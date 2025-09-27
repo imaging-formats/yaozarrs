@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self
+
+if TYPE_CHECKING:
+    import os
 
 __all__ = ["_BaseModel"]
 
@@ -68,8 +70,7 @@ class ZarrGroupModel(_BaseModel):
         """
         from ._io import read_json_from_uri
 
-        uri_str = os.fspath(uri)
-        json_content = read_json_from_uri(uri_str)
+        json_content, uri_str = read_json_from_uri(uri)
 
         # Create instance and set the original URI
         instance = cls.model_validate_json(json_content)
