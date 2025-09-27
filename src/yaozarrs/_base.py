@@ -70,29 +70,9 @@ class ZarrGroupModel(_BaseModel):
         FileNotFoundError
             If the URI or required zarr.json file cannot be found.
         """
-        try:
-            import fsspec
-        except ImportError as e:
-            msg = (
-                "fsspec is required for from_uri. "
-                "Install with: pip install yaozarrs[io]"
-            )
-            raise ImportError(msg) from e
+        from ._io import read_json_from_uri
 
-        # Determine the target JSON file URI
-        if uri.endswith((".json", ".zattrs")):
-            json_uri = uri
-        else:
-            # Assume it's a directory, look for zarr.json
-            json_uri = f"{uri.rstrip('/')}/zarr.json"
-
-        # Load JSON content using fsspec
-        try:
-            with fsspec.open(json_uri, "r") as f:
-                json_content = f.read()
-        except Exception as e:
-            msg = f"Could not load JSON from URI: {json_uri}"
-            raise FileNotFoundError(msg) from e
+        json_content = read_json_from_uri(uri)
 
         # Create instance and set the original URI
         instance = cls.model_validate_json(json_content)
