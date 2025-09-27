@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v05, validate_ome_node
+from yaozarrs import v05, validate_ome_object
 
 # Helper data
 COLUMN_A = {"name": "01"}
@@ -79,7 +79,7 @@ V05_VALID_PLATES = [
 
 @pytest.mark.parametrize("obj", V05_VALID_PLATES)
 def test_valid_v05_plates(obj: dict) -> None:
-    validate_ome_node(obj, v05.Plate)
+    validate_ome_object(obj, v05.Plate)
 
 
 # list of (invalid_obj, error_msg_substring)

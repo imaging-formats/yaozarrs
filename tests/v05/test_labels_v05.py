@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v05, validate_ome_node
+from yaozarrs import v05, validate_ome_object
 
 # Helper data
 COLOR_1 = {"label-value": 1, "rgba": [255, 0, 0, 255]}  # red
@@ -111,12 +111,12 @@ V05_VALID_LABELS_GROUPS = [
 
 @pytest.mark.parametrize("obj", V05_VALID_LABEL_IMAGES)
 def test_valid_v05_labels(obj: dict) -> None:
-    validate_ome_node(obj, v05.LabelImage)
+    validate_ome_object(obj, v05.LabelImage)
 
 
 @pytest.mark.parametrize("obj", V05_VALID_LABELS_GROUPS)
 def test_valid_v05_labels_groups(obj: dict) -> None:
-    validate_ome_node(obj, v05.LabelsGroup)
+    validate_ome_object(obj, v05.LabelsGroup)
 
 
 # list of (invalid_obj, error_msg_substring)

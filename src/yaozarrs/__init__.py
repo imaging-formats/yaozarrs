@@ -8,6 +8,6 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "uninstalled"
 
 from . import v05
-from ._validate import validate_ome_json, validate_ome_node
+from ._validate import validate_ome_json, validate_ome_object
 
-__all__ = ["v05", "validate_ome_json", "validate_ome_node"]
+__all__ = ["v05", "validate_ome_json", "validate_ome_object"]

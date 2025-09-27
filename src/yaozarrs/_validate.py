@@ -9,11 +9,11 @@ T = TypeVar("T", bound=AnyOME)
 
 
 @overload
-def validate_ome_node(node: Any, cls: type[T]) -> T: ...
+def validate_ome_object(node: Any, cls: type[T]) -> T: ...
 @overload
-def validate_ome_node(node: Any) -> AnyOME: ...
-def validate_ome_node(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
-    """Validate any ome-zarr document or node.
+def validate_ome_object(node: Any) -> AnyOME: ...
+def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
+    """Validate any ome-zarr document or node as a python object.
 
     Parameters
     ----------

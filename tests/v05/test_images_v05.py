@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v05, validate_ome_node
+from yaozarrs import v05, validate_ome_object
 
 X_AXIS = {"name": "x", "type": "space", "unit": "millimeter"}
 Y_AXIS = {"name": "y", "type": "space", "unit": None}
@@ -116,7 +116,7 @@ V05_VALID_IMAGES = [
 
 @pytest.mark.parametrize("obj", V05_VALID_IMAGES)
 def test_valid_v05_images(obj: dict) -> None:
-    validate_ome_node(obj, v05.Image)
+    validate_ome_object(obj, v05.Image)
 
 
 # list of (invalid_obj, error_msg_substring)

@@ -79,9 +79,13 @@ where "object" here refers to any dict or JSON object that could
 live at the "ome" key of an ome-zarr file.
 
 ```python
-from yaozarrs import validate_ome_node
+import yaozarrs
 
-obj = validate_ome_node(...)
+# validate from a dict or other python object:
+obj = yaozarrs.validate_ome_object(...)
+
+# or to validate from a JSON string | bytes:
+obj = yaozarrs.validate_ome_json(json_string)
 ```
 
 You can also construct objects directly from python, with IDE autocompletion:
@@ -110,7 +114,7 @@ img = v05.Image(multiscales=[scale])
 and of course, from dicts:
 
 ```python
-from yaozarrs import validate_ome_node, v05
+from yaozarrs import validate_ome_object, v05
 
 obj = {
     'version': '0.5',
@@ -132,7 +136,7 @@ obj = {
     ],
 }
 
-node = validate_ome_node(obj)
+node = validate_ome_object(obj)
 
 assert isinstance(node, v05.Image)
 ```

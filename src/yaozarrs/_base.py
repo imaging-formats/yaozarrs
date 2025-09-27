@@ -21,7 +21,7 @@ class _BaseModel(BaseModel):
             kwargs.setdefault("by_alias", True)
             return super().model_dump_json(**kwargs)
 
-        def model_dump(self, **kwargs: Any) -> str:
+        def model_dump(self, **kwargs: Any) -> str:  # pragma: no-cover
             # but required for round-tripping on pydantic <2.10.0
             kwargs.setdefault("by_alias", True)
             return super().model_dump(**kwargs)
