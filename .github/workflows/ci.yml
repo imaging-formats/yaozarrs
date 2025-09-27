@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
-      - run: uv run ty check
+      - run: uv run ty check -vv
 
   test:
     name: ${{ matrix.platform }} (${{ matrix.python-version }}) [${{ matrix.resolution }}]
