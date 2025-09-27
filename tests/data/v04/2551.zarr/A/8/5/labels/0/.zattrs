@@ -1,0 +1,208 @@
+{
+    "image-label": {
+        "colors": [],
+        "properties": [
+            {
+                "label-value": 1,
+                "omero:roiId": 633537,
+                "omero:shapeId": 633537
+            },
+            {
+                "label-value": 2,
+                "omero:roiId": 633538,
+                "omero:shapeId": 633538
+            },
+            {
+                "label-value": 3,
+                "omero:roiId": 633539,
+                "omero:shapeId": 633539
+            },
+            {
+                "label-value": 4,
+                "omero:roiId": 633540,
+                "omero:shapeId": 633540
+            },
+            {
+                "label-value": 5,
+                "omero:roiId": 633541,
+                "omero:shapeId": 633541
+            },
+            {
+                "label-value": 6,
+                "omero:roiId": 633542,
+                "omero:shapeId": 633542
+            },
+            {
+                "label-value": 7,
+                "omero:roiId": 633543,
+                "omero:shapeId": 633543
+            },
+            {
+                "label-value": 8,
+                "omero:roiId": 633544,
+                "omero:shapeId": 633544
+            },
+            {
+                "label-value": 9,
+                "omero:roiId": 633545,
+                "omero:shapeId": 633545
+            },
+            {
+                "label-value": 10,
+                "omero:roiId": 633546,
+                "omero:shapeId": 633546
+            },
+            {
+                "label-value": 11,
+                "omero:roiId": 633547,
+                "omero:shapeId": 633547
+            },
+            {
+                "label-value": 12,
+                "omero:roiId": 633548,
+                "omero:shapeId": 633548
+            },
+            {
+                "label-value": 13,
+                "omero:roiId": 633549,
+                "omero:shapeId": 633549
+            },
+            {
+                "label-value": 14,
+                "omero:roiId": 633550,
+                "omero:shapeId": 633550
+            },
+            {
+                "label-value": 15,
+                "omero:roiId": 633551,
+                "omero:shapeId": 633551
+            },
+            {
+                "label-value": 16,
+                "omero:roiId": 633552,
+                "omero:shapeId": 633552
+            },
+            {
+                "label-value": 17,
+                "omero:roiId": 633553,
+                "omero:shapeId": 633553
+            }
+        ],
+        "source": {
+            "image": "../.."
+        },
+        "version": "0.4"
+    },
+    "multiscales": [
+        {
+            "axes": [
+                {
+                    "name": "c",
+                    "type": "channel"
+                },
+                {
+                    "name": "z",
+                    "type": "space"
+                },
+                {
+                    "name": "y",
+                    "type": "space",
+                    "unit": "micrometer"
+                },
+                {
+                    "name": "x",
+                    "type": "space",
+                    "unit": "micrometer"
+                }
+            ],
+            "datasets": [
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.1077,
+                                0.1077
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "0"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.2154,
+                                0.2154
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "1"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.4308,
+                                0.4308
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "2"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.8616,
+                                0.8616
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "3"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.7232,
+                                1.7232
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "4"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                3.4464,
+                                3.4464
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "5"
+                }
+            ],
+            "name": "0",
+            "version": "0.4"
+        }
+    ]
+}

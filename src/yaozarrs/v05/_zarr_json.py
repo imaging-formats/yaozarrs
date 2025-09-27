@@ -1,4 +1,6 @@
-"""A zarr.json document found in any ome-zarr group.
+"""A zarr.json document found in any ome-zarr v0.5 group.
+
+https://ngff.openmicroscopy.org/0.5/
 
 Here are ALL the possible zarr.json documents you might encounter with OME metadata:
 
@@ -292,7 +294,7 @@ class OMEAttributes(_BaseModel):
     ome: OMEMetadata
 
 
-class ZarrJSON(_BaseModel):
+class OMEZarrGroupJSON(_BaseModel):
     """A zarr.json document found in any ome-zarr group."""
 
     zarr_format: Literal[3] = 3

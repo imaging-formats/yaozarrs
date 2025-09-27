@@ -1,0 +1,343 @@
+{
+    "image-label": {
+        "colors": [],
+        "properties": [
+            {
+                "label-value": 1,
+                "omero:roiId": 631459,
+                "omero:shapeId": 631459
+            },
+            {
+                "label-value": 2,
+                "omero:roiId": 631460,
+                "omero:shapeId": 631460
+            },
+            {
+                "label-value": 3,
+                "omero:roiId": 631461,
+                "omero:shapeId": 631461
+            },
+            {
+                "label-value": 4,
+                "omero:roiId": 631462,
+                "omero:shapeId": 631462
+            },
+            {
+                "label-value": 5,
+                "omero:roiId": 631463,
+                "omero:shapeId": 631463
+            },
+            {
+                "label-value": 6,
+                "omero:roiId": 631464,
+                "omero:shapeId": 631464
+            },
+            {
+                "label-value": 7,
+                "omero:roiId": 631465,
+                "omero:shapeId": 631465
+            },
+            {
+                "label-value": 8,
+                "omero:roiId": 631466,
+                "omero:shapeId": 631466
+            },
+            {
+                "label-value": 9,
+                "omero:roiId": 631467,
+                "omero:shapeId": 631467
+            },
+            {
+                "label-value": 10,
+                "omero:roiId": 631468,
+                "omero:shapeId": 631468
+            },
+            {
+                "label-value": 11,
+                "omero:roiId": 631469,
+                "omero:shapeId": 631469
+            },
+            {
+                "label-value": 12,
+                "omero:roiId": 631470,
+                "omero:shapeId": 631470
+            },
+            {
+                "label-value": 13,
+                "omero:roiId": 631471,
+                "omero:shapeId": 631471
+            },
+            {
+                "label-value": 14,
+                "omero:roiId": 631472,
+                "omero:shapeId": 631472
+            },
+            {
+                "label-value": 15,
+                "omero:roiId": 631473,
+                "omero:shapeId": 631473
+            },
+            {
+                "label-value": 16,
+                "omero:roiId": 631474,
+                "omero:shapeId": 631474
+            },
+            {
+                "label-value": 17,
+                "omero:roiId": 631475,
+                "omero:shapeId": 631475
+            },
+            {
+                "label-value": 18,
+                "omero:roiId": 631476,
+                "omero:shapeId": 631476
+            },
+            {
+                "label-value": 19,
+                "omero:roiId": 631477,
+                "omero:shapeId": 631477
+            },
+            {
+                "label-value": 20,
+                "omero:roiId": 631478,
+                "omero:shapeId": 631478
+            },
+            {
+                "label-value": 21,
+                "omero:roiId": 631479,
+                "omero:shapeId": 631479
+            },
+            {
+                "label-value": 22,
+                "omero:roiId": 631480,
+                "omero:shapeId": 631480
+            },
+            {
+                "label-value": 23,
+                "omero:roiId": 631481,
+                "omero:shapeId": 631481
+            },
+            {
+                "label-value": 24,
+                "omero:roiId": 631482,
+                "omero:shapeId": 631482
+            },
+            {
+                "label-value": 25,
+                "omero:roiId": 631483,
+                "omero:shapeId": 631483
+            },
+            {
+                "label-value": 26,
+                "omero:roiId": 631484,
+                "omero:shapeId": 631484
+            },
+            {
+                "label-value": 27,
+                "omero:roiId": 631485,
+                "omero:shapeId": 631485
+            },
+            {
+                "label-value": 28,
+                "omero:roiId": 631486,
+                "omero:shapeId": 631486
+            },
+            {
+                "label-value": 29,
+                "omero:roiId": 631487,
+                "omero:shapeId": 631487
+            },
+            {
+                "label-value": 30,
+                "omero:roiId": 631488,
+                "omero:shapeId": 631488
+            },
+            {
+                "label-value": 31,
+                "omero:roiId": 631489,
+                "omero:shapeId": 631489
+            },
+            {
+                "label-value": 32,
+                "omero:roiId": 631490,
+                "omero:shapeId": 631490
+            },
+            {
+                "label-value": 33,
+                "omero:roiId": 631491,
+                "omero:shapeId": 631491
+            },
+            {
+                "label-value": 34,
+                "omero:roiId": 631492,
+                "omero:shapeId": 631492
+            },
+            {
+                "label-value": 35,
+                "omero:roiId": 631493,
+                "omero:shapeId": 631493
+            },
+            {
+                "label-value": 36,
+                "omero:roiId": 631494,
+                "omero:shapeId": 631494
+            },
+            {
+                "label-value": 37,
+                "omero:roiId": 631495,
+                "omero:shapeId": 631495
+            },
+            {
+                "label-value": 38,
+                "omero:roiId": 631496,
+                "omero:shapeId": 631496
+            },
+            {
+                "label-value": 39,
+                "omero:roiId": 631497,
+                "omero:shapeId": 631497
+            },
+            {
+                "label-value": 40,
+                "omero:roiId": 631498,
+                "omero:shapeId": 631498
+            },
+            {
+                "label-value": 41,
+                "omero:roiId": 631499,
+                "omero:shapeId": 631499
+            },
+            {
+                "label-value": 42,
+                "omero:roiId": 631500,
+                "omero:shapeId": 631500
+            },
+            {
+                "label-value": 43,
+                "omero:roiId": 631501,
+                "omero:shapeId": 631501
+            },
+            {
+                "label-value": 44,
+                "omero:roiId": 631502,
+                "omero:shapeId": 631502
+            }
+        ],
+        "source": {
+            "image": "../.."
+        },
+        "version": "0.4"
+    },
+    "multiscales": [
+        {
+            "axes": [
+                {
+                    "name": "c",
+                    "type": "channel"
+                },
+                {
+                    "name": "z",
+                    "type": "space"
+                },
+                {
+                    "name": "y",
+                    "type": "space",
+                    "unit": "micrometer"
+                },
+                {
+                    "name": "x",
+                    "type": "space",
+                    "unit": "micrometer"
+                }
+            ],
+            "datasets": [
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.1077,
+                                0.1077
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "0"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.2154,
+                                0.2154
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "1"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.4308,
+                                0.4308
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "2"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.8616,
+                                0.8616
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "3"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.7232,
+                                1.7232
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "4"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                3.4464,
+                                3.4464
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "5"
+                }
+            ],
+            "name": "0",
+            "version": "0.4"
+        }
+    ]
+}

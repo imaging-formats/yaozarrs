@@ -1,0 +1,52 @@
+{
+    "multiscales": [
+        {
+            "datasets": [
+                {
+                    "path": "0"
+                }
+            ],
+            "version": "0.1"
+        }
+    ],
+    "omero": {
+        "channels": [
+            {
+                "active": true,
+                "coefficient": 1.0,
+                "color": "0000FF",
+                "family": "linear",
+                "inverted": false,
+                "label": "LaminB1",
+                "window": {
+                    "end": 1500.0,
+                    "max": 65535.0,
+                    "min": 0.0,
+                    "start": 0.0
+                }
+            },
+            {
+                "active": true,
+                "coefficient": 1.0,
+                "color": "FFFF00",
+                "family": "linear",
+                "inverted": false,
+                "label": "Dapi",
+                "window": {
+                    "end": 1500.0,
+                    "max": 65535.0,
+                    "min": 0.0,
+                    "start": 0.0
+                }
+            }
+        ],
+        "id": 6001245,
+        "name": "B4_C1.tif",
+        "rdefs": {
+            "defaultT": 0,
+            "defaultZ": 128,
+            "model": "color"
+        },
+        "version": "0.1"
+    }
+}

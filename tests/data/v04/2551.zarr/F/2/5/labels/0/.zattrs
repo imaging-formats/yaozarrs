@@ -1,0 +1,178 @@
+{
+    "image-label": {
+        "colors": [],
+        "properties": [
+            {
+                "label-value": 1,
+                "omero:roiId": 633977,
+                "omero:shapeId": 633977
+            },
+            {
+                "label-value": 2,
+                "omero:roiId": 633978,
+                "omero:shapeId": 633978
+            },
+            {
+                "label-value": 3,
+                "omero:roiId": 633979,
+                "omero:shapeId": 633979
+            },
+            {
+                "label-value": 4,
+                "omero:roiId": 633980,
+                "omero:shapeId": 633980
+            },
+            {
+                "label-value": 5,
+                "omero:roiId": 633981,
+                "omero:shapeId": 633981
+            },
+            {
+                "label-value": 6,
+                "omero:roiId": 633982,
+                "omero:shapeId": 633982
+            },
+            {
+                "label-value": 7,
+                "omero:roiId": 633983,
+                "omero:shapeId": 633983
+            },
+            {
+                "label-value": 8,
+                "omero:roiId": 633984,
+                "omero:shapeId": 633984
+            },
+            {
+                "label-value": 9,
+                "omero:roiId": 633985,
+                "omero:shapeId": 633985
+            },
+            {
+                "label-value": 10,
+                "omero:roiId": 633986,
+                "omero:shapeId": 633986
+            },
+            {
+                "label-value": 11,
+                "omero:roiId": 633987,
+                "omero:shapeId": 633987
+            }
+        ],
+        "source": {
+            "image": "../.."
+        },
+        "version": "0.4"
+    },
+    "multiscales": [
+        {
+            "axes": [
+                {
+                    "name": "c",
+                    "type": "channel"
+                },
+                {
+                    "name": "z",
+                    "type": "space"
+                },
+                {
+                    "name": "y",
+                    "type": "space",
+                    "unit": "micrometer"
+                },
+                {
+                    "name": "x",
+                    "type": "space",
+                    "unit": "micrometer"
+                }
+            ],
+            "datasets": [
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.1077,
+                                0.1077
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "0"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.2154,
+                                0.2154
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "1"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.4308,
+                                0.4308
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "2"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                0.8616,
+                                0.8616
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "3"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.7232,
+                                1.7232
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "4"
+                },
+                {
+                    "coordinateTransformations": [
+                        {
+                            "scale": [
+                                1.0,
+                                1.0,
+                                3.4464,
+                                3.4464
+                            ],
+                            "type": "scale"
+                        }
+                    ],
+                    "path": "5"
+                }
+            ],
+            "name": "0",
+            "version": "0.4"
+        }
+    ]
+}

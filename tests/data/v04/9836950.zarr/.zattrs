@@ -1,0 +1,47 @@
+{
+    "multiscales": [
+        {
+            "datasets": [
+                {
+                    "path": "0"
+                },
+                {
+                    "path": "1"
+                },
+                {
+                    "path": "2"
+                },
+                {
+                    "path": "3"
+                }
+            ],
+            "version": "0.1"
+        }
+    ],
+    "omero": {
+        "channels": [
+            {
+                "active": true,
+                "coefficient": 1.0,
+                "color": "808080",
+                "family": "linear",
+                "inverted": false,
+                "label": "0",
+                "window": {
+                    "end": 100.0,
+                    "max": 255.0,
+                    "min": 0.0,
+                    "start": 5.0
+                }
+            }
+        ],
+        "id": 9836950,
+        "name": "056F63395C",
+        "rdefs": {
+            "defaultT": 0,
+            "defaultZ": 78,
+            "model": "greyscale"
+        },
+        "version": "0.1"
+    }
+}

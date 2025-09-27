@@ -2,9 +2,9 @@ from typing import Any, TypeAlias, TypeVar, overload
 
 from pydantic import TypeAdapter
 
-from .v05 import OMENode, OMEZarr
+from .v05 import OMEMetadata, OMEZarrGroupJSON
 
-AnyNode: TypeAlias = OMEZarr | OMENode
+AnyNode: TypeAlias = OMEZarrGroupJSON | OMEMetadata
 T = TypeVar("T", bound=AnyNode)
 
 

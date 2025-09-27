@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from yaozarrs.v05._zarr_json import ZarrJSON
+from yaozarrs.v05 import OMEZarrGroupJSON
 
 DATA = Path(__file__).parent / "data"
 # ALL of the zarr.json files in the test data
@@ -15,15 +15,9 @@ OME_ZARR_JSONS: dict[str, str] = {
 }
 
 
-@pytest.mark.parametrize(
-    "txt", OME_ZARR_JSONS.values(), ids=list(OME_ZARR_JSONS.keys())
-)
+@pytest.mark.parametrize("txt", OME_ZARR_JSONS.values(), ids=OME_ZARR_JSONS.keys())
 def test_data(txt: str) -> None:
-    obj = ZarrJSON.model_validate_json(txt)
-
-    # FIXME:
-    # we shouldn't have to do by_alias=True here...
-    # but it's required for pydantic <2.10.0
-    js = obj.model_dump_json(by_alias=True)
-    obj2 = ZarrJSON.model_validate_json(js)
+    obj = OMEZarrGroupJSON.model_validate_json(txt)
+    js = obj.model_dump_json()
+    obj2 = OMEZarrGroupJSON.model_validate_json(js)
     assert obj == obj2

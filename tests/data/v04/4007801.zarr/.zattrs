@@ -1,0 +1,64 @@
+{
+    "multiscales": [
+        {
+            "datasets": [
+                {
+                    "path": "0"
+                },
+                {
+                    "path": "1"
+                },
+                {
+                    "path": "2"
+                },
+                {
+                    "path": "3"
+                },
+                {
+                    "path": "4"
+                }
+            ],
+            "version": "0.1"
+        }
+    ],
+    "omero": {
+        "channels": [
+            {
+                "active": true,
+                "coefficient": 1,
+                "color": "00FF00",
+                "family": "linear",
+                "inverted": false,
+                "label": "H2B-eGFP",
+                "window": {
+                    "end": 1093,
+                    "max": 65535,
+                    "min": 0,
+                    "start": 0
+                }
+            },
+            {
+                "active": true,
+                "coefficient": 1,
+                "color": "FF0000",
+                "family": "linear",
+                "inverted": false,
+                "label": "myr-tdTomato",
+                "window": {
+                    "end": 439,
+                    "max": 65535,
+                    "min": 0,
+                    "start": 0
+                }
+            }
+        ],
+        "id": 4007801,
+        "name": "SPM00_TM000512_CM00_CM01_CHN01.klb",
+        "rdefs": {
+            "defaultT": 265,
+            "defaultZ": 494,
+            "model": "color"
+        },
+        "version": "0.1"
+    }
+}
