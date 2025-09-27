@@ -115,7 +115,7 @@ def metadata_mirror(remote_url: str, local_parent: str, verbose: bool = True) ->
     str
         Path to the local mirrored store directory.
     """
-    fs, root = fsspec.core.url_to_fs(remote_url)
+    fs, root = fsspec.url_to_fs(remote_url)  # type: ignore
 
     root_path = PurePosixPath(root.rstrip("/"))
     root_name = root_path.name or root_path.parent.name
