@@ -269,7 +269,7 @@ Here are ALL the possible zarr.json documents you might encounter with OME metad
 
 from typing import Literal, TypeAlias
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs.v05._bf2raw import Bf2Raw
 from yaozarrs.v05._ome import OME
 
@@ -293,7 +293,7 @@ class OMEAttributes(_BaseModel):
     ome: OMEMetadata
 
 
-class OMEZarrGroupJSON(_BaseModel):
+class OMEZarrGroupJSON(ZarrGroupModel):
     """A zarr.json document found in any ome-zarr group."""
 
     zarr_format: Literal[3] = 3

@@ -32,6 +32,11 @@ dependencies = [
     "typing-extensions>=4.6.0",
 ]
 
+[project.optional-dependencies]
+io =  [
+    "aiohttp>=3.12.15",
+    "fsspec>=2025.0",
+]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/yaozarrs"
