@@ -279,13 +279,12 @@ from ._plate import Plate
 from ._series import Series
 from ._well import Well
 
-# Anything that can live in the "ome" key of a v0.5 ome-zarr file.
-#
 # LabelImage must come before Image because it's a subclass
 # could also use pydantic.Discriminator, but this is simpler
 OMEMetadata: TypeAlias = (
     LabelImage | Image | Plate | Well | LabelsGroup | OME | Series | Bf2Raw
 )
+"""Anything that can live in the "ome" key of a v0.5 ome-zarr file."""
 
 
 class OMEAttributes(_BaseModel):

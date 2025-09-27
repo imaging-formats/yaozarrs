@@ -49,6 +49,7 @@ dev = [
     "pyright>=1.1.405",
     "rich>=14.1.0",
     "ruff>=0.13.1",
+    "ty>=0.0.1a21",
 ]
 
 [tool.uv.sources]
@@ -142,3 +143,6 @@ ignore = [
 # https://github.com/crate-ci/typos/blob/master/docs/reference.md
 [tool.typos.default]
 extend-ignore-identifiers-re = ["(?i)ome", "AIMD"]
+
+[tool.ty.environment]
+python = "./.venv"

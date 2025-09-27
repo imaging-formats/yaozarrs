@@ -19,23 +19,30 @@ repos:
       - id: actionlint
 
   - repo: https://github.com/adhtruong/mirrors-typos
-    rev: v1.36.2
+    rev: v1.36.3
     hooks:
       - id: typos
-        args: [--force-exclude]  # omitting --write-changes
+        args: [--force-exclude] # omitting --write-changes
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.13.2
     hooks:
       - id: ruff-check
-        args: [--fix]  # may also add '--unsafe-fixes'
+        args: [--fix] # may also add '--unsafe-fixes'
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
-    hooks:
-      - id: mypy
-        files: "^src/"
-        additional_dependencies:
-          - pydantic
+  # out with the old, in with the ty!
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.18.2
+  #   hooks:
+  #     - id: mypy
+  #       files: "^src/"
+  #       additional_dependencies:
+  #         - pydantic
 
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty check
+        entry: ty check
+        language: python

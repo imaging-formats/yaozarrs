@@ -7,7 +7,7 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-import fsspec
+import fsspec  # type: ignore
 
 META_SUFFIXES = (
     "zarr.json",  # Zarr v3

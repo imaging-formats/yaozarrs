@@ -6,10 +6,6 @@ https://github.com/ome/ngff/tree/0.4
 
 from __future__ import annotations
 
-from typing import TypeAlias
-
-from pydantic import BaseModel
-
 from yaozarrs.v04._bf2raw import Bf2Raw
 from yaozarrs.v04._ome import OME
 
@@ -36,9 +32,12 @@ from ._label import (
 )
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._well import FieldOfView, Well, WellDef
+from ._zarr_json import OMEZarrGroupJSON
 
 __all__ = [
+    "OME",
     "Acquisition",
+    "Bf2Raw",
     "ChannelAxis",
     "Column",
     "CustomAxis",
@@ -51,6 +50,7 @@ __all__ = [
     "LabelProperty",
     "LabelSource",
     "Multiscale",
+    "OMEZarrGroupJSON",
     "Omero",
     "OmeroChannel",
     "OmeroWindow",
@@ -67,9 +67,9 @@ __all__ = [
 ]
 
 
-OMENode: TypeAlias = Image | Plate | LabelImage | Well | OME | Bf2Raw
-"""Anything that can live in the "ome" key of a v0.4 ome-zarr file."""
+# OMENode: TypeAlias = Image | Plate | LabelImage | Well | OME | Bf2Raw
+# """Anything that can live in the "ome" key of a v0.4 ome-zarr file."""
 
 
-class OMEZarr(BaseModel):
-    ome: OMENode
+# class OMEZarr(BaseModel):
+#     ome: OMENode
