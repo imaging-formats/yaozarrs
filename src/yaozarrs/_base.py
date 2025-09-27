@@ -19,14 +19,12 @@ class _BaseModel(BaseModel):
     )
 
     if not TYPE_CHECKING:
-
+        # "by_alias" is required for round-tripping on pydantic <2.10.0
         def model_dump_json(self, **kwargs: Any) -> str:
-            # but required for round-tripping on pydantic <2.10.0
             kwargs.setdefault("by_alias", True)
             return super().model_dump_json(**kwargs)
 
         def model_dump(self, **kwargs: Any) -> str:  # pragma: no-cover
-            # but required for round-tripping on pydantic <2.10.0
             kwargs.setdefault("by_alias", True)
             return super().model_dump(**kwargs)
 
