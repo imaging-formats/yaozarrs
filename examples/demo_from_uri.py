@@ -5,11 +5,6 @@ import sys
 
 from yaozarrs.v05 import OMEZarrGroupJSON
 
-try:
-    from rich import print
-except ImportError:
-    from builtins import print  # type: ignore
-
 
 def demo_zarr_uri(uri: str) -> None:
     """Demonstrate loading from a zarr URI."""

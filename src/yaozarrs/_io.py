@@ -1,4 +1,3 @@
-import os
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
@@ -33,12 +32,10 @@ def _require_fsspec(func: F) -> F:
 
 
 @_require_fsspec
-def read_json_from_uri(uri: str | os.PathLike, attrs_file: str = "zarr.json") -> str:
-    uri_str = os.fspath(uri)
-
+def read_json_from_uri(uri_str: str, attrs_file: str = "zarr.json") -> str:
     # Determine the target JSON file URI
     if uri_str.endswith((".json", ".zattrs")):
-        json_uri = uri
+        json_uri = uri_str
     else:
         # Assume it's a directory, look for zarr attributes file inside it
         json_uri = f"{uri_str.rstrip('/')}/{attrs_file}"
@@ -49,7 +46,7 @@ def read_json_from_uri(uri: str | os.PathLike, attrs_file: str = "zarr.json") ->
             json_content = cast("io.TextIOBase", f).read()
 
     except Exception as e:
-        msg = f"Could not load JSON from URI: {json_uri}"
+        msg = f"Could not load JSON from URI: {json_uri}:\n{e}"
         raise FileNotFoundError(msg) from e
 
     return json_content

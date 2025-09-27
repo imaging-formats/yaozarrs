@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -51,7 +52,7 @@ class ZarrGroupModel(_BaseModel):
     )
 
     @classmethod
-    def from_uri(cls, uri: str) -> Self:
+    def from_uri(cls, uri: str | os.PathLike) -> Self:
         """Create an instance of this model by loading JSON data from a URI.
 
         Parameters
@@ -69,9 +70,10 @@ class ZarrGroupModel(_BaseModel):
         """
         from ._io import read_json_from_uri
 
-        json_content = read_json_from_uri(uri)
+        uri_str = os.fspath(uri)
+        json_content = read_json_from_uri(uri_str)
 
         # Create instance and set the original URI
         instance = cls.model_validate_json(json_content)
-        instance.uri = uri
+        instance.uri = uri_str
         return instance
