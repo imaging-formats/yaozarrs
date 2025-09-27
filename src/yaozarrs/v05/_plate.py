@@ -142,3 +142,11 @@ class PlateDef(_BaseModel):
 class Plate(_BaseModel):
     version: Literal["0.5"] = "0.5"
     plate: PlateDef
+
+    # this may be present... for docs created by bioformats2raw
+    # it's here just to allow round-tripping, and show that if was present in the doc.
+    bioformats2raw_layout: Literal[3] | None = Field(
+        default=None,
+        alias="bioformats2raw.layout",
+        description="The top-level identifier metadata added by bioformats2raw",
+    )

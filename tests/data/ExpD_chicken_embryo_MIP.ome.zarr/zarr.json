@@ -1,0 +1,88 @@
+{
+  "attributes": {
+    "ome": {
+      "version": "0.5",
+      "_creator": {
+        "name": "ome2024-ngff-challenge",
+        "version": "1.0.2",
+        "notes": null
+      },
+      "multiscales": [
+        {
+          "axes": [
+            { "name": "y", "type": "space", "unit": "micrometer" },
+            { "name": "x", "type": "space", "unit": "micrometer" }
+          ],
+          "datasets": [
+            {
+              "coordinateTransformations": [
+                { "scale": [1.6, 1.6], "type": "scale" }
+              ],
+              "path": "0"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [3.2, 3.2], "type": "scale" }
+              ],
+              "path": "1"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [6.4, 6.4], "type": "scale" }
+              ],
+              "path": "2"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [12.8, 12.8], "type": "scale" }
+              ],
+              "path": "3"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [25.6, 25.6], "type": "scale" }
+              ],
+              "path": "4"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [51.2, 51.2], "type": "scale" }
+              ],
+              "path": "5"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [102.4, 102.4], "type": "scale" }
+              ],
+              "path": "6"
+            },
+            {
+              "coordinateTransformations": [
+                { "scale": [204.8, 204.8], "type": "scale" }
+              ],
+              "path": "7"
+            }
+          ],
+          "name": "/"
+        }
+      ],
+      "omero": {
+        "channels": [
+          {
+            "active": true,
+            "coefficient": 1.0,
+            "color": "FFFFFF",
+            "family": "linear",
+            "inverted": false,
+            "label": "Cy3",
+            "window": { "end": 55.0, "max": 255.0, "min": 0.0, "start": 0.0 }
+          }
+        ],
+        "id": 1,
+        "rdefs": { "defaultT": 0, "defaultZ": 0, "model": "greyscale" }
+      }
+    }
+  },
+  "zarr_format": 3,
+  "node_type": "group"
+}

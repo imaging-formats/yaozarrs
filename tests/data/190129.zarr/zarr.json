@@ -1,1 +1,90 @@
-{"attributes": {"ome": {"version": "0.5", "_creator": {"name": "ome2024-ngff-challenge", "version": "1.0.0", "notes": null}, "plate": {"columns": [{"name": "1"}, {"name": "2"}, {"name": "3"}, {"name": "4"}, {"name": "5"}, {"name": "6"}, {"name": "7"}, {"name": "8"}, {"name": "9"}, {"name": "10"}, {"name": "11"}], "field_count": 32, "name": "190129", "rows": [{"name": "A"}, {"name": "B"}, {"name": "C"}, {"name": "D"}, {"name": "E"}, {"name": "F"}], "wells": [{"columnIndex": 6, "path": "B/7", "rowIndex": 1}, {"columnIndex": 8, "path": "D/9", "rowIndex": 3}, {"columnIndex": 2, "path": "E/3", "rowIndex": 4}, {"columnIndex": 4, "path": "F/5", "rowIndex": 5}, {"columnIndex": 10, "path": "B/11", "rowIndex": 1}, {"columnIndex": 10, "path": "F/11", "rowIndex": 5}, {"columnIndex": 6, "path": "C/7", "rowIndex": 2}, {"columnIndex": 2, "path": "B/3", "rowIndex": 1}, {"columnIndex": 6, "path": "F/7", "rowIndex": 5}, {"columnIndex": 2, "path": "D/3", "rowIndex": 3}, {"columnIndex": 3, "path": "B/4", "rowIndex": 1}, {"columnIndex": 3, "path": "C/4", "rowIndex": 2}, {"columnIndex": 9, "path": "C/10", "rowIndex": 2}, {"columnIndex": 7, "path": "C/8", "rowIndex": 2}, {"columnIndex": 4, "path": "D/5", "rowIndex": 3}, {"columnIndex": 10, "path": "E/11", "rowIndex": 4}, {"columnIndex": 4, "path": "C/5", "rowIndex": 2}, {"columnIndex": 8, "path": "F/9", "rowIndex": 5}, {"columnIndex": 1, "path": "D/2", "rowIndex": 3}, {"columnIndex": 1, "path": "C/2", "rowIndex": 2}, {"columnIndex": 2, "path": "F/3", "rowIndex": 5}, {"columnIndex": 4, "path": "B/5", "rowIndex": 1}, {"columnIndex": 1, "path": "B/2", "rowIndex": 1}, {"columnIndex": 8, "path": "C/9", "rowIndex": 2}, {"columnIndex": 7, "path": "D/8", "rowIndex": 3}, {"columnIndex": 2, "path": "C/3", "rowIndex": 2}, {"columnIndex": 6, "path": "E/7", "rowIndex": 4}, {"columnIndex": 5, "path": "B/6", "rowIndex": 1}, {"columnIndex": 5, "path": "F/6", "rowIndex": 5}, {"columnIndex": 8, "path": "B/9", "rowIndex": 1}, {"columnIndex": 7, "path": "E/8", "rowIndex": 4}, {"columnIndex": 9, "path": "F/10", "rowIndex": 5}, {"columnIndex": 5, "path": "E/6", "rowIndex": 4}, {"columnIndex": 6, "path": "D/7", "rowIndex": 3}, {"columnIndex": 9, "path": "E/10", "rowIndex": 4}, {"columnIndex": 4, "path": "E/5", "rowIndex": 4}, {"columnIndex": 1, "path": "E/2", "rowIndex": 4}, {"columnIndex": 3, "path": "F/4", "rowIndex": 5}, {"columnIndex": 7, "path": "F/8", "rowIndex": 5}, {"columnIndex": 8, "path": "E/9", "rowIndex": 4}, {"columnIndex": 5, "path": "D/6", "rowIndex": 3}, {"columnIndex": 7, "path": "B/8", "rowIndex": 1}, {"columnIndex": 9, "path": "B/10", "rowIndex": 1}, {"columnIndex": 3, "path": "D/4", "rowIndex": 3}, {"columnIndex": 5, "path": "C/6", "rowIndex": 2}, {"columnIndex": 3, "path": "E/4", "rowIndex": 4}, {"columnIndex": 9, "path": "D/10", "rowIndex": 3}, {"columnIndex": 1, "path": "F/2", "rowIndex": 5}, {"columnIndex": 10, "path": "C/11", "rowIndex": 2}]}}}, "zarr_format": 3, "node_type": "group"}
+{
+  "attributes": {
+    "ome": {
+      "version": "0.5",
+      "_creator": {
+        "name": "ome2024-ngff-challenge",
+        "version": "1.0.0",
+        "notes": null
+      },
+      "plate": {
+        "columns": [
+          { "name": "1" },
+          { "name": "2" },
+          { "name": "3" },
+          { "name": "4" },
+          { "name": "5" },
+          { "name": "6" },
+          { "name": "7" },
+          { "name": "8" },
+          { "name": "9" },
+          { "name": "10" },
+          { "name": "11" }
+        ],
+        "field_count": 32,
+        "name": "190129",
+        "rows": [
+          { "name": "A" },
+          { "name": "B" },
+          { "name": "C" },
+          { "name": "D" },
+          { "name": "E" },
+          { "name": "F" }
+        ],
+        "wells": [
+          { "columnIndex": 6, "path": "B/7", "rowIndex": 1 },
+          { "columnIndex": 8, "path": "D/9", "rowIndex": 3 },
+          { "columnIndex": 2, "path": "E/3", "rowIndex": 4 },
+          { "columnIndex": 4, "path": "F/5", "rowIndex": 5 },
+          { "columnIndex": 10, "path": "B/11", "rowIndex": 1 },
+          { "columnIndex": 10, "path": "F/11", "rowIndex": 5 },
+          { "columnIndex": 6, "path": "C/7", "rowIndex": 2 },
+          { "columnIndex": 2, "path": "B/3", "rowIndex": 1 },
+          { "columnIndex": 6, "path": "F/7", "rowIndex": 5 },
+          { "columnIndex": 2, "path": "D/3", "rowIndex": 3 },
+          { "columnIndex": 3, "path": "B/4", "rowIndex": 1 },
+          { "columnIndex": 3, "path": "C/4", "rowIndex": 2 },
+          { "columnIndex": 9, "path": "C/10", "rowIndex": 2 },
+          { "columnIndex": 7, "path": "C/8", "rowIndex": 2 },
+          { "columnIndex": 4, "path": "D/5", "rowIndex": 3 },
+          { "columnIndex": 10, "path": "E/11", "rowIndex": 4 },
+          { "columnIndex": 4, "path": "C/5", "rowIndex": 2 },
+          { "columnIndex": 8, "path": "F/9", "rowIndex": 5 },
+          { "columnIndex": 1, "path": "D/2", "rowIndex": 3 },
+          { "columnIndex": 1, "path": "C/2", "rowIndex": 2 },
+          { "columnIndex": 2, "path": "F/3", "rowIndex": 5 },
+          { "columnIndex": 4, "path": "B/5", "rowIndex": 1 },
+          { "columnIndex": 1, "path": "B/2", "rowIndex": 1 },
+          { "columnIndex": 8, "path": "C/9", "rowIndex": 2 },
+          { "columnIndex": 7, "path": "D/8", "rowIndex": 3 },
+          { "columnIndex": 2, "path": "C/3", "rowIndex": 2 },
+          { "columnIndex": 6, "path": "E/7", "rowIndex": 4 },
+          { "columnIndex": 5, "path": "B/6", "rowIndex": 1 },
+          { "columnIndex": 5, "path": "F/6", "rowIndex": 5 },
+          { "columnIndex": 8, "path": "B/9", "rowIndex": 1 },
+          { "columnIndex": 7, "path": "E/8", "rowIndex": 4 },
+          { "columnIndex": 9, "path": "F/10", "rowIndex": 5 },
+          { "columnIndex": 5, "path": "E/6", "rowIndex": 4 },
+          { "columnIndex": 6, "path": "D/7", "rowIndex": 3 },
+          { "columnIndex": 9, "path": "E/10", "rowIndex": 4 },
+          { "columnIndex": 4, "path": "E/5", "rowIndex": 4 },
+          { "columnIndex": 1, "path": "E/2", "rowIndex": 4 },
+          { "columnIndex": 3, "path": "F/4", "rowIndex": 5 },
+          { "columnIndex": 7, "path": "F/8", "rowIndex": 5 },
+          { "columnIndex": 8, "path": "E/9", "rowIndex": 4 },
+          { "columnIndex": 5, "path": "D/6", "rowIndex": 3 },
+          { "columnIndex": 7, "path": "B/8", "rowIndex": 1 },
+          { "columnIndex": 9, "path": "B/10", "rowIndex": 1 },
+          { "columnIndex": 3, "path": "D/4", "rowIndex": 3 },
+          { "columnIndex": 5, "path": "C/6", "rowIndex": 2 },
+          { "columnIndex": 3, "path": "E/4", "rowIndex": 4 },
+          { "columnIndex": 9, "path": "D/10", "rowIndex": 3 },
+          { "columnIndex": 1, "path": "F/2", "rowIndex": 5 },
+          { "columnIndex": 10, "path": "C/11", "rowIndex": 2 }
+        ]
+      }
+    }
+  },
+  "zarr_format": 3,
+  "node_type": "group"
+}
