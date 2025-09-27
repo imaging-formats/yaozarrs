@@ -17,12 +17,14 @@ F = TypeVar("F", bound=Callable[..., object])
 
 
 def _require_fsspec(func: F) -> F:
+    """Decorator to ensure fsspec is available for functions that need it."""
+
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         if fsspec is None:
             msg = (
                 f"fsspec is required for {func.__name__!r}.\n"
-                "Install with: pip install yaozarrs[io]"
+                "Install with: 'pip install yaozarrs[io]' or 'pip install fsspec'"
             )
             raise ImportError(msg)
         return func(*args, **kwargs)

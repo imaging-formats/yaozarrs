@@ -58,12 +58,9 @@ class ZarrGroupModel(_BaseModel):
         ----------
         uri : str
             The URI to load the JSON data from.  This can be a local file path,
-            or a remote URL (e.g. s3://bucket/key/some_file.zarr).
-
-        Returns
-        -------
-        Self
-            An instance of this model loaded from the URI.
+            or a remote URL (e.g. s3://bucket/key/some_file.zarr).  It can be a zarr
+            group directory, or a direct path to a JSON file (e.g. zarr.json or
+            .zattrs) inside a zarr group.
 
         Raises
         ------
