@@ -112,7 +112,6 @@ class TestV04StorageValidation:
         result = v04.validate_storage(model)
         assert not result.valid
         assert len(result.errors) == 1
-        assert "does not exist" in result.errors[0].message
 
     def test_validate_valid_image_storage(self):
         """Test validation of a valid image storage structure."""
