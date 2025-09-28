@@ -4,7 +4,7 @@ from annotated_types import MinLen
 from pydantic import Field
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._utils import UniqueList
+from yaozarrs._types import UniqueList
 
 
 class FieldOfView(_BaseModel):

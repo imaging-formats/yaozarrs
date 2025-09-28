@@ -5,8 +5,8 @@ from pydantic import AfterValidator, Field, WrapValidator, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._types import UniqueList
 from yaozarrs._units import SpaceUnits, TimeUnits
-from yaozarrs._utils import UniqueList
 
 # ------------------------------------------------------------------------------
 # Axis model

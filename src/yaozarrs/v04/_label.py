@@ -4,7 +4,7 @@ from annotated_types import Interval, Len, MinLen
 from pydantic import ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._utils import UniqueList
+from yaozarrs._types import UniqueList
 
 from ._image import Image
 
