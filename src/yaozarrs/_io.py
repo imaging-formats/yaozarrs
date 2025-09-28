@@ -60,7 +60,7 @@ def read_json_from_uri(uri: str | os.PathLike) -> tuple[str, str]:
         with fsspec.open(json_uri, "r") as f:
             json_content = cast("io.TextIOBase", f).read()
 
-    except FileNotFoundError as e:
+    except FileNotFoundError as e:  # pragma: no cover
         msg = f"Could not load JSON from URI: {json_uri}:\n{e}"
         raise FileNotFoundError(msg) from e
 
