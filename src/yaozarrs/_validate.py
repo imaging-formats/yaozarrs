@@ -100,7 +100,6 @@ def from_uri(uri: str | os.PathLike) -> AnyOME:
     from ._io import read_json_from_uri
 
     json_content, uri_str = read_json_from_uri(uri)
-
     obj = validate_ome_json(json_content, AnyOMEGroup)
     obj.uri = uri_str
     return obj
