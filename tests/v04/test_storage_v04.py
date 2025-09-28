@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-
-# Import dependencies
 import sys
 import tempfile
 from pathlib import Path
@@ -17,11 +15,14 @@ from yaozarrs import v04
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from scripts.write_demo_zarr import (  # noqa: E402
-    write_ome_image,
-    write_ome_labels,
-    write_ome_plate,
-)
+try:
+    from scripts.write_demo_zarr import (
+        write_ome_image,
+        write_ome_labels,
+        write_ome_plate,
+    )
+except ImportError as e:
+    pytest.skip(reason=f"Cannot test storage: {e}", allow_module_level=True)
 
 
 class TestV04StorageValidation:
