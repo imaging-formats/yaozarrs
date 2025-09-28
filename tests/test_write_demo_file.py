@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import importlib.util
+
+import pytest
+
+if not importlib.util.find_spec("ome_zarr"):
+    pytest.skip("ome_zarr not installed", allow_module_level=True)
+
 import json
 import sys
 from pathlib import Path
 
-import pytest
 import zarr
 
 import yaozarrs
-
-if not importlib.util.find_spec("ome_zarr"):
-    pytest.skip("ome_zarr not installed", allow_module_level=True)
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 if not (SCRIPTS / "write_demo_zarr.py").is_file():
