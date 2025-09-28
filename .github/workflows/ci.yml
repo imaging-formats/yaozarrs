@@ -93,8 +93,13 @@ jobs:
       - run: |
           for ome_type in "image" "labels" "plate"; do
             for ome_version in "0.4" "0.5"; do
+              DEST="${ome_type}.ome.zarr"
+              # remove existing demo file if any
+              rm -rf "${DEST}"
               echo "Writing type $ome_type version $ome_version"
-              uv run scripts/write_demo_zarr.py --version "$ome_version" --overwrite "$ome_type" "${ome_type}.ome.zarr"
+              uv run scripts/write_demo_zarr.py --version "$ome_version" --overwrite "$ome_type" "${DEST}"
+              # ensure it was written
+              ls -lh "${DEST}"
             done
           done
 
