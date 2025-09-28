@@ -83,6 +83,21 @@ jobs:
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
+  test_demo_script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: |
+          for ome_version in "0.4" "0.5"; do
+            for ome_type in "image" "labels" "plate"; do
+              echo "Testing version $ome_version with type $ome_type"
+              uv run scripts/write_demo_zarr.py --version "$ome_version" "$ome_type" "${ome_type}.ome.zarr"
+            done
+          done
+
   build-and-inspect-package:
     name: Build & inspect package.
     needs: test

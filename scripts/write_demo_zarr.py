@@ -308,7 +308,12 @@ def write_ome_plate(
         acquisitions if acquisitions else [{"id": 0, "name": "default"}]
     )
     writer.write_plate_metadata(
-        root, rows, columns, well_paths, acquisitions=plate_acquisitions
+        root,
+        rows,
+        columns,
+        well_paths,
+        acquisitions=plate_acquisitions,
+        name=plate_name,
     )
 
     # Create wells and fields
