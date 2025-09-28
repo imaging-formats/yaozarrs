@@ -32,6 +32,7 @@ from ._label import (
 )
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
+from ._storage import ValidationError, ValidationResult, validate_storage
 from ._well import FieldOfView, Well, WellDef
 from ._zarr_json import OMEAttributes, OMEMetadata, OMEZarrGroupJSON
 
@@ -67,6 +68,9 @@ __all__ = [
     "SpaceAxis",
     "TimeAxis",
     "TranslationTransformation",
+    "ValidationError",
+    "ValidationResult",
     "Well",
     "WellDef",
+    "validate_storage",
 ]

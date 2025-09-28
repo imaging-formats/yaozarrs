@@ -35,6 +35,9 @@ dependencies = [
 [project.optional-dependencies]
 io = ["fsspec[http]>=2025.0"]
 
+[project.scripts]
+yaozarrs = "yaozarrs._cli:main"
+
 [project.urls]
 homepage = "https://github.com/tlambert03/yaozarrs"
 repository = "https://github.com/tlambert03/yaozarrs"
