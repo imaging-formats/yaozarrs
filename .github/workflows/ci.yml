@@ -91,10 +91,10 @@ jobs:
         with:
           enable-cache: true
       - run: |
-          for ome_version in "0.4" "0.5"; do
-            for ome_type in "image" "labels" "plate"; do
-              echo "Testing version $ome_version with type $ome_type"
-              uv run scripts/write_demo_zarr.py --version "$ome_version" "$ome_type" "${ome_type}.ome.zarr"
+          for ome_type in "image" "labels" "plate"; do
+            for ome_version in "0.4" "0.5"; do
+              echo "Writing type $ome_type version $ome_version"
+              uv run scripts/write_demo_zarr.py --version "$ome_version" --overwrite "$ome_type" "${ome_type}.ome.zarr"
             done
           done
 

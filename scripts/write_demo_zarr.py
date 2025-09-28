@@ -179,8 +179,8 @@ def write_ome_labels(
         # Create a random elliptical region for each label
         center_y = rng.integers(shape[-2] // 4, 3 * shape[-2] // 4)
         center_x = rng.integers(shape[-1] // 4, 3 * shape[-1] // 4)
-        radius_y = rng.integers(5, shape[-2] // 8)
-        radius_x = rng.integers(5, shape[-1] // 8)
+        radius_y = rng.integers(2, max(3, shape[-2] // 8))
+        radius_x = rng.integers(2, max(3, shape[-1] // 8))
 
         y, x = np.ogrid[: shape[-2], : shape[-1]]
         mask = (y - center_y) ** 2 / radius_y**2 + (
