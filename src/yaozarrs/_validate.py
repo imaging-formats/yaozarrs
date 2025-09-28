@@ -1,10 +1,12 @@
+import os
 from typing import Any, TypeAlias, TypeVar, overload
 
 from pydantic import TypeAdapter
 
 from . import v04, v05
 
-AnyOME: TypeAlias = v05.OMEZarrGroupJSON | v04.OMEZarrGroupJSON | v05.OMEMetadata
+AnyOMEGroup: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON
+AnyOME: TypeAlias = AnyOMEGroup | v05.OMEMetadata
 T = TypeVar("T", bound=AnyOME)
 
 
@@ -62,3 +64,42 @@ def validate_ome_json(
     """
     adapter = TypeAdapter[T](cls or AnyOME)
     return adapter.validate_json(data)
+
+
+def from_uri(uri: str | os.PathLike) -> AnyOME:
+    """Load and validate any OME-Zarr group from a URI or local path.
+
+    This function will attempt to load the OME-Zarr group metadata from the given
+    URI or local path. It supports both v0.4 and v0.5 of the OME-Zarr specification.
+    The URI should be a path to a zarr group (directory or URL) with valid ome-zarr
+    metadata, or a path directly to the metadata JSON file itself (e.g. zarr.json or
+    .zattrs).
+
+    This requires that you have installed yaozarrs with the `io` extra, e.g.
+    `pip install yaozarrs[io]`.
+
+    Parameters
+    ----------
+    uri : str | os.PathLike
+        The URI or local path to the OME-Zarr group. This can be a file path,
+        a directory path, or a URL.
+
+    Returns
+    -------
+    AnyOME
+        An instance of `v05.OMEZarrGroupJSON`, `v04.OMEZarrGroupJSON`, or another
+        valid OME-Zarr node type, depending on the object detected.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the URI does not point to a valid OME-Zarr group.
+    pydantic.ValidationError
+        If the loaded metadata is not valid according to the OME-Zarr specification.
+    """
+    from ._io import read_json_from_uri
+
+    json_content, uri_str = read_json_from_uri(uri)
+    obj = validate_ome_json(json_content, AnyOMEGroup)
+    obj.uri = uri_str
+    return obj

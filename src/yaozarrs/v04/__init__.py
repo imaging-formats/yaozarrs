@@ -66,11 +66,3 @@ __all__ = [
     "Well",
     "WellDef",
 ]
-
-
-# OMENode: TypeAlias = Image | Plate | LabelImage | Well | OME | Bf2Raw
-# """Anything that can live in the "ome" key of a v0.4 ome-zarr file."""
-
-
-# class OMEZarr(BaseModel):
-#     ome: OMENode

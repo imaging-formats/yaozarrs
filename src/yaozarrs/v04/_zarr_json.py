@@ -222,11 +222,10 @@ converted_file/
 
 from typing import TypeAlias
 
-from yaozarrs.v05._bf2raw import Bf2Raw
-from yaozarrs.v05._ome import OME
-
+from ._bf2raw import Bf2Raw
 from ._image import Image
 from ._label import LabelImage
+from ._ome import OME
 from ._plate import Plate
 
 # from ._series import Series  # TODO?
@@ -236,6 +235,8 @@ from ._well import Well
 # could also use pydantic.Discriminator, but this is simpler
 
 
+# NOTE:
+# these are ALL also ZarrGroupModels (i.e. have a "uri" attribute)
 OMEZarrGroupJSON: TypeAlias = LabelImage | Image | Plate | Well | OME | Bf2Raw
 """A .zattrs document found in any ome-zarr group.
 
