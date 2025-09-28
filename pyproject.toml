@@ -40,11 +40,10 @@ homepage = "https://github.com/tlambert03/yaozarrs"
 repository = "https://github.com/tlambert03/yaozarrs"
 
 [dependency-groups]
-test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+test = ["yaozarrs[io]", "pytest>=7.0.0", "pytest-cov>=4.0.0"]
 dev = [
     { include-group = "test" },
     { include-group = "docs" },
-    "yaozarrs[io]",
     "ipython>=8.37.0",
     "mypy>=1.18.2",
     "pdbpp>=0.11.7; sys_platform != 'win32'",

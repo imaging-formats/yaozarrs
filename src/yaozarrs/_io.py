@@ -53,15 +53,7 @@ def read_json_from_uri(uri: str | os.PathLike) -> tuple[str, str]:
         A tuple containing the JSON content as a string, and the normalized URI string.
     """
     uri_str = os.fspath(uri)
-    # Determine the target JSON file URI
-    if uri_str.endswith(("zarr.json", ".zattrs")):
-        json_uri = uri_str
-    else:
-        # we assume it's a zarr group directory
-        # we now need to use fsspec to list the contents of this directory
-        # (which may be local or remote)
-        # to find either zarr.json or .zattrs
-        json_uri = _find_zarr_group_metadata(uri_str)
+    json_uri = _find_zarr_group_metadata(uri_str)
 
     # Load JSON content using fsspec
     try:
@@ -79,6 +71,14 @@ def _find_zarr_group_metadata(
     uri_str: str, candidates: Iterable[str] = ("zarr.json", ".zattrs")
 ) -> str:
     """Return path to zarr group metadata file inside a zarr group directory."""
+    # If the URI already points to a known metadata file, return it directly
+    if uri_str.endswith(("zarr.json", ".zattrs")):
+        return uri_str
+
+    # we assume it's a zarr group directory
+    # we now need to use fsspec to use the filesystem
+    # (which may be local or remote)
+    # to find either zarr.json or .zattrs
     options = fsspec.utils.infer_storage_options(uri_str)
     protocol = options.get("protocol", "file")
     fs = cast("fsspec.AbstractFileSystem", fsspec.filesystem(protocol))
@@ -88,4 +88,4 @@ def _find_zarr_group_metadata(
         if fs.exists(json_uri):
             return json_uri
 
-    raise FileNotFoundError(f"Could not find zarr group metadaata in: {uri_str}")
+    raise FileNotFoundError(f"Could not find zarr group metadata in: {uri_str}")

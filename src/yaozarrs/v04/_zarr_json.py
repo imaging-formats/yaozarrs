@@ -236,7 +236,7 @@ from ._well import Well
 
 
 # NOTE:
-# these are ALL also ZarrGroupModels
+# these are ALL also ZarrGroupModels (i.e. have a "uri" attribute)
 OMEZarrGroupJSON: TypeAlias = LabelImage | Image | Plate | Well | OME | Bf2Raw
 """A .zattrs document found in any ome-zarr group.
 
