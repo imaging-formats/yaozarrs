@@ -29,19 +29,36 @@ jobs:
       - run: uv run ty check -vv
 
   test:
-    name: ${{ matrix.platform }} (${{ matrix.python-version }}) [${{ matrix.resolution }}]
+    name: ${{ matrix.platform }} (${{ matrix.python-version }}) [${{ matrix.resolution }}] ${{ matrix.group == 'test-full' && '(full)' || '' }}
     runs-on: ${{ matrix.platform }}
     env:
       UV_PRERELEASE: ${{ github.event_name == 'schedule' && 'allow' || 'if-necessary-or-explicit' }}
       UV_RESOLUTION: ${{ matrix.resolution }}
       PYTEST_ADDOPTS: ${{ matrix.resolution == 'lowest-direct' && '-W ignore' || '' }}
-
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         platform: [ubuntu-latest, macos-latest, windows-latest]
         resolution: ["highest", "lowest-direct"]
+        group: ["test"]
+        include:
+          - python-version: "3.13"
+            platform: ubuntu-latest
+            resolution: highest
+            group: test-full
+          - python-version: "3.13"
+            platform: ubuntu-latest
+            resolution: lowest-direct
+            group: test-full
+          - python-version: "3.10"
+            platform: windows-latest
+            resolution: highest
+            group: test-full
+          - python-version: "3.10"
+            platform: macos-latest
+            resolution: lowest-direct
+            group: test-full
 
     steps:
       - uses: actions/checkout@v5
@@ -53,7 +70,7 @@ jobs:
           enable-cache: true
 
       - name: 🧪 Run Tests
-        run: uv run --no-dev --group test coverage run -p -m pytest -v
+        run: uv run --no-dev --group ${{ matrix.group }} coverage run -p -m pytest -v
 
       # If something goes wrong with --pre tests, we can open an issue in the repo
       - name: 📝 Report --pre Failures
@@ -72,7 +89,7 @@ jobs:
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
-          name: covreport-${{ matrix.platform }}-py${{ matrix.python-version }}-${{ matrix.resolution }}
+          name: covreport-${{ matrix.platform }}-py${{ matrix.python-version }}-${{ matrix.resolution }}-${{ matrix.group }}
           path: ./.coverage*
           include-hidden-files: true
 

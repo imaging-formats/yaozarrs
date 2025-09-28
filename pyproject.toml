@@ -34,6 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 io = ["fsspec[http]>=2025.0"]
+storage = ["yaozarrs[io]", "zarr>=3.1"]
 
 [project.scripts]
 yaozarrs = "yaozarrs._cli:main"
@@ -43,13 +44,17 @@ homepage = "https://github.com/tlambert03/yaozarrs"
 repository = "https://github.com/tlambert03/yaozarrs"
 
 [dependency-groups]
-test = ["yaozarrs[io]", "pytest>=7.0.0", "pytest-cov>=4.0.0"]
-dev = [
+test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+test-full = [
     { include-group = "test" },
+    "yaozarrs[storage]",
+    "ome-zarr>=0.10.2",
+]
+dev = [
+    { include-group = "test-full" },
     { include-group = "docs" },
     "ipython>=8.37.0",
     "mypy>=1.18.2",
-    "ome-zarr>=0.10.2",
     "pdbpp>=0.11.7; sys_platform != 'win32'",
     "pre-commit-uv>=4.1.5",
     "rich>=14.1.0",
