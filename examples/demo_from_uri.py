@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Demonstration script for the ZarrGroupModel.from_uri functionality."""
 
+import builtins
 import sys
 
-from yaozarrs.v05 import OMEZarrGroupJSON
+from yaozarrs import from_uri
 
 try:
     from rich import print
 except ImportError:
-    from builtins import print  # type: ignore
+    print = builtins.print  # type: ignore # noqa
 
 
 def demo_zarr_uri(uri: str) -> None:
@@ -18,13 +19,13 @@ def demo_zarr_uri(uri: str) -> None:
 
     try:
         # Load the zarr group
-        zarr_group = OMEZarrGroupJSON.from_uri(uri)
+        zarr_group = from_uri(uri)
 
         print(zarr_group.model_dump(exclude_unset=True, exclude_none=True))
         print("✅ Successfully loaded!")
 
     except Exception as e:
-        print(f"❌ Failed to load URI: {e}")
+        builtins.print(f"❌ Failed to load URI: {e}")
 
 
 if __name__ == "__main__":

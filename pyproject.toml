@@ -33,26 +33,22 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-io =  [
-    "aiohttp>=3.12.15",
-    "fsspec>=2025.0",
-]
+io = ["fsspec[http]>=2025.0"]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/yaozarrs"
 repository = "https://github.com/tlambert03/yaozarrs"
-
 
 [dependency-groups]
 test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
 dev = [
     { include-group = "test" },
     { include-group = "docs" },
+    "yaozarrs[io]",
     "ipython>=8.37.0",
     "mypy>=1.18.2",
     "pdbpp>=0.11.7; sys_platform != 'win32'",
     "pre-commit-uv>=4.1.5",
-    "pyright>=1.1.405",
     "rich>=14.1.0",
     "ruff>=0.13.1",
     "ty>=0.0.1a21",
@@ -122,11 +118,6 @@ disallow_subclassing_any = false
 show_error_codes = true
 pretty = true
 plugins = ["pydantic.mypy"]
-
-[tool.pyright]
-pythonVersion = "3.10"
-reportArgumentType = false
-enableExperimentalFeatures = true
 
 # https://coverage.readthedocs.io/
 [tool.coverage.report]

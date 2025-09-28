@@ -5,10 +5,10 @@ from typing import Annotated
 from annotated_types import MinLen
 from pydantic import Field
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import ZarrGroupModel
 
 
-class OME(_BaseModel):
+class OME(ZarrGroupModel):
     """Model for the ome group that contains OME-XML metadata."""
 
     series: Annotated[list[str], MinLen(1)] = Field(

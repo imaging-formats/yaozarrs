@@ -1,4 +1,5 @@
 import os
+from collections.abc import Iterable
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
@@ -6,9 +7,11 @@ if TYPE_CHECKING:
     import io
 
     import fsspec
+    import fsspec.utils
 else:
     try:
         import fsspec
+        import fsspec.utils
     except ImportError:
         fsspec = None
 
@@ -21,7 +24,7 @@ def _require_fsspec(func: F) -> F:
 
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if fsspec is None:
+        if fsspec is None:  # pragma: no cover
             msg = (
                 f"fsspec is required for {func.__name__!r}.\n"
                 "Install with: 'pip install yaozarrs[io]' or 'pip install fsspec'"
@@ -51,20 +54,38 @@ def read_json_from_uri(uri: str | os.PathLike) -> tuple[str, str]:
     """
     uri_str = os.fspath(uri)
     # Determine the target JSON file URI
-    if uri_str.endswith((".json", ".zattrs")):
+    if uri_str.endswith(("zarr.json", ".zattrs")):
         json_uri = uri_str
     else:
-        attrs_file: str = "zarr.json"  # TODO find the right one...
-        # Assume it's a directory, look for zarr attributes file inside it
-        json_uri = f"{uri_str.rstrip('/')}/{attrs_file}"
+        # we assume it's a zarr group directory
+        # we now need to use fsspec to list the contents of this directory
+        # (which may be local or remote)
+        # to find either zarr.json or .zattrs
+        json_uri = _find_zarr_group_metadata(uri_str)
 
     # Load JSON content using fsspec
     try:
         with fsspec.open(json_uri, "r") as f:
             json_content = cast("io.TextIOBase", f).read()
 
-    except Exception as e:
+    except FileNotFoundError as e:
         msg = f"Could not load JSON from URI: {json_uri}:\n{e}"
         raise FileNotFoundError(msg) from e
 
-    return json_content, uri_str
+    return json_content, json_uri
+
+
+def _find_zarr_group_metadata(
+    uri_str: str, candidates: Iterable[str] = ("zarr.json", ".zattrs")
+) -> str:
+    """Return path to zarr group metadata file inside a zarr group directory."""
+    options = fsspec.utils.infer_storage_options(uri_str)
+    protocol = options.get("protocol", "file")
+    fs = cast("fsspec.AbstractFileSystem", fsspec.filesystem(protocol))
+
+    for candidate in candidates:
+        json_uri = uri_str + fs.sep + candidate
+        if fs.exists(json_uri):
+            return json_uri
+
+    raise FileNotFoundError(f"Could not find zarr group metadaata in: {uri_str}")

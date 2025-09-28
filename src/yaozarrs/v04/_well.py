@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 from annotated_types import MinLen
 from pydantic import Field
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._utils import UniqueList
 
 
@@ -30,7 +30,7 @@ class WellDef(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
-class Well(_BaseModel):
+class Well(ZarrGroupModel):
     """A well at the top-level of an ome-zarr file."""
 
     well: WellDef

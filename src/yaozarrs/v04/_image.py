@@ -4,7 +4,7 @@ from annotated_types import Len, MinLen
 from pydantic import AfterValidator, Field, WrapValidator, model_validator
 from typing_extensions import Self
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._units import SpaceUnits, TimeUnits
 from yaozarrs._utils import UniqueList
 
@@ -270,6 +270,6 @@ class Omero(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
-class Image(_BaseModel):
+class Image(ZarrGroupModel):
     multiscales: Annotated[UniqueList[Multiscale], MinLen(1)]
     omero: Omero | None = None

@@ -3,10 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Self
-
-if TYPE_CHECKING:
-    import os
 
 __all__ = ["_BaseModel"]
 
@@ -26,13 +22,13 @@ class _BaseModel(BaseModel):
             kwargs.setdefault("by_alias", True)
             return super().model_dump_json(**kwargs)
 
-        def model_dump(self, **kwargs: Any) -> str:  # pragma: no-cover
+        def model_dump(self, **kwargs: Any) -> str:  # pragma: no cover
             kwargs.setdefault("by_alias", True)
             return super().model_dump(**kwargs)
 
 
 class ZarrGroupModel(_BaseModel):
-    """Base class for models that have a direct mapping to a json file.
+    """Base class for models that have a direct mapping to a file or URI.
 
     e.g. v04 .zattrs or v05 zarr.json
 
@@ -44,35 +40,13 @@ class ZarrGroupModel(_BaseModel):
 
     uri: str | None = Field(
         default=None,
-        description="The URI this model was loaded from, if any.",
+        description=(
+            "The URI this model was loaded from, if any. Note, if `from_uri()` is "
+            "used, and a group directory is given, uri will resolve to the actual "
+            "JSON file inside that directory that corresponds to this model."
+        ),
         examples=[
-            "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
-            "/path/to/some_file.zarr",
+            "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr/zarr.json",
+            "/path/to/some_file.zarr/zarr.json",
         ],
     )
-
-    @classmethod
-    def from_uri(cls, uri: str | os.PathLike) -> Self:
-        """Create an instance of this model by loading JSON data from a URI.
-
-        Parameters
-        ----------
-        uri : str
-            The URI to load the JSON data from.  This can be a local file path,
-            or a remote URL (e.g. s3://bucket/key/some_file.zarr).  It can be a zarr
-            group directory, or a direct path to a JSON file (e.g. zarr.json or
-            .zattrs) inside a zarr group.
-
-        Raises
-        ------
-        FileNotFoundError
-            If the URI or required zarr.json file cannot be found.
-        """
-        from ._io import read_json_from_uri
-
-        json_content, uri_str = read_json_from_uri(uri)
-
-        # Create instance and set the original URI
-        instance = cls.model_validate_json(json_content)
-        instance.uri = uri_str
-        return instance
