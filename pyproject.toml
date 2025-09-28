@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 io = ["fsspec[http]>=2025.0"]
-storage = ["yaozarrs[io]", "zarr>=3.1; python_version>='3.11'"]
+storage = ["yaozarrs[io]", "zarr>=2.18", "zarr>=3.1; python_version>='3.11'"]
 
 [project.scripts]
 yaozarrs = "yaozarrs._cli:main"

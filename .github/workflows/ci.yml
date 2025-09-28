@@ -59,6 +59,10 @@ jobs:
             platform: macos-latest
             resolution: lowest-direct
             group: test-full
+          - python-version: "3.10"
+            platform: ubuntu-latest
+            resolution: lowest-direct
+            group: test-full
 
     steps:
       - uses: actions/checkout@v5
