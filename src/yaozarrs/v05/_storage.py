@@ -119,16 +119,26 @@ class _StorageValidator:
                 )
                 return self._result()
 
-            # Check if this is a zarr v3 group
-            if (
-                hasattr(zarr_metadata, "_zarr_format")
-                and zarr_metadata._zarr_format != 3
-            ):
-                self._add_error(
-                    self.group_uri,
-                    f"zarr_format must be 3 for OME-ZARR v0.5, "
-                    f"got {zarr_metadata._zarr_format}",
-                )
+            # Check zarr format - v0.5 prefers zarr v3 but can work with v2
+            if hasattr(zarr_metadata, "_zarr_format"):
+                zarr_format = zarr_metadata._zarr_format
+                if zarr_format not in (2, 3):
+                    self._add_error(
+                        self.group_uri,
+                        f"zarr_format must be 2 or 3 for OME-ZARR v0.5, "
+                        f"got {zarr_format}",
+                    )
+                elif zarr_format == 2:
+                    # Import zarr to check version
+                    import zarr as zarr_module
+
+                    zarr_major_version = int(zarr_module.__version__.split(".")[0])
+                    if zarr_major_version >= 3:
+                        self._add_warning(
+                            self.group_uri,
+                            "OME-ZARR v0.5 should use zarr v3 format "
+                            "when zarr v3 is available",
+                        )
 
             # Get OME metadata
             ome_metadata = attributes.get("ome", {})

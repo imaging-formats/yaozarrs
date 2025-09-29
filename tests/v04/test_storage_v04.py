@@ -271,8 +271,11 @@ class TestV04StorageValidation:
 
             result = v04.validate_storage(model)
             assert not result.valid
+            # With zarr v2, we get a different error when trying to open zarr v3 format
             assert any(
-                "zarr_format must be 2" in error.message for error in result.errors
+                "unsupported zarr format: 3" in error.message
+                or "zarr_format must be 2" in error.message
+                for error in result.errors
             )
 
     def test_validate_missing_dataset_path(self):

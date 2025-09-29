@@ -16,11 +16,23 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
+    # Check if zarr v3 is available for v0.5 tests
+    import zarr
+
+    zarr_major_version = int(zarr.__version__.split(".")[0])
+    if zarr_major_version < 3:
+        pytest.skip(
+            reason="OME-ZARR v0.5 tests require zarr v3+, "
+            "but zarr v{zarr.__version__} is installed",
+            allow_module_level=True,
+        )
+
     from scripts.write_demo_zarr import (
         write_ome_image,
         write_ome_labels,
         write_ome_plate,
     )
+
 except ImportError as e:
     pytest.skip(reason=f"Cannot test storage: {e}", allow_module_level=True)
 

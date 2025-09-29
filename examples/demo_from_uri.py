@@ -7,7 +7,7 @@ import sys
 from yaozarrs import from_uri
 
 try:
-    from rich import print
+    from rich import print  # ty: ignore
 except ImportError:
     print = builtins.print  # type: ignore # noqa
 

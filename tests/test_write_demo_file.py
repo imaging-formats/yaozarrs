@@ -28,7 +28,11 @@ sys.path.insert(0, str(SCRIPTS))
 
 from write_demo_zarr import write_ome_image, write_ome_labels, write_ome_plate  # type: ignore # noqa
 
-VERSIONS = ["0.4", "0.5"]
+# Only test v0.5 if zarr v3 is available
+zarr_major_version = int(zarr.__version__.split(".")[0])
+VERSIONS = ["0.4"]
+if zarr_major_version >= 3:
+    VERSIONS.append("0.5")
 
 
 @pytest.mark.parametrize("version", VERSIONS)

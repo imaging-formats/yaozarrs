@@ -21,9 +21,27 @@ from typing import Literal
 
 import numpy as np
 import zarr
+import zarr as zarr_module
 from ome_zarr import writer
 from ome_zarr.format import CurrentFormat, FormatV04
 from ome_zarr.io import parse_url
+
+
+def _get_format_for_version(version: str):
+    """Get the appropriate format for the OME-ZARR version."""
+    if version == "0.4":
+        return FormatV04()
+    else:
+        # Check if zarr v3 is available for v0.5
+        zarr_major_version = int(zarr_module.__version__.split(".")[0])
+        if zarr_major_version < 3:
+            raise ValueError(
+                f"OME-ZARR v{version} requires zarr v3 or later, but zarr "
+                f"v{zarr_module.__version__} is installed. OME-ZARR v0.5 format "
+                "cannot be properly created or validated with zarr v2. "
+                "Please upgrade zarr to v3+ or use OME-ZARR v0.4 format instead."
+            )
+        return CurrentFormat()
 
 
 def write_ome_image(
@@ -81,7 +99,7 @@ def write_ome_image(
     data = rng.integers(0, 1000, size=shape, dtype=dtype)
 
     # Setup format
-    fmt = FormatV04() if version == "0.4" else CurrentFormat()
+    fmt = _get_format_for_version(version)
 
     # Open zarr store
     if not (parsed := parse_url(str(path), mode="w", fmt=fmt)):
@@ -90,19 +108,8 @@ def write_ome_image(
     store = parsed.store
     root = zarr.group(store=store)
 
-    # Write image
-    writer.write_image(
-        image=data,
-        group=root,
-        axes=axes,
-        storage_options={"chunks": chunks},
-        scaler=writer.Scaler(
-            downscale=scale_factor,
-            max_layer=num_levels - 1,
-        ),
-    )
-
-    # Add channel metadata if provided
+    # Prepare metadata
+    metadata_kwargs = {}
     if channel_names or channel_colors:
         n_channels = shape[axes.index("c")] if "c" in axes else 1
         channels = []
@@ -115,8 +122,20 @@ def write_ome_image(
                 channel["color"] = f"{channel_colors[i]:06x}"
             channels.append(channel)
 
-        omero_metadata = {"omero": {"channels": channels}}
-        writer.add_metadata(root, omero_metadata)
+        metadata_kwargs["metadata"] = {"omero": {"channels": channels}}
+
+    # Write image
+    writer.write_image(
+        image=data,
+        group=root,
+        axes=axes,
+        storage_options={"chunks": chunks},
+        scaler=writer.Scaler(
+            downscale=scale_factor,
+            max_layer=num_levels - 1,
+        ),
+        **metadata_kwargs,
+    )
 
 
 def write_ome_labels(
@@ -189,7 +208,7 @@ def write_ome_labels(
         data[mask] = label_id
 
     # Setup format
-    fmt = FormatV04() if version == "0.4" else CurrentFormat()
+    fmt = _get_format_for_version(version)
 
     # Open zarr store
     if not (parsed := parse_url(str(path), mode="w", fmt=fmt)):
@@ -288,7 +307,7 @@ def write_ome_plate(
             chunks = tuple(min(32, s) for s in image_shape)
 
     # Setup format
-    fmt = FormatV04() if version == "0.4" else CurrentFormat()
+    fmt = _get_format_for_version(version)
 
     # Open zarr store
     if not (parsed := parse_url(str(path), mode="w", fmt=fmt)):
