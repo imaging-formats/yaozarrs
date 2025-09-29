@@ -1,16 +1,19 @@
 # OME-ZARR Storage Layout Rules
 
-This document outlines the directory structure and validation requirements for OME-ZARR hierarchies based on the official specifications.
+This document outlines the directory structure and validation requirements for
+OME-ZARR hierarchies based on the official specifications.
 
 ## Version Differences
 
 ### OME-ZARR v0.4
+
 - Uses Zarr v2 specification
 - Metadata in `.zattrs` and `.zgroup` files
 - Groups defined by `.zgroup` files
 - Arrays have individual `.zattrs` files
 
 ### OME-ZARR v0.5
+
 - Uses Zarr v3 specification
 - Metadata in `zarr.json` files
 - Single `zarr.json` per group/array
@@ -20,7 +23,8 @@ This document outlines the directory structure and validation requirements for O
 
 ### 1. Image Groups
 
-#### v0.5 Structure:
+#### v0.5 Structure
+
 ```
 my_image/
 ├── zarr.json          # Group metadata with "multiscales"
@@ -32,7 +36,8 @@ my_image/
     └── ...
 ```
 
-#### v0.4 Structure:
+#### v0.4 Structure
+
 ```
 my_image/
 ├── .zgroup            # Marks as Zarr group
@@ -48,6 +53,7 @@ my_image/
 ```
 
 **Requirements:**
+
 - MUST have `multiscales` metadata
 - Resolution levels numbered sequentially (0, 1, 2...)
 - Ordered from highest to lowest resolution
@@ -57,7 +63,8 @@ my_image/
 
 ### 2. Plate Groups
 
-#### v0.5 Structure:
+#### v0.5 Structure
+
 ```
 my_plate/
 ├── zarr.json          # Group metadata with "plate"
@@ -71,7 +78,8 @@ my_plate/
     └── 1/             # Column 1 well
 ```
 
-#### v0.4 Structure:
+#### v0.4 Structure
+
 ```
 my_plate/
 ├── .zgroup
@@ -88,6 +96,7 @@ my_plate/
 ```
 
 **Requirements:**
+
 - MUST have `plate` metadata with:
   - `columns` list (names MUST be alphanumeric)
   - `rows` list (names MUST be alphanumeric)
@@ -99,6 +108,7 @@ my_plate/
 ### 3. Well Groups
 
 **Requirements:**
+
 - MUST have `well` metadata with `images` list
 - Each image entry has `path` to field directory
 - MAY have `acquisition` reference
@@ -106,7 +116,8 @@ my_plate/
 
 ### 4. Labels Groups
 
-#### Structure:
+#### Structure
+
 ```
 my_image/labels/
 ├── zarr.json/.zattrs  # Contains "labels" list
@@ -119,6 +130,7 @@ my_image/labels/
 ```
 
 **Requirements:**
+
 - MUST be located within an Image group as `labels/` subdirectory
 - MUST have `labels` metadata listing label image names
 - Each label image is a complete Image group
@@ -129,7 +141,8 @@ my_image/labels/
 
 ### 5. Series Collection Groups
 
-#### v0.5 Structure:
+#### v0.5 Structure
+
 ```
 converted_multiseries/
 ├── zarr.json          # Contains "series" list
@@ -144,13 +157,15 @@ converted_multiseries/
 ```
 
 **Requirements:**
+
 - MUST have `series` metadata listing image paths
 - Each series path is a complete Image group
 - MAY have OME metadata directory
 
 ### 6. Bioformats2raw Layout Groups
 
-#### Structure:
+#### Structure
+
 ```
 converted_file/
 ├── zarr.json/.zattrs  # Contains "bioformats2raw.layout"
@@ -165,6 +180,7 @@ converted_file/
 ```
 
 **Requirements:**
+
 - MUST have `bioformats2raw.layout` metadata
 - Images in numbered directories (filesystem discovery)
 - SHOULD have OME metadata directory
@@ -172,19 +188,23 @@ converted_file/
 ## Validation Rules
 
 ### Path Validation
+
 - Column and row names MUST contain only alphanumeric characters
 - Names MUST be case-sensitive
 - Names MUST NOT be duplicates within same list
 - Paths should avoid case-insensitive filesystem collisions
 
 ### Array Requirements
+
 - 2-5 dimensional arrays
 - Dimension order: time (optional) → channel (optional) → spatial axes
 - Spatial axes ordered "zyx" for anisotropic data
 - Dimensions MUST match "axes" metadata length
-- Label images MUST use integer data types: `uint8`, `int8`, `uint16`, `int16`, `uint32`, `int32`, `uint64`, `int64`
+- Label images MUST use integer data types: `uint8`, `int8`, `uint16`, `int16`,
+  `uint32`, `int32`, `uint64`, `int64`
 
 ### Metadata Consistency
+
 - OME-ZARR version MUST be consistent within hierarchy
 - Multiscale datasets MUST have same number of resolution levels
 - Metadata references MUST match actual filesystem structure
@@ -192,6 +212,7 @@ converted_file/
 - Axis types SHOULD be "space", "time", or "channel"
 
 ### File Existence
+
 - v0.5: `zarr.json` MUST exist for all groups and arrays
 - v0.4: `.zgroup` MUST exist for groups, `.zarray` for arrays
 - v0.4: `.zattrs` files contain metadata
@@ -199,12 +220,14 @@ converted_file/
 - Referenced paths in metadata MUST exist on filesystem
 
 ### Coordinate Transformations
+
 - MUST include at least one `scale` transformation
 - Optional `translation` MUST follow `scale`
 - Transformation arrays MUST match axes length
 - Only `translation` and `scale` types allowed
 
 ### Cross-References
+
 - Well paths MUST match plate row/column definitions
 - Image paths MUST be valid within hierarchy
 - Label source references MUST point to valid images
@@ -213,6 +236,7 @@ converted_file/
 ## Array Discovery Methods
 
 ### Explicit Discovery (Metadata-driven)
+
 - **Images**: Listed in `multiscales.datasets[].path`
 - **Plates**: Wells listed in `plate.wells[].path`
 - **Wells**: Images listed in `well.images[].path`
@@ -220,12 +244,14 @@ converted_file/
 - **Series**: Listed in `series` array
 
 ### Filesystem Discovery
+
 - **Bioformats2raw**: Numbered directories (0/, 1/, 2/, etc.)
 - **Labels directory**: Explore for subdirectories
 
 ## Error Conditions
 
 ### Critical Errors (MUST fail validation)
+
 - Missing required metadata files
 - Referenced paths don't exist on filesystem
 - Invalid data types for label arrays
@@ -234,6 +260,7 @@ converted_file/
 - Missing required metadata keys
 
 ### Warnings (SHOULD report but may not fail)
+
 - Non-standard axis ordering
 - Missing optional metadata
 - Case-insensitive path conflicts
