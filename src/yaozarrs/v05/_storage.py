@@ -9,130 +9,127 @@ Requires zarr to be installed for full validation.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import os
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, TypedDict
 
-from yaozarrs._storage_common import BaseStorageValidator, ValidationResult
+import zarr
+from typing_extensions import NotRequired
+
+from yaozarrs._validate import validate_ome_object
+
+from ._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
-    from yaozarrs._base import ZarrGroupModel
+    from zarr.storage import StoreLike
 
 
-def validate_storage(model: ZarrGroupModel) -> ValidationResult:
-    """Validate OME-ZARR v0.5 storage structure.
+class ErrorDetails(TypedDict):
+    type: str
+    """
+    The type of error that occurred, this is an identifier designed for
+    programmatic use that will change rarely or never.
 
-    Parameters
-    ----------
-    model : ZarrGroupModel
-        A model instance with a uri field pointing to the zarr group to validate.
+    `type` is unique for each error message, and can hence be used as an identifier to
+    build custom error messages.
+    """
+    loc: tuple[int | str, ...]
+    """Tuple of strings and ints identifying where in the schema the error occurred."""
+    msg: str
+    """A human readable error message."""
+    input: Any
+    """The input data at this `loc` that caused the error."""
+    ctx: NotRequired[dict[str, Any]]
+    """
+    Values which are required to render the error message, and could hence be useful in
+    rendering custom error messages.
+    Also useful for passing custom error data forward.
+    """
+    url: NotRequired[str]
+    """A URL giving information about the error."""
 
-    Returns
-    -------
-    ValidationResult
-        Validation result with errors and warnings.
+
+class StorageValidationError(ValueError):
+    """`StorageValidationError` is raised when validation of zarr storage fails.
+
+    It contains a list of errors which detail why validation failed.
+    """
+
+    @property
+    def title(self) -> str:
+        """The title of the error, as used in the heading of `str(validation_error)`."""
+        return "StorageValidationError"
+
+    def errors(
+        self,
+        *,
+        include_url: bool = True,
+        include_context: bool = True,
+        include_input: bool = True,
+    ) -> list[ErrorDetails]:
+        """
+        Details about each error in the validation error.
+
+        Parameters
+        ----------
+        include_url: bool
+            Whether to include a URL to documentation on the error each error.
+        include_context: bool
+            Whether to include the context of each error.
+        include_input: bool
+            Whether to include the input value of each error.
+
+        Returns
+        -------
+            A list of `ErrorDetails` for each error in the validation error.
+        """
+        return []
+
+
+def _get_zarr_group(uri: str | StoreLike | OMEZarrGroupJSON) -> zarr.Group:
+    try:
+        import zarr
+    except ImportError as e:
+        raise ImportError(
+            "zarr must be installed to use storage validation. "
+            "Please install yaozarrs with the `storage` extra, "
+            "e.g. `pip install yaozarrs[storage]`."
+        ) from e
+
+    if isinstance(uri, (str, Path)):
+        uri = str(os.path.expanduser(uri))
+    return zarr.open_group(uri)
+
+
+def validate_zarr_store(obj: OMEZarrGroupJSON | zarr.Group | StoreLike):
+    """Validate an OME-Zarr v0.5 storage structure.
 
     Raises
     ------
+    StorageValidationError
+        If the storage structure is invalid.
     ImportError
-        If zarr is not available.
-    ValueError
-        If the model doesn't have a valid uri.
+        If zarr is not installed.
     """
-    return _StorageValidator.validate_group_model(model)
+    attrs_model: OMEAttributes | None = None
+    if isinstance(obj, zarr.Group):
+        zarr_group = obj
+    elif isinstance(obj, OMEZarrGroupJSON):
+        attrs_model = obj.attributes
+        zarr_group = _get_zarr_group(obj.uri)
+    else:
+        zarr_group = _get_zarr_group(obj)
+
+    _validate_zarr_group(zarr_group, attrs_model)
 
 
-class _StorageValidator(BaseStorageValidator):
-    """Internal validator for OME-ZARR v0.5 storage."""
+def _validate_zarr_group(zarr_group: zarr.Group, attrs_model: OMEAttributes | None):
+    if attrs_model is None:
+        # extract the model from the zarr attributes
+        attrs = zarr_group.attrs.asdict()
+        attrs_model = validate_ome_object(attrs, OMEAttributes)
 
-    @staticmethod
-    def _extract_group_uri(uri: str) -> str:
-        """Extract the base zarr group URI (remove zarr.json suffix if present)."""
-        group_uri = uri
-        if group_uri.endswith("/zarr.json"):
-            group_uri = group_uri[: -len("/zarr.json")]
-        elif group_uri.endswith("\\zarr.json"):  # Windows paths
-            group_uri = group_uri[: -len("\\zarr.json")]
-        return group_uri
-
-    def _validate_zarr_format(self, zarr_metadata) -> None:
-        """Validate zarr format requirements for v0.5 (allows format 2 or 3)."""
-        if hasattr(zarr_metadata, "_zarr_format"):
-            zarr_format = zarr_metadata._zarr_format
-            if zarr_format not in (2, 3):
-                self._add_error(
-                    self.group_uri,
-                    f"zarr_format must be 2 or 3 for OME-ZARR v0.5, got {zarr_format}",
-                )
-            elif zarr_format == 2:
-                # Import zarr to check version
-                import zarr as zarr_module
-
-                zarr_major_version = int(zarr_module.__version__.split(".")[0])
-                if zarr_major_version >= 3:
-                    self._add_warning(
-                        self.group_uri,
-                        "OME-ZARR v0.5 should use zarr v3 format "
-                        "when zarr v3 is available",
-                    )
-
-    def _validate_version_metadata(self, metadata: dict[str, Any]) -> None:
-        """Validate version-specific metadata requirements for v0.5."""
-        # v0.5 expects OME metadata under 'ome' key
-        ome_metadata = metadata.get("ome", {})
-        if not ome_metadata:
-            self._add_error(self.group_uri, "Missing 'ome' metadata in attributes")
-            return
-
-        # Check OME version
-        version = ome_metadata.get("version")
-        if version != "0.5":
-            self._add_error(
-                self.group_uri, f"OME version must be '0.5', got '{version}'"
-            )
-
-    def _get_coordinate_transforms_missing_scale_severity(self) -> str:
-        """Get severity level for missing scale transformations (error for v0.5)."""
-        return "error"
-
-    def validate(self) -> ValidationResult:
-        """Run complete validation."""
-        try:
-            # Get zarr group metadata
-            try:
-                zarr_metadata = self.zarr_group.info
-                attributes = self.zarr_group.attrs.asdict()
-            except Exception as e:
-                self._add_error(
-                    self.group_uri, f"Cannot access zarr group metadata: {e}"
-                )
-                return self._result()
-
-            # Check zarr format
-            self._validate_zarr_format(zarr_metadata)
-
-            # Validate version-specific metadata
-            self._validate_version_metadata(attributes)
-
-            # Get OME metadata for structure validation
-            ome_metadata = attributes.get("ome", {})
-            if ome_metadata:
-                # Validate based on OME metadata type
-                self._validate_ome_structure(ome_metadata)
-
-            return self._result()
-
-        except Exception as e:
-            self._add_error(self.group_uri, f"Unexpected error during validation: {e}")
-            return self._result()
-
-    def _validate_multiscale(
-        self, multiscale: dict[str, Any], path_prefix: str
-    ) -> None:
-        """Validate a single multiscale definition with v0.5 specific logic."""
-        # Validate axes (required in v0.5)
-        axes = multiscale.get("axes", [])
-        if not axes:
-            self._add_error(self.group_uri, f"{path_prefix}: axes are required")
-            return
-
-        # Call parent implementation for common validation
-        super()._validate_multiscale(multiscale, path_prefix)
+    # at this point we have a valid zarr_group, and OMEAttributes model
+    # (which means the "ome" key is present and valid)
+    # and we can begin to validate that the storage structure itself is valid,
+    # by traversing the structure recursively

@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-from yaozarrs._storage_common import ValidationError
 from yaozarrs.v04._bf2raw import Bf2Raw
 from yaozarrs.v04._ome import OME
 
@@ -33,7 +32,6 @@ from ._label import (
     LabelSource,
 )
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
-from ._storage import ValidationResult, validate_storage
 from ._well import FieldOfView, Well, WellDef
 from ._zarr_json import OMEZarrGroupJSON
 
@@ -65,9 +63,6 @@ __all__ = [
     "SpaceAxis",
     "TimeAxis",
     "TranslationTransformation",
-    "ValidationError",
-    "ValidationResult",
     "Well",
     "WellDef",
-    "validate_storage",
 ]
