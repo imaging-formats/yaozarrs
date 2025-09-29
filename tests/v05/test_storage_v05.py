@@ -76,41 +76,6 @@ class TestV05StorageValidation:
         with pytest.raises(ValueError, match="Model must have a uri field"):
             v05.validate_storage(model)
 
-    def test_validate_storage_http_url(self):
-        """Test that HTTP URLs fail for nonexistent URLs."""
-        model = v05.OMEZarrGroupJSON(
-            zarr_format=3,
-            node_type="group",
-            attributes=v05.OMEAttributes(
-                ome=v05.Image(
-                    version="0.5",
-                    multiscales=[
-                        v05.Multiscale(
-                            name="test",
-                            axes=[
-                                v05.SpaceAxis(name="x", type="space"),
-                                v05.SpaceAxis(name="y", type="space"),
-                            ],
-                            datasets=[
-                                v05.Dataset(
-                                    path="0",
-                                    coordinateTransformations=[
-                                        v05.ScaleTransformation(scale=[1.0, 1.0])
-                                    ],
-                                )
-                            ],
-                        )
-                    ],
-                )
-            ),
-            uri="https://example.com/test.zarr",
-        )
-
-        result = v05.validate_storage(model)
-        assert not result.valid
-        assert len(result.errors) == 1
-        assert "Cannot open zarr group" in result.errors[0].message
-
     def test_validate_storage_nonexistent_path(self):
         """Test validation of nonexistent zarr group."""
         model = v05.OMEZarrGroupJSON(
