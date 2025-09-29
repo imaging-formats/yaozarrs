@@ -83,8 +83,10 @@ def _find_zarr_group_metadata(
     protocol = options.get("protocol", "file")
     fs = cast("fsspec.AbstractFileSystem", fsspec.filesystem(protocol))
 
+    if not uri_str.endswith(fs.sep):
+        uri_str = uri_str + fs.sep
     for candidate in candidates:
-        json_uri = uri_str + fs.sep + candidate
+        json_uri = uri_str + candidate
         if fs.exists(json_uri):
             return json_uri
 

@@ -179,13 +179,21 @@ class Dataset(_BaseModel):
         )
     )
 
+    @property
+    def scale_transform(self) -> ScaleTransformation:
+        """Return the scale transformation from the list.
+
+        (CoordinateTransformsList validator ensures there is exactly one.)
+        """
+        return next(
+            t
+            for t in self.coordinateTransformations
+            if isinstance(t, ScaleTransformation)
+        )
+
 
 def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
     """Validate a list of Dataset for `Multiscale.datasets`."""
-    # The "paths" of the datasets MUST be be ordered from the highest resolution to the
-    # lowest resolution (i.e. largest to smallest
-    ...  # (Cannot validate without I/O)
-
     # Each "datasets" dictionary MUST have the same number of dimensions...
     # NOTE: this wording from the spec is a bit ambiguous,
     # since the "number of dimensions" of a dataset is not explicitly defined.
@@ -260,7 +268,7 @@ class Multiscale(_BaseModel):
     )
 
     @model_validator(mode="after")
-    def _check_ndim(self) -> Self:
+    def _post_validate(self) -> Self:
         # The number and order of dimensions in each dataset MUST
         # correspond to number and order of "axes".
         # TODO ... this is ambiguous.  is it the same as the following check?
@@ -283,6 +291,22 @@ class Multiscale(_BaseModel):
                         f"  The length of the transformation ({transform.ndim}) "
                         f"does not match the number of axes ({self.ndim})."
                     )
+
+        # The "paths" of the datasets MUST be be ordered from the highest resolution to
+        # the lowest resolution (i.e. largest to smallest
+        spatial_indices: dict[int, str] = {
+            i: ax.name for i, ax in enumerate(self.axes) if ax.type == "space"
+        }
+        spatial_scales = [
+            tuple(ds.scale_transform.scale[idx] for idx in spatial_indices)
+            for ds in self.datasets
+        ]
+        if spatial_scales != sorted(spatial_scales):
+            raise ValueError(
+                "The datasets are not ordered from highest to lowest resolution. "
+                f"Found spatial scales: {spatial_scales}"
+            )
+
         return self
 
     @property

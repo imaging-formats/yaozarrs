@@ -7,7 +7,7 @@ import sys
 from typing import Any
 
 import yaozarrs
-from yaozarrs import from_uri, v04, v05
+from yaozarrs import from_uri, v04
 
 
 def _get_zarr_info(uri: str) -> dict[str, Any]:
@@ -250,7 +250,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
         if version == "0.5":
             try:
-                result = v05.validate_storage(metadata)
+                from yaozarrs.v05._storage import validate_zarr_store
+
+                result = validate_zarr_store(metadata)
             except Exception as e:
                 _print_result(False, f"Storage validation failed: {e}")
                 return 1

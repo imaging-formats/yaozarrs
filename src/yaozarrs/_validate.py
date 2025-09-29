@@ -6,7 +6,7 @@ from pydantic import TypeAdapter
 from . import v04, v05
 
 AnyOMEGroup: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON
-AnyOME: TypeAlias = AnyOMEGroup | v05.OMEMetadata
+AnyOME: TypeAlias = AnyOMEGroup | v05.OMEMetadata | v05.OMEAttributes
 T = TypeVar("T", bound=AnyOME)
 
 
@@ -66,7 +66,11 @@ def validate_ome_json(
     return adapter.validate_json(data)
 
 
-def from_uri(uri: str | os.PathLike) -> AnyOME:
+@overload
+def from_uri(uri: str | os.PathLike, cls: type[T]) -> T: ...
+@overload
+def from_uri(uri: str | os.PathLike) -> AnyOMEGroup: ...
+def from_uri(uri: str | os.PathLike, cls: type[T] | Any = None) -> T | AnyOMEGroup:
     """Load and validate any OME-Zarr group from a URI or local path.
 
     This function will attempt to load the OME-Zarr group metadata from the given
@@ -83,6 +87,8 @@ def from_uri(uri: str | os.PathLike) -> AnyOME:
     uri : str | os.PathLike
         The URI or local path to the OME-Zarr group. This can be a file path,
         a directory path, or a URL.
+    cls : type[T]
+        The class to validate against. Must be a subclass of `BaseModel`.
 
     Returns
     -------
@@ -100,6 +106,6 @@ def from_uri(uri: str | os.PathLike) -> AnyOME:
     from ._io import read_json_from_uri
 
     json_content, uri_str = read_json_from_uri(uri)
-    obj = validate_ome_json(json_content, AnyOMEGroup)
+    obj = validate_ome_json(json_content, cls or AnyOMEGroup)
     obj.uri = uri_str
     return obj
