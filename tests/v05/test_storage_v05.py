@@ -330,3 +330,243 @@ class TestV05StorageValidation:
                 "at least one 'scale' transformation is required" in error.message
                 for error in result.errors
             )
+
+    def test_extract_group_uri_with_zarr_json(self):
+        """Test URI extraction with zarr.json paths specific to v0.5."""
+        from yaozarrs.v05._storage import _StorageValidator
+
+        # Test zarr.json path
+        uri_zarr_json = "/data/test.zarr/zarr.json"
+        extracted = _StorageValidator._extract_group_uri(uri_zarr_json)
+        assert extracted == "/data/test.zarr"
+
+        # Test Windows zarr.json path
+        uri_windows = r"C:\data\test.zarr\zarr.json"
+        extracted = _StorageValidator._extract_group_uri(uri_windows)
+        assert extracted == r"C:\data\test.zarr"
+
+        # Test URI without zarr.json suffix
+        uri_no_suffix = "/data/test.zarr"
+        extracted = _StorageValidator._extract_group_uri(uri_no_suffix)
+        assert extracted == "/data/test.zarr"
+
+    def test_validate_v05_version_metadata(self):
+        """Test v0.5 specific version metadata validation."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            test_path = Path(tmp_dir) / "test.zarr"
+            test_path.mkdir()
+
+            # Test missing OME version
+            zarr_json_path = test_path / "zarr.json"
+            invalid_data = {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "ome": {
+                        # Missing version
+                        "multiscales": [
+                            {
+                                "name": "test",
+                                "axes": [
+                                    {"name": "x", "type": "space"},
+                                    {"name": "y", "type": "space"},
+                                ],
+                                "datasets": [
+                                    {
+                                        "path": "0",
+                                        "coordinateTransformations": [
+                                            {"type": "scale", "scale": [1.0, 1.0]}
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+
+            with zarr_json_path.open("w") as f:
+                json.dump(invalid_data, f)
+
+            # Create a valid model but use invalid file
+            valid_data = {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "ome": {
+                        "version": "0.5",
+                        "multiscales": [
+                            {
+                                "name": "test",
+                                "axes": [
+                                    {"name": "x", "type": "space"},
+                                    {"name": "y", "type": "space"},
+                                ],
+                                "datasets": [
+                                    {
+                                        "path": "0",
+                                        "coordinateTransformations": [
+                                            {"type": "scale", "scale": [1.0, 1.0]}
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+            model = v05.OMEZarrGroupJSON.model_validate(valid_data)
+            model.uri = str(zarr_json_path)
+
+            result = v05.validate_storage(model)
+            assert not result.valid
+            error_messages = [error.message for error in result.errors]
+            assert any("OME version must be '0.5'" in msg for msg in error_messages)
+
+    def test_validate_zarr_format_warnings(self):
+        """Test zarr format validation warnings for v0.5."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            test_path = Path(tmp_dir) / "test.zarr"
+            test_path.mkdir()
+
+            zarr_json_path = test_path / "zarr.json"
+            # Use zarr format 2 with v0.5 (should generate warning)
+            data_with_zarr_v2 = {
+                "zarr_format": 2,  # Should be 3 for v0.5
+                "node_type": "group",
+                "attributes": {
+                    "ome": {
+                        "version": "0.5",
+                        "multiscales": [
+                            {
+                                "name": "test",
+                                "axes": [
+                                    {"name": "x", "type": "space"},
+                                    {"name": "y", "type": "space"},
+                                ],
+                                "datasets": [
+                                    {
+                                        "path": "0",
+                                        "coordinateTransformations": [
+                                            {"type": "scale", "scale": [1.0, 1.0]}
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+
+            with zarr_json_path.open("w") as f:
+                json.dump(data_with_zarr_v2, f)
+
+            # Create valid model for pydantic validation
+            valid_data = {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "ome": {
+                        "version": "0.5",
+                        "multiscales": [
+                            {
+                                "name": "test",
+                                "axes": [
+                                    {"name": "x", "type": "space"},
+                                    {"name": "y", "type": "space"},
+                                ],
+                                "datasets": [
+                                    {
+                                        "path": "0",
+                                        "coordinateTransformations": [
+                                            {"type": "scale", "scale": [1.0, 1.0]}
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+            model = v05.OMEZarrGroupJSON.model_validate(valid_data)
+            model.uri = str(zarr_json_path)
+
+            result = v05.validate_storage(model)
+            # Should be invalid due to format mismatch or generate warnings
+            warning_messages = (
+                [warning.message for warning in result.warnings]
+                if result.warnings
+                else []
+            )
+            # Check if zarr format validation produces appropriate feedback
+            assert len(result.errors) > 0 or len(warning_messages) > 0
+
+    def test_validate_multiscale_axes_required_v05(self):
+        """Test that axes are required in v0.5 multiscales."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            test_path = Path(tmp_dir) / "test.zarr"
+            test_path.mkdir()
+
+            zarr_json_path = test_path / "zarr.json"
+            # Data without axes (invalid for v0.5)
+            invalid_data = {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "ome": {
+                        "version": "0.5",
+                        "multiscales": [
+                            {
+                                "name": "test",
+                                # Missing axes - required in v0.5
+                                "datasets": [
+                                    {
+                                        "path": "0",
+                                        "coordinateTransformations": [
+                                            {"type": "scale", "scale": [1.0, 1.0]}
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+
+            with zarr_json_path.open("w") as f:
+                json.dump(invalid_data, f)
+
+            # Create valid model for validation
+            valid_data = {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "ome": {
+                        "version": "0.5",
+                        "multiscales": [
+                            {
+                                "name": "test",
+                                "axes": [
+                                    {"name": "x", "type": "space"},
+                                    {"name": "y", "type": "space"},
+                                ],
+                                "datasets": [
+                                    {
+                                        "path": "0",
+                                        "coordinateTransformations": [
+                                            {"type": "scale", "scale": [1.0, 1.0]}
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+            model = v05.OMEZarrGroupJSON.model_validate(valid_data)
+            model.uri = str(zarr_json_path)
+
+            result = v05.validate_storage(model)
+            assert not result.valid
+            error_messages = [error.message for error in result.errors]
+            assert any("axes are required" in msg for msg in error_messages)

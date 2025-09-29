@@ -9,35 +9,12 @@ Requires zarr to be installed for full validation.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any
+
+from yaozarrs._storage_common import BaseStorageValidator, ValidationResult
 
 if TYPE_CHECKING:
     from yaozarrs._base import ZarrGroupModel
-
-# Try to import zarr, but make it optional
-try:
-    import zarr
-
-    ZARR_AVAILABLE = True
-except ImportError:
-    ZARR_AVAILABLE = False
-    zarr = None  # type: ignore
-
-
-class ValidationError(NamedTuple):
-    """A validation error found during storage validation."""
-
-    path: str
-    message: str
-    severity: str  # "error" or "warning"
-
-
-class ValidationResult(NamedTuple):
-    """Result of storage validation."""
-
-    valid: bool
-    errors: list[ValidationError]
-    warnings: list[ValidationError]
 
 
 def validate_storage(model: ZarrGroupModel) -> ValidationResult:
@@ -60,128 +37,60 @@ def validate_storage(model: ZarrGroupModel) -> ValidationResult:
     ValueError
         If the model doesn't have a valid uri.
     """
-    if not ZARR_AVAILABLE:
-        raise ImportError(
-            "zarr package is required for storage validation. "
-            "Install with: pip install zarr"
-        )
-
-    if not model.uri:
-        raise ValueError("Model must have a uri field to validate storage")
-
-    # Extract the base zarr group URI (remove .zattrs suffix if present)
-    group_uri = model.uri
-    if group_uri.endswith("/.zattrs"):
-        group_uri = group_uri[: -len("/.zattrs")]
-    elif group_uri.endswith("\\.zattrs"):  # Windows paths
-        group_uri = group_uri[: -len("\\.zattrs")]
-
-    try:
-        # Try to open the zarr group using zarr-python
-        # This will work for both local and remote (HTTP, S3, etc.) URLs
-        zarr_group = zarr.open_group(group_uri, mode="r")
-    except Exception as e:
-        return ValidationResult(
-            valid=False,
-            errors=[
-                ValidationError(
-                    path=group_uri,
-                    message=f"Cannot open zarr group: {e}",
-                    severity="error",
-                )
-            ],
-            warnings=[],
-        )
-
-    validator = _StorageValidator(group_uri, zarr_group)
-    return validator.validate()
+    return _StorageValidator.validate_group_model(model)
 
 
-class _StorageValidator:
+class _StorageValidator(BaseStorageValidator):
     """Internal validator for OME-ZARR v0.4 storage."""
 
-    def __init__(self, group_uri: str, zarr_group):
-        self.group_uri = group_uri
-        self.zarr_group = zarr_group
-        self.errors: list[ValidationError] = []
-        self.warnings: list[ValidationError] = []
+    @staticmethod
+    def _extract_group_uri(uri: str) -> str:
+        """Extract the base zarr group URI (remove .zattrs suffix if present)."""
+        group_uri = uri
+        if group_uri.endswith("/.zattrs"):
+            group_uri = group_uri[: -len("/.zattrs")]
+        elif group_uri.endswith("\\.zattrs"):  # Windows paths
+            group_uri = group_uri[: -len("\\.zattrs")]
+        return group_uri
 
-    def validate(self) -> ValidationResult:
-        """Run complete validation."""
-        try:
-            # Get zarr group metadata and attributes
-            try:
-                zarr_metadata = self.zarr_group.info
-                ome_metadata = self.zarr_group.attrs.asdict()
-            except Exception as e:
-                self._add_error(
-                    self.group_uri, f"Cannot access zarr group metadata: {e}"
-                )
-                return self._result()
-
-            # Check if this is a zarr v2 group (for v0.4)
-            if (
-                hasattr(zarr_metadata, "_zarr_format")
-                and zarr_metadata._zarr_format != 2
-            ):
-                self._add_error(
-                    self.group_uri,
-                    f"zarr_format must be 2 for OME-ZARR v0.4, "
-                    f"got {zarr_metadata._zarr_format}",
-                )
-
-            if not ome_metadata:
-                self._add_error(
-                    self.group_uri, "Empty OME metadata in zarr group attributes"
-                )
-                return self._result()
-
-            # Validate based on OME metadata type
-            self._validate_ome_structure(ome_metadata)
-
-            return self._result()
-
-        except Exception as e:
-            self._add_error(self.group_uri, f"Unexpected error during validation: {e}")
-            return self._result()
-
-    def _validate_ome_structure(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate OME structure based on metadata type."""
-        # Determine the type of OME group based on top-level keys
-        if "multiscales" in ome_metadata:
-            if "image-label" in ome_metadata:
-                self._validate_label_image(ome_metadata)
-            else:
-                self._validate_image_group(ome_metadata)
-        elif "plate" in ome_metadata:
-            self._validate_plate_group(ome_metadata)
-        elif "well" in ome_metadata:
-            self._validate_well_group(ome_metadata)
-        elif "labels" in ome_metadata:
-            self._validate_labels_group(ome_metadata)
-        elif "bioformats2raw.layout" in ome_metadata:
-            self._validate_bioformats2raw_group(ome_metadata)
-        else:
-            # Could be an OME group or other metadata
-            self._add_warning(
+    def _validate_zarr_format(self, zarr_metadata) -> None:
+        """Validate zarr format requirements for v0.4 (must be format 2)."""
+        if hasattr(zarr_metadata, "_zarr_format") and zarr_metadata._zarr_format != 2:
+            self._add_error(
                 self.group_uri,
-                "Unknown OME metadata type - may be valid but not recognized",
+                f"zarr_format must be 2 for OME-ZARR v0.4, "
+                f"got {zarr_metadata._zarr_format}",
             )
 
-    def _validate_image_group(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate image group structure."""
-        multiscales = ome_metadata["multiscales"]
-        if not isinstance(multiscales, list) or not multiscales:
-            self._add_error(self.group_uri, "multiscales must be a non-empty list")
-            return
+    def _extract_ome_metadata(
+        self, attributes: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Extract OME metadata from attributes for v0.4 (direct in attributes)."""
+        # v0.4 stores OME metadata directly in the attributes, not under 'ome' key
+        if not attributes:
+            self._add_error(
+                self.group_uri, "Empty OME metadata in zarr group attributes"
+            )
+            return None
+        return attributes
 
-        for i, multiscale in enumerate(multiscales):
-            self._validate_multiscale(multiscale, f"multiscales[{i}]")
+    def _validate_version_metadata(self, metadata: dict[str, Any]) -> None:
+        """Validate version-specific metadata requirements for v0.4."""
+        # v0.4 expects OME metadata directly in attributes, not under 'ome' key
+        # This validation handles the direct metadata format
+        if not metadata:
+            self._add_error(
+                self.group_uri, "Empty OME metadata in zarr group attributes"
+            )
+
+    def _get_coordinate_transforms_missing_scale_severity(self) -> str:
+        """Get severity level for missing scale transformations (warning for v0.4)."""
+        return "warning"
 
     def _validate_multiscale(
         self, multiscale: dict[str, Any], path_prefix: str
     ) -> None:
-        """Validate a single multiscale definition."""
+        """Validate a single multiscale definition with v0.4 specific logic."""
         # Check version
         version = multiscale.get("version")
         if version and version != "0.4":
@@ -190,138 +99,11 @@ class _StorageValidator:
                 f"{path_prefix}: version should be '0.4', got '{version}'",
             )
 
-        # Validate axes (may be optional in v0.4)
-        axes = multiscale.get("axes", [])
-        if axes:
-            # Check for unique axis names
-            axis_names = [ax.get("name") for ax in axes if isinstance(ax, dict)]
-            if len(axis_names) != len(set(axis_names)):
-                self._add_error(
-                    self.group_uri, f"{path_prefix}: axis names must be unique"
-                )
-
-        # Validate datasets
-        datasets = multiscale.get("datasets", [])
-        if not datasets:
-            self._add_error(self.group_uri, f"{path_prefix}: datasets are required")
-            return
-
-        # Check that dataset paths exist
-        for j, dataset in enumerate(datasets):
-            if not isinstance(dataset, dict):
-                continue
-
-            dataset_path = dataset.get("path")
-            if not dataset_path:
-                self._add_error(
-                    self.group_uri, f"{path_prefix}.datasets[{j}]: path is required"
-                )
-                continue
-
-            # Check if dataset exists in zarr group
-            try:
-                dataset_item = self.zarr_group[dataset_path]
-                # Check if it's an array
-                if not hasattr(dataset_item, "shape"):
-                    self._add_error(
-                        f"{self.group_uri}/{dataset_path}",
-                        f"Dataset path is not a zarr array: {dataset_path}",
-                    )
-                    continue
-            except KeyError:
-                self._add_error(
-                    f"{self.group_uri}/{dataset_path}",
-                    f"Dataset path does not exist: {dataset_path}",
-                )
-                continue
-            except Exception as e:
-                self._add_error(
-                    f"{self.group_uri}/{dataset_path}", f"Error accessing dataset: {e}"
-                )
-                continue
-
-            # Validate that it's a proper zarr array
-            array_path = f"{self.group_uri}/{dataset_path}"
-            self._validate_zarr_array(
-                dataset_item, len(axes) if axes else None, array_path
-            )
-
-            # Validate coordinate transformations
-            coord_transforms = dataset.get("coordinateTransformations", [])
-            if axes:  # Only validate if axes are defined
-                self._validate_coordinate_transformations(
-                    coord_transforms, len(axes), f"{path_prefix}.datasets[{j}]"
-                )
-
-    def _validate_zarr_array(
-        self, zarr_array, expected_ndim: int | None, array_path: str
-    ) -> None:
-        """Validate a zarr array."""
-        try:
-            # Check shape matches expected dimensions if provided
-            if expected_ndim is not None:
-                shape = zarr_array.shape
-                if len(shape) != expected_ndim:
-                    self._add_warning(
-                        array_path,
-                        f"Array dimensions ({len(shape)}) don't match "
-                        f"axes count ({expected_ndim})",
-                    )
-
-            # For zarr v2, we can check some basic properties
-            if hasattr(zarr_array, "info"):
-                # The zarr array should be readable
-                if not hasattr(zarr_array, "dtype"):
-                    self._add_error(array_path, "Zarr array has no accessible dtype")
-
-        except Exception as e:
-            self._add_error(array_path, f"Error validating zarr array: {e}")
-
-    def _validate_coordinate_transformations(
-        self, transforms: list[Any], axes_count: int, path_prefix: str
-    ) -> None:
-        """Validate coordinate transformations."""
-        has_scale = False
-
-        for i, transform in enumerate(transforms):
-            if not isinstance(transform, dict):
-                continue
-
-            transform_type = transform.get("type")
-            if transform_type == "scale":
-                has_scale = True
-                scale = transform.get("scale", [])
-                if len(scale) != axes_count:
-                    self._add_error(
-                        self.group_uri,
-                        f"{path_prefix}.coordinateTransformations[{i}]: "
-                        f"scale length ({len(scale)}) must match "
-                        f"axes count ({axes_count})",
-                    )
-            elif transform_type == "translation":
-                translation = transform.get("translation", [])
-                if len(translation) != axes_count:
-                    self._add_error(
-                        self.group_uri,
-                        f"{path_prefix}.coordinateTransformations[{i}]: "
-                        f"translation length ({len(translation)}) must match "
-                        f"axes count ({axes_count})",
-                    )
-            elif transform_type not in ["scale", "translation"]:
-                self._add_error(
-                    self.group_uri,
-                    f"{path_prefix}.coordinateTransformations[{i}]: "
-                    f"unknown transformation type '{transform_type}'",
-                )
-
-        if not has_scale:
-            self._add_warning(
-                self.group_uri,
-                f"{path_prefix}: at least one 'scale' transformation is recommended",
-            )
+        # Call parent implementation for common validation
+        super()._validate_multiscale(multiscale, path_prefix)
 
     def _validate_label_image(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate label image structure."""
+        """Validate label image structure with v0.4 specific logic."""
         # First validate as regular image
         self._validate_image_group(ome_metadata)
 
@@ -347,31 +129,36 @@ class _StorageValidator:
             for dataset in datasets:
                 dataset_path = dataset.get("path")
                 if dataset_path:
-                    self._validate_label_data_type(dataset_path)
+                    try:
+                        dataset_item = self.zarr_group[dataset_path]
+                        array_path = f"{self.group_uri}/{dataset_path}"
+                        self._validate_label_data_type_v04(dataset_item, array_path)
+                    except KeyError:
+                        # Already reported by main dataset validation
+                        pass
+                    except Exception as e:
+                        self._add_error(
+                            f"{self.group_uri}/{dataset_path}",
+                            f"Error accessing label dataset: {e}",
+                        )
 
-    def _validate_label_data_type(self, dataset_path: str) -> None:
-        """Validate that label array uses integer data type."""
+    def _validate_label_data_type_v04(self, dataset_item, array_path: str) -> None:
+        """Validate that label array uses integer data type (v0.4 specific check)."""
         try:
-            dataset_item = self.zarr_group[dataset_path]
             # Check if it's an array and get its dtype
             if hasattr(dataset_item, "dtype"):
                 dtype_str = str(dataset_item.dtype)
                 # Check if it's an integer type
                 if not any(dtype_str.startswith(prefix) for prefix in ["int", "uint"]):
                     self._add_error(
-                        f"{self.group_uri}/{dataset_path}",
+                        array_path,
                         f"Label arrays must use integer data types, got '{dtype_str}'",
                     )
-        except KeyError:
-            return  # Already reported by array validation
         except Exception as e:
-            self._add_error(
-                f"{self.group_uri}/{dataset_path}",
-                f"Error checking label data type: {e}",
-            )
+            self._add_error(array_path, f"Error checking label data type: {e}")
 
     def _validate_plate_group(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate plate group structure."""
+        """Validate plate group structure with v0.4 specific logic."""
         plate = ome_metadata.get("plate", {})
         if not plate:
             self._add_error(self.group_uri, "plate metadata is required")
@@ -384,153 +171,11 @@ class _StorageValidator:
                 self.group_uri, f"plate version should be '0.4', got '{version}'"
             )
 
-        # Validate required fields
-        for field in ["columns", "rows", "wells"]:
-            if field not in plate:
-                self._add_error(self.group_uri, f"plate.{field} is required")
-
-        # Validate columns and rows
-        columns = plate.get("columns", [])
-        rows = plate.get("rows", [])
-
-        self._validate_plate_names(columns, "columns")
-        self._validate_plate_names(rows, "rows")
-
-        # Validate wells
-        wells = plate.get("wells", [])
-        self._validate_wells(wells, rows, columns)
-
-    def _validate_plate_names(self, names: list[Any], field_name: str) -> None:
-        """Validate plate row/column names."""
-        seen_names = set()
-        for i, name_obj in enumerate(names):
-            if not isinstance(name_obj, dict):
-                self._add_error(
-                    self.group_uri, f"plate.{field_name}[{i}] must be an object"
-                )
-                continue
-
-            name = name_obj.get("name")
-            if not name:
-                self._add_error(
-                    self.group_uri, f"plate.{field_name}[{i}].name is required"
-                )
-                continue
-
-            # Check alphanumeric
-            if not str(name).replace("_", "").replace("-", "").isalnum():
-                self._add_warning(
-                    self.group_uri,
-                    f"plate.{field_name}[{i}].name should be alphanumeric: '{name}'",
-                )
-
-            # Check for duplicates
-            if name in seen_names:
-                self._add_error(
-                    self.group_uri,
-                    f"plate.{field_name}[{i}].name is duplicate: '{name}'",
-                )
-            seen_names.add(name)
-
-    def _validate_wells(
-        self, wells: list[Any], rows: list[Any], columns: list[Any]
-    ) -> None:
-        """Validate wells structure and paths."""
-        for i, well in enumerate(wells):
-            if not isinstance(well, dict):
-                continue
-
-            path = well.get("path")
-            row_index = well.get("rowIndex")
-            col_index = well.get("columnIndex")
-
-            if path is None:
-                self._add_error(self.group_uri, f"plate.wells[{i}].path is required")
-                continue
-
-            # Check that well path exists in zarr group
-            try:
-                well_group = self.zarr_group[path]
-                # Validate that it's a proper well group
-                self._validate_well_zarr_group(well_group, path)
-            except KeyError:
-                self._add_error(
-                    f"{self.group_uri}/{path}", f"Well path does not exist: {path}"
-                )
-                continue
-            except Exception as e:
-                self._add_error(
-                    f"{self.group_uri}/{path}", f"Error accessing well group: {e}"
-                )
-                continue
-
-            # Validate row/column indices
-            if isinstance(row_index, int) and isinstance(col_index, int):
-                if not (0 <= row_index < len(rows)):
-                    self._add_error(
-                        self.group_uri,
-                        f"plate.wells[{i}].rowIndex out of range: {row_index}",
-                    )
-                if not (0 <= col_index < len(columns)):
-                    self._add_error(
-                        self.group_uri,
-                        f"plate.wells[{i}].columnIndex out of range: {col_index}",
-                    )
-
-    def _validate_well_zarr_group(self, well_group, well_path: str) -> None:
-        """Validate a well zarr group structure."""
-        well_uri = f"{self.group_uri}/{well_path}"
-
-        try:
-            well_metadata = well_group.attrs.asdict()
-        except Exception as e:
-            self._add_error(well_uri, f"Cannot access well metadata: {e}")
-            return
-
-        # Check well metadata
-        well_info = well_metadata.get("well", {})
-
-        if not well_info:
-            self._add_error(well_uri, "well metadata is required in well groups")
-            return
-
-        # Check version
-        version = well_info.get("version")
-        if version and version != "0.4":
-            self._add_warning(
-                well_uri, f"well version should be '0.4', got '{version}'"
-            )
-
-        # Validate images
-        images = well_info.get("images", [])
-        if not images:
-            self._add_error(well_uri, "well.images is required and must be non-empty")
-            return
-
-        for i, image in enumerate(images):
-            if not isinstance(image, dict):
-                continue
-
-            image_path = image.get("path")
-            if not image_path:
-                self._add_error(well_uri, f"well.images[{i}].path is required")
-                continue
-
-            # Check that image path exists in well group
-            try:
-                well_group[image_path]
-            except KeyError:
-                self._add_error(
-                    f"{well_uri}/{image_path}",
-                    f"Image path does not exist: {image_path}",
-                )
-            except Exception as e:
-                self._add_error(
-                    f"{well_uri}/{image_path}", f"Error accessing image path: {e}"
-                )
+        # Call parent implementation for common validation
+        super()._validate_plate_group(ome_metadata)
 
     def _validate_well_group(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate well group structure (when validating a well directly)."""
+        """Validate well group structure with v0.4 specific logic."""
         well = ome_metadata.get("well", {})
         if not well:
             self._add_error(self.group_uri, "well metadata is required")
@@ -543,116 +188,28 @@ class _StorageValidator:
                 self.group_uri, f"well version should be '0.4', got '{version}'"
             )
 
-        # Validate images and recursively check them
-        images = well.get("images", [])
-        for _i, image in enumerate(images):
-            if not isinstance(image, dict):
-                continue
+        # Call parent implementation for common validation
+        super()._validate_well_group(ome_metadata)
 
-            image_path = image.get("path")
-            if image_path:
-                try:
-                    image_group = self.zarr_group[image_path]
-                    # Recursively validate the image
-                    image_uri = f"{self.group_uri}/{image_path}"
-                    image_validator = _StorageValidator(image_uri, image_group)
-                    image_result = image_validator.validate()
-                    self.errors.extend(image_result.errors)
-                    self.warnings.extend(image_result.warnings)
-                except KeyError:
-                    self._add_error(
-                        f"{self.group_uri}/{image_path}",
-                        f"Image path does not exist: {image_path}",
-                    )
-                except Exception as e:
-                    self._add_error(
-                        f"{self.group_uri}/{image_path}", f"Error validating image: {e}"
-                    )
+    def _validate_well_zarr_group(self, well_group, well_path: str) -> None:
+        """Validate a well zarr group structure with v0.4 specific logic."""
+        well_uri = f"{self.group_uri}/{well_path}"
 
-    def _validate_labels_group(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate labels group structure."""
-        labels = ome_metadata.get("labels", [])
-        if not isinstance(labels, list):
-            self._add_error(self.group_uri, "labels must be a list")
-            return
+        # Use parent validation for common structure
+        super()._validate_well_zarr_group(well_group, well_uri)
 
-        # Check that each label path exists
-        for i, label_name in enumerate(labels):
-            if not isinstance(label_name, str):
-                self._add_error(self.group_uri, f"labels[{i}] must be a string")
-                continue
-
-            try:
-                label_group = self.zarr_group[label_name]
-                # Recursively validate the label image
-                label_uri = f"{self.group_uri}/{label_name}"
-                label_validator = _StorageValidator(label_uri, label_group)
-                label_result = label_validator.validate()
-                self.errors.extend(label_result.errors)
-                self.warnings.extend(label_result.warnings)
-            except KeyError:
-                self._add_error(
-                    f"{self.group_uri}/{label_name}",
-                    f"Label path does not exist: {label_name}",
-                )
-                continue
-            except Exception as e:
-                self._add_error(
-                    f"{self.group_uri}/{label_name}", f"Error validating label: {e}"
-                )
-                continue
-
-    def _validate_bioformats2raw_group(self, ome_metadata: dict[str, Any]) -> None:
-        """Validate bioformats2raw group structure."""
-        layout = ome_metadata.get("bioformats2raw.layout")
-        if layout is None:
-            self._add_error(self.group_uri, "bioformats2raw.layout is required")
-            return
-
-        # Check for numbered directories (zarr group discovery)
-        numbered_dirs = []
+        # Add v0.4 specific version validation
         try:
-            for item_name in self.zarr_group.keys():
-                if item_name.isdigit():
-                    numbered_dirs.append(int(item_name))
-        except Exception as e:
-            self._add_error(
-                self.group_uri, f"Error discovering numbered directories: {e}"
-            )
+            well_metadata = well_group.attrs.asdict()
+            ome_metadata = well_metadata.get("ome", {})
+            well_info = ome_metadata.get("well", {})
 
-        if not numbered_dirs:
-            self._add_warning(
-                self.group_uri,
-                "No numbered image directories found for bioformats2raw layout",
-            )
-
-        # Check for OME metadata directory
-        try:
-            ome_group = self.zarr_group["OME"]
-            # Note: zarr groups don't have files like METADATA.ome.xml
-            # This would be stored as zarr arrays or attributes
-            if "METADATA.ome.xml" not in ome_group.keys():
-                self._add_warning(
-                    f"{self.group_uri}/OME",
-                    "METADATA.ome.xml data not found in OME group",
-                )
-        except KeyError:
-            self._add_warning(f"{self.group_uri}/OME", "OME metadata group not found")
-        except Exception as e:
-            self._add_error(
-                f"{self.group_uri}/OME", f"Error checking OME metadata: {e}"
-            )
-
-    def _add_error(self, path: str, message: str) -> None:
-        """Add a validation error."""
-        self.errors.append(ValidationError(path, message, "error"))
-
-    def _add_warning(self, path: str, message: str) -> None:
-        """Add a validation warning."""
-        self.warnings.append(ValidationError(path, message, "warning"))
-
-    def _result(self) -> ValidationResult:
-        """Create validation result."""
-        return ValidationResult(
-            valid=len(self.errors) == 0, errors=self.errors, warnings=self.warnings
-        )
+            if well_info:
+                version = well_info.get("version")
+                if version and version != "0.4":
+                    self._add_warning(
+                        well_uri, f"well version should be '0.4', got '{version}'"
+                    )
+        except Exception:
+            # Error already handled by parent method
+            pass
