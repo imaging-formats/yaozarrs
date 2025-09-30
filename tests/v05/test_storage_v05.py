@@ -2,7 +2,11 @@ from pathlib import Path
 from typing import Callable, cast
 
 import pytest
-import zarr
+
+try:
+    import zarr
+except ImportError:
+    pytest.skip("zarr not installed", allow_module_level=True)
 
 from yaozarrs.v05._storage import (
     ErrorDetails,
