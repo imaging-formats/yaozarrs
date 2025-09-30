@@ -90,4 +90,6 @@ def _find_zarr_group_metadata(
         if fs.exists(json_uri):
             return json_uri
 
-    raise FileNotFoundError(f"Could not find zarr group metadata in: {uri_str}")
+    raise FileNotFoundError(  # pragma: no cover
+        f"Could not find zarr group metadata in: {uri_str}"
+    )

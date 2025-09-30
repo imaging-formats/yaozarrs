@@ -20,6 +20,8 @@ test-cov-full:
     uv run -p 3.10 --resolution lowest-direct --exact -U --no-dev --group test-full \
         coverage run --parallel-mode --source=src --omit="*/tests/*" -m pytest -v
 
+    sleep 1  
+
     echo ""
     echo "📊 Step 2: Running tests with Python 3.13 + highest dependencies..."
     uv run -p 3.13 --resolution highest --exact -U --no-dev --group test-full \

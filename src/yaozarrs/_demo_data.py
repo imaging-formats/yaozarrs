@@ -364,7 +364,7 @@ def write_ome_plate(
                 )
 
 
-def _get_format_for_version(version: str):
+def _get_format_for_version(version: str) -> CurrentFormat | FormatV04:
     """Get the appropriate format for the OME-ZARR version."""
     if version == "0.4":
         return FormatV04()
@@ -372,7 +372,7 @@ def _get_format_for_version(version: str):
         # Check if zarr v3 is available for v0.5
         zarr_major_version = int(zarr_module.__version__.split(".")[0])
         if zarr_major_version < 3:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"OME-ZARR v{version} requires zarr v3 or later, but zarr "
                 f"v{zarr_module.__version__} is installed. OME-ZARR v0.5 format "
                 "cannot be properly created or validated with zarr v2. "
