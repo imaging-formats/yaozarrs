@@ -3,8 +3,12 @@
 # dependencies = [
 #     "numpy",
 #     "ome-zarr",
+#     "yaozarrs",
 #     "zarr",
 # ]
+#
+# [tool.uv.sources]
+# yaozarrs = { path = "../" }
 # ///
 """A script to create demo OME-ZARR datasets from the command line."""
 
