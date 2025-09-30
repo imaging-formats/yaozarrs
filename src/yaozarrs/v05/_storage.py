@@ -215,7 +215,15 @@ def validate_zarr_store(obj: OMEZarrGroupJSON | zarr.Group | StoreLike) -> None:
         zarr_group = obj
     elif isinstance(obj, OMEZarrGroupJSON):
         attrs_model = obj.attributes
-        zarr_group = _open_zarr_group(obj.uri)
+        # obj.uri points to the JSON file, but zarr.open_group needs the directory
+        # Extract the parent directory from the JSON file path
+        zarr_group_uri = obj.uri
+        if zarr_group_uri and zarr_group_uri.endswith(("zarr.json", ".zattrs")):
+            if zarr_group_uri.endswith("zarr.json"):
+                zarr_group_uri = zarr_group_uri[: -len("zarr.json")].rstrip("/")
+            elif zarr_group_uri.endswith(".zattrs"):
+                zarr_group_uri = zarr_group_uri[: -len(".zattrs")].rstrip("/")
+        zarr_group = _open_zarr_group(zarr_group_uri)
     else:
         zarr_group = _open_zarr_group(obj)
 

@@ -7,7 +7,7 @@ import sys
 from typing import Any
 
 import yaozarrs
-from yaozarrs import from_uri, v04
+from yaozarrs import from_uri
 
 
 def _get_zarr_info(uri: str) -> dict[str, Any]:
@@ -252,46 +252,21 @@ def cmd_validate(args: argparse.Namespace) -> int:
             try:
                 from yaozarrs.v05._storage import validate_zarr_store
 
-                result = validate_zarr_store(metadata)
+                validate_zarr_store(metadata)
+                _print_result(True, "Storage structure validation passed")
             except Exception as e:
                 _print_result(False, f"Storage validation failed: {e}")
                 return 1
         elif version == "0.4":
-            try:
-                result = v04.validate_storage(metadata)
-            except Exception as e:
-                _print_result(False, f"Storage validation failed: {e}")
-                return 1
+            _print_result(
+                False, "Storage validation for v0.4 is not supported in this version"
+            )
+            return 1
         else:
             _print_result(
                 False, f"Storage validation not supported for version: {version}"
             )
             return 1
-
-        # Report results
-        if result.valid:
-            _print_result(True, "Storage structure validation passed")
-        else:
-            _print_result(False, "Storage structure validation failed")
-
-            if result.errors:
-                print("\nErrors found:")
-                for error in result.errors:
-                    print(f"  ✗ {error.path}")
-                    print(f"    {error.message}")
-
-            if result.warnings:
-                print("\nWarnings:")
-                for warning in result.warnings:
-                    print(f"  ⚠ {warning.path}")
-                    print(f"    {warning.message}")
-
-            return 1
-
-        if result.warnings:
-            print("\nWarnings:")
-            for warning in result.warnings:
-                _print_warning(f"{warning.path}: {warning.message}")
 
     # Summary
     _print_section("Summary")
