@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from pathlib import Path
 from typing import Callable, cast
 
@@ -24,7 +25,8 @@ def test_validate_invalid_storage(tmp_path: Path) -> None:
 def test_validate_missing_zarr_file() -> None:
     """Test validation with non-existent zarr file."""
     # Use a path that doesn't trigger filesystem creation attempts
-    with pytest.raises(FileNotFoundError):
+    # ValueError in zarr2, FileNotFoundError in zarr3
+    with pytest.raises((FileNotFoundError, ValueError)):
         validate_zarr_store("./nonexistent_zarr_directory")
 
 
@@ -109,15 +111,18 @@ def test_storage_validation_error() -> None:
     assert error.title == "StorageValidationError"
 
 
-@pytest.mark.parametrize(
-    "uri",
-    [
-        # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
-        "/Users/talley/Downloads/zarr/6001240_labels.zarr",
+URIS = []
+
+if version("zarr").startswith("3"):
+    URIS += [
+        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
+        # "/Users/talley/Downloads/zarr/6001240_labels.zarr",
         # "/Users/talley/Downloads/zarr/3.66.9-6.141020_15-41-29.00.ome.zarr",
         # "/Users/talley/Downloads/zarr/76-45.ome.zarr",
-    ],
-)
+    ]
+
+
+@pytest.mark.parametrize("uri", URIS)
 def test_validate_storage(uri: str) -> None:
     """Test basic validation functionality."""
     # Test with real zarr file that should pass validation

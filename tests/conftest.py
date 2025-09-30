@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Callable, Literal
 
 import pytest
@@ -22,6 +23,9 @@ def write_demo_ome(tmp_path_factory: pytest.TempPathFactory) -> Callable[..., Pa
         pytest.skip("ome-zarr not installed", allow_module_level=True)
 
     def _write_demo(type: Literal["image", "labels", "plate"], **kwargs: Any) -> Path:
+        if kwargs.get("version") == "0.5" and version("zarr").startswith("2"):
+            pytest.skip("zarr v2 does not support OME-Zarr v0.5")
+
         path = tmp_path_factory.mktemp(f"demo_{type}")
         if type == "image":
             write_ome_image(path, **kwargs)
