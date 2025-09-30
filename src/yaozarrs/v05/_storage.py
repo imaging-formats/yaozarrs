@@ -231,15 +231,10 @@ def validate_zarr_store(obj: OMEZarrGroupJSON | zarr.Group | StoreLike) -> None:
 
 
 def _validate_zarr_group(
-    zarr_group: zarr.Group, attrs_model: OMEAttributes | None
+    zarr_group: zarr.Group, attrs_model: OMEAttributes | None = None
 ) -> None:
-    if attrs_model is None:
-        # extract the model from the zarr attributes
-        attrs = zarr_group.attrs.asdict()
-        attrs_model = validate_ome_object(attrs, OMEAttributes)
-
     # Validate the storage structure using the visitor pattern
-    result = StorageValidatorImpl.validate_group(zarr_group, attrs_model)
+    result = StorageValidatorV05.validate_group(zarr_group, attrs_model)
 
     # Raise error if any validation issues found
     if not result.is_valid:
@@ -311,12 +306,12 @@ class StorageValidator(ABC):
         ...
 
 
-class StorageValidatorImpl(StorageValidator):
-    """Concrete implementation of storage validator."""
+class StorageValidatorV05(StorageValidator):
+    """Concrete implementation of storage validator. for OME-ZARR v0.5 spec."""
 
     @classmethod
     def validate_group(
-        cls, zarr_group: zarr.Group, attrs_model: OMEAttributes
+        cls, zarr_group: zarr.Group, attrs_model: OMEAttributes | None = None
     ) -> ValidationResult:
         """Entry point that dispatches to appropriate visitor method.
 
@@ -332,6 +327,11 @@ class StorageValidatorImpl(StorageValidator):
         ValidationResult
             The validation result containing any errors found.
         """
+        if attrs_model is None:
+            # extract the model from the zarr attributes
+            attrs = zarr_group.attrs.asdict()
+            attrs_model = validate_ome_object(attrs, OMEAttributes)
+
         validator = cls()
         ome_metadata = attrs_model.ome
         loc_prefix = ("ome",)

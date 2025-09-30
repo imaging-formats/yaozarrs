@@ -267,7 +267,7 @@ Here are ALL the possible zarr.json documents you might encounter with OME metad
 
 """
 
-from typing import Generic, Literal, TypeAlias, TypeVar
+from typing import Literal, TypeAlias
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs.v05._bf2raw import Bf2Raw
@@ -287,13 +287,10 @@ OMEMetadata: TypeAlias = (
 """Anything that can live in the "ome" key of a v0.5 ome-zarr file."""
 
 
-OMEMeta = TypeVar("OMEMeta", bound=OMEMetadata)
-
-
-class OMEAttributes(_BaseModel, Generic[OMEMeta]):
+class OMEAttributes(_BaseModel):
     """The attributes field of a zarr.json document in an ome-zarr group."""
 
-    ome: OMEMeta
+    ome: OMEMetadata
 
 
 class OMEZarrGroupJSON(ZarrGroupModel):
