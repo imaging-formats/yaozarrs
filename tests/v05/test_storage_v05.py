@@ -105,18 +105,23 @@ def test_storage_validation_error() -> None:
     assert error.title == "StorageValidationError"
 
 
-# @pytest.mark.parametrize(
-#     "uri",
-#     ["https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr"],
-# )
-# def test_validate_storage(uri: str) -> None:
-#     """Test basic validation functionality."""
-#     # Test with real zarr file that should pass validation
-#     validate_zarr_store(uri)
+@pytest.mark.parametrize(
+    "uri",
+    [
+        # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
+        "/Users/talley/Downloads/zarr/6001240_labels.zarr",
+        # "/Users/talley/Downloads/zarr/3.66.9-6.141020_15-41-29.00.ome.zarr",
+        # "/Users/talley/Downloads/zarr/76-45.ome.zarr",
+    ],
+)
+def test_validate_storage(uri: str) -> None:
+    """Test basic validation functionality."""
+    # Test with real zarr file that should pass validation
+    validate_zarr_store(uri)
 
 
-@pytest.mark.parametrize("type", ["image", "labels"])
+@pytest.mark.parametrize("type", ["image", "labels", "plate"])
 def test_validate_demo_storage(type: str, write_demo_ome: Callable) -> None:
     """Test validation on demo OME-Zarr files."""
-    path = write_demo_ome(type)
+    path = write_demo_ome(type, version="0.5")
     validate_zarr_store(path)

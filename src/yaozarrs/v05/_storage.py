@@ -23,6 +23,8 @@ from typing_extensions import NotRequired
 from yaozarrs._validate import from_uri, validate_ome_object
 from yaozarrs.v05._image import Image, Multiscale
 from yaozarrs.v05._label import LabelImage, LabelsGroup
+from yaozarrs.v05._plate import Plate
+from yaozarrs.v05._well import Well
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
@@ -467,129 +469,99 @@ def _validate_multiscale(
                 )
 
 
+def _validate_plate_group(
+    zarr_group: zarr.Group,
+    plate_model: Plate,
+    loc_prefix: Loc,
+    errors: list[ErrorDetails],
+) -> None:
+    """Validate a plate group and its wells."""
+    # Validate each well path
+    for well_idx, well in enumerate(plate_model.plate.wells):
+        well_loc = (*loc_prefix, "plate", "wells", well_idx)
+
+        if well.path not in zarr_group:
+            errors.append(
+                _create_error(
+                    "well_path_not_found",
+                    (*well_loc, "path"),
+                    f"Well path '{well.path}' not found in plate group",
+                    well.path,
+                )
+            )
+            continue
+
+        well_group = zarr_group[well.path]
+        if not isinstance(well_group, zarr.Group):
+            errors.append(
+                _create_error(
+                    "well_path_not_group",
+                    (*well_loc, "path"),
+                    f"Well path '{well.path}' is not a zarr group",
+                    well.path,
+                )
+            )
+            continue
+
+        # Validate well metadata
+        well_attrs = well_group.attrs.asdict()
+        from yaozarrs.v05._well import Well
+
+        well_attrs_model = validate_ome_object(well_attrs, OMEAttributes)
+        if isinstance(well_attrs_model.ome, Well):
+            _validate_well_group(well_group, well_attrs_model.ome, well_loc, errors)
+
+
+def _validate_well_group(
+    zarr_group: zarr.Group,
+    well_model: Well,
+    loc_prefix: Loc,
+    errors: list[ErrorDetails],
+) -> None:
+    """Validate a well group and its field images."""
+    # Validate each field image path
+    for field_idx, field in enumerate(well_model.well.images):
+        field_loc = (*loc_prefix, "well", "images", field_idx)
+
+        if field.path not in zarr_group:
+            errors.append(
+                _create_error(
+                    "field_path_not_found",
+                    (*field_loc, "path"),
+                    f"Field path '{field.path}' not found in well group",
+                    field.path,
+                )
+            )
+            continue
+
+        field_group = zarr_group[field.path]
+        if not isinstance(field_group, zarr.Group):
+            errors.append(
+                _create_error(
+                    "field_path_not_group",
+                    (*field_loc, "path"),
+                    f"Field path '{field.path}' is not a zarr group",
+                    field.path,
+                )
+            )
+            continue
+
+        # Validate field as image group
+        field_attrs = field_group.attrs.asdict()
+        field_attrs_model = validate_ome_object(field_attrs, OMEAttributes)
+        if isinstance(field_attrs_model.ome, Image):
+            _validate_image_group(field_group, field_attrs_model.ome, field_loc, errors)
+
+
 STORAGE_VALIDATORS: dict[type[T], Validator[T]] = {
     LabelImage: _validate_label_image_group,
     Image: _validate_image_group,
     LabelsGroup: _validate_labels_group,
-    # Plate: _validate_plate_group,
-    # Well: _validate_well_group,
+    Plate: _validate_plate_group,
+    Well: _validate_well_group,
     # Series: _validate_series_group,
     Multiscale: _validate_multiscale,
 }
-
-
-# def _validate_plate_group(
-#     zarr_group: zarr.Group,
-#     attrs_model: OMEAttributes,
-#     loc_prefix: Loc,
-#     errors: list[ErrorDetails],
-# ) -> None:
-#     """Validate a plate group and its wells."""
-#     from yaozarrs.v05._plate import Plate
-
-#     if not isinstance(attrs_model.ome, Plate):
-#         errors.append(
-#             _create_error(
-#                 "invalid_plate_group",
-#                 loc_prefix,
-#                 "Group does not contain valid Plate metadata",
-#                 type(attrs_model.ome).__name__,
-#             )
-#         )
-#         return
-
-#     plate_metadata = attrs_model.ome.plate
-
-#     # Validate each well path
-#     for well_idx, well in enumerate(plate_metadata.wells):
-#         well_loc = (*loc_prefix, "plate", "wells", well_idx)
-
-#         try:
-#             well_group = zarr_group[well.path]
-#             if not hasattr(well_group, "attrs"):
-#                 errors.append(
-#                     _create_error(
-#                         "well_path_not_group",
-#                         (*well_loc, "path"),
-#                         f"Well path '{well.path}' is not a zarr group",
-#                         well.path,
-#                     )
-#                 )
-#                 continue
-
-#             # Type check to ensure it's a Group
-#             if not hasattr(well_group, "keys"):
-#                 continue
-
-#             # Validate well metadata
-#             well_attrs = well_group.attrs.asdict()
-#             well_attrs_model = validate_ome_object(well_attrs, OMEAttributes)
-#             _validate_well_group(well_group, well_attrs_model, well_loc, errors)
-
-#         except KeyError:
-#             errors.append(
-#                 _create_error(
-#                     "well_path_not_found",
-#                     (*well_loc, "path"),
-#                     f"Well path '{well.path}' not found in plate group",
-#                     well.path,
-#                 )
-#             )
-
-
-# def _validate_well_group(
-#     zarr_group: zarr.Group,
-#     attrs_model: OMEAttributes,
-#     loc_prefix: Loc,
-#     errors: list[ErrorDetails],
-# ) -> None:
-#     """Validate a well group and its field images."""
-#     from yaozarrs.v05._well import Well
-
-#     if not isinstance(attrs_model.ome, Well):
-#         errors.append(
-#             _create_error(
-#                 "invalid_well_group",
-#                 loc_prefix,
-#                 "Group does not contain valid Well metadata",
-#                 type(attrs_model.ome).__name__,
-#             )
-#         )
-#         return
-
-#     well_metadata = attrs_model.ome.well
-
-#     # Validate each field image path
-#     for field_idx, field in enumerate(well_metadata.images):
-#         field_loc = (*loc_prefix, "well", "images", field_idx)
-
-#         try:
-#             field_group = zarr_group[field.path]
-#             if not isinstance(field_group, zarr.Group):
-#                 errors.append(
-#                     _create_error(
-#                         "field_path_not_group",
-#                         (*field_loc, "path"),
-#                         f"Field path '{field.path}' is not a zarr group",
-#                         field.path,
-#                     )
-#                 )
-#                 continue
-
-#             # Validate field as image group
-#             field_attrs = field_group.attrs.asdict()
-#             field_attrs_model = validate_ome_object(field_attrs, OMEAttributes)
-#             _validate_image_group(field_group, field_attrs_model, field_loc, errors)
-
-#         except KeyError:
-#             errors.append(
-#                 _create_error(
-#                     "field_path_not_found",
-#                     (*field_loc, "path"),
-#                     f"Field path '{field.path}' not found in well group",
-#                     field.path,
-#                 )
-#             )
 
 
 # def _validate_series_group(
