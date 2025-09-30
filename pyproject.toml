@@ -27,21 +27,21 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "pydantic>=2.1.0",
+    "pydantic>=2.5.0",
     "pydantic-core>=2.20.0; python_version>='3.13'",
     "typing-extensions>=4.6.0",
 ]
 
 [project.optional-dependencies]
 io = ["fsspec[http]>=2025.0"]
-storage = ["yaozarrs[io]", "zarr>=2.18", "zarr>=3.1; python_version>='3.11'"]
+storage = ["yaozarrs[io]", "zarr>=2.18", "zarr>=3.1.0; python_version>='3.11'"]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/yaozarrs"
 repository = "https://github.com/tlambert03/yaozarrs"
 
 [dependency-groups]
-test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
 test-full = [
     { include-group = "test" },
     "yaozarrs[storage]",

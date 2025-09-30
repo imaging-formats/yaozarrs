@@ -495,7 +495,7 @@ class StorageValidatorV05(StorageValidator):
                     "invalid_label_image",
                     label_loc,
                     f"Label path '{label_path}' contains Image metadata, "
-                    "but not is not a LabelImage (missing 'image-label' metadata?)",
+                    "but is not a LabelImage (missing 'image-label' metadata?)",
                     {"path": label_path, "type": type(label_image_model).__name__},
                 )
                 continue
