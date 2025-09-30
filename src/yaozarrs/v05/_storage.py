@@ -12,23 +12,26 @@ from __future__ import annotations
 import os
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, TypeAlias, TypedDict, TypeVar
 
 import numpy as np
 import zarr
-import zarr.abc.store
 import zarr.storage
+from pydantic import BaseModel
 from typing_extensions import NotRequired
 
 from yaozarrs._validate import from_uri, validate_ome_object
-from yaozarrs.v05._image import Image
+from yaozarrs.v05._image import Image, Multiscale
 from yaozarrs.v05._label import LabelImage, LabelsGroup
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
     from zarr.storage import StoreLike
 
-    from yaozarrs.v05._image import Multiscale
+
+# ----------------------------------------------------------
+# ERROR HANDLING
+# ----------------------------------------------------------
 
 
 class ErrorDetails(TypedDict):
@@ -54,6 +57,28 @@ class ErrorDetails(TypedDict):
     """
     url: NotRequired[str]
     """A URL giving information about the error."""
+
+
+def _create_error(
+    error_type: str,
+    loc: tuple[int | str, ...],
+    msg: str,
+    input_val: Any = None,
+    ctx: dict[str, Any] | None = None,
+    url: str | None = None,
+) -> ErrorDetails:
+    """Create a standardized error detail dictionary."""
+    error: ErrorDetails = {
+        "type": error_type,
+        "loc": loc,
+        "msg": msg,
+        "input": input_val,
+    }
+    if ctx is not None:
+        error["ctx"] = ctx
+    if url is not None:
+        error["url"] = url
+    return error
 
 
 class StorageValidationError(ValueError):
@@ -123,6 +148,11 @@ class StorageValidationError(ValueError):
         return filtered_errors
 
 
+# ----------------------------------------------------------
+# MAIN VALIDATION FUNCTIONS
+# ----------------------------------------------------------
+
+
 def _open_zarr_group(uri: str | StoreLike | OMEZarrGroupJSON) -> zarr.Group:
     try:
         import zarr
@@ -160,176 +190,86 @@ def validate_zarr_store(obj: OMEZarrGroupJSON | zarr.Group | StoreLike) -> None:
     _validate_zarr_group(zarr_group, attrs_model)
 
 
-def _create_error(
-    error_type: str,
-    loc: tuple[int | str, ...],
-    msg: str,
-    input_val: Any = None,
-    ctx: dict[str, Any] | None = None,
-    url: str | None = None,
-) -> ErrorDetails:
-    """Create a standardized error detail dictionary."""
-    error: ErrorDetails = {
-        "type": error_type,
-        "loc": loc,
-        "msg": msg,
-        "input": input_val,
-    }
-    if ctx is not None:
-        error["ctx"] = ctx
-    if url is not None:
-        error["url"] = url
-    return error
+def _validate_zarr_group(
+    zarr_group: zarr.Group, attrs_model: OMEAttributes | None
+) -> None:
+    if attrs_model is None:
+        # extract the model from the zarr attributes
+        attrs = zarr_group.attrs.asdict()
+        attrs_model = validate_ome_object(attrs, OMEAttributes)
+
+    # at this point we have a valid zarr_group, and OMEAttributes model
+    # (which means the "ome" key is present and valid)
+    # and we can begin to validate that the storage structure itself is valid,
+    # by traversing the structure recursively
+    errors: list[ErrorDetails] = []
+    loc_prefix = ("ome",)
+    ome_metadata = attrs_model.ome
+    if validate_func := STORAGE_VALIDATORS.get(type(ome_metadata)):
+        validate_func(zarr_group, ome_metadata, loc_prefix, errors)
+
+    else:
+        raise NotImplementedError(
+            f"Unknown OME metadata type: {type(ome_metadata).__name__}"
+        )
+
+    # Raise error if any validation issues found
+    if errors:
+        raise StorageValidationError(errors)
 
 
-def _validate_multiscale(
+# ----------------------------------------------------------
+# VALIDATORS
+# ----------------------------------------------------------
+
+Loc: TypeAlias = tuple[int | str, ...]
+T = TypeVar("T", bound=BaseModel)
+Validator: TypeAlias = Callable[[zarr.Group, T, Loc, list["ErrorDetails"]], Any]
+
+
+def _validate_label_image_group(
     zarr_group: zarr.Group,
-    multiscale: Multiscale,
-    loc_prefix: tuple[int | str, ...],
+    image_model: LabelImage,
+    loc_prefix: Loc,
     errors: list[ErrorDetails],
 ) -> None:
-    """Validate that all dataset paths exist as arrays with correct dimensionality."""
-    for ds_idx, dataset in enumerate(multiscale.datasets):
-        ds_loc = (*loc_prefix, "datasets", ds_idx, "path")
+    # The value of the source key MUST be a JSON object containing information about
+    # the original image from which the label image derives. This object MAY include
+    # a key image, whose value MUST be a string specifying the relative path to a
+    # Zarr image group.
+    if (src := image_model.image_label.source) and (src_img := src.image):
+        _validate_labels_image_source(zarr_group, src_img, loc_prefix, errors)
 
-        # Check if path exists as array
-        if dataset.path not in zarr_group:
-            errors.append(
-                _create_error(
-                    "dataset_path_not_found",
-                    ds_loc,
-                    f"Dataset path '{dataset.path}' not found in zarr group",
-                    dataset.path,
-                )
-            )
-            continue
-
-        arr = zarr_group[dataset.path]
-        if not isinstance(arr, zarr.Array):
-            errors.append(
-                _create_error(
-                    "dataset_not_array",
-                    ds_loc,
-                    f"Dataset path '{dataset.path}' exists but is not a zarr array",
-                    dataset.path,
-                )
-            )
-            continue
-
-        # Check array dimensionality matches axes
-        expected_ndim = len(multiscale.axes)
-        if arr.ndim != expected_ndim:
-            errors.append(
-                _create_error(
-                    "dataset_dimension_mismatch",
-                    ds_loc,
-                    f"Dataset '{dataset.path}' has {arr.ndim} dimensions "
-                    f"but axes specify {expected_ndim}",
-                    {
-                        "actual_ndim": arr.ndim,
-                        "expected_ndim": expected_ndim,
-                        "path": dataset.path,
-                    },
-                )
-            )
-
-        # Check dimension_names attribute matches axes
-        # TODO: check whether the key "dimension_names" is in the Zarr spec
-        if dim_names := list(arr.attrs.asdict().get("dimension_names", [])):
-            expected_names = [ax.name for ax in multiscale.axes]
-            if dim_names != expected_names:
-                errors.append(
-                    _create_error(
-                        "dimension_names_mismatch",
-                        (*ds_loc, "dimension_names"),
-                        f"Array dimension_names {dim_names} don't match "
-                        f"axes names {expected_names}",
-                        {"actual": dim_names, "expected": expected_names},
-                    )
-                )
+    # For label images, validate integer data types
+    _validate_label_data_types(image_model, zarr_group, loc_prefix, errors)
 
 
-def _validate_label_data_types(
-    multiscale: Multiscale,
+def _validate_image_group(
     zarr_group: zarr.Group,
-    loc_prefix: tuple[int | str, ...],
+    image_model: Image,
+    loc_prefix: Loc,
     errors: list[ErrorDetails],
 ) -> None:
-    """Validate that label arrays contain only integer data types."""
-    # The "labels" group is not itself an image; it contains images.
-    # The pixels of the label images MUST be integer data types, i.e. one of [uint8,
-    # int8, uint16, int16, uint32, int32, uint64, int64].
-    for ds_idx, dataset in enumerate(multiscale.datasets):
-        ds_loc = (*loc_prefix, "datasets", ds_idx, "path")
-        if dataset.path not in zarr_group:
-            # Path validation will catch this separately
-            continue  # pragma: no cover
+    """Validate an image group with multiscales metadata."""
+    # Validate each multiscale
+    for ms_idx, multiscale in enumerate(image_model.multiscales):
+        ms_loc = (*loc_prefix, "multiscales", ms_idx)
+        # Validate dataset paths exist and have correct dimensions
+        _validate_multiscale(zarr_group, multiscale, ms_loc, errors)
 
-        arr = zarr_group[dataset.path]
-        # check if np.integer dtype
-        if not (
-            isinstance(arr, zarr.Array) and np.issubdtype((dt := arr.dtype), np.integer)
-        ):
-            errors.append(
-                _create_error(
-                    "label_non_integer_dtype",
-                    ds_loc,
-                    f"Label array '{dataset.path}' has non-integer dtype "
-                    f"'{dt}'. Labels must use integer types.",
-                    {"path": dataset.path, "dtype": str(dt)},
-                )
-            )
-
-
-def _check_for_labels_group(
-    zarr_group: zarr.Group,
-    loc_prefix: tuple[int | str, ...],
-    errors: list[ErrorDetails],
-) -> tuple[zarr.Group, LabelsGroup] | None:
-    """Check for labels group at same level as datasets and return it if valid."""
-    if "labels" not in zarr_group:
-        return None
-    labels_loc = (*loc_prefix, "labels")
-
-    labels_group = zarr_group["labels"]
-    if not isinstance(labels_group, zarr.Group):
-        # TODO: warn?  this part of the spec is unclear
-        errors.append(
-            _create_error(
-                "labels_not_group",
-                labels_loc,
-                f"Found 'labels' path but it is a {type(labels_group)}, "
-                "not a zarr group",
-                "labels",
-            )
+    # Check whether this image has a labels group, and validate if so
+    lbls_group_model = _check_for_labels_group(zarr_group, loc_prefix, errors)
+    if lbls_group_model is not None:
+        labels_group, labels_model = lbls_group_model
+        _validate_labels_group(
+            labels_group, labels_model, (*loc_prefix, "labels"), errors, image_model
         )
-        return None
-
-    attrs = labels_group.attrs.asdict()
-    try:
-        labels_attrs = validate_ome_object(attrs, OMEAttributes)
-        if isinstance(labels_attrs.ome, LabelsGroup):
-            return labels_group, labels_attrs.ome
-    except Exception as e:
-        # TODO: warn?
-        # what happens if there just happens to be a nested zarr group
-        # named "labels" that isn't actually a labels group?
-        errors.append(
-            _create_error(
-                "invalid_labels_metadata",
-                labels_loc,
-                f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
-                f"but metadata not valid LabelsGroup metadata: {e!s}",
-                attrs,
-            )
-        )
-    return None
 
 
 def _validate_labels_group(
     labels_group: zarr.Group,
     labels_model: LabelsGroup,
-    loc_prefix: tuple[int | str, ...],
+    loc_prefix: Loc,
     errors: list[ErrorDetails],
     parent_image_model: Image | None = None,
 ) -> None:
@@ -460,136 +400,88 @@ def _validate_labels_group(
         _validate_image_group(label_group, label_image_model, label_loc, errors)
 
 
-def _resolve_source_path(zarr_group: zarr.Group, src_rel_path: str) -> str:
-    """Resolve a relative source path against the zarr group's store location.
-
-    Parameters
-    ----------
-    zarr_group : zarr.Group
-        The zarr group to resolve relative to
-    src_rel_path : str
-        The relative path to resolve (e.g., "../other",
-        "../../images/source.zarr")
-
-    Returns
-    -------
-    str
-        The resolved absolute path
-
-    Raises
-    ------
-    ValueError
-        If the store type is not supported
-    """
-    store = zarr_group.store
-    path = zarr_group.path
-    if isinstance(store, zarr.storage.FsspecStore):
-        # Use appropriate path joining based on filesystem type
-        root = store.path
-        if root.startswith(("http://", "https://")):
-            from urllib.parse import urljoin
-
-            # Ensure root ends with separator for proper urljoin behavior
-            # ug...
-            if not root.endswith("/"):
-                root = root + "/"
-            root = urljoin(root, path)
-            if not root.endswith("/"):
-                root = root + "/"
-            return urljoin(root, src_rel_path)
-        else:
-            # For other filesystems, use posixpath for UNIX-style path joining
-            # Most fsspec filesystems use forward slashes as separators
-            import posixpath
-
-            return posixpath.normpath(posixpath.join(root, path, src_rel_path))
-
-    elif isinstance(store, zarr.storage.LocalStore):
-        return str((store.root / path / src_rel_path).resolve())
-
-    else:
-        raise NotImplementedError(f"Unsupported store type: {type(store)}")
-
-
-def _validate_labels_image_source(
+def _validate_multiscale(
     zarr_group: zarr.Group,
-    src_img_rel_path: str,
-    loc_prefix: tuple[int | str, ...],
+    multiscale: Multiscale,
+    loc_prefix: Loc,
     errors: list[ErrorDetails],
 ) -> None:
-    # FIXME: HACKY
-    # Resolve the source image path relative to the current zarr group
-    # neither zarr nor fsspec make this easy to do in an arbitrary way
-    # but the OME-Zarr spec allows this to be a relative path
-    try:
-        image_source = _resolve_source_path(zarr_group, src_img_rel_path)
-    except Exception:
-        warnings.warn("Unable to resolve source image path", UserWarning, stacklevel=3)
-    else:
-        try:
-            img = from_uri(image_source, OMEZarrGroupJSON)
-            if not isinstance(img.attributes.ome, Image):
-                errors.append(
-                    _create_error(
-                        "invalid_label_image_source",
-                        (*loc_prefix, "image_label", "source", "image"),
-                        f"Label image source '{image_source}' does not contain "
-                        "valid Image ('multiscales') metadata",
-                        image_source,
-                    )
-                )
-        except Exception as e:
+    """Validate that all dataset paths exist as arrays with correct dimensionality."""
+    for ds_idx, dataset in enumerate(multiscale.datasets):
+        ds_loc = (*loc_prefix, "datasets", ds_idx, "path")
+
+        # Check if path exists as array
+        if dataset.path not in zarr_group:
             errors.append(
                 _create_error(
-                    "label_image_source_not_found",
-                    (*loc_prefix, "image_label", "source", "image"),
-                    f"Label image source '{image_source}' could not be opened: {e!s}",
-                    image_source,
+                    "dataset_path_not_found",
+                    ds_loc,
+                    f"Dataset path '{dataset.path}' not found in zarr group",
+                    dataset.path,
+                )
+            )
+            continue
+
+        arr = zarr_group[dataset.path]
+        if not isinstance(arr, zarr.Array):
+            errors.append(
+                _create_error(
+                    "dataset_not_array",
+                    ds_loc,
+                    f"Dataset path '{dataset.path}' exists but is not a zarr array",
+                    dataset.path,
+                )
+            )
+            continue
+
+        # Check array dimensionality matches axes
+        expected_ndim = len(multiscale.axes)
+        if arr.ndim != expected_ndim:
+            errors.append(
+                _create_error(
+                    "dataset_dimension_mismatch",
+                    ds_loc,
+                    f"Dataset '{dataset.path}' has {arr.ndim} dimensions "
+                    f"but axes specify {expected_ndim}",
+                    {
+                        "actual_ndim": arr.ndim,
+                        "expected_ndim": expected_ndim,
+                        "path": dataset.path,
+                    },
                 )
             )
 
+        # Check dimension_names attribute matches axes
+        # TODO: check whether the key "dimension_names" is in the Zarr spec
+        if dim_names := list(arr.attrs.asdict().get("dimension_names", [])):
+            expected_names = [ax.name for ax in multiscale.axes]
+            if dim_names != expected_names:
+                errors.append(
+                    _create_error(
+                        "dimension_names_mismatch",
+                        (*ds_loc, "dimension_names"),
+                        f"Array dimension_names {dim_names} don't match "
+                        f"axes names {expected_names}",
+                        {"actual": dim_names, "expected": expected_names},
+                    )
+                )
 
-def _validate_image_group(
-    zarr_group: zarr.Group,
-    image_model: Image,
-    loc_prefix: tuple[int | str, ...],
-    errors: list[ErrorDetails],
-) -> None:
-    """Validate an image group with multiscales metadata."""
-    # Validate each multiscale
-    for ms_idx, multiscale in enumerate(image_model.multiscales):
-        ms_loc = (*loc_prefix, "multiscales", ms_idx)
 
-        # Validate dataset paths exist and have correct dimensions
-        _validate_multiscale(zarr_group, multiscale, ms_loc, errors)
-
-    # Additional check on subclass
-    if isinstance(image_model, LabelImage):
-        # The value of the source key MUST be a JSON object containing information about
-        # the original image from which the label image derives. This object MAY include
-        # a key image, whose value MUST be a string specifying the relative path to a
-        # Zarr image group.
-        if (src := image_model.image_label.source) and (src_img := src.image):
-            _validate_labels_image_source(zarr_group, src_img, loc_prefix, errors)
-
-        # For label images, validate integer data types
-        for ms_idx, multiscale in enumerate(image_model.multiscales):
-            ms_loc = (*loc_prefix, "multiscales", ms_idx)
-            _validate_label_data_types(multiscale, zarr_group, ms_loc, errors)
-
-    # Check whether this image has a labels group, and validate if so
-    lbls_group_model = _check_for_labels_group(zarr_group, loc_prefix, errors)
-    if lbls_group_model is not None:
-        labels_group, labels_model = lbls_group_model
-        _validate_labels_group(
-            labels_group, labels_model, (*loc_prefix, "labels"), errors, image_model
-        )
+STORAGE_VALIDATORS: dict[type[T], Validator[T]] = {
+    LabelImage: _validate_label_image_group,
+    Image: _validate_image_group,
+    LabelsGroup: _validate_labels_group,
+    # Plate: _validate_plate_group,
+    # Well: _validate_well_group,
+    # Series: _validate_series_group,
+    Multiscale: _validate_multiscale,
+}
 
 
 # def _validate_plate_group(
 #     zarr_group: zarr.Group,
 #     attrs_model: OMEAttributes,
-#     loc_prefix: tuple[int | str, ...],
+#     loc_prefix: Loc,
 #     errors: list[ErrorDetails],
 # ) -> None:
 #     """Validate a plate group and its wells."""
@@ -648,7 +540,7 @@ def _validate_image_group(
 # def _validate_well_group(
 #     zarr_group: zarr.Group,
 #     attrs_model: OMEAttributes,
-#     loc_prefix: tuple[int | str, ...],
+#     loc_prefix: Loc,
 #     errors: list[ErrorDetails],
 # ) -> None:
 #     """Validate a well group and its field images."""
@@ -703,7 +595,7 @@ def _validate_image_group(
 # def _validate_series_group(
 #     zarr_group: zarr.Group,
 #     attrs_model: OMEAttributes,
-#     loc_prefix: tuple[int | str, ...],
+#     loc_prefix: Loc,
 #     errors: list[ErrorDetails],
 # ) -> None:
 #     """Validate a series collection group."""
@@ -742,7 +634,7 @@ def _validate_image_group(
 #             # Validate series as image group
 #             series_attrs = series_group.attrs.asdict()
 #             series_attrs_model = validate_ome_object(series_attrs, OMEAttributes)
-#             _validate_image_group(series_group, series_attrs_model, series_loc, errors)
+#             _validate_image_group(series_group, series_attrs_model, series_loc,errors)
 
 #         except KeyError:
 #             errors.append(
@@ -758,7 +650,7 @@ def _validate_image_group(
 # def _validate_bioformats2raw_group(
 #     zarr_group: zarr.Group,
 #     attrs_model: OMEAttributes,
-#     loc_prefix: tuple[int | str, ...],
+#     loc_prefix: Loc,
 #     errors: list[ErrorDetails],
 # ) -> None:
 #     """Validate a bioformats2raw layout group by discovering numbered directories."""
@@ -817,52 +709,176 @@ def _validate_image_group(
 #             )
 
 
-def _validate_zarr_group(
-    zarr_group: zarr.Group, attrs_model: OMEAttributes | None
-) -> None:
-    if attrs_model is None:
-        # extract the model from the zarr attributes
-        attrs = zarr_group.attrs.asdict()
-        attrs_model = validate_ome_object(attrs, OMEAttributes)
+# ----------------------------------------------------------
+# HELPER FUNCTIONS
+# ----------------------------------------------------------
 
-    # at this point we have a valid zarr_group, and OMEAttributes model
-    # (which means the "ome" key is present and valid)
-    # and we can begin to validate that the storage structure itself is valid,
-    # by traversing the structure recursively
 
-    errors: list[ErrorDetails] = []
-    loc_prefix = ("ome",)
+def _check_for_labels_group(
+    zarr_group: zarr.Group,
+    loc_prefix: Loc,
+    errors: list[ErrorDetails],
+) -> tuple[zarr.Group, LabelsGroup] | None:
+    """Check for labels group at same level as datasets and return it if valid."""
+    if "labels" not in zarr_group:
+        return None
+    labels_loc = (*loc_prefix, "labels")
 
-    # Determine the type of group and validate accordingly
-    from yaozarrs import v05
-
-    ome_metadata = attrs_model.ome
-
-    if isinstance(ome_metadata, v05.LabelImage):
-        # LabelImage is a subclass of Image, so check this first
-        _validate_image_group(zarr_group, ome_metadata, loc_prefix, errors)
-    elif isinstance(ome_metadata, v05.Image):
-        _validate_image_group(zarr_group, ome_metadata, loc_prefix, errors)
-    # elif isinstance(ome_metadata, v05.LabelsGroup):
-    #     _validate_labels_group(zarr_group, loc_prefix, errors)
-    # elif isinstance(ome_metadata, v05.Plate):
-    #     _validate_plate_group(zarr_group, attrs_model, loc_prefix, errors)
-    # elif isinstance(ome_metadata, v05.Well):
-    #     _validate_well_group(zarr_group, attrs_model, loc_prefix, errors)
-    # elif isinstance(ome_metadata, v05.Series):
-    #     _validate_series_group(zarr_group, attrs_model, loc_prefix, errors)
-    # elif isinstance(ome_metadata, v05.Bf2Raw):
-    #     _validate_bioformats2raw_group(zarr_group, attrs_model, loc_prefix, errors)
-    else:
+    labels_group = zarr_group["labels"]
+    if not isinstance(labels_group, zarr.Group):
+        # TODO: warn?  this part of the spec is unclear
         errors.append(
             _create_error(
-                "unknown_group_type",
-                loc_prefix,
-                f"Unknown OME metadata type: {type(ome_metadata).__name__}",
-                type(ome_metadata).__name__,
+                "labels_not_group",
+                labels_loc,
+                f"Found 'labels' path but it is a {type(labels_group)}, "
+                "not a zarr group",
+                "labels",
             )
         )
+        return None
 
-    # Raise error if any validation issues found
-    if errors:
-        raise StorageValidationError(errors)
+    attrs = labels_group.attrs.asdict()
+    try:
+        labels_attrs = validate_ome_object(attrs, OMEAttributes)
+        if isinstance(labels_attrs.ome, LabelsGroup):
+            return labels_group, labels_attrs.ome
+    except Exception as e:
+        # TODO: warn?
+        # what happens if there just happens to be a nested zarr group
+        # named "labels" that isn't actually a labels group?
+        errors.append(
+            _create_error(
+                "invalid_labels_metadata",
+                labels_loc,
+                f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
+                f"but metadata not valid LabelsGroup metadata: {e!s}",
+                attrs,
+            )
+        )
+    return None
+
+
+def _validate_labels_image_source(
+    zarr_group: zarr.Group,
+    src_img_rel_path: str,
+    loc_prefix: Loc,
+    errors: list[ErrorDetails],
+) -> None:
+    # FIXME: HACKY
+    # Resolve the source image path relative to the current zarr group
+    # neither zarr nor fsspec make this easy to do in an arbitrary way
+    # but the OME-Zarr spec allows this to be a relative path
+    try:
+        image_source = _resolve_source_path(zarr_group, src_img_rel_path)
+    except Exception:
+        warnings.warn("Unable to resolve source image path", UserWarning, stacklevel=3)
+    else:
+        try:
+            img = from_uri(image_source, OMEZarrGroupJSON)
+            if not isinstance(img.attributes.ome, Image):
+                errors.append(
+                    _create_error(
+                        "invalid_label_image_source",
+                        (*loc_prefix, "image_label", "source", "image"),
+                        f"Label image source '{image_source}' does not contain "
+                        "valid Image ('multiscales') metadata",
+                        image_source,
+                    )
+                )
+        except Exception as e:
+            errors.append(
+                _create_error(
+                    "label_image_source_not_found",
+                    (*loc_prefix, "image_label", "source", "image"),
+                    f"Label image source '{image_source}' could not be opened: {e!s}",
+                    image_source,
+                )
+            )
+
+
+def _resolve_source_path(zarr_group: zarr.Group, src_rel_path: str) -> str:
+    """Resolve a relative source path against the zarr group's store location.
+
+    Parameters
+    ----------
+    zarr_group : zarr.Group
+        The zarr group to resolve relative to
+    src_rel_path : str
+        The relative path to resolve (e.g., "../other",
+        "../../images/source.zarr")
+
+    Returns
+    -------
+    str
+        The resolved absolute path
+
+    Raises
+    ------
+    ValueError
+        If the store type is not supported
+    """
+    store = zarr_group.store
+    path = zarr_group.path
+    if isinstance(store, zarr.storage.FsspecStore):
+        # Use appropriate path joining based on filesystem type
+        root = store.path
+        if root.startswith(("http://", "https://")):
+            from urllib.parse import urljoin
+
+            # Ensure root ends with separator for proper urljoin behavior
+            # ug...
+            if not root.endswith("/"):
+                root = root + "/"
+            root = urljoin(root, path)
+            if not root.endswith("/"):
+                root = root + "/"
+            return urljoin(root, src_rel_path)
+        else:
+            # For other filesystems, use posixpath for UNIX-style path joining
+            # Most fsspec filesystems use forward slashes as separators
+            import posixpath
+
+            return posixpath.normpath(posixpath.join(root, path, src_rel_path))
+
+    elif isinstance(store, zarr.storage.LocalStore):
+        return str((store.root / path / src_rel_path).resolve())
+
+    else:
+        raise NotImplementedError(f"Unsupported store type: {type(store)}")
+
+
+def _validate_label_data_types(
+    image_model: LabelImage,
+    zarr_group: zarr.Group,
+    loc_prefix: Loc,
+    errors: list[ErrorDetails],
+) -> None:
+    """Validate that label arrays contain only integer data types."""
+    # The "labels" group is not itself an image; it contains images.
+    # The pixels of the label images MUST be integer data types, i.e. one of [uint8,
+    # int8, uint16, int16, uint32, int32, uint64, int64].
+    for ms_idx, multiscale in enumerate(image_model.multiscales):
+        ms_loc = (*loc_prefix, "multiscales", ms_idx)
+
+        for ds_idx, dataset in enumerate(multiscale.datasets):
+            ds_loc = (*ms_loc, "datasets", ds_idx, "path")
+            if dataset.path not in zarr_group:
+                # Path validation will catch this separately
+                continue  # pragma: no cover
+
+            arr = zarr_group[dataset.path]
+            # check if np.integer dtype
+            if not (
+                isinstance(arr, zarr.Array)
+                and np.issubdtype((dt := arr.dtype), np.integer)
+            ):
+                errors.append(
+                    _create_error(
+                        "label_non_integer_dtype",
+                        ds_loc,
+                        f"Label array '{dataset.path}' has non-integer dtype "
+                        f"'{dt}'. Labels must use integer types.",
+                        {"path": dataset.path, "dtype": str(dt)},
+                    )
+                )

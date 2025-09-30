@@ -1,0 +1,39 @@
+"""Test script to verify the OME-ZARR writer functions work correctly."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Literal
+
+import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+@pytest.fixture
+def write_demo_ome(tmp_path_factory: pytest.TempPathFactory) -> Callable[..., Path]:
+    try:
+        from yaozarrs._demo_data import (
+            write_ome_image,
+            write_ome_labels,
+            write_ome_plate,
+        )
+    except ImportError:
+        pytest.skip("ome-zarr not installed", allow_module_level=True)
+
+    def _write_demo(type: Literal["image", "labels", "plate"], **kwargs: Any) -> Path:
+        path = tmp_path_factory.mktemp(f"demo_{type}")
+        if type == "image":
+            write_ome_image(path, **kwargs)
+        elif type == "labels":
+            # XXX: write_labels is special (in ome-zarr) ...
+            # it creates a group "labels"
+            write_ome_labels(path, **kwargs)
+            path = path / "labels"
+        elif type == "plate":
+            write_ome_plate(path, **kwargs)
+        else:
+            raise ValueError(f"Unknown type: {type}")
+        return path
+
+    return _write_demo

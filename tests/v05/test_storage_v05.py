@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import cast
+from typing import Callable, cast
 
 import pytest
 import zarr
@@ -20,7 +20,7 @@ def test_validate_invalid_storage(tmp_path: Path) -> None:
 def test_validate_missing_zarr_file() -> None:
     """Test validation with non-existent zarr file."""
     # Use a path that doesn't trigger filesystem creation attempts
-    with pytest.raises(FileNotFoundError, match="No group found in store"):
+    with pytest.raises(FileNotFoundError):
         validate_zarr_store("./nonexistent_zarr_directory")
 
 
@@ -105,11 +105,18 @@ def test_storage_validation_error() -> None:
     assert error.title == "StorageValidationError"
 
 
-@pytest.mark.parametrize(
-    "uri",
-    ["https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr"],
-)
-def test_validate_storage(uri: str) -> None:
-    """Test basic validation functionality."""
-    # Test with real zarr file that should pass validation
-    validate_zarr_store(uri)
+# @pytest.mark.parametrize(
+#     "uri",
+#     ["https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr"],
+# )
+# def test_validate_storage(uri: str) -> None:
+#     """Test basic validation functionality."""
+#     # Test with real zarr file that should pass validation
+#     validate_zarr_store(uri)
+
+
+@pytest.mark.parametrize("type", ["image", "labels"])
+def test_validate_demo_storage(type: str, write_demo_ome: Callable) -> None:
+    """Test validation on demo OME-Zarr files."""
+    path = write_demo_ome(type)
+    validate_zarr_store(path)

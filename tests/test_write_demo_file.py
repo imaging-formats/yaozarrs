@@ -2,49 +2,37 @@
 
 from __future__ import annotations
 
-import importlib.util
+import json
+from contextlib import suppress
+from typing import TYPE_CHECKING, Callable, Literal, TypeAlias
 
 import pytest
 
-if not importlib.util.find_spec("ome_zarr"):
-    pytest.skip("ome_zarr not installed", allow_module_level=True)
-
-import json
-import sys
-from pathlib import Path
-
-import zarr
-
 import yaozarrs
 
-SCRIPTS = Path(__file__).parent.parent / "scripts"
-if not (SCRIPTS / "write_demo_zarr.py").is_file():
-    raise AssertionError(
-        f"Script not found: {SCRIPTS / 'write_demo_zarr.py'}. "
-        f"Please update {__name__} accordingly."
-    )
+if TYPE_CHECKING:
+    VersionStr: TypeAlias = Literal["0.4", "0.5"]
 
-sys.path.insert(0, str(SCRIPTS))
+VERSIONS = []
+with suppress(ImportError):
+    import zarr
 
-from write_demo_zarr import write_ome_image, write_ome_labels, write_ome_plate  # type: ignore # noqa
+    # Only test v0.5 if zarr v3 is available
+    zarr_major_version = int(zarr.__version__.split(".")[0])
+    VERSIONS = ["0.4"]
+    if zarr_major_version >= 3:
+        VERSIONS.append("0.5")
 
-# Only test v0.5 if zarr v3 is available
-zarr_major_version = int(zarr.__version__.split(".")[0])
-VERSIONS = ["0.4"]
-if zarr_major_version >= 3:
-    VERSIONS.append("0.5")
+ZATTRS = {"0.4": ".zattrs", "0.5": "zarr.json"}
 
 
 @pytest.mark.parametrize("version", VERSIONS)
-def test_image_dataset(version: str, tmp_path: Path) -> None:
+def test_image_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
     """Test image dataset creation and validation."""
-    print(f"\n=== Testing Image Dataset (v{version}) ===")
-
-    image_path = tmp_path / f"test_image_v{version.replace('.', '')}"
 
     # Create the dataset
-    write_ome_image(
-        image_path,
+    image_path = write_demo_ome(
+        "image",
         version=version,
         shape=(2, 3, 64, 64),  # t, c, y, x
         axes="tcyx",
@@ -53,60 +41,25 @@ def test_image_dataset(version: str, tmp_path: Path) -> None:
         num_levels=3,
     )
 
-    print(f"✓ Created image dataset at {image_path}")
+    # Check multiscale levels
+    for i in range(3):
+        assert zarr.open_array(str(image_path), mode="r", path=str(i))
 
-    # Test with zarr-python
-    try:
-        store = zarr.open_group(str(image_path), mode="r")
-        print(f"✓ Opened with zarr-python: {list(store.keys())}")
+    metadata_file = image_path / ZATTRS[version]
+    with open(metadata_file) as f:
+        metadata = json.load(f)
 
-        # Check multiscale levels
-        for i in range(3):
-            if str(i) in store:
-                data = store[str(i)]
-                assert isinstance(data, zarr.Array)
-                print(f"  - Level {i}: shape={data.shape}, dtype={data.dtype}")
-    except Exception as e:
-        print(f"✗ Failed to open with zarr-python: {e}")
-
-    # Test with yaozarrs
-    try:
-        # Read the metadata file
-        if version == "0.4":
-            metadata_file = image_path / ".zattrs"
-        else:
-            metadata_file = image_path / "zarr.json"
-
-        if metadata_file.exists():
-            with open(metadata_file) as f:
-                metadata = json.load(f)
-
-            # Validate with yaozarrs
-            if version == "0.4":
-                validated = yaozarrs.validate_ome_json(json.dumps(metadata))
-            else:
-                # For v0.5, metadata is in the "attributes" key
-                ome_metadata = metadata.get("attributes", {})
-                validated = yaozarrs.validate_ome_json(json.dumps(ome_metadata))
-
-            print(f"✓ Validated with yaozarrs: {type(validated).__name__}")
-        else:
-            print(f"✗ Metadata file not found: {metadata_file}")
-    except Exception as e:
-        print(f"✗ Failed to validate with yaozarrs: {e}")
+    yaozarrs.validate_ome_json(json.dumps(metadata))
 
 
 @pytest.mark.parametrize("version", VERSIONS)
-def test_labels_dataset(version: str, tmp_path: Path) -> None:
+def test_labels_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
     """Test labels dataset creation and validation."""
-    print(f"\n=== Testing Labels Dataset (v{version}) ===")
-
-    labels_path = tmp_path / f"test_labels_v{version.replace('.', '')}"
-
     # Create the dataset
-    write_ome_labels(
-        labels_path,
+    labels_path = write_demo_ome(
+        "labels",
         version=version,
+        labels_name="annotations",
         shape=(64, 64),
         num_labels=3,
         label_colors=[
@@ -117,62 +70,29 @@ def test_labels_dataset(version: str, tmp_path: Path) -> None:
         num_levels=2,
     )
 
-    print(f"✓ Created labels dataset at {labels_path}")
+    # Check labels group
+    labels_group = zarr.open_group(str(labels_path), mode="r")
+    annotations_group = labels_group["annotations"]
+    assert isinstance(labels_group, zarr.Group)
+    assert isinstance(annotations_group, zarr.Group)
+    for key in ["0", "1"]:  # Label arrays
+        assert isinstance(annotations_group[key], zarr.Array)
 
-    # Test with zarr-python
-    try:
-        store = zarr.open_group(str(labels_path), mode="r")
-        print(f"✓ Opened with zarr-python: {list(store.keys())}")
+    metadata_file = labels_path / ZATTRS[version]
+    with open(metadata_file) as f:
+        metadata = json.load(f)
 
-        # Check labels group
-        if "labels" in store:
-            labels_group = zarr.open_group(str(labels_path), path="labels")
-            print(f"  - Labels group keys: {list(labels_group.keys())}")
-
-            for key in labels_group.keys():
-                if key.isdigit():  # Resolution level
-                    data = labels_group[key]
-                    assert isinstance(data, zarr.Array)
-                    print(f"  - Level {key}: shape={data.shape}, dtype={data.dtype}")
-                    unique_labels = set(data[:].flatten())
-                    print(f"    Unique labels: {sorted(unique_labels)}")
-    except Exception as e:
-        print(f"✗ Failed to open with zarr-python: {e}")
-
-    # Test with yaozarrs
-    try:
-        if version == "0.4":
-            metadata_file = labels_path / ".zattrs"
-        else:
-            metadata_file = labels_path / "zarr.json"
-
-        if metadata_file.exists():
-            with open(metadata_file) as f:
-                metadata = json.load(f)
-
-            if version == "0.4":
-                validated = yaozarrs.validate_ome_json(json.dumps(metadata))
-            else:
-                ome_metadata = metadata.get("attributes", {})
-                validated = yaozarrs.validate_ome_json(json.dumps(ome_metadata))
-
-            print(f"✓ Validated with yaozarrs: {type(validated).__name__}")
-        else:
-            print(f"✗ Metadata file not found: {metadata_file}")
-    except Exception as e:
-        print(f"✗ Failed to validate with yaozarrs: {e}")
+    yaozarrs.validate_ome_json(json.dumps(metadata))
+    # yaozarrs.from_uri(labels_path / ZATTRS[version])
 
 
 @pytest.mark.parametrize("version", VERSIONS)
-def test_plate_dataset(version: str, tmp_path: Path) -> None:
+def test_plate_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
     """Test plate dataset creation and validation."""
-    print(f"\n=== Testing Plate Dataset (v{version}) ===")
-
-    plate_path = tmp_path / f"test_plate_v{version.replace('.', '')}"
 
     # Create the dataset
-    write_ome_plate(
-        plate_path,
+    plate_path = write_demo_ome(
+        "plate",
         version=version,
         plate_name="test-plate",
         rows=["A", "B"],
@@ -187,51 +107,14 @@ def test_plate_dataset(version: str, tmp_path: Path) -> None:
         num_levels=2,
     )
 
-    print(f"✓ Created plate dataset at {plate_path}")
+    # Check wells
+    for row in ["A", "B"]:
+        for col in ["1", "2", "3"]:
+            well_path = f"{row}/{col}"
+            well_group = zarr.open_group(str(plate_path), path=well_path)
 
-    # Test with zarr-python
-    try:
-        store = zarr.open_group(str(plate_path), mode="r")
-        print(f"✓ Opened with zarr-python: {list(store.keys())}")
+            # Check fields
+            for field in ["0", "1"]:
+                assert isinstance(well_group[field]["0"], zarr.Array)
 
-        # Check wells
-        for row in ["A", "B"]:
-            for col in ["1", "2", "3"]:
-                well_path = f"{row}/{col}"
-                if well_path in store:
-                    well_group = zarr.open_group(str(plate_path), path=well_path)
-                    print(f"  - Well {well_path}: {list(well_group.keys())}")
-
-                    # Check fields
-                    for field in ["0", "1"]:
-                        if field in well_group:
-                            field_group = well_group[field]
-                            if "0" in field_group:  # First resolution level
-                                data = field_group["0"]
-                                assert isinstance(data, zarr.Array)
-                                print(f"    Field {field}: shape={data.shape}")
-    except Exception as e:
-        print(f"✗ Failed to open with zarr-python: {e}")
-
-    # Test with yaozarrs
-    try:
-        if version == "0.4":
-            metadata_file = plate_path / ".zattrs"
-        else:
-            metadata_file = plate_path / "zarr.json"
-
-        if metadata_file.exists():
-            with open(metadata_file) as f:
-                metadata = json.load(f)
-
-            if version == "0.4":
-                validated = yaozarrs.validate_ome_json(json.dumps(metadata))
-            else:
-                ome_metadata = metadata.get("attributes", {})
-                validated = yaozarrs.validate_ome_json(json.dumps(ome_metadata))
-
-            print(f"✓ Validated with yaozarrs: {type(validated).__name__}")
-        else:
-            print(f"✗ Metadata file not found: {metadata_file}")
-    except Exception as e:
-        print(f"✗ Failed to validate with yaozarrs: {e}")
+    yaozarrs.from_uri(plate_path / ZATTRS[version])
