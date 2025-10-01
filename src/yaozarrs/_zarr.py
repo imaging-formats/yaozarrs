@@ -512,7 +512,7 @@ def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
         raise ValueError(f"Unknown node_type: {node._metadata.node_type}")
 
 
-def open_group(uri: str | os.PathLike) -> ZarrGroup:
+def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     """Open a zarr v2/v3 group from a URI.
 
     Parameters

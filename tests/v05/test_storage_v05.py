@@ -4,16 +4,22 @@ from typing import Callable, cast
 
 import pytest
 
-try:
-    import zarr
-except ImportError:
-    pytest.skip("zarr not installed", allow_module_level=True)
-
 from yaozarrs.v05._storage import (
     ErrorDetails,
     StorageValidationError,
     validate_zarr_store,
 )
+
+try:
+    import zarr
+except ImportError:
+    pytest.skip("zarr not installed", allow_module_level=True)
+try:
+    from aiohttp.client_exceptions import ClientConnectorError
+
+    connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
+except ImportError:
+    connection_exceptions = ()
 
 
 def test_validate_invalid_storage(tmp_path: Path) -> None:
@@ -138,5 +144,9 @@ def test_validate_storage(uri: str) -> None:
 @pytest.mark.parametrize("type", ["image", "labels", "plate"])
 def test_validate_demo_storage(type: str, write_demo_ome: Callable) -> None:
     """Test validation on demo OME-Zarr files."""
+
     path = write_demo_ome(type, version="0.5")
-    validate_zarr_store(path)
+    try:
+        validate_zarr_store(path)
+    except connection_exceptions:
+        pytest.xfail("No internet")

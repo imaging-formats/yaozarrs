@@ -1,0 +1,485 @@
+from __future__ import annotations
+
+import json
+import os
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Callable
+
+import fsspec
+import numpy as np
+import pytest
+
+from yaozarrs._zarr import (
+    ZarrArray,
+    ZarrGroup,
+    ZarrNode,
+    _CachedMapper,
+    open_group,
+)
+from yaozarrs._zarr import open as zarr_open
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+def _write_local_v2_store(base_path: os.PathLike[str]) -> None:
+    root = os.fspath(base_path)
+    os.makedirs(root, exist_ok=True)
+
+    group_meta = {"zarr_format": 2}
+    attrs = {"name": "local"}
+
+    with open(os.path.join(root, ".zgroup"), "w", encoding="utf-8") as fh:
+        json.dump(group_meta, fh)
+    with open(os.path.join(root, ".zattrs"), "w", encoding="utf-8") as fh:
+        json.dump(attrs, fh)
+
+    array_path = os.path.join(root, "array")
+    os.makedirs(array_path, exist_ok=True)
+    array_meta = {
+        "zarr_format": 2,
+        "chunks": [2, 2],
+        "dtype": "<i4",
+        "shape": [2, 2],
+        "compressor": None,
+        "fill_value": 0,
+        "order": "C",
+        "filters": None,
+    }
+    with open(os.path.join(array_path, ".zarray"), "w", encoding="utf-8") as fh:
+        json.dump(array_meta, fh)
+    with open(os.path.join(array_path, ".zattrs"), "w", encoding="utf-8") as fh:
+        json.dump({"kind": "array"}, fh)
+
+    group_child_path = os.path.join(root, "group_child")
+    os.makedirs(group_child_path, exist_ok=True)
+    with open(os.path.join(group_child_path, ".zgroup"), "w", encoding="utf-8") as fh:
+        json.dump({"zarr_format": 2}, fh)
+    with open(os.path.join(group_child_path, ".zattrs"), "w", encoding="utf-8") as fh:
+        json.dump({"kind": "group"}, fh)
+
+
+def _setup_memory_v3_store(store_name: str) -> None:
+    mapper = fsspec.get_mapper(store_name)
+    mapper["zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "group",
+            "attributes": {"group": True},
+        }
+    ).encode()
+    mapper["child/zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "array",
+            "attributes": {"array": True},
+            "shape": [1, 2, 3],
+            "data_type": "<i2",
+        }
+    ).encode()
+    mapper["group_child/zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "group",
+            "attributes": {"group": True},
+        }
+    ).encode()
+    mapper["unknown/zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "mystery",
+        }
+    ).encode()
+
+
+# ------------------------
+
+
+@pytest.fixture
+def memory_mapper(tmp_path: Path) -> fsspec.FSMap:
+    mapper = fsspec.get_mapper(f"memory://{tmp_path.name}.zarr")
+    return mapper
+
+
+@pytest.fixture
+def v2_store(tmp_path: Path) -> Path:
+    """Create a local v2 zarr store with test data."""
+    store_path = tmp_path / "store.zarr"
+    _write_local_v2_store(store_path)
+    return store_path
+
+
+@pytest.fixture
+def v3_memory_store(tmp_path: Path) -> str:
+    """Create a v3 zarr store in memory with test data."""
+    store_name = f"memory://{tmp_path.name}_v3.zarr"
+    _setup_memory_v3_store(store_name)
+    return store_name
+
+
+def test_cached_mapper_caches_values_and_exceptions(
+    memory_mapper: fsspec.FSMap,
+) -> None:
+    memory_mapper["value"] = b"first"
+    cached = _CachedMapper(memory_mapper)
+
+    assert cached.get("value") == b"first"
+    memory_mapper["value"] = b"second"
+    assert cached.get("value") == b"first"
+
+    missing = cached.getitems(["missing"])
+    assert "missing" in missing
+    with pytest.raises(KeyError):
+        cached.get("missing")
+
+
+def test_cached_mapper_contains_len_iter_and_getitem(
+    memory_mapper: fsspec.FSMap,
+) -> None:
+    memory_mapper["exists"] = b"data"
+    cached = _CachedMapper(memory_mapper)
+
+    assert "exists" in cached
+    assert 123 not in cached
+    assert "missing" not in cached
+    assert list(cached) == list(memory_mapper)
+    assert len(cached) == len(memory_mapper)
+    assert cached["exists"] == b"data"
+    with pytest.raises(KeyError):
+        _ = cached["missing"]
+
+    assert cached.fs is memory_mapper.fs
+
+
+@pytest.mark.parametrize(
+    "setup_key,get_raises,on_error_arg,expected",
+    [
+        ("key", False, None, {"key": b"value"}),
+        (None, True, "raise", FileNotFoundError),
+        (None, True, None, {}),
+    ],
+    ids=["fallback", "on_error_raise", "on_error_omit"],
+)
+def test_cached_mapper_getitems_error_handling(
+    monkeypatch: pytest.MonkeyPatch,
+    memory_mapper: fsspec.FSMap,
+    setup_key: str | None,
+    get_raises: bool,
+    on_error_arg: str | None,
+    expected: dict | type[Exception],
+) -> None:
+    if setup_key:
+        memory_mapper[setup_key] = b"value"
+
+    cached = _CachedMapper(memory_mapper)
+
+    def boom(keys, on_error=None):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(cached._fsmap, "getitems", boom)
+
+    if get_raises:
+
+        def bad_get(key, default=None):
+            raise FileNotFoundError("nope")
+
+        monkeypatch.setattr(cached._fsmap, "get", bad_get)
+
+    key = setup_key if setup_key else "missing"
+    kwargs = {"on_error": on_error_arg} if on_error_arg else {}
+
+    if isinstance(expected, type) and issubclass(expected, Exception):
+        with pytest.raises(expected):
+            cached.getitems([key], **kwargs)
+    else:
+        result = cached.getitems([key], **kwargs)
+        assert result == expected
+
+
+def test_zarrnode_missing_metadata_raises(memory_mapper: fsspec.FSMap) -> None:
+    cached = _CachedMapper(memory_mapper)
+    with pytest.raises(FileNotFoundError):
+        ZarrNode(cached)
+
+
+def test_zarrnode_wraps_plain_fsmap(tmp_path: Path) -> None:
+    store = f"memory://{tmp_path.name}_wrap.zarr"
+    mapper = fsspec.get_mapper(store)
+    mapper["zarr.json"] = json.dumps(
+        {"zarr_format": 3, "node_type": "group", "attributes": {}}
+    ).encode()
+
+    node = ZarrNode(mapper)
+    assert isinstance(node._mapper, _CachedMapper)
+
+
+def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
+    store = f"memory://{tmp_path.name}_v2root.zarr"
+    mapper = fsspec.get_mapper(store)
+    mapper[".zarray"] = json.dumps(
+        {
+            "zarr_format": 2,
+            "dtype": "<u2",
+            "shape": [3],
+            "chunks": [3],
+            "compressor": None,
+            "fill_value": 0,
+            "order": "C",
+            "filters": None,
+        }
+    ).encode()
+    mapper[".zattrs"] = json.dumps({"key": "value"}).encode()
+
+    node = ZarrNode(_CachedMapper(mapper))
+    assert node.zarr_format == 2
+    assert node.attrs.asdict()["key"] == "value"
+    array = ZarrArray(node._mapper, node.path, node._metadata)
+    assert array.ndim == 1
+
+
+def test_zarrgroup_v3_behaviour(
+    monkeypatch: pytest.MonkeyPatch, v3_memory_store: str
+) -> None:
+    group = zarr_open(v3_memory_store)
+    assert isinstance(group, ZarrGroup)
+    assert group.zarr_format == 3
+    assert group.attrs.asdict()["group"] is True
+
+    captured = {}
+
+    def recorder(keys):
+        captured["keys"] = tuple(keys)
+        return {}
+
+    monkeypatch.setattr(group._mapper, "getitems", recorder)
+    group.prefetch_children(["child"])
+    assert captured["keys"] == ("child/zarr.json",)
+
+    assert "child" in group
+    child = group["child"]
+    assert isinstance(child, ZarrArray)
+    assert child.path == "child"
+    assert child.ndim == 3
+    assert child.dtype == np.dtype("<i2")
+
+    subgroup = group["group_child"]
+    assert isinstance(subgroup, ZarrGroup)
+    assert subgroup.attrs.asdict()["group"] is True
+
+    with pytest.raises(ValueError):
+        _ = group["unknown"]
+
+    assert group.get("missing", "sentinel") == "sentinel"
+
+
+def test_zarrgroup_v2_behaviour(
+    v2_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    group = open_group(v2_store)
+    assert isinstance(group, ZarrGroup)
+    assert group.attrs.asdict() == {"name": "local"}
+
+    calls = {}
+
+    def recorder(keys):
+        calls["keys"] = tuple(keys)
+        return {}
+
+    monkeypatch.setattr(group._mapper, "getitems", recorder)
+    group.prefetch_children(["array", "group_child", "missing"])
+    assert calls["keys"] == (
+        "array/.zgroup",
+        "array/.zarray",
+        "group_child/.zgroup",
+        "group_child/.zarray",
+        "missing/.zgroup",
+        "missing/.zarray",
+    )
+
+    assert "array" in group
+    arr = group["array"]
+    assert isinstance(arr, ZarrArray)
+    assert arr.path == "array"
+    assert arr.ndim == 2
+    assert arr.dtype == np.dtype("<i4")
+    assert group.get("missing") is None
+    with pytest.raises(KeyError):
+        _ = group["missing"]
+
+    subgroup = group["group_child"]
+    assert isinstance(subgroup, ZarrGroup)
+    assert subgroup.attrs.asdict()["kind"] == "group"
+
+
+def test_zarrgroup_prefetch_handles_exceptions(
+    v2_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    group = open_group(v2_store)
+
+    def boom(keys):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(group._mapper, "getitems", boom)
+    group.prefetch_children(["array"])
+
+
+def test_zarrarray_property_errors(memory_mapper) -> None:
+    meta = {
+        "zarr_format": 2,
+        "node_type": "array",
+        "attributes": {},
+    }
+    array = ZarrArray(_CachedMapper(memory_mapper), "", meta)
+    with pytest.raises(ValueError):
+        _ = array.ndim
+
+    meta_with_shape = {**meta, "shape": [1, 2], "data_type": None}
+    array2 = ZarrArray(_CachedMapper(memory_mapper), "", meta_with_shape)
+    with pytest.raises(ValueError):
+        _ = array2.dtype
+
+
+def test_zarrgroup_ome_model_cached(
+    monkeypatch: pytest.MonkeyPatch, v2_store: Path
+) -> None:
+    group = open_group(v2_store)
+
+    calls = {"count": 0}
+
+    def fake_validate(obj):
+        calls["count"] += 1
+        return {"received": obj}
+
+    monkeypatch.setattr("yaozarrs._validate.validate_ome_object", fake_validate)
+
+    first = group.ome_model()
+    second = group.ome_model()
+    assert first == second == {"received": group.attrs.asdict()}
+    assert calls["count"] == 1
+
+
+def test_zarrgroup_to_zarr_python(v2_store: Path) -> None:
+    zarr = pytest.importorskip("zarr")
+    group = open_group(v2_store)
+    result = group.to_zarr_python()
+    assert isinstance(result, zarr.Group)
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+def test_zarrgroup_from_zarr_python(write_demo_ome: Callable, version: str) -> None:
+    zarr = pytest.importorskip("zarr")
+    path = write_demo_ome("image", version=version)
+    zarr_group = zarr.open_group(path)
+    group = open_group(zarr_group)
+    assert isinstance(group, ZarrGroup)
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+def test_zarrarray_to_tensorstore(write_demo_ome: Callable, version: str) -> None:
+    ts = pytest.importorskip("tensorstore")
+    path = write_demo_ome("image", version=version)
+    group = open_group(path)
+    array = group["0"]
+    assert isinstance(array, ZarrArray)
+    result = array.to_tensorstore()
+    assert isinstance(result, ts.TensorStore)
+
+
+def test_open_returns_array_for_root_array(tmp_path: Path) -> None:
+    store = f"memory://{tmp_path.name}_array_root.zarr"
+    mapper = fsspec.get_mapper(store)
+    mapper["zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "array",
+            "attributes": {},
+            "shape": [1],
+            "data_type": "<i1",
+        }
+    ).encode()
+
+    node = zarr_open(store)
+    assert isinstance(node, ZarrArray)
+
+
+def test_open_raises_for_unknown_node_type(tmp_path: Path) -> None:
+    store = f"memory://{tmp_path.name}_unknown_root.zarr"
+    mapper = fsspec.get_mapper(store)
+    mapper["zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "mystery",
+            "attributes": {},
+        }
+    ).encode()
+
+    with pytest.raises(ValueError):
+        zarr_open(store)
+
+
+def test_open_type_error_when_mapper_unexpected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_mapper(uri):
+        return object()
+
+    monkeypatch.setattr("yaozarrs._zarr.get_mapper", fake_mapper)
+    with pytest.raises(TypeError):
+        zarr_open("memory://anything")
+
+
+def test_open_group_with_store_object(v2_store: Path) -> None:
+    class DummyStore:
+        def __init__(self, path):
+            self.path = path
+
+    dummy = SimpleNamespace(store=DummyStore(str(v2_store)))
+    group = open_group(dummy)
+    assert isinstance(group, ZarrGroup)
+
+    class DummyStrStore:
+        def __init__(self, path):
+            self._path = path
+
+        def __str__(self):
+            return f"file://{self._path}"
+
+    dummy2 = SimpleNamespace(store=DummyStrStore(str(v2_store)))
+    group2 = open_group(dummy2)
+    assert isinstance(group2, ZarrGroup)
+
+
+def test_open_group_raises_when_root_not_group(tmp_path: Path) -> None:
+    store = f"memory://{tmp_path.name}_not_group.zarr"
+    mapper = fsspec.get_mapper(store)
+    mapper["zarr.json"] = json.dumps(
+        {
+            "zarr_format": 3,
+            "node_type": "array",
+            "attributes": {},
+            "shape": [1],
+            "data_type": "<i1",
+        }
+    ).encode()
+
+    with pytest.raises(ValueError):
+        open_group(store)
+
+
+def test_open_group_type_error_when_invalid_argument() -> None:
+    with pytest.raises(TypeError):
+        open_group(123)  # type: ignore[arg-type]
+
+
+def test_open_group_type_error_when_mapper_unexpected(
+    monkeypatch: pytest.MonkeyPatch, v2_store: Path
+):
+    def fake_mapper(uri):
+        class Dummy:
+            pass
+
+        return Dummy()
+
+    monkeypatch.setattr("yaozarrs._zarr.get_mapper", fake_mapper)
+    with pytest.raises(TypeError):
+        open_group(v2_store)
