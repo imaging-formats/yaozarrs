@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -20,11 +21,104 @@ import numpy as np
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, MutableMapping
-
     import fsspec
     import tensorstore  # type: ignore
     import zarr  # type: ignore
+
+
+class _CachedMapper(Mapping[str, bytes]):
+    """Wrapper around a mapper that caches get() and __contains__() calls.
+
+    This significantly improves performance for remote stores where
+    network latency is high. The cache is unbounded since zarr metadata
+    files are typically small and immutable.
+    """
+
+    def __init__(self, mapper: Mapping[str, bytes]) -> None:
+        self._mapper = mapper
+        self._cache: dict[str, bytes | None] = {}
+
+    def get(self, key: str, default: bytes | None = None) -> bytes | None:
+        """Get a value from the mapper with caching."""
+        if key not in self._cache:
+            self._cache[key] = self._mapper.get(key, default)
+        return self._cache[key]
+
+    def __contains__(self, key: object) -> bool:
+        """Check if a key exists in the mapper."""
+        if not isinstance(key, str):
+            return False
+        if key not in self._cache:
+            self._cache[key] = self._mapper.get(key)
+        return self._cache[key] is not None
+
+    def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
+        """Batch fetch multiple items and cache them.
+
+        This is a performance optimization for remote stores that support
+        batch fetching via the getitems method.
+
+        Parameters
+        ----------
+        keys : list[str]
+            List of keys to fetch from the mapper.
+        on_error : {'omit', 'raise'}, default='omit'
+            How to handle missing keys:
+            - 'omit': Skip missing keys, return only found items
+            - 'raise': Raise exception for missing keys
+
+        Returns
+        -------
+        dict[str, bytes]
+            Dictionary mapping keys to their byte content.
+            Keys that don't exist are omitted from the result.
+        """
+        # Check which keys are not yet cached
+        uncached_keys = [k for k in keys if k not in self._cache]
+
+        # Fetch uncached keys in batch if any
+        if uncached_keys and hasattr(self._mapper, "getitems"):
+            try:
+                results = self._mapper.getitems(uncached_keys, on_error=on_error)  # type: ignore[attr-defined]
+                # Cache all results (including None for missing keys)
+                for key in uncached_keys:
+                    self._cache[key] = results.get(key)
+            except Exception:
+                # If batch fetch fails, fall back to individual gets
+                for key in uncached_keys:
+                    try:
+                        self._cache[key] = self._mapper.get(key)
+                    except Exception:
+                        if on_error == "raise":
+                            raise
+                        self._cache[key] = None
+
+        # Return cached results (only keys with non-None values)
+        result = {}
+        for key in keys:
+            val = self._cache.get(key)
+            if val is not None:
+                result[key] = val
+        return result
+
+    def __iter__(self):
+        """Delegate iteration to underlying mapper."""
+        return iter(self._mapper)
+
+    def __len__(self) -> int:
+        """Delegate len to underlying mapper."""
+        return len(self._mapper)
+
+    def __getitem__(self, key: str) -> bytes:
+        """Get item from mapper (required by Mapping protocol)."""
+        result = self.get(key)
+        if result is None:
+            raise KeyError(key)
+        return result
+
+    def __getattr__(self, name: str) -> Any:
+        """Delegate all other attributes to the underlying mapper."""
+        return getattr(self._mapper, name)
 
 
 @dataclass
@@ -71,11 +165,13 @@ class ZarrNode:
                 "uri must be a string, os.PathLike, or have a 'store' attribute"
             )
         mapper = get_mapper(uri)
-        return cls(mapper)
+        # Wrap in caching layer for better performance with remote stores
+        cached_mapper = _CachedMapper(mapper)
+        return cls(cached_mapper)
 
     def __init__(
         self,
-        mapper: MutableMapping[str, bytes],
+        mapper: Mapping[str, bytes],
         path: str = "",
         meta: dict[str, Any] | ZarrMetadata | None = None,
     ) -> None:
@@ -83,7 +179,7 @@ class ZarrNode:
 
         Parameters
         ----------
-        mapper : MutableMapping[str, bytes]
+        mapper : Mapping[str, bytes]
             The fsspec mapper for the zarr store.
         path : str
             The path within the zarr store.
@@ -230,9 +326,14 @@ class ZarrNode:
         ValueError
             If the URI cannot be determined from the mapper.
         """
+        # Unwrap cached mapper if present to access underlying fsspec mapper
+        actual_mapper = self._mapper
+        while isinstance(actual_mapper, _CachedMapper):
+            actual_mapper = actual_mapper._mapper
+
         # Check if we have an FSMap with filesystem info
-        if (fs := sys.modules.get("fsspec")) and isinstance(self._mapper, fs.FSMap):  # type: ignore
-            mapper = cast("fsspec.FSMap", self._mapper)
+        if (fs := sys.modules.get("fsspec")) and isinstance(actual_mapper, fs.FSMap):  # type: ignore
+            mapper = cast("fsspec.FSMap", actual_mapper)
 
             # Build the full path including our internal zarr path
             if self._path:
@@ -258,6 +359,45 @@ class ZarrGroup(ZarrNode):
     def node_type(cls) -> Literal["group"]:
         """Return the node type (group or array)."""
         return "group"
+
+    def prefetch_children(self, child_keys: list[str]) -> None:
+        """Prefetch metadata for multiple children in a single batch request.
+
+        This is a performance optimization for remote stores. If the underlying
+        mapper supports batch fetching (getitems), this will fetch all child
+        metadata files in parallel, significantly reducing latency.
+
+        Parameters
+        ----------
+        child_keys : list[str]
+            List of child keys to prefetch.
+        """
+        # Only prefetch if the mapper supports batch fetching
+        if not hasattr(self._mapper, "getitems"):
+            return
+
+        # Build list of metadata file paths to fetch
+        metadata_paths = []
+        for key in child_keys:
+            child_path = f"{self._path}/{key}" if self._path else key
+            if self._metadata.zarr_format >= 3:
+                metadata_paths.append(f"{child_path}/zarr.json")
+            else:
+                # For v2, we need to check both .zgroup and .zarray
+                metadata_paths.extend(
+                    [f"{child_path}/.zgroup", f"{child_path}/.zarray"]
+                )
+
+        # Batch fetch using getitems
+        try:
+            # Batch fetch metadata files - results are cached by _CachedMapper
+            # for subsequent access via __getitem__
+            self._mapper.getitems(metadata_paths)  # type: ignore[attr-defined]
+        except Exception:
+            # If batch fetching fails (network issues, unsupported operation, etc.),
+            # fall back to sequential access. Individual __getitem__ calls will
+            # still work and will populate the cache.
+            pass
 
     def __contains__(self, key: str) -> bool:
         """Check if a child node exists."""
@@ -409,10 +549,12 @@ def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
 
     uri = os.fspath(uri)
     mapper = get_mapper(uri)
-    node = ZarrNode(mapper)
+    # Wrap in caching layer for better performance with remote stores
+    cached_mapper = _CachedMapper(mapper)
+    node = ZarrNode(cached_mapper)
     if node._metadata.node_type == "group":
-        return ZarrGroup(mapper, node._path, node._metadata)
+        return ZarrGroup(cached_mapper, node._path, node._metadata)
     elif node._metadata.node_type == "array":
-        return ZarrArray(mapper, node._path, node._metadata)
+        return ZarrArray(cached_mapper, node._path, node._metadata)
     else:
         raise ValueError(f"Unknown node_type: {node._metadata.node_type}")

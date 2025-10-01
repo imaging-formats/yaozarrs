@@ -390,10 +390,21 @@ class StorageValidatorV05(StorageValidator):
         """Validate an image group with multiscales metadata."""
         result = ValidationResult()
 
+        # Collect all children we'll need to check and prefetch them in one batch
+        children_to_prefetch = []
+        for multiscale in image_model.multiscales:
+            children_to_prefetch.extend(ds.path for ds in multiscale.datasets)
+        # Also check for labels group
+        children_to_prefetch.append("labels")
+        zarr_group.prefetch_children(children_to_prefetch)
+
         # Validate each multiscale
         for ms_idx, multiscale in enumerate(image_model.multiscales):
             ms_loc = (*loc_prefix, "multiscales", ms_idx)
-            result = result.merge(self.visit_multiscale(zarr_group, multiscale, ms_loc))
+            # Note: datasets already prefetched above, no need to prefetch again
+            result = result.merge(
+                self._visit_multiscale_no_prefetch(zarr_group, multiscale, ms_loc)
+            )
 
         # Check whether this image has a labels group, and validate if so
         lbls_check = self._check_for_labels_group(zarr_group, loc_prefix)
@@ -421,6 +432,9 @@ class StorageValidatorV05(StorageValidator):
     ) -> ValidationResult:
         """Validate a labels group and its referenced label images."""
         result = ValidationResult()
+
+        # Prefetch all label metadata in a single batch request for performance
+        labels_group.prefetch_children(labels_model.labels)
 
         # Validate each label path exists and is valid LabelImage
         for label_idx, label_path in enumerate(labels_model.labels):
@@ -515,10 +529,10 @@ class StorageValidatorV05(StorageValidator):
 
         return result
 
-    def visit_multiscale(
+    def _visit_multiscale_no_prefetch(
         self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
     ) -> ValidationResult:
-        """Validate that all dataset paths exist with correct dimensionality."""
+        """Validate multiscale without prefetching (assumes already prefetched)."""
         result = ValidationResult()
 
         for ds_idx, dataset in enumerate(multiscale.datasets):
@@ -572,11 +586,90 @@ class StorageValidatorV05(StorageValidator):
 
         return result
 
+    def visit_multiscale(
+        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
+    ) -> ValidationResult:
+        """Validate that all dataset paths exist with correct dimensionality."""
+        # Prefetch all dataset metadata in a single batch request for performance
+        dataset_paths = [ds.path for ds in multiscale.datasets]
+        zarr_group.prefetch_children(dataset_paths)
+        return self._visit_multiscale_no_prefetch(zarr_group, multiscale, loc_prefix)
+
     def visit_plate(
         self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a plate group and its wells."""
         result = ValidationResult()
+
+        # Performance optimization: Deep prefetch strategy for plates
+        # Plates can have hundreds of wells, so we use aggressive batch fetching
+        # to minimize network round trips
+        well_paths = [well.path for well in plate_model.plate.wells]
+
+        # Step 1: Prefetch all well metadata
+        zarr_group.prefetch_children(well_paths)
+
+        # Step 2: Inspect first well to understand structure
+        if well_paths:
+            first_well = zarr_group.get(well_paths[0])
+            if isinstance(first_well, ZarrGroup):
+                first_well_attrs = first_well.attrs.asdict()
+                from yaozarrs._validate import validate_ome_object
+
+                first_well_meta = validate_ome_object(first_well_attrs, OMEAttributes)
+                if isinstance(first_well_meta.ome, Well):
+                    # Get field image paths from first well
+                    field_image_paths = [
+                        img.path for img in first_well_meta.ome.well.images
+                    ]
+
+                    # Step 3: Prefetch ALL field images across ALL wells in one batch
+                    if field_image_paths:
+                        all_field_paths = []
+                        for well_path in well_paths:
+                            for field_path in field_image_paths:
+                                # Build relative path for each well's fields
+                                all_field_paths.append(f"{well_path}/{field_path}")
+
+                        # Batch fetch all field metadata across the entire plate
+                        # This can be 384+ paths, but it's much faster than sequential
+                        zarr_group.prefetch_children(all_field_paths)
+
+                        # Step 4: Inspect first field to get dataset structure
+                        first_field = first_well.get(field_image_paths[0])
+                        if isinstance(first_field, ZarrGroup):
+                            first_field_attrs = first_field.attrs.asdict()
+                            first_field_meta = validate_ome_object(
+                                first_field_attrs, OMEAttributes
+                            )
+                            if hasattr(first_field_meta.ome, "multiscales"):
+                                from yaozarrs.v05._image import Image
+
+                                if isinstance(first_field_meta.ome, Image):
+                                    # Get dataset paths from first multiscale
+                                    if first_field_meta.ome.multiscales:
+                                        dataset_paths = [
+                                            ds.path
+                                            for ds in first_field_meta.ome.multiscales[
+                                                0
+                                            ].datasets
+                                        ]
+
+                                        # Step 5: Prefetch ALL datasets across entire plate
+                                        if dataset_paths:
+                                            all_dataset_paths = []
+                                            for well_path in well_paths:
+                                                for field_path in field_image_paths:
+                                                    for ds_path in dataset_paths:
+                                                        all_dataset_paths.append(
+                                                            f"{well_path}/{field_path}/{ds_path}"
+                                                        )
+
+                                            # Massive batch: fetch all datasets for all fields in all wells
+                                            # This can be 1000+ paths but dramatically reduces latency
+                                            zarr_group.prefetch_children(
+                                                all_dataset_paths
+                                            )
 
         # Validate each well path
         for well_idx, well in enumerate(plate_model.plate.wells):
@@ -615,6 +708,12 @@ class StorageValidatorV05(StorageValidator):
     ) -> ValidationResult:
         """Validate a well group and its field images."""
         result = ValidationResult()
+
+        # Performance optimization: prefetch all field image metadata in one batch
+        # Note: For plates, this is often already prefetched by visit_plate's
+        # deep prefetch strategy, but we do it here too for standalone wells
+        field_paths = [field.path for field in well_model.well.images]
+        zarr_group.prefetch_children(field_paths)
 
         # Validate each field image path
         for field_idx, field_image in enumerate(well_model.well.images):
