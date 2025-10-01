@@ -8,15 +8,15 @@ and metadata consistency.
 from __future__ import annotations
 
 import warnings
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from itertools import chain, product
 from typing import TYPE_CHECKING, Any, TypeAlias, TypedDict
 
 import numpy as np
 from typing_extensions import NotRequired
 
 from yaozarrs._validate import from_uri, validate_ome_object
-from yaozarrs._zarr import ZarrArray, ZarrGroup
+from yaozarrs._zarr import ZarrArray, ZarrGroup, open_group
 from yaozarrs.v05._image import Image, Multiscale
 from yaozarrs.v05._label import LabelImage, LabelsGroup
 from yaozarrs.v05._plate import Plate
@@ -24,7 +24,6 @@ from yaozarrs.v05._well import Well
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
-    import os
     from pathlib import Path
 
 # ----------------------------------------------------------
@@ -180,35 +179,6 @@ class StorageValidationError(ValueError):
 # ----------------------------------------------------------
 
 
-def _open_zarr_group(uri: str | os.PathLike | OMEZarrGroupJSON) -> ZarrGroup:
-    """Open a zarr group using fsspec.
-
-    Parameters
-    ----------
-    uri : str | Path | OMEZarrGroupJSON | Any
-        The URI to open, a parsed OMEZarrGroupJSON object, or a zarr.Group
-        object (for backwards compatibility).
-
-    Returns
-    -------
-    ZarrGroup
-        The opened zarr group.
-    """
-    if isinstance(uri, OMEZarrGroupJSON):
-        # Extract the parent directory from the JSON file path
-        zarr_group_uri = uri.uri
-        if not zarr_group_uri:
-            raise ValueError("OMEZarrGroupJSON uri cannot be None")
-        elif zarr_group_uri.endswith(("zarr.json", ".zattrs")):
-            if zarr_group_uri.endswith("zarr.json"):
-                zarr_group_uri = zarr_group_uri[: -len("zarr.json")].rstrip("/")
-            elif zarr_group_uri.endswith(".zattrs"):
-                zarr_group_uri = zarr_group_uri[: -len(".zattrs")].rstrip("/")
-    else:
-        zarr_group_uri = uri
-    return ZarrGroup.from_uri(zarr_group_uri)
-
-
 def validate_zarr_store(
     obj: OMEZarrGroupJSON | ZarrGroup | str | Path | Any,
 ) -> None:
@@ -230,17 +200,13 @@ def validate_zarr_store(
     if isinstance(obj, ZarrGroup):
         zarr_group = obj
     elif isinstance(obj, OMEZarrGroupJSON):
+        if not obj.uri:
+            raise ValueError("Cannot validate OMEZarrGroupJSON without a uri")
         attrs_model = obj.attributes
-        zarr_group = _open_zarr_group(obj)
+        zarr_group = open_group(obj.uri)
     else:
-        zarr_group = _open_zarr_group(obj)
+        zarr_group = open_group(obj)
 
-    _validate_zarr_group(zarr_group, attrs_model)
-
-
-def _validate_zarr_group(
-    zarr_group: ZarrGroup, attrs_model: OMEAttributes | None = None
-) -> None:
     # Validate the storage structure using the visitor pattern
     result = StorageValidatorV05.validate_group(zarr_group, attrs_model)
 
@@ -264,58 +230,60 @@ class LabelsCheckResult:
     labels_info: tuple[ZarrGroup, LabelsGroup] | None = None
 
 
-class StorageValidator(ABC):
-    """Abstract visitor for validating different OME-Zarr storage structures."""
+# class StorageValidator(ABC):
+#     """Abstract visitor for validating different OME-Zarr storage structures."""
 
-    @abstractmethod
-    def visit_image(
-        self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
-    ) -> ValidationResult:
-        """Validate an Image group with multiscales metadata."""
-        ...
+#     @abstractmethod
+#     def visit_image(
+#         self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
+#     ) -> ValidationResult:
+#         """Validate an Image group with multiscales metadata."""
+#         ...
 
-    @abstractmethod
-    def visit_label_image(
-        self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
-    ) -> ValidationResult:
-        """Validate a LabelImage group."""
-        ...
+#     @abstractmethod
+#     def visit_label_image(
+#         self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
+#     ) -> ValidationResult:
+#         """Validate a LabelImage group."""
+#         ...
 
-    @abstractmethod
-    def visit_labels_group(
-        self,
-        labels_group: ZarrGroup,
-        labels_model: LabelsGroup,
-        loc_prefix: Loc,
-        parent_image_model: Image | None = None,
-    ) -> ValidationResult:
-        """Validate a LabelsGroup and its referenced label images."""
-        ...
+#     @abstractmethod
+#     def visit_labels_group(
+#         self,
+#         labels_group: ZarrGroup,
+#         labels_model: LabelsGroup,
+#         loc_prefix: Loc,
+#         parent_image_model: Image | None = None,
+#     ) -> ValidationResult:
+#         """Validate a LabelsGroup and its referenced label images."""
+#         ...
 
-    @abstractmethod
-    def visit_plate(
-        self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
-    ) -> ValidationResult:
-        """Validate a Plate group and its wells."""
-        ...
+#     @abstractmethod
+#     def visit_plate(
+#         self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
+#     ) -> ValidationResult:
+#         """Validate a Plate group and its wells."""
+#         ...
 
-    @abstractmethod
-    def visit_well(
-        self, zarr_group: ZarrGroup, well_model: Well, loc_prefix: Loc
-    ) -> ValidationResult:
-        """Validate a Well group and its field images."""
-        ...
+#     @abstractmethod
+#     def visit_well(
+#         self, zarr_group: ZarrGroup, well_model: Well, loc_prefix: Loc
+#     ) -> ValidationResult:
+#         """Validate a Well group and its field images."""
+#         ...
 
-    @abstractmethod
-    def visit_multiscale(
-        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
-    ) -> ValidationResult:
-        """Validate that all dataset paths exist with correct dimensionality."""
-        ...
+#     @abstractmethod
+#     def visit_multiscale(
+#         self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
+#     ) -> ValidationResult:
+#         """Validate that all dataset paths exist with correct dimensionality."""
+#         ...
 
 
-class StorageValidatorV05(StorageValidator):
+class StorageValidatorV05:
     """Concrete implementation of storage validator. for OME-ZARR v0.5 spec."""
+
+    __slots__ = ()
 
     @classmethod
     def validate_group(
@@ -601,75 +569,10 @@ class StorageValidatorV05(StorageValidator):
         """Validate a plate group and its wells."""
         result = ValidationResult()
 
-        # Performance optimization: Deep prefetch strategy for plates
-        # Plates can have hundreds of wells, so we use aggressive batch fetching
-        # to minimize network round trips
         well_paths = [well.path for well in plate_model.plate.wells]
 
-        # Step 1: Prefetch all well metadata
-        zarr_group.prefetch_children(well_paths)
-
-        # Step 2: Inspect first well to understand structure
-        if well_paths:
-            first_well = zarr_group.get(well_paths[0])
-            if isinstance(first_well, ZarrGroup):
-                first_well_attrs = first_well.attrs.asdict()
-                from yaozarrs._validate import validate_ome_object
-
-                first_well_meta = validate_ome_object(first_well_attrs, OMEAttributes)
-                if isinstance(first_well_meta.ome, Well):
-                    # Get field image paths from first well
-                    field_image_paths = [
-                        img.path for img in first_well_meta.ome.well.images
-                    ]
-
-                    # Step 3: Prefetch ALL field images across ALL wells in one batch
-                    if field_image_paths:
-                        all_field_paths = []
-                        for well_path in well_paths:
-                            for field_path in field_image_paths:
-                                # Build relative path for each well's fields
-                                all_field_paths.append(f"{well_path}/{field_path}")
-
-                        # Batch fetch all field metadata across the entire plate
-                        # This can be 384+ paths, but it's much faster than sequential
-                        zarr_group.prefetch_children(all_field_paths)
-
-                        # Step 4: Inspect first field to get dataset structure
-                        first_field = first_well.get(field_image_paths[0])
-                        if isinstance(first_field, ZarrGroup):
-                            first_field_attrs = first_field.attrs.asdict()
-                            first_field_meta = validate_ome_object(
-                                first_field_attrs, OMEAttributes
-                            )
-                            if hasattr(first_field_meta.ome, "multiscales"):
-                                from yaozarrs.v05._image import Image
-
-                                if isinstance(first_field_meta.ome, Image):
-                                    # Get dataset paths from first multiscale
-                                    if first_field_meta.ome.multiscales:
-                                        dataset_paths = [
-                                            ds.path
-                                            for ds in first_field_meta.ome.multiscales[
-                                                0
-                                            ].datasets
-                                        ]
-
-                                        # Step 5: Prefetch ALL datasets across entire plate
-                                        if dataset_paths:
-                                            all_dataset_paths = []
-                                            for well_path in well_paths:
-                                                for field_path in field_image_paths:
-                                                    for ds_path in dataset_paths:
-                                                        all_dataset_paths.append(
-                                                            f"{well_path}/{field_path}/{ds_path}"
-                                                        )
-
-                                            # Massive batch: fetch all datasets for all fields in all wells
-                                            # This can be 1000+ paths but dramatically reduces latency
-                                            zarr_group.prefetch_children(
-                                                all_dataset_paths
-                                            )
+        # Prefetch all metadata in one go to minimize network round trips
+        self._prefetch_plate_hierarchy(zarr_group, well_paths)
 
         # Validate each well path
         for well_idx, well in enumerate(plate_model.plate.wells):
@@ -694,12 +597,17 @@ class StorageValidatorV05(StorageValidator):
                 continue
 
             # Validate well metadata
-            well_attrs = well_group.attrs.asdict()
-            well_attrs_model = validate_ome_object(well_attrs, OMEAttributes)
-            if isinstance(well_attrs_model.ome, Well):
-                result = result.merge(
-                    self.visit_well(well_group, well_attrs_model.ome, well_loc)
+            well_model = well_group.ome_model().ome
+            if not isinstance(well_model, Well):
+                result.add_error(
+                    "invalid_well",
+                    well_loc,
+                    f"Well path '{well.path}' does not contain valid Well metadata",
+                    {"path": well.path, "type": type(well_model).__name__},
                 )
+                continue
+
+            result = result.merge(self.visit_well(well_group, well_model, well_loc))
 
         return result
 
@@ -746,6 +654,88 @@ class StorageValidatorV05(StorageValidator):
                 )
 
         return result
+
+    def _prefetch_plate_hierarchy(
+        self, zarr_group: ZarrGroup, well_paths: list[str]
+    ) -> None:
+        """Prefetch entire plate hierarchy to minimize network round trips.
+
+        Strategy: Inspect first well/field to understand structure, then batch
+        fetch all metadata across the entire plate (wells, fields, datasets).
+        """
+        if not well_paths:
+            return
+
+        # Step 1: Prefetch all well metadata
+        zarr_group.prefetch_children(well_paths)
+
+        # Step 2: Get structure from first well
+        field_paths = self._get_field_paths_from_first_well(zarr_group, well_paths[0])
+        if not field_paths:
+            return
+
+        # Step 3: Prefetch all field images across all wells
+        all_field_paths = ("/".join(grp) for grp in product(well_paths, field_paths))
+        zarr_group.prefetch_children(all_field_paths)
+
+        # Step 4: Get dataset structure from first field
+        first_well = zarr_group.get(well_paths[0])
+        if not isinstance(first_well, ZarrGroup):
+            return
+
+        dataset_paths = self._get_dataset_paths_from_first_field(
+            first_well, field_paths[0]
+        )
+        if not dataset_paths:
+            return
+
+        # Step 5: Prefetch all datasets across entire plate
+        # Also prefetch labels metadata (optional, but common)
+        ds_paths = (
+            "/".join(grp) for grp in product(well_paths, field_paths, dataset_paths)
+        )
+        labels_paths = (
+            "/".join(grp) + "/labels" for grp in product(well_paths, field_paths)
+        )
+        zarr_group.prefetch_children(chain(ds_paths, labels_paths))
+
+    def _get_field_paths_from_first_well(
+        self, zarr_group: ZarrGroup, first_well_path: str
+    ) -> list[str]:
+        """Extract field image paths from the first well."""
+        first_well = zarr_group.get(first_well_path)
+        if not isinstance(first_well, ZarrGroup):
+            return []
+
+        first_well_attrs = first_well.attrs.asdict()
+        first_well_meta = validate_ome_object(first_well_attrs, OMEAttributes)
+
+        if isinstance(first_well_meta.ome, Well):
+            return [img.path for img in first_well_meta.ome.well.images]
+
+        return []
+
+    def _get_dataset_paths_from_first_field(
+        self, first_well: ZarrGroup, first_field_path: str
+    ) -> list[str]:
+        """Extract dataset paths from the first field image."""
+        first_field = first_well.get(first_field_path)
+        if not isinstance(first_field, ZarrGroup):
+            return []
+
+        first_field_attrs = first_field.attrs.asdict()
+        first_field_meta = validate_ome_object(first_field_attrs, OMEAttributes)
+
+        if not hasattr(first_field_meta.ome, "multiscales"):
+            return []
+
+        if not isinstance(first_field_meta.ome, Image):
+            return []
+
+        if not first_field_meta.ome.multiscales:
+            return []
+
+        return [ds.path for ds in first_field_meta.ome.multiscales[0].datasets]
 
     def _check_for_labels_group(
         self, zarr_group: ZarrGroup, loc_prefix: Loc

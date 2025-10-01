@@ -5,51 +5,66 @@ all children to be the same zarr_format version. Mixed v2/v3 hierarchies
 are not supported.
 
 Array data access is only supported via conversion to tensorstore or zarr-python.
+
+This module requires fsspec for filesystem operations.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import sys
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-from typing_extensions import Self
+from fsspec import FSMap, get_mapper
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    import fsspec
     import tensorstore  # type: ignore
     import zarr  # type: ignore
 
+    from yaozarrs._validate import AnyOME
+
 
 class _CachedMapper(Mapping[str, bytes]):
-    """Wrapper around a mapper that caches get() and __contains__() calls.
+    """Caching wrapper for FSMap that caches metadata file reads.
 
-    This significantly improves performance for remote stores where
-    network latency is high. The cache is unbounded since zarr metadata
-    files are typically small and immutable.
+    fsspec does NOT cache individual file reads - it only caches directory
+    listings and maintains HTTP connection pools. Since zarr validation
+    requires reading thousands of small metadata files, we add an application-
+    level cache here.
+
+    This cache is unbounded since zarr metadata files are:
+    - Small (typically < 10KB each)
+    - Immutable (don't change during validation)
+    - Limited in number (even large plates have ~10K metadata files)
+
+    For HTTPS stores, this cache works with fsspec's async batch fetching
+    via getitems(), which uses aiohttp to fetch up to 1280 files concurrently.
     """
 
-    def __init__(self, mapper: Mapping[str, bytes]) -> None:
-        self._mapper = mapper
-        self._cache: dict[str, bytes | None] = {}
+    def __init__(self, mapper: FSMap) -> None:
+        self._fsmap = mapper
+        self._cache: dict[str, bytes | None | Exception] = {}
 
     def get(self, key: str, default: bytes | None = None) -> bytes | None:
         """Get a value from the mapper with caching."""
         if key not in self._cache:
-            self._cache[key] = self._mapper.get(key, default)
-        return self._cache[key]
+            self._cache[key] = val = self._fsmap.get(key, default)
+        else:
+            val = self._cache[key]
+        if isinstance(val, Exception):
+            raise val
+        return val
 
     def __contains__(self, key: object) -> bool:
         """Check if a key exists in the mapper."""
         if not isinstance(key, str):
             return False
         if key not in self._cache:
-            self._cache[key] = self._mapper.get(key)
+            self._cache[key] = self._fsmap.get(key)
         return self._cache[key] is not None
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
@@ -76,18 +91,19 @@ class _CachedMapper(Mapping[str, bytes]):
         # Check which keys are not yet cached
         uncached_keys = [k for k in keys if k not in self._cache]
 
-        # Fetch uncached keys in batch if any
-        if uncached_keys and hasattr(self._mapper, "getitems"):
+        # Fetch uncached keys in batch using FSMap.getitems()
+        # For HTTPS, this uses async aiohttp with concurrency up to 1280 requests
+        if uncached_keys:
             try:
-                results = self._mapper.getitems(uncached_keys, on_error=on_error)  # type: ignore[attr-defined]
-                # Cache all results (including None for missing keys)
-                for key in uncached_keys:
-                    self._cache[key] = results.get(key)
+                # use on_error='return' to get all results including missing keys
+                # which will be stored as exceptions (usually KeyErrors)
+                results = self._fsmap.getitems(uncached_keys, on_error="return")
+                self._cache.update(results)
             except Exception:
                 # If batch fetch fails, fall back to individual gets
                 for key in uncached_keys:
                     try:
-                        self._cache[key] = self._mapper.get(key)
+                        self._cache[key] = self._fsmap.get(key)
                     except Exception:
                         if on_error == "raise":
                             raise
@@ -103,11 +119,11 @@ class _CachedMapper(Mapping[str, bytes]):
 
     def __iter__(self):
         """Delegate iteration to underlying mapper."""
-        return iter(self._mapper)
+        return iter(self._fsmap)
 
     def __len__(self) -> int:
         """Delegate len to underlying mapper."""
-        return len(self._mapper)
+        return len(self._fsmap)
 
     def __getitem__(self, key: str) -> bytes:
         """Get item from mapper (required by Mapping protocol)."""
@@ -118,16 +134,15 @@ class _CachedMapper(Mapping[str, bytes]):
 
     def __getattr__(self, name: str) -> Any:
         """Delegate all other attributes to the underlying mapper."""
-        return getattr(self._mapper, name)
+        return getattr(self._fsmap, name)
 
 
-@dataclass
-class ZarrMetadata:
+class ZarrMetadata(BaseModel):
     """Metadata from a zarr metadata file."""
 
     zarr_format: Literal[2, 3]
     node_type: str  # "group" or "array"
-    attributes: dict[str, Any]
+    attributes: dict[str, Any] = Field(default_factory=dict)
     shape: tuple[int, ...] | None = None
     data_type: str | None = None
 
@@ -151,27 +166,9 @@ class ZarrNode:
 
     __slots__ = ("_mapper", "_metadata", "_path")
 
-    @classmethod
-    def from_uri(cls, uri: str | os.PathLike) -> Self:
-        """Create a ZarrNode from a URI."""
-        from fsspec import get_mapper
-
-        if isinstance(uri, (str, os.PathLike)):
-            uri = os.path.expanduser(os.fspath(uri))
-        elif hasattr(uri, "store"):
-            uri = str(uri.store)
-        else:
-            raise TypeError(
-                "uri must be a string, os.PathLike, or have a 'store' attribute"
-            )
-        mapper = get_mapper(uri)
-        # Wrap in caching layer for better performance with remote stores
-        cached_mapper = _CachedMapper(mapper)
-        return cls(cached_mapper)
-
     def __init__(
         self,
-        mapper: Mapping[str, bytes],
+        mapper: _CachedMapper | FSMap,
         path: str = "",
         meta: dict[str, Any] | ZarrMetadata | None = None,
     ) -> None:
@@ -179,40 +176,42 @@ class ZarrNode:
 
         Parameters
         ----------
-        mapper : Mapping[str, bytes]
-            The fsspec mapper for the zarr store.
+        mapper : _CachedMapper | FSMap
+            The mapper for the zarr store. Should be a _CachedMapper for best
+            performance, or an FSMap which will be wrapped automatically.
         path : str
             The path within the zarr store.
-        meta : dict[str, Any] | None
+        meta : dict[str, Any] | ZarrMetadata | None
             Optional pre-loaded metadata dictionary. If not provided, it will be
             loaded from the store.
         """
+        # Ensure we have a cached mapper for performance
+        if isinstance(mapper, FSMap) and not isinstance(mapper, _CachedMapper):
+            mapper = _CachedMapper(mapper)
+
         self._mapper = mapper
         self._path = path.rstrip("/")
         if meta is None:
             self._metadata = self._load_metadata()
-        elif isinstance(meta, ZarrMetadata):
-            if meta.node_type != self.node_type():
-                raise ValueError(
-                    f"Metadata node_type '{meta.node_type}' does not match "
-                    f"expected '{self.node_type()}'"
-                )
-            self._metadata = meta
         else:
-            if "zarr_format" not in meta:
-                raise ValueError("Metadata missing 'zarr_format'")
-            if meta.get("node_type") != self.node_type():
+            self._metadata = ZarrMetadata.model_validate(meta)
+            if self._metadata.node_type != self.node_type():  # pragma: no cover
                 raise ValueError(
-                    f"Metadata node_type '{meta.get('node_type')}' does not match "
+                    f"Metadata node_type '{self._metadata.node_type}' does not match "
                     f"expected '{self.node_type()}'"
                 )
-            self._metadata = ZarrMetadata(
-                zarr_format=meta["zarr_format"],
-                node_type=self.node_type(),
-                attributes=meta.get("attributes") or {},
-                shape=tuple(meta["shape"]) if "shape" in meta else None,
-                data_type=meta.get("data_type"),
-            )
+
+    def _load_metadata(self) -> ZarrMetadata:
+        """Load and parse zarr metadata (v2 or v3)."""
+        prefix = f"{self._path}/" if self._path else ""
+        fnames = ("zarr.json", ".zgroup", ".zarray")
+        for fname in fnames:
+            if json_data := self._mapper.get(f"{prefix}{fname}".lstrip("/")):
+                return ZarrMetadata.model_validate_json(json_data)
+
+        raise FileNotFoundError(
+            f"No zarr metadata found at '{self._path}' (tried {fnames})"
+        )
 
     @property
     def attrs(self) -> ZarrAttributes:
@@ -234,66 +233,6 @@ class ZarrNode:
         """Return the node type (group or array)."""
         raise NotImplementedError("Cannot instantiate base ZarrNode")
 
-    def _load_metadata(self) -> ZarrMetadata:
-        """Load and parse zarr metadata (v2 or v3)."""
-        prefix = f"{self._path}/" if self._path else ""
-        parsers = {
-            "zarr.json": self._parse_zarr_json_data,
-            ".zgroup": self._parse_zgroup_data,
-            ".zarray": self._parse_zarray_data,
-        }
-
-        for fname, parser in parsers.items():
-            if json_data := self._mapper.get(f"{prefix}{fname}".lstrip("/")):
-                meta = json.loads(json_data.decode("utf-8"))
-                return parser(meta, prefix)
-
-        raise FileNotFoundError(
-            f"No zarr metadata found at '{self._path}' "
-            f"(tried {', '.join(parsers.keys())})"
-        )
-
-    def _parse_zarr_json_data(self, meta: dict[str, Any], prefix: str) -> ZarrMetadata:
-        """Parse metadata from zarr.json file (v3+ format)."""
-        return ZarrMetadata(
-            zarr_format=meta.get("zarr_format", 3),
-            node_type=meta["node_type"],
-            attributes=meta.get("attributes", {}),
-            shape=tuple(meta["shape"]) if "shape" in meta else None,
-            data_type=meta.get("data_type"),
-        )
-
-    def _parse_zgroup_data(self, meta: dict[str, Any], prefix: str) -> ZarrMetadata:
-        zarr_format = meta.get("zarr_format", 2)
-        if zarr_format != 2:
-            raise ValueError(f"Expected zarr_format 2 in .zgroup, got {zarr_format}")
-        return ZarrMetadata(
-            zarr_format=2,
-            node_type="group",
-            attributes=self._load_v2_attrs(prefix),
-            shape=None,
-            data_type=None,
-        )
-
-    def _parse_zarray_data(self, meta: dict[str, Any], prefix: str) -> ZarrMetadata:
-        zarr_format = meta.get("zarr_format", 2)
-        if zarr_format != 2:
-            raise ValueError(f"Expected zarr_format 2 in .zarray, got {zarr_format}")
-        dtype_str = str(np.dtype(meta["dtype"])) if "dtype" in meta else None
-        return ZarrMetadata(
-            zarr_format=2,
-            node_type="array",
-            attributes=self._load_v2_attrs(prefix),
-            shape=tuple(meta["shape"]) if "shape" in meta else None,
-            data_type=dtype_str,
-        )
-
-    def _load_v2_attrs(self, prefix: str) -> dict[str, Any]:
-        """Load v2 .zattrs file if present."""
-        if zattrs_data := self._mapper.get(f"{prefix}.zattrs".lstrip("/")):
-            return json.loads(zattrs_data.decode("utf-8"))
-        return {}
-
     def to_zarr_python(self) -> zarr.Array | zarr.Group:
         """Convert to a zarr-python Array or Group object."""
         try:
@@ -311,39 +250,26 @@ class ZarrNode:
         - "file:///Users/user/data/array.zarr"
         - "https://example.com/data/array.zarr"
         - "s3://bucket/path/array.zarr"
-        - "memory://"
 
-        This URI can be used with various tools including TensorStore,
-        fsspec, and other libraries that understand standard URI schemes.
+        This URI can be used with TensorStore, fsspec, and other libraries.
 
         Returns
         -------
         str
             A URI string that follows standard protocol://path format.
-
-        Raises
-        ------
-        ValueError
-            If the URI cannot be determined from the mapper.
         """
-        # Unwrap cached mapper if present to access underlying fsspec mapper
-        actual_mapper = self._mapper
-        while isinstance(actual_mapper, _CachedMapper):
-            actual_mapper = actual_mapper._mapper
+        # Unwrap cached mapper to access underlying FSMap
+        mapper = self._mapper
+        if isinstance(mapper, _CachedMapper):
+            mapper = mapper._fsmap
 
-        # Check if we have an FSMap with filesystem info
-        if (fs := sys.modules.get("fsspec")) and isinstance(actual_mapper, fs.FSMap):  # type: ignore
-            mapper = cast("fsspec.FSMap", actual_mapper)
+        # Build the full path including our internal zarr path
+        if self._path:
+            full_path = f"{mapper.root.rstrip('/')}/{self._path}"
+        else:
+            full_path = mapper.root
 
-            # Build the full path including our internal zarr path
-            if self._path:
-                full_path = f"{mapper.root.rstrip('/')}/{self._path}"
-            else:
-                full_path = mapper.root
-
-            return mapper.fs.unstrip_protocol(full_path)
-
-        raise NotImplementedError("Only fsspec mappers are supported for get_uri()")
+        return mapper.fs.unstrip_protocol(full_path)
 
 
 class ZarrGroup(ZarrNode):
@@ -353,29 +279,36 @@ class ZarrGroup(ZarrNode):
     zarr_format version as the parent. Does not support mixed hierarchies.
     """
 
-    __slots__ = ()
+    __slots__ = ("_ome_model",)
+
+    def ome_model(self) -> AnyOME:
+        if not hasattr(self, "_ome_model"):
+            from ._validate import validate_ome_object
+
+            self._ome_model = validate_ome_object(self._metadata.attributes)
+        return self._ome_model
 
     @classmethod
     def node_type(cls) -> Literal["group"]:
         """Return the node type (group or array)."""
         return "group"
 
-    def prefetch_children(self, child_keys: list[str]) -> None:
-        """Prefetch metadata for multiple children in a single batch request.
+    def prefetch_children(self, child_keys: Iterable[str]) -> None:
+        """Prefetch metadata for multiple children using async batch fetching.
 
-        This is a performance optimization for remote stores. If the underlying
-        mapper supports batch fetching (getitems), this will fetch all child
-        metadata files in parallel, significantly reducing latency.
+        For HTTPS URIs, this triggers fsspec's async batch fetching which uses
+        aiohttp to fetch up to 1280 files concurrently. Results are cached in
+        the _CachedMapper for subsequent access.
+
+        This is critical for performance with remote stores - a 384-well plate
+        can have 2000+ metadata files. Without batching, sequential fetches would
+        take 10+ minutes; with batching, validation completes in ~80 seconds.
 
         Parameters
         ----------
         child_keys : list[str]
             List of child keys to prefetch.
         """
-        # Only prefetch if the mapper supports batch fetching
-        if not hasattr(self._mapper, "getitems"):
-            return
-
         # Build list of metadata file paths to fetch
         metadata_paths = []
         for key in child_keys:
@@ -388,15 +321,12 @@ class ZarrGroup(ZarrNode):
                     [f"{child_path}/.zgroup", f"{child_path}/.zarray"]
                 )
 
-        # Batch fetch using getitems
+        # Batch fetch using getitems - _CachedMapper handles fallback if needed
         try:
-            # Batch fetch metadata files - results are cached by _CachedMapper
-            # for subsequent access via __getitem__
-            self._mapper.getitems(metadata_paths)  # type: ignore[attr-defined]
+            self._mapper.getitems(metadata_paths)
         except Exception:
-            # If batch fetching fails (network issues, unsupported operation, etc.),
-            # fall back to sequential access. Individual __getitem__ calls will
-            # still work and will populate the cache.
+            # If batch fetching fails, _CachedMapper will fall back to sequential
+            # access when files are actually requested via __getitem__
             pass
 
     def __contains__(self, key: str) -> bool:
@@ -531,12 +461,12 @@ def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
     Parameters
     ----------
     uri : str | os.PathLike
-        The URI of the zarr store or a specific group/array within it.
+        The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file")
 
     Returns
     -------
     ZarrGroup | ZarrArray
-        The opened zarr group or array.
+        The opened zarr group or array with caching enabled.
 
     Raises
     ------
@@ -545,16 +475,64 @@ def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
     ValueError
         If the metadata is invalid or inconsistent.
     """
-    from fsspec import get_mapper
-
     uri = os.fspath(uri)
     mapper = get_mapper(uri)
-    # Wrap in caching layer for better performance with remote stores
+
+    if not isinstance(mapper, FSMap):
+        raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
+
+    # Wrap in caching layer for metadata-level caching
     cached_mapper = _CachedMapper(mapper)
     node = ZarrNode(cached_mapper)
+
     if node._metadata.node_type == "group":
         return ZarrGroup(cached_mapper, node._path, node._metadata)
     elif node._metadata.node_type == "array":
         return ZarrArray(cached_mapper, node._path, node._metadata)
     else:
         raise ValueError(f"Unknown node_type: {node._metadata.node_type}")
+
+
+def open_group(uri: str | os.PathLike) -> ZarrGroup:
+    """Open a zarr v2/v3 group from a URI.
+
+    Parameters
+    ----------
+    uri : str | os.PathLike
+        The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file")
+
+    Returns
+    -------
+    ZarrGroup
+        The opened zarr group with caching enabled.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no zarr metadata is found at the specified URI.
+    ValueError
+        If the metadata is invalid or inconsistent, or if the root node is not a group.
+    """
+    if isinstance(uri, (str, os.PathLike)):
+        uri = os.path.expanduser(os.fspath(uri))
+    elif hasattr(uri, "store"):
+        uri = str(uri.store)
+    else:
+        raise TypeError(
+            "uri must be a string, os.PathLike, or have a 'store' attribute"
+        )
+
+    mapper = get_mapper(uri)
+
+    if not isinstance(mapper, FSMap):
+        raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
+
+    # Wrap in caching layer for metadata-level caching
+    cached_mapper = _CachedMapper(mapper)
+    node = ZarrNode(cached_mapper)
+
+    if node._metadata.node_type != "group":
+        raise ValueError(
+            f"Expected root node to be 'group', got '{node._metadata.node_type}'"
+        )
+    return ZarrGroup(cached_mapper, node._path, node._metadata)
