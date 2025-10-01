@@ -525,7 +525,7 @@ class StorageValidatorV05(StorageValidator):
             ds_loc = (*loc_prefix, "datasets", ds_idx, "path")
 
             # Check if path exists as array
-            if dataset.path not in zarr_group:
+            if (arr := zarr_group.get(dataset.path)) is None:
                 result.add_error(
                     "dataset_path_not_found",
                     ds_loc,
@@ -534,7 +534,6 @@ class StorageValidatorV05(StorageValidator):
                 )
                 continue
 
-            arr = zarr_group[dataset.path]
             if not isinstance(arr, ZarrArray):
                 result.add_error(
                     "dataset_not_array",
@@ -583,7 +582,7 @@ class StorageValidatorV05(StorageValidator):
         for well_idx, well in enumerate(plate_model.plate.wells):
             well_loc = (*loc_prefix, "plate", "wells", well_idx)
 
-            if well.path not in zarr_group:
+            if (well_group := zarr_group.get(well.path)) is None:
                 result.add_error(
                     "well_path_not_found",
                     (*well_loc, "path"),
@@ -592,7 +591,6 @@ class StorageValidatorV05(StorageValidator):
                 )
                 continue
 
-            well_group = zarr_group[well.path]
             if not isinstance(well_group, ZarrGroup):
                 result.add_error(
                     "well_path_not_group",
@@ -622,7 +620,7 @@ class StorageValidatorV05(StorageValidator):
         for field_idx, field_image in enumerate(well_model.well.images):
             field_loc = (*loc_prefix, "well", "images", field_idx)
 
-            if field_image.path not in zarr_group:
+            if (field_group := zarr_group.get(field_image.path)) is None:
                 result.add_error(
                     "field_path_not_found",
                     (*field_loc, "path"),
@@ -631,7 +629,6 @@ class StorageValidatorV05(StorageValidator):
                 )
                 continue
 
-            field_group = zarr_group[field_image.path]
             if not isinstance(field_group, ZarrGroup):
                 result.add_error(
                     "field_path_not_group",
@@ -657,11 +654,10 @@ class StorageValidatorV05(StorageValidator):
         """Check for labels group at same level as datasets and return result."""
         result = ValidationResult()
 
-        if "labels" not in zarr_group:
+        if (labels_group := zarr_group.get("labels")) is None:
             return LabelsCheckResult(result=result, labels_info=None)
 
         labels_loc = (*loc_prefix, "labels")
-        labels_group = zarr_group["labels"]
 
         if not isinstance(labels_group, ZarrGroup):
             result.add_error(
@@ -741,11 +737,10 @@ class StorageValidatorV05(StorageValidator):
 
             for ds_idx, dataset in enumerate(multiscale.datasets):
                 ds_loc = (*ms_loc, "datasets", ds_idx, "path")
-                if dataset.path not in zarr_group:
+                if (arr := zarr_group.get(dataset.path)) is None:
                     # Path validation will catch this separately
                     continue  # pragma: no cover
 
-                arr = zarr_group[dataset.path]
                 # check if np.integer dtype
                 if not (
                     isinstance(arr, ZarrArray)

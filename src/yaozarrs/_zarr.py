@@ -271,6 +271,13 @@ class ZarrGroup(ZarrNode):
                 or f"{child_path}/.zarray" in self._mapper
             )
 
+    def get(self, key: str, default: Any = None) -> ZarrGroup | ZarrArray | None:
+        """Get a child node (group or array), or return default if not found."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
     def __getitem__(self, key: str) -> ZarrGroup | ZarrArray:
         """Get a child node (group or array)."""
         child_path = f"{self._path}/{key}" if self._path else key
