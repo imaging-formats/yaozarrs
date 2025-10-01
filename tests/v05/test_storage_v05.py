@@ -117,13 +117,14 @@ if version("zarr").startswith("3"):
     URIS += [
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0010/76-45.ome.zarr",
+        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0026/3.66.9-6.141020_15-41-29.00.ome.zarr",
     ]
     for local in [
         "~/Downloads/zarr/6001240_labels.zarr",
-        "~/Downloads/zarr/3.66.9-6.141020_15-41-29.00.ome.zarr",
         "~/Downloads/zarr/76-45.ome.zarr",
+        "~/Downloads/zarr/3.66.9-6.141020_15-41-29.00.ome.zarr",
     ]:
-        if Path(local).exists():
+        if Path(local).expanduser().exists():
             URIS.append(local)
 
 

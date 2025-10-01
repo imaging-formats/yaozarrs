@@ -17,8 +17,10 @@ from typing_extensions import NotRequired
 
 from yaozarrs._validate import from_uri, validate_ome_object
 from yaozarrs._zarr import ZarrArray, ZarrGroup, open_group
+from yaozarrs.v05._bf2raw import Bf2Raw
 from yaozarrs.v05._image import Image, Multiscale
 from yaozarrs.v05._label import LabelImage, LabelsGroup
+from yaozarrs.v05._ome import OME
 from yaozarrs.v05._plate import Plate
 from yaozarrs.v05._well import Well
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
@@ -325,6 +327,10 @@ class StorageValidatorV05:
             return validator.visit_well(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, Multiscale):
             return validator.visit_multiscale(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, Bf2Raw):
+            return validator.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, OME):
+            return validator.visit_series(zarr_group, ome_metadata, loc_prefix)
         else:
             raise NotImplementedError(
                 f"Unknown OME metadata type: {type(ome_metadata).__name__}"
@@ -655,6 +661,162 @@ class StorageValidatorV05:
 
         return result
 
+    def visit_bioformats2raw(
+        self, zarr_group: ZarrGroup, bf2raw_model: Bf2Raw, loc_prefix: Loc
+    ) -> ValidationResult:
+        """Validate a bioformats2raw layout.
+
+        According to spec:
+        1. Check for OME subgroup with optional "series" metadata
+        2. If series exists, validate those paths
+        3. Otherwise, validate consecutively numbered directories (0/, 1/, 2/, ...)
+        """
+        result = ValidationResult()
+
+        # First, check if there's an OME subgroup
+        zarr_group.prefetch_children(["OME"])
+
+        # Check for OME subgroup with series metadata
+        ome_group = zarr_group.get("OME")
+        if ome_group is not None and isinstance(ome_group, ZarrGroup):
+            ome_attrs = ome_group.attrs.asdict()
+            try:
+                ome_attrs_model = validate_ome_object(ome_attrs, OMEAttributes)
+
+                # If OME group has series metadata, use that to find images
+                if isinstance(ome_attrs_model.ome, OME):
+                    # Validate using the series paths
+                    result = result.merge(
+                        self.visit_series(
+                            zarr_group, ome_attrs_model.ome, (*loc_prefix, "OME")
+                        )
+                    )
+                    return result
+            except Exception:
+                # OME group exists but doesn't have valid OME metadata
+                # Fall through to numbered directory validation
+                pass
+
+        # No OME group with series, so validate numbered directories
+        # Discover consecutively numbered directories (0, 1, 2, etc.)
+        numbered_paths = []
+        for i in range(1000):  # reasonable upper limit
+            if str(i) not in zarr_group:
+                break
+            numbered_paths.append(str(i))
+
+        if not numbered_paths:
+            result.add_error(
+                "bf2raw_no_images",
+                loc_prefix,
+                "Bioformats2raw group contains no numbered image directories",
+                None,
+            )
+            return result
+
+        # Prefetch all numbered path metadata
+        zarr_group.prefetch_children(numbered_paths)
+
+        # Validate each numbered directory as image group
+        for path in numbered_paths:
+            image_loc = (*loc_prefix, path)
+
+            image_group = zarr_group.get(path)
+            if image_group is None:
+                result.add_error(
+                    "bf2raw_path_not_found",
+                    image_loc,
+                    f"Bioformats2raw path '{path}' not found",
+                    path,
+                )
+                continue
+
+            if not isinstance(image_group, ZarrGroup):
+                result.add_error(
+                    "bf2raw_path_not_group",
+                    image_loc,
+                    f"Bioformats2raw path '{path}' is not a zarr group",
+                    path,
+                )
+                continue
+
+            # Validate as image group
+            image_attrs = image_group.attrs.asdict()
+            image_attrs_model = validate_ome_object(image_attrs, OMEAttributes)
+
+            if isinstance(image_attrs_model.ome, Image):
+                result = result.merge(
+                    self.visit_image(image_group, image_attrs_model.ome, image_loc)
+                )
+            else:
+                result.add_error(
+                    "bf2raw_invalid_image",
+                    image_loc,
+                    f"Bioformats2raw path '{path}' does not contain "
+                    "valid Image metadata",
+                    {"path": path, "type": type(image_attrs_model.ome).__name__},
+                )
+
+        return result
+
+    def visit_series(
+        self, zarr_group: ZarrGroup, ome_model: OME, loc_prefix: Loc
+    ) -> ValidationResult:
+        """Validate an OME group with series metadata.
+
+        The series attribute is a list of paths to image groups. Each path
+        should point to a valid image group with multiscales metadata.
+        """
+        result = ValidationResult()
+
+        # Prefetch all series path metadata
+        zarr_group.prefetch_children(ome_model.series)
+
+        # Validate each series path
+        for series_idx, series_path in enumerate(ome_model.series):
+            series_loc = (*loc_prefix, "series", series_idx)
+
+            series_group = zarr_group.get(series_path)
+            if series_group is None:
+                result.add_error(
+                    "series_path_not_found",
+                    series_loc,
+                    f"Series path '{series_path}' not found in series group",
+                    series_path,
+                )
+                continue
+
+            if not isinstance(series_group, ZarrGroup):
+                result.add_error(
+                    "series_path_not_group",
+                    series_loc,
+                    f"Series path '{series_path}' is not a zarr group",
+                    series_path,
+                )
+                continue
+
+            # Validate series as image group
+            series_attrs = series_group.attrs.asdict()
+            series_attrs_model = validate_ome_object(series_attrs, OMEAttributes)
+
+            if isinstance(series_attrs_model.ome, Image):
+                result = result.merge(
+                    self.visit_image(series_group, series_attrs_model.ome, series_loc)
+                )
+            else:
+                result.add_error(
+                    "series_invalid_image",
+                    series_loc,
+                    f"Series path '{series_path}' does not contain "
+                    "valid Image metadata",
+                    {
+                        "path": series_path,
+                        "type": type(series_attrs_model.ome).__name__,
+                    },
+                )
+
+        return result
+
     def _prefetch_plate_hierarchy(
         self, zarr_group: ZarrGroup, well_paths: list[str]
     ) -> None:
@@ -844,123 +1006,6 @@ class StorageValidatorV05:
                     )
 
         return result
-
-
-# def _validate_series_group(
-#     zarr_group: zarr.Group,
-#     attrs_model: OMEAttributes,
-#     loc_prefix: Loc,
-#     errors: list[ErrorDetails],
-# ) -> None:
-#     """Validate a series collection group."""
-#     from yaozarrs.v05._series import Series
-
-#     if not isinstance(attrs_model.ome, Series):
-#         errors.append(
-#             _create_error(
-#                 "invalid_series_group",
-#                 loc_prefix,
-#                 "Group does not contain valid Series metadata",
-#                 type(attrs_model.ome).__name__,
-#             )
-#         )
-#         return
-
-#     series_metadata = attrs_model.ome
-
-#     # Validate each series path
-#     for series_idx, series_path in enumerate(series_metadata.series):
-#         series_loc = (*loc_prefix, "series", series_idx)
-
-#         try:
-#             series_group = zarr_group[series_path]
-#             if not isinstance(series_group, zarr.Group):
-#                 errors.append(
-#                     _create_error(
-#                         "series_path_not_group",
-#                         series_loc,
-#                         f"Series path '{series_path}' is not a zarr group",
-#                         series_path,
-#                     )
-#                 )
-#                 continue
-
-#             # Validate series as image group
-#             series_attrs = series_group.attrs.asdict()
-#             series_attrs_model = validate_ome_object(series_attrs, OMEAttributes)
-#             _validate_image_group(series_group, series_attrs_model, series_loc,errors)
-
-#         except KeyError:
-#             errors.append(
-#                 _create_error(
-#                     "series_path_not_found",
-#                     series_loc,
-#                     f"Series path '{series_path}' not found in series group",
-#                     series_path,
-#                 )
-#             )
-
-
-# def _validate_bioformats2raw_group(
-#     zarr_group: zarr.Group,
-#     attrs_model: OMEAttributes,
-#     loc_prefix: Loc,
-#     errors: list[ErrorDetails],
-# ) -> None:
-#     """Validate a bioformats2raw layout group by discovering numbered directories."""
-#     from yaozarrs.v05._bf2raw import Bf2Raw
-
-#     if not isinstance(attrs_model.ome, Bf2Raw):
-#         errors.append(
-#             _create_error(
-#                 "invalid_bf2raw_group",
-#                 loc_prefix,
-#                 "Group does not contain valid Bf2Raw metadata",
-#                 type(attrs_model.ome).__name__,
-#             )
-#         )
-#         return
-
-#     # Discover numbered directories (0, 1, 2, etc.)
-#     numbered_paths = []
-#     for key in zarr_group.keys():
-#         if key.isdigit():
-#             numbered_paths.append(key)
-
-#     # Sort numerically
-#     numbered_paths.sort(key=int)
-
-#     # Validate each numbered directory as image group
-#     for path in numbered_paths:
-#         image_loc = (*loc_prefix, path)
-
-#         try:
-#             image_group = zarr_group[path]
-#             if not isinstance(image_group, zarr.Group):
-#                 errors.append(
-#                     _create_error(
-#                         "bf2raw_path_not_group",
-#                         image_loc,
-#                         f"Bioformats2raw path '{path}' is not a zarr group",
-#                         path,
-#                     )
-#                 )
-#                 continue
-
-#             # Validate as image group
-#             image_attrs = image_group.attrs.asdict()
-#             image_attrs_model = validate_ome_object(image_attrs, OMEAttributes)
-#             _validate_image_group(image_group, image_attrs_model, image_loc, errors)
-
-#         except KeyError:
-#             errors.append(
-#                 _create_error(
-#                     "bf2raw_path_not_found",
-#                     image_loc,
-#                     f"Bioformats2raw path '{path}' not found",
-#                     path,
-#                 )
-#             )
 
 
 # ----------------------------------------------------------
