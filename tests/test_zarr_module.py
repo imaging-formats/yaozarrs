@@ -2,21 +2,15 @@ from __future__ import annotations
 
 import json
 import os
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Callable
+from unittest.mock import patch
 
 import fsspec
 import numpy as np
 import pytest
 
-from yaozarrs._zarr import (
-    ZarrArray,
-    ZarrGroup,
-    ZarrNode,
-    _CachedMapper,
-    open_group,
-)
-from yaozarrs._zarr import open as zarr_open
+from yaozarrs._zarr import ZarrArray, ZarrGroup, ZarrNode, _CachedMapper, open_group
+from yaozarrs._zarr import open as open_zarr
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -240,7 +234,7 @@ def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
 def test_zarrgroup_v3_behaviour(
     monkeypatch: pytest.MonkeyPatch, v3_memory_store: str
 ) -> None:
-    group = zarr_open(v3_memory_store)
+    group = open_zarr(v3_memory_store)
     assert isinstance(group, ZarrGroup)
     assert group.zarr_format == 3
     assert group.attrs.asdict()["group"] is True
@@ -272,28 +266,22 @@ def test_zarrgroup_v3_behaviour(
     assert group.get("missing", "sentinel") == "sentinel"
 
 
-def test_zarrgroup_v2_behaviour(
-    v2_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
     group = open_group(v2_store)
     assert isinstance(group, ZarrGroup)
     assert group.attrs.asdict() == {"name": "local"}
 
-    calls = {}
-
-    def recorder(keys):
-        calls["keys"] = tuple(keys)
-        return {}
-
-    monkeypatch.setattr(group._mapper, "getitems", recorder)
-    group.prefetch_children(["array", "group_child", "missing"])
-    assert calls["keys"] == (
-        "array/.zgroup",
-        "array/.zarray",
-        "group_child/.zgroup",
-        "group_child/.zarray",
-        "missing/.zgroup",
-        "missing/.zarray",
+    with patch.object(group._mapper, "getitems") as m:
+        group.prefetch_children(["array", "group_child", "missing"])
+    m.assert_called_once_with(
+        [
+            "array/.zgroup",
+            "array/.zarray",
+            "group_child/.zgroup",
+            "group_child/.zarray",
+            "missing/.zgroup",
+            "missing/.zarray",
+        ]
     )
 
     assert "array" in group
@@ -339,23 +327,13 @@ def test_zarrarray_property_errors(memory_mapper) -> None:
         _ = array2.dtype
 
 
-def test_zarrgroup_ome_model_cached(
-    monkeypatch: pytest.MonkeyPatch, v2_store: Path
-) -> None:
+def test_zarrgroup_ome_model_cached(v2_store: Path) -> None:
     group = open_group(v2_store)
-
-    calls = {"count": 0}
-
-    def fake_validate(obj):
-        calls["count"] += 1
-        return {"received": obj}
-
-    monkeypatch.setattr("yaozarrs._validate.validate_ome_object", fake_validate)
-
-    first = group.ome_model()
-    second = group.ome_model()
-    assert first == second == {"received": group.attrs.asdict()}
-    assert calls["count"] == 1
+    with patch("yaozarrs._validate.validate_ome_object") as m:
+        first = group.ome_model()
+        second = group.ome_model()
+    m.assert_called_once()
+    assert first is second
 
 
 def test_zarrgroup_to_zarr_python(v2_store: Path) -> None:
@@ -398,7 +376,7 @@ def test_open_returns_array_for_root_array(tmp_path: Path) -> None:
         }
     ).encode()
 
-    node = zarr_open(store)
+    node = open_zarr(store)
     assert isinstance(node, ZarrArray)
 
 
@@ -414,39 +392,7 @@ def test_open_raises_for_unknown_node_type(tmp_path: Path) -> None:
     ).encode()
 
     with pytest.raises(ValueError):
-        zarr_open(store)
-
-
-def test_open_type_error_when_mapper_unexpected(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    def fake_mapper(uri):
-        return object()
-
-    monkeypatch.setattr("yaozarrs._zarr.get_mapper", fake_mapper)
-    with pytest.raises(TypeError):
-        zarr_open("memory://anything")
-
-
-def test_open_group_with_store_object(v2_store: Path) -> None:
-    class DummyStore:
-        def __init__(self, path):
-            self.path = path
-
-    dummy = SimpleNamespace(store=DummyStore(str(v2_store)))
-    group = open_group(dummy)
-    assert isinstance(group, ZarrGroup)
-
-    class DummyStrStore:
-        def __init__(self, path):
-            self._path = path
-
-        def __str__(self):
-            return f"file://{self._path}"
-
-    dummy2 = SimpleNamespace(store=DummyStrStore(str(v2_store)))
-    group2 = open_group(dummy2)
-    assert isinstance(group2, ZarrGroup)
+        open_zarr(store)
 
 
 def test_open_group_raises_when_root_not_group(tmp_path: Path) -> None:

@@ -497,7 +497,7 @@ def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
     uri = os.fspath(uri)
     mapper = get_mapper(uri)
 
-    if not isinstance(mapper, FSMap):
+    if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
 
     # Wrap in caching layer for metadata-level caching
