@@ -204,13 +204,32 @@ class ZarrNode:
     def _load_metadata(self) -> ZarrMetadata:
         """Load and parse zarr metadata (v2 or v3)."""
         prefix = f"{self._path}/" if self._path else ""
-        fnames = ("zarr.json", ".zgroup", ".zarray")
-        for fname in fnames:
-            if json_data := self._mapper.get(f"{prefix}{fname}".lstrip("/")):
-                return ZarrMetadata.model_validate_json(json_data)
+
+        # Try v3 first (zarr.json)
+        if json_data := self._mapper.get(f"{prefix}zarr.json".lstrip("/")):
+            return ZarrMetadata.model_validate_json(json_data)
+
+        # Try v2 (.zgroup or .zarray)
+        # v2 metadata files don't have node_type, we need to infer it
+        zgroup_data = self._mapper.get(f"{prefix}.zgroup".lstrip("/"))
+        if zgroup_data is not None:
+            z_group_meta = json.loads(zgroup_data.decode("utf-8"))
+            attrs_data = self._mapper.get(f"{prefix}.zattrs".lstrip("/"))
+            attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
+            meta = {**z_group_meta, "node_type": "group", "attributes": attrs}
+            return ZarrMetadata.model_validate(meta)
+
+        zarray_data = self._mapper.get(f"{prefix}.zarray".lstrip("/"))
+        if zarray_data is not None:
+            zarray_meta = json.loads(zarray_data.decode("utf-8"))
+            attrs_data = self._mapper.get(f"{prefix}.zattrs".lstrip("/"))
+            attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
+            meta = {**zarray_meta, "node_type": "array", "attributes": attrs}
+            return ZarrMetadata.model_validate(meta)
 
         raise FileNotFoundError(
-            f"No zarr metadata found at '{self._path}' (tried {fnames})"
+            f"No zarr metadata found at '{self._path}' "
+            "(tried zarr.json, .zgroup, .zarray)"
         )
 
     @property
@@ -516,7 +535,15 @@ def open_group(uri: str | os.PathLike) -> ZarrGroup:
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
     elif hasattr(uri, "store"):
-        uri = str(uri.store)
+        # Handle both zarr v2 and v3 Group objects
+        # v3: str(group.store) returns a URI like "file:///path"
+        # v2: group.store.path returns the directory path
+        if hasattr(uri.store, "path"):
+            # Zarr v2: DirectoryStore has .path attribute
+            uri = uri.store.path
+        else:
+            # Zarr v3: LocalStore's __str__ returns URI
+            uri = str(uri.store)
     else:
         raise TypeError(
             "uri must be a string, os.PathLike, or have a 'store' attribute"
