@@ -3,25 +3,20 @@
 This module provides functions to validate that OME-ZARR v0.5 storage structures
 conform to the specification requirements for directory layout, file existence,
 and metadata consistency.
-
-Requires zarr to be installed for full validation.
 """
 
 from __future__ import annotations
 
-import os
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias, TypedDict
 
 import numpy as np
-import zarr
-import zarr.storage
 from typing_extensions import NotRequired
 
 from yaozarrs._validate import from_uri, validate_ome_object
+from yaozarrs._zarr import ZarrArray, ZarrGroup
 from yaozarrs.v05._image import Image, Multiscale
 from yaozarrs.v05._label import LabelImage, LabelsGroup
 from yaozarrs.v05._plate import Plate
@@ -29,8 +24,8 @@ from yaozarrs.v05._well import Well
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
-    from zarr.storage import StoreLike
-
+    import os
+    from pathlib import Path
 
 # ----------------------------------------------------------
 # ERROR HANDLING
@@ -185,45 +180,58 @@ class StorageValidationError(ValueError):
 # ----------------------------------------------------------
 
 
-def _open_zarr_group(uri: str | StoreLike | OMEZarrGroupJSON) -> zarr.Group:
-    try:
-        import zarr
-    except ImportError as e:
-        raise ImportError(
-            "zarr must be installed to use storage validation. "
-            "Please install yaozarrs with the `storage` extra, "
-            "e.g. `pip install yaozarrs[storage]`."
-        ) from e
+def _open_zarr_group(uri: str | os.PathLike | OMEZarrGroupJSON) -> ZarrGroup:
+    """Open a zarr group using fsspec.
 
-    if isinstance(uri, (str, Path)):
-        uri = str(os.path.expanduser(uri))
-    return zarr.open_group(uri, mode="r")
+    Parameters
+    ----------
+    uri : str | Path | OMEZarrGroupJSON | Any
+        The URI to open, a parsed OMEZarrGroupJSON object, or a zarr.Group
+        object (for backwards compatibility).
+
+    Returns
+    -------
+    ZarrGroup
+        The opened zarr group.
+    """
+    if isinstance(uri, OMEZarrGroupJSON):
+        # Extract the parent directory from the JSON file path
+        zarr_group_uri = uri.uri
+        if not zarr_group_uri:
+            raise ValueError("OMEZarrGroupJSON uri cannot be None")
+        elif zarr_group_uri.endswith(("zarr.json", ".zattrs")):
+            if zarr_group_uri.endswith("zarr.json"):
+                zarr_group_uri = zarr_group_uri[: -len("zarr.json")].rstrip("/")
+            elif zarr_group_uri.endswith(".zattrs"):
+                zarr_group_uri = zarr_group_uri[: -len(".zattrs")].rstrip("/")
+    else:
+        zarr_group_uri = uri
+    return ZarrGroup.from_uri(zarr_group_uri)
 
 
-def validate_zarr_store(obj: OMEZarrGroupJSON | zarr.Group | StoreLike) -> None:
+def validate_zarr_store(
+    obj: OMEZarrGroupJSON | ZarrGroup | str | Path | Any,
+) -> None:
     """Validate an OME-Zarr v0.5 storage structure.
+
+    Parameters
+    ----------
+    obj : OMEZarrGroupJSON | ZarrGroup | str | Path | Any
+        The zarr store to validate. Can be a URI string, a Path, a parsed
+        OMEZarrGroupJSON object, a ZarrGroup instance, or a zarr.Group object
+        (for backwards compatibility).
 
     Raises
     ------
     StorageValidationError
         If the storage structure is invalid.
-    ImportError
-        If zarr is not installed.
     """
     attrs_model: OMEAttributes | None = None
-    if isinstance(obj, zarr.Group):
+    if isinstance(obj, ZarrGroup):
         zarr_group = obj
     elif isinstance(obj, OMEZarrGroupJSON):
         attrs_model = obj.attributes
-        # obj.uri points to the JSON file, but zarr.open_group needs the directory
-        # Extract the parent directory from the JSON file path
-        zarr_group_uri = obj.uri
-        if zarr_group_uri and zarr_group_uri.endswith(("zarr.json", ".zattrs")):
-            if zarr_group_uri.endswith("zarr.json"):
-                zarr_group_uri = zarr_group_uri[: -len("zarr.json")].rstrip("/")
-            elif zarr_group_uri.endswith(".zattrs"):
-                zarr_group_uri = zarr_group_uri[: -len(".zattrs")].rstrip("/")
-        zarr_group = _open_zarr_group(zarr_group_uri)
+        zarr_group = _open_zarr_group(obj)
     else:
         zarr_group = _open_zarr_group(obj)
 
@@ -231,7 +239,7 @@ def validate_zarr_store(obj: OMEZarrGroupJSON | zarr.Group | StoreLike) -> None:
 
 
 def _validate_zarr_group(
-    zarr_group: zarr.Group, attrs_model: OMEAttributes | None = None
+    zarr_group: ZarrGroup, attrs_model: OMEAttributes | None = None
 ) -> None:
     # Validate the storage structure using the visitor pattern
     result = StorageValidatorV05.validate_group(zarr_group, attrs_model)
@@ -253,7 +261,7 @@ class LabelsCheckResult:
     """Result of checking for a labels group."""
 
     result: ValidationResult
-    labels_info: tuple[zarr.Group, LabelsGroup] | None = None
+    labels_info: tuple[ZarrGroup, LabelsGroup] | None = None
 
 
 class StorageValidator(ABC):
@@ -261,14 +269,14 @@ class StorageValidator(ABC):
 
     @abstractmethod
     def visit_image(
-        self, zarr_group: zarr.Group, image_model: Image, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate an Image group with multiscales metadata."""
         ...
 
     @abstractmethod
     def visit_label_image(
-        self, zarr_group: zarr.Group, label_image_model: LabelImage, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a LabelImage group."""
         ...
@@ -276,7 +284,7 @@ class StorageValidator(ABC):
     @abstractmethod
     def visit_labels_group(
         self,
-        labels_group: zarr.Group,
+        labels_group: ZarrGroup,
         labels_model: LabelsGroup,
         loc_prefix: Loc,
         parent_image_model: Image | None = None,
@@ -286,21 +294,21 @@ class StorageValidator(ABC):
 
     @abstractmethod
     def visit_plate(
-        self, zarr_group: zarr.Group, plate_model: Plate, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a Plate group and its wells."""
         ...
 
     @abstractmethod
     def visit_well(
-        self, zarr_group: zarr.Group, well_model: Well, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, well_model: Well, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a Well group and its field images."""
         ...
 
     @abstractmethod
     def visit_multiscale(
-        self, zarr_group: zarr.Group, multiscale: Multiscale, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate that all dataset paths exist with correct dimensionality."""
         ...
@@ -311,13 +319,13 @@ class StorageValidatorV05(StorageValidator):
 
     @classmethod
     def validate_group(
-        cls, zarr_group: zarr.Group, attrs_model: OMEAttributes | None = None
+        cls, zarr_group: ZarrGroup, attrs_model: OMEAttributes | None = None
     ) -> ValidationResult:
         """Entry point that dispatches to appropriate visitor method.
 
         Parameters
         ----------
-        zarr_group : zarr.Group
+        zarr_group : ZarrGroup
             The zarr group to validate.
         attrs_model : OMEAttributes
             The validated OME attributes model.
@@ -355,7 +363,7 @@ class StorageValidatorV05(StorageValidator):
             )
 
     def visit_label_image(
-        self, zarr_group: zarr.Group, label_image_model: LabelImage, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a LabelImage group."""
         result = ValidationResult()
@@ -377,7 +385,7 @@ class StorageValidatorV05(StorageValidator):
         return result
 
     def visit_image(
-        self, zarr_group: zarr.Group, image_model: Image, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate an image group with multiscales metadata."""
         result = ValidationResult()
@@ -406,7 +414,7 @@ class StorageValidatorV05(StorageValidator):
 
     def visit_labels_group(
         self,
-        labels_group: zarr.Group,
+        labels_group: ZarrGroup,
         labels_model: LabelsGroup,
         loc_prefix: Loc,
         parent_image_model: Image | None = None,
@@ -428,7 +436,7 @@ class StorageValidatorV05(StorageValidator):
                 continue
 
             label_group = labels_group[label_path]
-            if not isinstance(label_group, zarr.Group):
+            if not isinstance(label_group, ZarrGroup):
                 result.add_error(
                     "label_path_not_group",
                     label_loc,
@@ -508,7 +516,7 @@ class StorageValidatorV05(StorageValidator):
         return result
 
     def visit_multiscale(
-        self, zarr_group: zarr.Group, multiscale: Multiscale, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate that all dataset paths exist with correct dimensionality."""
         result = ValidationResult()
@@ -527,7 +535,7 @@ class StorageValidatorV05(StorageValidator):
                 continue
 
             arr = zarr_group[dataset.path]
-            if not isinstance(arr, zarr.Array):
+            if not isinstance(arr, ZarrArray):
                 result.add_error(
                     "dataset_not_array",
                     ds_loc,
@@ -566,7 +574,7 @@ class StorageValidatorV05(StorageValidator):
         return result
 
     def visit_plate(
-        self, zarr_group: zarr.Group, plate_model: Plate, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a plate group and its wells."""
         result = ValidationResult()
@@ -585,7 +593,7 @@ class StorageValidatorV05(StorageValidator):
                 continue
 
             well_group = zarr_group[well.path]
-            if not isinstance(well_group, zarr.Group):
+            if not isinstance(well_group, ZarrGroup):
                 result.add_error(
                     "well_path_not_group",
                     (*well_loc, "path"),
@@ -605,7 +613,7 @@ class StorageValidatorV05(StorageValidator):
         return result
 
     def visit_well(
-        self, zarr_group: zarr.Group, well_model: Well, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, well_model: Well, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a well group and its field images."""
         result = ValidationResult()
@@ -624,7 +632,7 @@ class StorageValidatorV05(StorageValidator):
                 continue
 
             field_group = zarr_group[field_image.path]
-            if not isinstance(field_group, zarr.Group):
+            if not isinstance(field_group, ZarrGroup):
                 result.add_error(
                     "field_path_not_group",
                     (*field_loc, "path"),
@@ -644,7 +652,7 @@ class StorageValidatorV05(StorageValidator):
         return result
 
     def _check_for_labels_group(
-        self, zarr_group: zarr.Group, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, loc_prefix: Loc
     ) -> LabelsCheckResult:
         """Check for labels group at same level as datasets and return result."""
         result = ValidationResult()
@@ -655,7 +663,7 @@ class StorageValidatorV05(StorageValidator):
         labels_loc = (*loc_prefix, "labels")
         labels_group = zarr_group["labels"]
 
-        if not isinstance(labels_group, zarr.Group):
+        if not isinstance(labels_group, ZarrGroup):
             result.add_error(
                 "labels_not_group",
                 labels_loc,
@@ -685,7 +693,7 @@ class StorageValidatorV05(StorageValidator):
         return LabelsCheckResult(result=result, labels_info=None)
 
     def _validate_labels_image_source(
-        self, zarr_group: zarr.Group, src_img_rel_path: str, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, src_img_rel_path: str, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate that label image source exists and is valid."""
         result = ValidationResult()
@@ -720,7 +728,7 @@ class StorageValidatorV05(StorageValidator):
         return result
 
     def _validate_label_data_types(
-        self, image_model: LabelImage, zarr_group: zarr.Group, loc_prefix: Loc
+        self, image_model: LabelImage, zarr_group: ZarrGroup, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate that label arrays contain only integer data types."""
         result = ValidationResult()
@@ -740,7 +748,7 @@ class StorageValidatorV05(StorageValidator):
                 arr = zarr_group[dataset.path]
                 # check if np.integer dtype
                 if not (
-                    isinstance(arr, zarr.Array)
+                    isinstance(arr, ZarrArray)
                     and np.issubdtype((dt := arr.dtype), np.integer)
                 ):
                     result.add_error(
@@ -876,12 +884,12 @@ class StorageValidatorV05(StorageValidator):
 # ----------------------------------------------------------
 
 
-def _resolve_source_path(zarr_group: zarr.Group, src_rel_path: str) -> str:
+def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:
     """Resolve a relative source path against the zarr group's store location.
 
     Parameters
     ----------
-    zarr_group : zarr.Group
+    zarr_group : ZarrGroup
         The zarr group to resolve relative to
     src_rel_path : str
         The relative path to resolve (e.g., "../other",
@@ -891,37 +899,34 @@ def _resolve_source_path(zarr_group: zarr.Group, src_rel_path: str) -> str:
     -------
     str
         The resolved absolute path
-
-    Raises
-    ------
-    ValueError
-        If the store type is not supported
     """
-    store = zarr_group.store
+    import posixpath
+
+    # Get the mapper's root path if available
+    mapper = zarr_group._mapper
     path = zarr_group.path
-    if isinstance(store, zarr.storage.FsspecStore):
-        # Use appropriate path joining based on filesystem type
-        root = store.path
-        if root.startswith(("http://", "https://")):
-            from urllib.parse import urljoin
 
-            # Ensure root ends with separator for proper urljoin behavior
-            # ug...
-            if not root.endswith("/"):
-                root = root + "/"
-            root = urljoin(root, path)
-            if not root.endswith("/"):
-                root = root + "/"
-            return urljoin(root, src_rel_path)
-        else:
-            # For other filesystems, use posixpath for UNIX-style path joining
-            # Most fsspec filesystems use forward slashes as separators
-            import posixpath
-
-            return posixpath.normpath(posixpath.join(root, path, src_rel_path))
-
-    elif isinstance(store, zarr.storage.LocalStore):
-        return str((store.root / path / src_rel_path).resolve())
-
+    # Try to get the root path from the mapper
+    if hasattr(mapper, "root"):
+        root = mapper.root
+    elif hasattr(mapper, "fs") and hasattr(mapper.fs, "root"):
+        root = mapper.fs.root
     else:
-        raise NotImplementedError(f"Unsupported store type: {type(store)}")
+        # Fall back to using the path directly
+        root = ""
+
+    # Handle URL paths
+    if isinstance(root, str) and root.startswith(("http://", "https://")):
+        from urllib.parse import urljoin
+
+        # Ensure root ends with separator for proper urljoin behavior
+        if not root.endswith("/"):
+            root = root + "/"
+        root = urljoin(root, path)
+        if not root.endswith("/"):
+            root = root + "/"
+        return urljoin(root, src_rel_path)
+    else:
+        # For other filesystems, use posixpath for UNIX-style path joining
+        # Most fsspec filesystems use forward slashes as separators
+        return posixpath.normpath(posixpath.join(str(root), path, src_rel_path))

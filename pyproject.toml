@@ -155,3 +155,9 @@ extend-ignore-identifiers-re = ["(?i)ome", "AIMD"]
 
 [tool.ty.environment]
 python = "./.venv"
+
+[tool.pyright]
+reportAttributeAccessIssue = false
+
+[tool.ty.rules]
+unresolved-attribute = "ignore"
