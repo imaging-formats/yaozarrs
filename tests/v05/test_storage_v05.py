@@ -138,7 +138,10 @@ if version("zarr").startswith("3"):
 def test_validate_storage(uri: str) -> None:
     """Test basic validation functionality."""
     # Test with real zarr file that should pass validation
-    validate_zarr_store(uri)
+    try:
+        validate_zarr_store(uri)
+    except connection_exceptions:
+        pytest.xfail("No internet")
 
 
 @pytest.mark.parametrize("type", ["image", "labels", "plate"])

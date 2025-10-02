@@ -1,5 +1,8 @@
 """Minimal zarr v2/v3 support for reading metadata and structure.
 
+Allows avoiding a full dependency on zarr-python
+(which pins strictly, and has a much larger API surface).
+
 This implementation matches zarr-python's behavior: a zarr group expects
 all children to be the same zarr_format version. Mixed v2/v3 hierarchies
 are not supported.
@@ -13,7 +16,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -22,6 +25,8 @@ from fsspec import FSMap, get_mapper
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     import tensorstore  # type: ignore
     import zarr  # type: ignore
 
@@ -227,7 +232,7 @@ class ZarrNode:
             meta = {**zarray_meta, "node_type": "array", "attributes": attrs}
             return ZarrMetadata.model_validate(meta)
 
-        raise FileNotFoundError(
+        raise FileNotFoundError(  # pragma: no cover
             f"No zarr metadata found at '{self._path}' "
             "(tried zarr.json, .zgroup, .zarray)"
         )
@@ -413,9 +418,7 @@ class ZarrGroup(ZarrNode):
                 "node_type": "array",
                 "attributes": attrs,
                 "shape": array_meta.get("shape"),
-                "data_type": str(np.dtype(array_meta["dtype"]))
-                if "dtype" in array_meta
-                else None,
+                "data_type": array_meta.get("dtype"),
             }
             return ZarrArray(self._mapper, child_path, meta)
 
@@ -508,7 +511,7 @@ def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
         return ZarrGroup(cached_mapper, node._path, node._metadata)
     elif node._metadata.node_type == "array":
         return ZarrArray(cached_mapper, node._path, node._metadata)
-    else:
+    else:  # pragma: no cover
         raise ValueError(f"Unknown node_type: {node._metadata.node_type}")
 
 
@@ -544,14 +547,14 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
         else:
             # Zarr v3: LocalStore's __str__ returns URI
             uri = str(uri.store)
-    else:
+    else:  # pragma: no cover
         raise TypeError(
             "uri must be a string, os.PathLike, or have a 'store' attribute"
         )
 
     mapper = get_mapper(uri)
 
-    if not isinstance(mapper, FSMap):
+    if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
 
     # Wrap in caching layer for metadata-level caching

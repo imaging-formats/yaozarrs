@@ -80,7 +80,7 @@ def _create_error(
     return error
 
 
-@dataclass
+@dataclass(slots=True)
 class ValidationResult:
     """Result of a validation operation containing any errors found."""
 
@@ -230,56 +230,6 @@ class LabelsCheckResult:
 
     result: ValidationResult
     labels_info: tuple[ZarrGroup, LabelsGroup] | None = None
-
-
-# class StorageValidator(ABC):
-#     """Abstract visitor for validating different OME-Zarr storage structures."""
-
-#     @abstractmethod
-#     def visit_image(
-#         self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
-#     ) -> ValidationResult:
-#         """Validate an Image group with multiscales metadata."""
-#         ...
-
-#     @abstractmethod
-#     def visit_label_image(
-#         self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
-#     ) -> ValidationResult:
-#         """Validate a LabelImage group."""
-#         ...
-
-#     @abstractmethod
-#     def visit_labels_group(
-#         self,
-#         labels_group: ZarrGroup,
-#         labels_model: LabelsGroup,
-#         loc_prefix: Loc,
-#         parent_image_model: Image | None = None,
-#     ) -> ValidationResult:
-#         """Validate a LabelsGroup and its referenced label images."""
-#         ...
-
-#     @abstractmethod
-#     def visit_plate(
-#         self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
-#     ) -> ValidationResult:
-#         """Validate a Plate group and its wells."""
-#         ...
-
-#     @abstractmethod
-#     def visit_well(
-#         self, zarr_group: ZarrGroup, well_model: Well, loc_prefix: Loc
-#     ) -> ValidationResult:
-#         """Validate a Well group and its field images."""
-#         ...
-
-#     @abstractmethod
-#     def visit_multiscale(
-#         self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
-#     ) -> ValidationResult:
-#         """Validate that all dataset paths exist with correct dimensionality."""
-#         ...
 
 
 class StorageValidatorV05:
@@ -487,6 +437,7 @@ class StorageValidatorV05:
                         )
 
             if not isinstance(label_image_model, LabelImage):
+                # TODO: should it just be a warning?
                 result.add_error(
                     "invalid_label_image",
                     label_loc,
@@ -699,6 +650,7 @@ class StorageValidatorV05:
 
         # No OME group with series, so validate numbered directories
         # Discover consecutively numbered directories (0, 1, 2, etc.)
+        # FIXME: ... do better for searching
         numbered_paths = []
         for i in range(1000):  # reasonable upper limit
             if str(i) not in zarr_group:
