@@ -18,11 +18,11 @@ import json
 import os
 from collections.abc import Iterator, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import numpy as np
 from fsspec import FSMap, get_mapper
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -31,6 +31,111 @@ if TYPE_CHECKING:
     import zarr  # type: ignore
 
     from yaozarrs._validate import AnyOME
+
+__all__ = ["ZarrArray", "ZarrGroup", "ZarrMetadata", "open_group"]
+
+# -------------------  Metadata Loading  -------------------
+
+
+class ZarrMetadata(BaseModel):
+    """Metadata from a zarr metadata file.
+
+    We don't differentiate between v2 and v3 here - both are loaded into this
+    common format.  Extra fields may be present depending on the zarr version
+    and node type, use `getattr()` or `model_dump()` to access them.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow", frozen=True)
+
+    zarr_format: Literal[2, 3]
+    node_type: Literal["group", "array"]
+    attributes: dict[str, Any] = Field(default_factory=dict)
+    shape: tuple[int, ...] | None = None
+    data_type: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fix_inputs(cls, val: Any) -> Any:
+        """Fix up input dictionary before validation."""
+        # cast v2 "dtype" to "data_type"
+        if isinstance(val, dict):
+            if "dtype" in val and "data_type" not in val:
+                val["data_type"] = val.pop("dtype")
+        return val
+
+
+def _load_zarr_json(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | None:
+    """Load and parse zarr v3 metadata (zarr.json)."""
+    if json_data := mapper.get(f"{prefix}zarr.json".lstrip("/")):
+        return ZarrMetadata.model_validate_json(json_data)
+    return None
+
+
+def _load_zgroup(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | None:
+    """Load and parse zarr v2 group metadata (.zgroup)."""
+    zgroup_data = mapper.get(f"{prefix}.zgroup".lstrip("/"))
+    if zgroup_data is not None:
+        z_group_meta = json.loads(zgroup_data.decode("utf-8"))
+        attrs_data = mapper.get(f"{prefix}.zattrs".lstrip("/"))
+        attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
+        meta = {**z_group_meta, "node_type": "group", "attributes": attrs}
+        return ZarrMetadata.model_validate(meta)
+    return None
+
+
+def _load_zarray(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | None:
+    """Load and parse zarr v2 array metadata (.zarray)."""
+    zarray_data = mapper.get(f"{prefix}.zarray".lstrip("/"))
+    if zarray_data is not None:
+        zarray_meta = json.loads(zarray_data.decode("utf-8"))
+        attrs_data = mapper.get(f"{prefix}.zattrs".lstrip("/"))
+        attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
+        meta = {**zarray_meta, "node_type": "array", "attributes": attrs}
+        return ZarrMetadata.model_validate(meta)
+    return None
+
+
+def _load_zarr_metadata(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata:
+    """Load and parse zarr metadata (v2 or v3).
+
+    First checks for v3 (zarr.json), then v2 (.zgroup or .zarray).
+
+    Parameters
+    ----------
+    prefix : str
+        The path prefix within the zarr store (may be empty).
+    mapper : Mapping[str, bytes]
+        The mapper for the zarr store.
+
+    Returns
+    -------
+    ZarrMetadata
+        The parsed zarr metadata.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no zarr metadata is found at the specified prefix.
+    ValidationError
+        If the metadata is invalid or inconsistent.
+    """
+    # Try v3 first (zarr.json)
+    if (meta := _load_zarr_json(prefix, mapper)) is not None:
+        return meta
+
+    # Try v2 (.zgroup or .zarray)
+    if (meta := _load_zgroup(prefix, mapper)) is not None:
+        return meta
+
+    if (meta := _load_zarray(prefix, mapper)) is not None:
+        return meta
+
+    raise FileNotFoundError(  # pragma: no cover
+        f"No zarr metadata found at '{prefix}' (tried zarr.json, .zgroup, .zarray)"
+    )
+
+
+# ---------------------------------------------------
 
 
 class _CachedMapper(Mapping[str, bytes]):
@@ -142,120 +247,25 @@ class _CachedMapper(Mapping[str, bytes]):
         return getattr(self._fsmap, name)
 
 
-class ZarrMetadata(BaseModel):
-    """Metadata from a zarr metadata file."""
-
-    zarr_format: Literal[2, 3]
-    node_type: str  # "group" or "array"
-    attributes: dict[str, Any] = Field(default_factory=dict)
-    shape: tuple[int, ...] | None = None
-    data_type: str | None = None
-
-
-class ZarrAttributes:
-    """Dict-like wrapper for zarr attributes.
-
-    ... to match the zarr-python API.
-    """
-
-    def __init__(self, attributes: dict[str, Any]) -> None:
-        self._attributes = MappingProxyType(attributes)
-
-    def asdict(self) -> Mapping[str, Any]:
-        """Return attributes as a dictionary."""
-        return self._attributes
-
-
 class ZarrNode:
     """Base class for zarr nodes (groups and arrays)."""
 
     __slots__ = ("_mapper", "_metadata", "_path")
 
-    def __init__(
-        self,
-        mapper: _CachedMapper | FSMap,
-        path: str = "",
-        meta: dict[str, Any] | ZarrMetadata | None = None,
-    ) -> None:
-        """Initialize a zarr node.
-
-        Parameters
-        ----------
-        mapper : _CachedMapper | FSMap
-            The mapper for the zarr store. Should be a _CachedMapper for best
-            performance, or an FSMap which will be wrapped automatically.
-        path : str
-            The path within the zarr store.
-        meta : dict[str, Any] | ZarrMetadata | None
-            Optional pre-loaded metadata dictionary. If not provided, it will be
-            loaded from the store.
-        """
-        # Ensure we have a cached mapper for performance
-        if isinstance(mapper, FSMap) and not isinstance(mapper, _CachedMapper):
-            mapper = _CachedMapper(mapper)
-
-        self._mapper = mapper
-        self._path = path.rstrip("/")
-        if meta is None:
-            self._metadata = self._load_metadata()
-        else:
-            self._metadata = ZarrMetadata.model_validate(meta)
-            if self._metadata.node_type != self.node_type():  # pragma: no cover
-                raise ValueError(
-                    f"Metadata node_type '{self._metadata.node_type}' does not match "
-                    f"expected '{self.node_type()}'"
-                )
-
-    def _load_metadata(self) -> ZarrMetadata:
-        """Load and parse zarr metadata (v2 or v3)."""
-        prefix = f"{self._path}/" if self._path else ""
-
-        # Try v3 first (zarr.json)
-        if json_data := self._mapper.get(f"{prefix}zarr.json".lstrip("/")):
-            return ZarrMetadata.model_validate_json(json_data)
-
-        # Try v2 (.zgroup or .zarray)
-        # v2 metadata files don't have node_type, we need to infer it
-        zgroup_data = self._mapper.get(f"{prefix}.zgroup".lstrip("/"))
-        if zgroup_data is not None:
-            z_group_meta = json.loads(zgroup_data.decode("utf-8"))
-            attrs_data = self._mapper.get(f"{prefix}.zattrs".lstrip("/"))
-            attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
-            meta = {**z_group_meta, "node_type": "group", "attributes": attrs}
-            return ZarrMetadata.model_validate(meta)
-
-        zarray_data = self._mapper.get(f"{prefix}.zarray".lstrip("/"))
-        if zarray_data is not None:
-            zarray_meta = json.loads(zarray_data.decode("utf-8"))
-            attrs_data = self._mapper.get(f"{prefix}.zattrs".lstrip("/"))
-            attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
-            meta = {**zarray_meta, "node_type": "array", "attributes": attrs}
-            return ZarrMetadata.model_validate(meta)
-
-        raise FileNotFoundError(  # pragma: no cover
-            f"No zarr metadata found at '{self._path}' "
-            "(tried zarr.json, .zgroup, .zarray)"
-        )
-
     @property
-    def attrs(self) -> ZarrAttributes:
+    def attrs(self) -> Mapping[str, Any]:
         """Return attributes as a read-only mapping."""
-        return ZarrAttributes(self._metadata.attributes)
+        return MappingProxyType(self._metadata.attributes)
 
     @property
     def path(self) -> str:
-        """Return the path of this node."""
+        """Return the path of this node relative to the store root."""
         return self._path
 
     @property
-    def zarr_format(self) -> Literal[2, 3]:
-        """Return the zarr format version (2 or 3)."""
-        return self._metadata.zarr_format
-
-    @classmethod
-    def node_type(cls) -> Literal["group", "array"]:
-        """Return the node type (group or array)."""
-        raise NotImplementedError("Cannot instantiate base ZarrNode")
+    def metadata(self) -> ZarrMetadata:
+        """Return the parsed zarr metadata."""
+        return self._metadata
 
     def to_zarr_python(self) -> zarr.Array | zarr.Group:
         """Convert to a zarr-python Array or Group object."""
@@ -264,9 +274,15 @@ class ZarrNode:
         except ImportError as e:
             raise ImportError("zarr package is required for to_zarr_python()") from e
 
-        return zarr.open(self.get_uri(), mode="r")
+        return zarr.open(self.store_path, mode="r")
 
-    def get_uri(self) -> str:
+    @classmethod
+    def node_type(cls) -> Literal["group", "array"]:
+        """Return the node type (group or array)."""
+        raise NotImplementedError("Cannot instantiate base ZarrNode")
+
+    @property
+    def store_path(self) -> str:
         """Get the URI for this zarr node.
 
         Returns a URI string in the standard format protocol://path,
@@ -295,6 +311,59 @@ class ZarrNode:
 
         return mapper.fs.unstrip_protocol(full_path)
 
+    @property
+    def zarr_format(self) -> Literal[2, 3]:
+        """Return the zarr format version (2 or 3)."""
+        return self._metadata.zarr_format
+
+    # ----------------- Private API -----------------
+
+    def __repr__(self) -> str:
+        cls_name = self.__class__.__name__
+        return f"<{cls_name} {self.store_path}>"
+
+    def __init__(
+        self,
+        mapper: _CachedMapper | FSMap,
+        path: str = "",
+        meta: ZarrMetadata | None = None,
+    ) -> None:
+        """Initialize a zarr node.
+
+        Parameters
+        ----------
+        mapper : _CachedMapper | FSMap
+            The mapper for the zarr store. Should be a _CachedMapper for best
+            performance, or an FSMap which will be wrapped automatically.
+        path : str
+            The path within the zarr store.
+        meta : dict[str, Any] | ZarrMetadata | None
+            Optional pre-loaded metadata dictionary. If not provided, it will be
+            loaded from the store.
+        """
+        # Ensure we have a cached mapper for performance
+        if isinstance(mapper, FSMap) and not isinstance(mapper, _CachedMapper):
+            mapper = _CachedMapper(mapper)
+
+        self._mapper = mapper
+        self._path = path.rstrip("/")
+        if meta is None:
+            self._metadata = self._load_metadata()
+        elif isinstance(meta, ZarrMetadata):
+            if meta.node_type != self.node_type():  # pragma: no cover
+                raise ValueError(
+                    f"Metadata node_type '{meta.node_type}' does not match "
+                    f"expected '{self.node_type()}'"
+                )
+            self._metadata = meta
+        else:  # pragma: no cover
+            raise ValueError("meta must be a ZarrMetadata instance or None")
+
+    def _load_metadata(self) -> ZarrMetadata:
+        """Load and parse zarr metadata (v2 or v3)."""
+        prefix = f"{self._path}/" if self._path else ""
+        return _load_zarr_metadata(prefix, self._mapper)
+
 
 class ZarrGroup(ZarrNode):
     """Wrapper around a zarr v2/v3 group.
@@ -309,7 +378,10 @@ class ZarrGroup(ZarrNode):
         if not hasattr(self, "_ome_model"):
             from ._validate import validate_ome_object
 
-            self._ome_model = validate_ome_object(self._metadata.attributes)
+            try:
+                self._ome_model = validate_ome_object(self._metadata.attributes)
+            except Exception as e:  # pragma: no cover
+                raise ValueError(f"Failed to parse OME-Zarr metadata:\n\n{e}") from e
         return self._ome_model
 
     @classmethod
@@ -383,43 +455,25 @@ class ZarrGroup(ZarrNode):
 
     def _getitem_v3(self, child_path: str, key: str) -> ZarrGroup | ZarrArray:
         """Get a v3 child node."""
-        data = self._mapper.get(f"{child_path}/zarr.json")
-        if data is None:
-            raise KeyError(key)
+        prefix = f"{child_path}/"
+        if (meta := _load_zarr_json(prefix, self._mapper)) is not None:
+            if meta.node_type == "group":
+                return ZarrGroup(self._mapper, child_path, meta)
+            elif meta.node_type == "array":
+                return ZarrArray(self._mapper, child_path, meta)
+            else:  # pragma: no cover
+                raise ValueError(f"Unknown node_type: {meta.node_type}")
 
-        meta = json.loads(data.decode("utf-8"))
-        node_type = meta.get("node_type")
-
-        if node_type == "group":
-            return ZarrGroup(self._mapper, child_path, meta)
-        elif node_type == "array":
-            return ZarrArray(self._mapper, child_path, meta)
-        else:
-            raise ValueError(f"Unknown node_type: {node_type}")
+        raise KeyError(key)
 
     def _getitem_v2(self, child_path: str, key: str) -> ZarrGroup | ZarrArray:
         """Get a v2 child node."""
+        prefix = f"{child_path}/"
         # Try group
-        zgroup_data = self._mapper.get(f"{child_path}/.zgroup")
-        if zgroup_data is not None:
-            attrs_data = self._mapper.get(f"{child_path}/.zattrs")
-            attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
-            meta = {"zarr_format": 2, "node_type": "group", "attributes": attrs}
+        if (meta := _load_zgroup(prefix, self._mapper)) is not None:
             return ZarrGroup(self._mapper, child_path, meta)
 
-        # Try array
-        zarray_data = self._mapper.get(f"{child_path}/.zarray")
-        if zarray_data is not None:
-            array_meta = json.loads(zarray_data.decode("utf-8"))
-            attrs_data = self._mapper.get(f"{child_path}/.zattrs")
-            attrs = json.loads(attrs_data.decode("utf-8")) if attrs_data else {}
-            meta = {
-                "zarr_format": 2,
-                "node_type": "array",
-                "attributes": attrs,
-                "shape": array_meta.get("shape"),
-                "data_type": array_meta.get("dtype"),
-            }
+        if (meta := _load_zarray(prefix, self._mapper)) is not None:
             return ZarrArray(self._mapper, child_path, meta)
 
         raise KeyError(key)
@@ -443,14 +497,14 @@ class ZarrArray(ZarrNode):
     @property
     def ndim(self) -> int:
         """Return the number of dimensions."""
-        if self._metadata.shape is None:
+        if self._metadata.shape is None:  # pragma: no cover
             raise ValueError("Array metadata missing 'shape'")
         return len(self._metadata.shape)
 
     @property
     def dtype(self) -> np.dtype:
         """Return the data type."""
-        if self._metadata.data_type is None:
+        if self._metadata.data_type is None:  # pragma: no cover
             raise ValueError("Array metadata missing 'data_type'")
         # Data type is already normalized to numpy dtype string in _load_metadata
         return np.dtype(self._metadata.data_type)
@@ -471,7 +525,7 @@ class ZarrArray(ZarrNode):
 
         spec = {
             "driver": "zarr3" if self._metadata.zarr_format == 3 else "zarr",
-            "kvstore": self.get_uri(),
+            "kvstore": self.store_path,
         }
         future = ts.open(spec)
         return future.result()

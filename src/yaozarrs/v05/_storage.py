@@ -257,8 +257,7 @@ class StorageValidatorV05:
         """
         if attrs_model is None:
             # extract the model from the zarr attributes
-            attrs = zarr_group.attrs.asdict()
-            attrs_model = validate_ome_object(attrs, OMEAttributes)
+            attrs_model = validate_ome_object(zarr_group.attrs, OMEAttributes)
 
         validator = cls()
         ome_metadata = attrs_model.ome
@@ -385,8 +384,7 @@ class StorageValidatorV05:
                 continue
 
             # Validate as LabelImage
-            label_attrs = label_group.attrs.asdict()
-            ome_attrs = validate_ome_object(label_attrs, OMEAttributes)
+            ome_attrs = validate_ome_object(label_group.attrs, OMEAttributes)
 
             if not isinstance((label_image_model := ome_attrs.ome), Image):
                 result.add_error(
@@ -499,7 +497,7 @@ class StorageValidatorV05:
                 )
 
             # Check dimension_names attribute matches axes
-            if dim_names := list(arr.attrs.asdict().get("dimension_names", [])):
+            if dim_names := list(dict(arr.attrs).get("dimension_names", [])):
                 expected_names = [ax.name for ax in multiscale.axes]
                 if dim_names != expected_names:
                     result.add_error(
@@ -604,8 +602,7 @@ class StorageValidatorV05:
                 continue
 
             # Validate field as image group
-            field_attrs = field_group.attrs.asdict()
-            field_attrs_model = validate_ome_object(field_attrs, OMEAttributes)
+            field_attrs_model = validate_ome_object(field_group.attrs, OMEAttributes)
             if isinstance(field_attrs_model.ome, Image):
                 result = result.merge(
                     self.visit_image(field_group, field_attrs_model.ome, field_loc)
@@ -631,9 +628,8 @@ class StorageValidatorV05:
         # Check for OME subgroup with series metadata
         ome_group = zarr_group.get("OME")
         if ome_group is not None and isinstance(ome_group, ZarrGroup):
-            ome_attrs = ome_group.attrs.asdict()
             try:
-                ome_attrs_model = validate_ome_object(ome_attrs, OMEAttributes)
+                ome_attrs_model = validate_ome_object(ome_group.attrs, OMEAttributes)
 
                 # If OME group has series metadata, use that to find images
                 if isinstance(ome_attrs_model.ome, OME):
@@ -694,8 +690,7 @@ class StorageValidatorV05:
                 continue
 
             # Validate as image group
-            image_attrs = image_group.attrs.asdict()
-            image_attrs_model = validate_ome_object(image_attrs, OMEAttributes)
+            image_attrs_model = validate_ome_object(image_group.attrs, OMEAttributes)
 
             if isinstance(image_attrs_model.ome, Image):
                 result = result.merge(
@@ -749,8 +744,7 @@ class StorageValidatorV05:
                 continue
 
             # Validate series as image group
-            series_attrs = series_group.attrs.asdict()
-            series_attrs_model = validate_ome_object(series_attrs, OMEAttributes)
+            series_attrs_model = validate_ome_object(series_group.attrs, OMEAttributes)
 
             if isinstance(series_attrs_model.ome, Image):
                 result = result.merge(
@@ -822,8 +816,7 @@ class StorageValidatorV05:
         if not isinstance(first_well, ZarrGroup):
             return []
 
-        first_well_attrs = first_well.attrs.asdict()
-        first_well_meta = validate_ome_object(first_well_attrs, OMEAttributes)
+        first_well_meta = validate_ome_object(first_well.attrs, OMEAttributes)
 
         if isinstance(first_well_meta.ome, Well):
             return [img.path for img in first_well_meta.ome.well.images]
@@ -838,8 +831,7 @@ class StorageValidatorV05:
         if not isinstance(first_field, ZarrGroup):
             return []
 
-        first_field_attrs = first_field.attrs.asdict()
-        first_field_meta = validate_ome_object(first_field_attrs, OMEAttributes)
+        first_field_meta = validate_ome_object(first_field.attrs, OMEAttributes)
 
         if not hasattr(first_field_meta.ome, "multiscales"):
             return []
@@ -873,9 +865,8 @@ class StorageValidatorV05:
             )
             return LabelsCheckResult(result=result, labels_info=None)
 
-        attrs = labels_group.attrs.asdict()
         try:
-            labels_attrs = validate_ome_object(attrs, OMEAttributes)
+            labels_attrs = validate_ome_object(labels_group.attrs, OMEAttributes)
             if isinstance(labels_attrs.ome, LabelsGroup):
                 # Return the labels info directly
                 return LabelsCheckResult(
@@ -887,7 +878,7 @@ class StorageValidatorV05:
                 labels_loc,
                 f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
                 f"but metadata not valid LabelsGroup metadata: {e!s}",
-                attrs,
+                labels_group.attrs,
             )
 
         return LabelsCheckResult(result=result, labels_info=None)

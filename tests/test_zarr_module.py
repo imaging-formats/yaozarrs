@@ -8,7 +8,14 @@ import fsspec
 import numpy as np
 import pytest
 
-from yaozarrs._zarr import ZarrArray, ZarrGroup, ZarrNode, _CachedMapper, open_group
+from yaozarrs._zarr import (
+    ZarrArray,
+    ZarrGroup,
+    ZarrMetadata,
+    ZarrNode,
+    _CachedMapper,
+    open_group,
+)
 from yaozarrs._zarr import open as open_zarr
 
 if TYPE_CHECKING:
@@ -186,7 +193,7 @@ def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
 
     node = ZarrNode(_CachedMapper(mapper))
     assert node.zarr_format == 2
-    assert node.attrs.asdict()["key"] == "value"
+    assert node.attrs["key"] == "value"
     array = ZarrArray(node._mapper, node.path, node._metadata)
     assert array.ndim == 1
 
@@ -194,6 +201,8 @@ def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
 def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:
     group = open_zarr(v3_memory_store)
     assert isinstance(group, ZarrGroup)
+    assert isinstance(group.metadata, ZarrMetadata)
+    assert "ZarrGroup" in repr(group)
     assert group.zarr_format == 3
 
     with patch.object(group._mapper, "getitems") as m:
@@ -219,7 +228,7 @@ def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:
 def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
     group = open_group(v2_store)
     assert isinstance(group, ZarrGroup)
-    assert group.attrs.asdict() == {"name": "local"}
+    assert group.attrs == {"name": "local"}
 
     with patch.object(group._mapper, "getitems") as m:
         group.prefetch_children(["array", "group_child", "missing"])
@@ -246,29 +255,13 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
 
     subgroup = group["group_child"]
     assert isinstance(subgroup, ZarrGroup)
-    assert subgroup.attrs.asdict()["kind"] == "group"
+    assert subgroup.attrs["kind"] == "group"
 
 
 def test_zarrgroup_prefetch_handles_exceptions(v2_store: Path) -> None:
     group = open_group(v2_store)
     with patch.object(group._mapper, "getitems", RuntimeError("boom")):
         group.prefetch_children(["array"])
-
-
-def test_zarrarray_property_errors(memory_mapper) -> None:
-    meta = {
-        "zarr_format": 2,
-        "node_type": "array",
-        "attributes": {},
-    }
-    array = ZarrArray(_CachedMapper(memory_mapper), "", meta)
-    with pytest.raises(ValueError):
-        _ = array.ndim
-
-    meta_with_shape = {**meta, "shape": [1, 2], "data_type": None}
-    array2 = ZarrArray(_CachedMapper(memory_mapper), "", meta_with_shape)
-    with pytest.raises(ValueError):
-        _ = array2.dtype
 
 
 def test_zarrgroup_ome_model_cached(v2_store: Path) -> None:
