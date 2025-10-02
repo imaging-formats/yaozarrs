@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -122,7 +122,7 @@ class _CachedMapper(Mapping[str, bytes]):
                 result[key] = val
         return result
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Delegate iteration to underlying mapper."""
         return iter(self._fsmap)
 

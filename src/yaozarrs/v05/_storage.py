@@ -296,7 +296,8 @@ class StorageValidatorV05:
         # about the original image from which the label image derives. This object
         # MAY include a key image, whose value MUST be a string specifying the
         # relative path to a Zarr image group.
-        if (src := label_image_model.image_label.source) and (src_img := src.image):
+        src = label_image_model.image_label.source
+        if src is not None and (src_img := src.image) is not None:
             result = result.merge(
                 self._validate_labels_image_source(zarr_group, src_img, loc_prefix)
             )
