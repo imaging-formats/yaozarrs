@@ -72,6 +72,20 @@ class ImageLabel(_BaseModel):
 
 
 # ------------------------------------------------------------------------------
+# Labels group model (contains paths to individual label images)
+# ------------------------------------------------------------------------------
+
+
+# NOTE: this is described in the spec, but doesn't appear in the schema.
+class LabelsGroup(_BaseModel):
+    """Model for the labels group that contains paths to individual label images."""
+
+    labels: Annotated[list[str], MinLen(1)] = Field(
+        description="Array of paths to labeled multiscale images"
+    )
+
+
+# ------------------------------------------------------------------------------
 # Label model (top-level for individual label images)
 # ------------------------------------------------------------------------------
 

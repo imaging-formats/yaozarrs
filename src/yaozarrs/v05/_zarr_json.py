@@ -267,11 +267,12 @@ Here are ALL the possible zarr.json documents you might encounter with OME metad
 
 """
 
-from typing import Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
+
+from pydantic import BaseModel, Discriminator, Tag
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs.v05._bf2raw import Bf2Raw
-from yaozarrs.v05._ome import OME
 
 from ._image import Image
 from ._label import LabelImage, LabelsGroup
@@ -281,9 +282,54 @@ from ._well import Well
 
 # LabelImage must come before Image because it's a subclass
 # could also use pydantic.Discriminator, but this is simpler
-OMEMetadata: TypeAlias = (
-    LabelImage | Image | Plate | Well | LabelsGroup | OME | Series | Bf2Raw
-)
+
+
+def _discriminate_ome_v4_metadata(v: Any) -> str | None:
+    if isinstance(v, dict):
+        if "image-label" in v:
+            return "label-image"
+        if "multiscales" in v:
+            return "image"
+        if "plate" in v:
+            return "plate"
+        if "bioformats2raw.layout" in v or "bioformats2raw_layout" in v:
+            return "bf2raw"
+        if "well" in v:
+            return "well"
+        if "labels" in v:
+            return "labels-group"
+        if "series" in v:
+            return "series"
+    elif isinstance(v, BaseModel):
+        if isinstance(v, LabelImage):
+            return "label-image"
+        if isinstance(v, Image):
+            return "image"
+        if isinstance(v, Plate):
+            return "plate"
+        if isinstance(v, Bf2Raw):
+            return "bf2raw"
+        if isinstance(v, Well):
+            return "well"
+        if isinstance(v, LabelsGroup):
+            return "labels-group"
+        if isinstance(v, Series):
+            return "series"
+    return None
+
+
+OMEMetadata: TypeAlias = Annotated[
+    (
+        Annotated[LabelImage, Tag("label-image")]
+        | Annotated[Image, Tag("image")]
+        | Annotated[Plate, Tag("plate")]
+        | Annotated[Bf2Raw, Tag("bf2raw")]
+        | Annotated[Well, Tag("well")]
+        | Annotated[LabelsGroup, Tag("labels-group")]
+        | Annotated[Series, Tag("series")]
+    ),
+    Discriminator(_discriminate_ome_v4_metadata),
+]
 """Anything that can live in the "ome" key of a v0.5 ome-zarr file."""
 
 

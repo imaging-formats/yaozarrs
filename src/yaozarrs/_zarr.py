@@ -18,11 +18,13 @@ import json
 import os
 from collections.abc import Iterator, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias
 
 import numpy as np
 from fsspec import FSMap, get_mapper
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
+
+from yaozarrs import v04, v05
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -33,6 +35,91 @@ if TYPE_CHECKING:
     from yaozarrs._validate import AnyOME
 
 __all__ = ["ZarrArray", "ZarrGroup", "ZarrMetadata", "open_group"]
+
+# --------------------------------
+# JSON DOCUMENTS
+# --------------------------------
+"""All of the structures of json docs we might find in a zarr store."""
+
+
+class ZGroupV2(BaseModel):
+    """Metadata for a zarr group, version 2.
+
+    .zgroup file
+    """
+
+    zarr_format: Literal[2]
+
+
+class ZArrayV2(BaseModel):
+    """Metadata for a zarr array, version 2.
+
+    .zarray file
+    """
+
+    zarr_format: Literal[2]
+    shape: list[int]
+    chunks: list[int]
+    dtype: str | list
+    compressor: dict | None
+    fill_value: int | float | str | None
+    order: Literal["C", "F"]
+    filters: list[dict] | None
+    dimension_separator: str | None = None
+
+
+class ZarrJsonArrayV3(BaseModel):
+    """Metadata for a zarr array, version 3.
+
+    zarr.json file for an array
+    """
+
+    zarr_format: Literal[3]
+    node_type: Literal["array"]
+    shape: list[int]
+    data_type: str | list
+    chunk_grid: dict
+    chunk_key_encoding: dict
+    fill_value: int | float | str | None
+    codecs: list[dict] | None
+
+    storage_transformers: list[dict] | None = None
+    dimension_names: list[str] | None = None
+    attributes: dict = Field(default_factory=dict)
+
+
+class ZarrJsonGroupV3(BaseModel):
+    """Metadata for a zarr group, version 3.
+
+    zarr.json file for a group
+    """
+
+    zarr_format: Literal[3]
+    node_type: Literal["group"]
+    attributes: dict = Field(default_factory=dict)
+
+
+# Union of all possible zarr.json structures
+ZarrJson: TypeAlias = Annotated[
+    ZarrJsonArrayV3 | ZarrJsonGroupV3, Field(discriminator="node_type")
+]
+
+AnyOMEMetadata: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEMetadata
+
+
+class OMEAttributesV5(BaseModel):
+    """The attributes field of a zarr.json document that usually appears nested."""
+
+    ome: v05.OMEMetadata
+
+
+class OMEZarrJSON(BaseModel):
+    """A zarr.json document found in any ome-zarr group."""
+
+    zarr_format: Literal[3] = 3
+    node_type: Literal["group"] = "group"
+    attributes: OMEAttributesV5
+
 
 # -------------------  Metadata Loading  -------------------
 
@@ -62,6 +149,15 @@ class ZarrMetadata(BaseModel):
             if "dtype" in val and "data_type" not in val:
                 val["data_type"] = val.pop("dtype")
         return val
+
+    def ome_metadata(self) -> v05.OMEMetadata | None:
+        """Return the OME metadata if present in attributes, else None."""
+        attrs = self.attributes
+        if "ome" in attrs:
+            return TypeAdapter(v05.OMEMetadata).validate_python(attrs["ome"])
+        else:
+            return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(attrs)
+        return None
 
 
 def _load_zarr_json(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | None:
@@ -376,10 +472,8 @@ class ZarrGroup(ZarrNode):
 
     def ome_model(self) -> AnyOME:
         if not hasattr(self, "_ome_model"):
-            from ._validate import validate_ome_object
-
             try:
-                self._ome_model = validate_ome_object(self._metadata.attributes)
+                self._ome_model = self._metadata.ome_metadata()
             except Exception as e:  # pragma: no cover
                 raise ValueError(f"Failed to parse OME-Zarr metadata:\n\n{e}") from e
         return self._ome_model

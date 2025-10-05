@@ -7,6 +7,7 @@ from unittest.mock import patch
 import fsspec
 import numpy as np
 import pytest
+from pydantic import BaseModel
 
 from yaozarrs._zarr import (
     ZarrArray,
@@ -280,13 +281,18 @@ def test_zarrgroup_to_zarr_python(v2_store: Path) -> None:
     assert isinstance(result, zarr.Group)
 
 
-@pytest.mark.parametrize("version", ["0.4", "0.5"])
-def test_zarrgroup_from_zarr_python(write_demo_ome: Callable, version: str) -> None:
+@pytest.mark.parametrize("type", ["image", "plate", "labels"])
+@pytest.mark.parametrize("version", ["0.5", "0.4"])
+def test_zarrgroup_from_zarr_python(
+    write_demo_ome: Callable, version: str, type: str
+) -> None:
     zarr = pytest.importorskip("zarr")
-    path = write_demo_ome("image", version=version)
+    path = write_demo_ome(type, version=version)
     zarr_group = zarr.open_group(path)
     group = open_group(zarr_group)
     assert isinstance(group, ZarrGroup)
+    assert isinstance(group.metadata, ZarrMetadata)
+    assert isinstance(group.metadata.ome_metadata(), BaseModel)
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
