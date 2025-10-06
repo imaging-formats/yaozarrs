@@ -18,7 +18,7 @@ import json
 import os
 from collections.abc import Iterator, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, overload
 
 import numpy as np
 from fsspec import FSMap, get_mapper
@@ -28,11 +28,14 @@ from yaozarrs import v04, v05
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import TypeVar
 
     import tensorstore  # type: ignore
     import zarr  # type: ignore
 
     from yaozarrs._validate import AnyOME
+
+    _T = TypeVar("_T")
 
 __all__ = ["ZarrArray", "ZarrGroup", "ZarrMetadata", "open_group"]
 
@@ -194,7 +197,9 @@ def _load_zarray(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | Non
 def _load_zarr_metadata(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata:
     """Load and parse zarr metadata (v2 or v3).
 
-    First checks for v3 (zarr.json), then v2 (.zgroup or .zarray).
+    First checks for v3 (zarr.json), then v2 (.zgroup or .zarray).  Note that `prefix`
+    does *not* include the name of the metadata file itself (e.g. "zarr.json"), but
+    should include any path within the zarr store.
 
     Parameters
     ----------
@@ -255,7 +260,13 @@ class _CachedMapper(Mapping[str, bytes]):
         self._fsmap = mapper
         self._cache: dict[str, bytes | None | Exception] = {}
 
-    def get(self, key: str, default: bytes | None = None) -> bytes | None:
+    @overload
+    def get(self, key: str, /) -> bytes | None: ...
+    @overload
+    def get(self, key: str, /, default: bytes) -> bytes: ...
+    @overload
+    def get(self, key: str, /, default: _T) -> _T: ...
+    def get(self, key: str, default: _T | None = None) -> _T | None:
         """Get a value from the mapper with caching."""
         if key not in self._cache:
             self._cache[key] = val = self._fsmap.get(key, default)
@@ -263,7 +274,7 @@ class _CachedMapper(Mapping[str, bytes]):
             val = self._cache[key]
         if isinstance(val, Exception):
             raise val
-        return val
+        return val  # type: ignore[return-value]
 
     def __contains__(self, key: object) -> bool:
         """Check if a key exists in the mapper."""
@@ -348,6 +359,44 @@ class ZarrNode:
 
     __slots__ = ("_mapper", "_metadata", "_path")
 
+    def __init__(
+        self,
+        mapper: _CachedMapper | FSMap,
+        path: str = "",
+        meta: ZarrMetadata | None = None,
+    ) -> None:
+        """Initialize a zarr node.
+
+        Parameters
+        ----------
+        mapper : _CachedMapper | FSMap
+            The mapper for the zarr store. Should be a _CachedMapper for best
+            performance, or an FSMap which will be wrapped automatically.
+        path : str
+            The path within the zarr store.
+        meta : dict[str, Any] | ZarrMetadata | None
+            Optional pre-loaded metadata dictionary. If not provided, it will be
+            loaded from the store.
+        """
+        # Ensure we have a cached mapper for performance
+        if isinstance(mapper, FSMap) and not isinstance(mapper, _CachedMapper):
+            mapper = _CachedMapper(mapper)
+
+        self._mapper = mapper
+        self._path = path.rstrip("/")
+        if meta is None:
+            prefix = f"{self._path}/" if self._path else ""
+            self._metadata = _load_zarr_metadata(prefix, self._mapper)
+        elif isinstance(meta, ZarrMetadata):
+            if meta.node_type != self.node_type():  # pragma: no cover
+                raise ValueError(
+                    f"Metadata node_type '{meta.node_type}' does not match "
+                    f"expected '{self.node_type()}'"
+                )
+            self._metadata = meta
+        else:  # pragma: no cover
+            raise ValueError("meta must be a ZarrMetadata instance or None")
+
     @property
     def attrs(self) -> Mapping[str, Any]:
         """Return attributes as a read-only mapping."""
@@ -412,53 +461,9 @@ class ZarrNode:
         """Return the zarr format version (2 or 3)."""
         return self._metadata.zarr_format
 
-    # ----------------- Private API -----------------
-
     def __repr__(self) -> str:
         cls_name = self.__class__.__name__
         return f"<{cls_name} {self.store_path}>"
-
-    def __init__(
-        self,
-        mapper: _CachedMapper | FSMap,
-        path: str = "",
-        meta: ZarrMetadata | None = None,
-    ) -> None:
-        """Initialize a zarr node.
-
-        Parameters
-        ----------
-        mapper : _CachedMapper | FSMap
-            The mapper for the zarr store. Should be a _CachedMapper for best
-            performance, or an FSMap which will be wrapped automatically.
-        path : str
-            The path within the zarr store.
-        meta : dict[str, Any] | ZarrMetadata | None
-            Optional pre-loaded metadata dictionary. If not provided, it will be
-            loaded from the store.
-        """
-        # Ensure we have a cached mapper for performance
-        if isinstance(mapper, FSMap) and not isinstance(mapper, _CachedMapper):
-            mapper = _CachedMapper(mapper)
-
-        self._mapper = mapper
-        self._path = path.rstrip("/")
-        if meta is None:
-            self._metadata = self._load_metadata()
-        elif isinstance(meta, ZarrMetadata):
-            if meta.node_type != self.node_type():  # pragma: no cover
-                raise ValueError(
-                    f"Metadata node_type '{meta.node_type}' does not match "
-                    f"expected '{self.node_type()}'"
-                )
-            self._metadata = meta
-        else:  # pragma: no cover
-            raise ValueError("meta must be a ZarrMetadata instance or None")
-
-    def _load_metadata(self) -> ZarrMetadata:
-        """Load and parse zarr metadata (v2 or v3)."""
-        prefix = f"{self._path}/" if self._path else ""
-        return _load_zarr_metadata(prefix, self._mapper)
 
 
 class ZarrGroup(ZarrNode):
@@ -468,15 +473,15 @@ class ZarrGroup(ZarrNode):
     zarr_format version as the parent. Does not support mixed hierarchies.
     """
 
-    __slots__ = ("_ome_model",)
+    __slots__ = ("_ome_metadata",)
 
-    def ome_model(self) -> AnyOME:
-        if not hasattr(self, "_ome_model"):
+    def ome_metadata(self) -> AnyOME:
+        if not hasattr(self, "_ome_metadata"):
             try:
-                self._ome_model = self._metadata.ome_metadata()
+                self._ome_metadata = self._metadata.ome_metadata()
             except Exception as e:  # pragma: no cover
                 raise ValueError(f"Failed to parse OME-Zarr metadata:\n\n{e}") from e
-        return self._ome_model
+        return self._ome_metadata
 
     @classmethod
     def node_type(cls) -> Literal["group"]:

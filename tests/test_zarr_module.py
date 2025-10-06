@@ -265,12 +265,12 @@ def test_zarrgroup_prefetch_handles_exceptions(v2_store: Path) -> None:
         group.prefetch_children(["array"])
 
 
-def test_zarrgroup_ome_model_cached(v2_store: Path) -> None:
-    group = open_group(v2_store)
-    with patch("yaozarrs._validate.validate_ome_object") as m:
-        first = group.ome_model()
-        second = group.ome_model()
-    m.assert_called_once()
+def test_zarrgroup_ome_model_cached(write_demo_ome: Callable) -> None:
+    pytest.importorskip("zarr")
+    path = write_demo_ome("image", version="0.5")
+    group = open_group(path)
+    first = group.ome_metadata()
+    second = group.ome_metadata()
     assert first is second
 
 
