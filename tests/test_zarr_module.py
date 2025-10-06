@@ -4,8 +4,13 @@ import json
 from typing import TYPE_CHECKING, Callable
 from unittest.mock import patch
 
-import fsspec
 import pytest
+
+try:
+    import fsspec
+except ImportError:
+    pytest.skip("fsspec not installed", allow_module_level=True)
+
 from pydantic import BaseModel
 
 from yaozarrs._zarr import (
