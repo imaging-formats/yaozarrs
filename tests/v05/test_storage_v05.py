@@ -4,22 +4,27 @@ from typing import Callable, cast
 
 import pytest
 
-from yaozarrs.v05._storage import (
-    ErrorDetails,
-    StorageValidationError,
-    validate_zarr_store,
-)
-
 try:
     import zarr
 except ImportError:
     pytest.skip("zarr not installed", allow_module_level=True)
+try:
+    import fsspec  # noqa: F401
+except ImportError:
+    pytest.skip("fsspec not installed", allow_module_level=True)
+
 try:
     from aiohttp.client_exceptions import ClientConnectorError
 
     connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
 except ImportError:
     connection_exceptions = ()
+
+from yaozarrs.v05._storage import (
+    ErrorDetails,
+    StorageValidationError,
+    validate_zarr_store,
+)
 
 
 def test_validate_invalid_storage(tmp_path: Path) -> None:
