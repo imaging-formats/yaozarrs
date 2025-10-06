@@ -553,7 +553,7 @@ class StorageValidatorV05:
                 continue
 
             # Validate well metadata
-            well_model = well_group.ome_metadata().ome
+            well_model = well_group.ome_metadata()
             if not isinstance(well_model, Well):
                 result.add_error(
                     "invalid_well",

@@ -33,8 +33,6 @@ if TYPE_CHECKING:
     import tensorstore  # type: ignore
     import zarr  # type: ignore
 
-    from yaozarrs._validate import AnyOME
-
     _T = TypeVar("_T")
 
 __all__ = ["ZarrArray", "ZarrGroup", "ZarrMetadata", "open_group"]
@@ -153,7 +151,7 @@ class ZarrMetadata(BaseModel):
                 val["data_type"] = val.pop("dtype")
         return val
 
-    def ome_metadata(self) -> v05.OMEMetadata | None:
+    def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata if present in attributes, else None."""
         attrs = self.attributes
         if "ome" in attrs:
@@ -475,7 +473,7 @@ class ZarrGroup(ZarrNode):
 
     __slots__ = ("_ome_metadata",)
 
-    def ome_metadata(self) -> AnyOME:
+    def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
             try:
                 self._ome_metadata = self._metadata.ome_metadata()
