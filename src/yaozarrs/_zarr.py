@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Iterator, Mapping
+from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, overload
 
@@ -450,6 +451,14 @@ class ZarrNode:
             full_path = f"{mapper.root.rstrip('/')}/{self._path}"
         else:
             full_path = mapper.root
+
+        # For local file systems, use Path.as_uri() for proper cross-platform
+        # URI formatting (especially Windows which needs file:///C:/ not file://C:/)
+        protocol = mapper.fs.protocol
+        if isinstance(protocol, tuple):
+            protocol = protocol[0]
+        if protocol in ("file", "local"):
+            return Path(full_path).as_uri()
 
         return mapper.fs.unstrip_protocol(full_path)
 
