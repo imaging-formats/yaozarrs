@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Callable
 from unittest.mock import patch
 
 import fsspec
-import numpy as np
 import pytest
 from pydantic import BaseModel
 
@@ -215,7 +214,7 @@ def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:
     assert isinstance(child, ZarrArray)
     assert child.path == "child"
     assert child.ndim == 3
-    assert child.dtype == np.dtype("<i2")
+    assert child.dtype == "<i2"
 
     subgroup = group["group_child"]
     assert isinstance(subgroup, ZarrGroup)
@@ -249,7 +248,7 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
     assert isinstance(arr, ZarrArray)
     assert arr.path == "array"
     assert arr.ndim == 2
-    assert arr.dtype == np.dtype("<i4")
+    assert arr.dtype == "<i4"
     assert group.get("missing") is None
     with pytest.raises(KeyError):
         _ = group["missing"]

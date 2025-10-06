@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 from itertools import chain, product
 from typing import TYPE_CHECKING, Any, TypeAlias, TypedDict
 
-import numpy as np
 from typing_extensions import NotRequired
 
 from yaozarrs._validate import from_uri, validate_ome_object
@@ -27,6 +26,30 @@ from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+def _is_integer_dtype(dtype_str: str) -> bool:
+    """Check if a dtype string represents an integer type.
+
+    Parameters
+    ----------
+    dtype_str : str
+        The dtype string to check (e.g., '<i2', 'uint8', 'int32')
+
+    Returns
+    -------
+    bool
+        True if the dtype represents an integer type, False otherwise
+    """
+    # Remove endianness markers
+    dtype_clean = dtype_str.lstrip("<>=|")
+    # Check for integer type indicators
+    return dtype_clean.startswith(("int", "uint")) or (
+        len(dtype_clean) >= 2
+        and dtype_clean[0] in ("i", "u")
+        and dtype_clean[1].isdigit()
+    )
+
 
 # ----------------------------------------------------------
 # ERROR HANDLING
@@ -936,11 +959,12 @@ class StorageValidatorV05:
                     # Path validation will catch this separately
                     continue  # pragma: no cover
 
-                # check if np.integer dtype
-                if not (
-                    isinstance(arr, ZarrArray)
-                    and np.issubdtype((dt := arr.dtype), np.integer)
-                ):
+                # check if integer dtype
+                if not isinstance(arr, ZarrArray):
+                    continue  # pragma: no cover
+
+                dt = arr.dtype
+                if not _is_integer_dtype(dt):
                     result.add_error(
                         "label_non_integer_dtype",
                         ds_loc,

@@ -20,7 +20,6 @@ from collections.abc import Iterator, Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, overload
 
-import numpy as np
 from fsspec import FSMap, get_mapper
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
@@ -599,12 +598,12 @@ class ZarrArray(ZarrNode):
         return len(self._metadata.shape)
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> str:
         """Return the data type."""
         if self._metadata.data_type is None:  # pragma: no cover
             raise ValueError("Array metadata missing 'data_type'")
         # Data type is already normalized to numpy dtype string in _load_metadata
-        return np.dtype(self._metadata.data_type)
+        return self._metadata.data_type
 
     if TYPE_CHECKING:
 
