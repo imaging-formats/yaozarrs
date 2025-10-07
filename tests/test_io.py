@@ -5,6 +5,13 @@ import pytest
 
 from yaozarrs import from_uri, v04, v05
 
+try:
+    from aiohttp.client_exceptions import ClientConnectorError
+
+    connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
+except ImportError:
+    connection_exceptions = ()
+
 HAVE_FSSPEC = importlib.util.find_spec("fsspec")
 DATA = Path(__file__).parent / "data"
 V05_DATA = DATA / "v05"
@@ -23,7 +30,7 @@ SOURCES = {
 def test_from_uri(uri: str, expected_type: type) -> None:
     try:
         obj = from_uri(uri)
-    except FileNotFoundError as e:
+    except connection_exceptions as e:
         pytest.xfail(reason=f"Internet down?: {e}")
         return
 

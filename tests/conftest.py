@@ -25,7 +25,7 @@ def write_demo_ome(tmp_path_factory: pytest.TempPathFactory) -> Callable[..., Pa
     def _write_demo(
         type: Literal["image", "labels", "plate", "image-with-labels"], **kwargs: Any
     ) -> Path:
-        if kwargs.get("version") == "0.5" and version("zarr").startswith("2"):
+        if kwargs.get("version", "0.5") == "0.5" and version("zarr").startswith("2"):
             pytest.skip("zarr v2 does not support OME-Zarr v0.5")
 
         path = tmp_path_factory.mktemp(f"demo_{type}")
