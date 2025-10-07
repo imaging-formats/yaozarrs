@@ -7,7 +7,7 @@ both v0.4 and v0.5 formats.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 try:
     import numpy as np
@@ -23,6 +23,35 @@ except ImportError as e:
     ) from e
 
 __all__ = ["write_ome_image", "write_ome_labels", "write_ome_plate"]
+
+
+def write_ome_bf2raw(
+    path: str | Path,
+    version: Literal["0.4", "0.5"] = "0.5",
+    num_series: int = 1,
+    write_ome_group: bool = False,
+    **img_kwargs: Any,
+):
+    path = Path(path)
+    series: list[str] = []
+    for n in range(num_series):
+        write_ome_image(path / str(n), **img_kwargs)
+        series.append(str(n))
+    group = zarr.open_group(path, mode="a")
+    if version == "0.4":
+        group.attrs.update({"version": version, "bioformats2raw.layout": 3})
+    else:
+        group.attrs["ome"] = {"version": version, "bioformats2raw.layout": 3}
+
+    if write_ome_group:
+        ome_dir = path / "OME"
+        ome_dir.mkdir()
+        (ome_dir / "METADATA.ome.xml").touch()
+        ome_group = zarr.open_group(ome_dir, mode="a")
+        if version == "0.4":
+            ome_group.attrs.update({"version": version, "series": series})
+        else:
+            ome_group.attrs["ome"] = {"version": version, "series": series}
 
 
 def write_ome_image(

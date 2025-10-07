@@ -20,8 +20,8 @@ from yaozarrs._zarr import ZarrArray, ZarrGroup, open_group
 from yaozarrs.v05._bf2raw import Bf2Raw
 from yaozarrs.v05._image import Image, Multiscale
 from yaozarrs.v05._label import LabelImage, LabelsGroup
-from yaozarrs.v05._ome import OME
 from yaozarrs.v05._plate import Plate
+from yaozarrs.v05._series import Series
 from yaozarrs.v05._well import Well
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
@@ -45,7 +45,6 @@ class StorageErrorType(Enum):
     field_path_not_found = auto()
     field_path_not_group = auto()
     bf2raw_no_images = auto()
-    bf2raw_path_not_found = auto()
     bf2raw_path_not_group = auto()
     bf2raw_invalid_image = auto()
     series_path_not_found = auto()
@@ -299,7 +298,7 @@ class StorageValidatorV05:
             return validator.visit_multiscale(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, Bf2Raw):
             return validator.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, OME):
+        elif isinstance(ome_metadata, Series):
             return validator.visit_series(zarr_group, ome_metadata, loc_prefix)
         else:
             raise NotImplementedError(
@@ -670,7 +669,7 @@ class StorageValidatorV05:
                 ome_attrs_model = validate_ome_object(ome_group.attrs, OMEAttributes)
 
                 # If OME group has series metadata, use that to find images
-                if isinstance(ome_attrs_model.ome, OME):
+                if isinstance(ome_attrs_model.ome, Series):
                     # Validate using the series paths
                     result = result.merge(
                         self.visit_series(
@@ -709,15 +708,6 @@ class StorageValidatorV05:
             image_loc = (*loc_prefix, path)
 
             image_group = zarr_group.get(path)
-            if image_group is None:
-                result.add_error(
-                    StorageErrorType.bf2raw_path_not_found,
-                    image_loc,
-                    f"Bioformats2raw path '{path}' not found",
-                    path,
-                )
-                continue
-
             if not isinstance(image_group, ZarrGroup):
                 result.add_error(
                     StorageErrorType.bf2raw_path_not_group,
@@ -728,11 +718,13 @@ class StorageValidatorV05:
                 continue
 
             # Validate as image group
-            image_attrs_model = validate_ome_object(image_group.attrs, OMEAttributes)
-
-            if isinstance(image_attrs_model.ome, Image):
+            try:
+                image_group_meta = image_group.ome_metadata()
+            except ValueError:
+                image_group_meta = None
+            if isinstance(image_group_meta, Image):
                 result = result.merge(
-                    self.visit_image(image_group, image_attrs_model.ome, image_loc)
+                    self.visit_image(image_group, image_group_meta, image_loc)
                 )
             else:
                 result.add_error(
@@ -740,13 +732,13 @@ class StorageValidatorV05:
                     image_loc,
                     f"Bioformats2raw path '{path}' does not contain "
                     "valid Image metadata",
-                    {"path": path, "type": type(image_attrs_model.ome).__name__},
+                    {"path": path, "type": type(image_group_meta).__name__},
                 )
 
         return result
 
     def visit_series(
-        self, zarr_group: ZarrGroup, ome_model: OME, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, ome_model: Series, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate an OME group with series metadata.
 
@@ -782,11 +774,13 @@ class StorageValidatorV05:
                 continue
 
             # Validate series as image group
-            series_attrs_model = validate_ome_object(series_group.attrs, OMEAttributes)
-
-            if isinstance(series_attrs_model.ome, Image):
+            try:
+                series_group_meta = series_group.ome_metadata()
+            except ValueError:
+                series_group_meta = None
+            if isinstance(series_group_meta, Image):
                 result = result.merge(
-                    self.visit_image(series_group, series_attrs_model.ome, series_loc)
+                    self.visit_image(series_group, series_group_meta, series_loc)
                 )
             else:
                 result.add_error(
@@ -796,7 +790,7 @@ class StorageValidatorV05:
                     "valid Image metadata",
                     {
                         "path": series_path,
-                        "type": type(series_attrs_model.ome).__name__,
+                        "type": type(series_group_meta).__name__,
                     },
                 )
 
@@ -810,7 +804,7 @@ class StorageValidatorV05:
         Strategy: Inspect first well/field to understand structure, then batch
         fetch all metadata across the entire plate (wells, fields, datasets).
         """
-        if not well_paths:
+        if not well_paths:  # pragma: no cover
             return
 
         # Step 1: Prefetch all well metadata
@@ -868,18 +862,15 @@ class StorageValidatorV05:
         """Extract dataset paths from the first field image."""
         first_field = first_well.get(first_field_path)
         if not isinstance(first_field, ZarrGroup):
-            return []
+            return []  # pragma: no cover
 
         first_field_meta = validate_ome_object(first_field.attrs, OMEAttributes)
 
-        if not hasattr(first_field_meta.ome, "multiscales"):
-            return []
-
-        if not isinstance(first_field_meta.ome, Image):
-            return []
-
-        if not first_field_meta.ome.multiscales:
-            return []
+        if (
+            not isinstance(first_field_meta.ome, Image)
+            or not first_field_meta.ome.multiscales
+        ):
+            return []  # pragma: no cover
 
         return [ds.path for ds in first_field_meta.ome.multiscales[0].datasets]
 

@@ -146,11 +146,24 @@ def test_validate_storage(uri: str) -> None:
         pytest.xfail("No internet")
 
 
-@pytest.mark.parametrize("type", ["image", "labels", "plate", "image-with-labels"])
+@pytest.mark.parametrize(
+    "type",
+    ["image", "labels", "plate", "image-with-labels", "bioformats2raw"],
+)
 def test_validate_valid_demo_storage(type: str, write_demo_ome: Callable) -> None:
     """Test validation on demo OME-Zarr files."""
 
     path = write_demo_ome(type, version="0.5")
+    try:
+        validate_zarr_store(path)
+    except connection_exceptions:
+        pytest.xfail("No internet")
+
+
+def test_validate_valid_demo_storage_bf2raw_ome_group(write_demo_ome: Callable) -> None:
+    """Test validation on demo OME-Zarr files."""
+
+    path = write_demo_ome("bioformats2raw", version="0.5", write_ome_group=True)
     try:
         validate_zarr_store(path)
     except connection_exceptions:
@@ -337,6 +350,36 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
         #     {"type": "image-with-labels"},
         #     lambda x: None,
         # ),
+        StorageTestCase(
+            StorageErrorType.bf2raw_no_images,
+            {"type": "bioformats2raw"},
+            lambda p: shutil.rmtree(p / "0"),
+        ),
+        StorageTestCase(
+            StorageErrorType.bf2raw_path_not_group,
+            {"type": "bioformats2raw"},
+            update_meta("0", ("node_type",), "array"),
+        ),
+        StorageTestCase(
+            StorageErrorType.bf2raw_invalid_image,
+            {"type": "bioformats2raw"},
+            update_meta("0", ("attributes", "ome", "multiscales"), []),
+        ),
+        StorageTestCase(
+            StorageErrorType.series_path_not_found,
+            {"type": "bioformats2raw", "write_ome_group": True},
+            update_meta("OME", ("attributes", "ome", "series"), ["1"]),
+        ),
+        StorageTestCase(
+            StorageErrorType.series_path_not_group,
+            {"type": "bioformats2raw", "write_ome_group": True},
+            update_meta("0", ("node_type",), "array"),
+        ),
+        StorageTestCase(
+            StorageErrorType.series_invalid_image,
+            {"type": "bioformats2raw", "write_ome_group": True},
+            update_meta("0", ("attributes", "ome", "multiscales"), []),
+        ),
     ],
     ids=lambda x: x.err_type,
 )

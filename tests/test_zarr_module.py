@@ -306,8 +306,10 @@ def test_zarrarray_to_tensorstore(write_demo_ome: Callable, version: str) -> Non
     ts = pytest.importorskip("tensorstore")
     path = write_demo_ome("image", version=version)
     group = open_group(path)
+    assert path.name in repr(group)
     array = group["0"]
     assert isinstance(array, ZarrArray)
+    assert f"{path.name}/0" in repr(array)
     result = array.to_tensorstore()
     assert isinstance(result, ts.TensorStore)
 

@@ -8,7 +8,7 @@ from pydantic import Field
 from yaozarrs._base import ZarrGroupModel
 
 
-class OME(ZarrGroupModel):
+class Series(ZarrGroupModel):
     """Model for the ome group that contains OME-XML metadata."""
 
     series: Annotated[list[str], MinLen(1)] = Field(

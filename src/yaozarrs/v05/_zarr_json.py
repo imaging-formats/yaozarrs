@@ -313,7 +313,7 @@ def _discriminate_ome_v4_metadata(v: Any) -> str | None:
             return "well"
         if isinstance(v, LabelsGroup):
             return "labels-group"
-        if isinstance(v, Series):
+        if isinstance(v, Series):  # pragma: no cover
             return "series"
     return None
 
