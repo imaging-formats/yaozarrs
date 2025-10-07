@@ -1000,7 +1000,7 @@ def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:
     import posixpath
 
     # Get the mapper's root path if available
-    mapper = zarr_group._mapper
+    mapper = zarr_group._store
     path = zarr_group.path
 
     # Try to get the root path from the mapper

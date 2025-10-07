@@ -176,7 +176,7 @@ def test_zarrnode_wraps_plain_fsmap(tmp_path: Path) -> None:
     ).encode()
 
     node = ZarrNode(mapper)
-    assert isinstance(node._mapper, _CachedMapper)
+    assert isinstance(node._store, _CachedMapper)
 
 
 def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
@@ -199,7 +199,7 @@ def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
     node = ZarrNode(_CachedMapper(mapper))
     assert node.zarr_format == 2
     assert node.attrs["key"] == "value"
-    array = ZarrArray(node._mapper, node.path, node._metadata)
+    array = ZarrArray(node._store, node.path, node._metadata)
     assert array.ndim == 1
 
 
@@ -210,7 +210,7 @@ def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:
     assert "ZarrGroup" in repr(group)
     assert group.zarr_format == 3
 
-    with patch.object(group._mapper, "getitems") as m:
+    with patch.object(group._store, "getitems") as m:
         group.prefetch_children(["child"])
     m.assert_called_once_with(["child/zarr.json"])
 
@@ -235,7 +235,7 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
     assert isinstance(group, ZarrGroup)
     assert group.attrs == {"name": "local"}
 
-    with patch.object(group._mapper, "getitems") as m:
+    with patch.object(group._store, "getitems") as m:
         group.prefetch_children(["array", "group_child", "missing"])
     m.assert_called_once_with(
         [
@@ -265,7 +265,7 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
 
 def test_zarrgroup_prefetch_handles_exceptions(v2_store: Path) -> None:
     group = open_group(v2_store)
-    with patch.object(group._mapper, "getitems", RuntimeError("boom")):
+    with patch.object(group._store, "getitems", RuntimeError("boom")):
         group.prefetch_children(["array"])
 
 

@@ -192,17 +192,17 @@ def _load_zarray(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | Non
     return None
 
 
-def _load_zarr_metadata(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata:
+def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMetadata:
     """Load and parse zarr metadata (v2 or v3).
 
-    First checks for v3 (zarr.json), then v2 (.zgroup or .zarray).  Note that `prefix`
+    First checks for v3 (zarr.json), then v2 (.zgroup or .zarray).  Note that `path`
     does *not* include the name of the metadata file itself (e.g. "zarr.json"), but
     should include any path within the zarr store.
 
     Parameters
     ----------
-    prefix : str
-        The path prefix within the zarr store (may be empty).
+    path : str
+        The path path within the zarr store (may be empty).
     mapper : Mapping[str, bytes]
         The mapper for the zarr store.
 
@@ -218,6 +218,8 @@ def _load_zarr_metadata(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadat
     ValidationError
         If the metadata is invalid or inconsistent.
     """
+    prefix = f"{path}/" if path else ""
+
     # Try v3 first (zarr.json)
     if (meta := _load_zarr_json(prefix, mapper)) is not None:
         return meta
@@ -355,11 +357,11 @@ class _CachedMapper(Mapping[str, bytes]):
 class ZarrNode:
     """Base class for zarr nodes (groups and arrays)."""
 
-    __slots__ = ("_mapper", "_metadata", "_path")
+    __slots__ = ("_metadata", "_path", "_store")
 
     def __init__(
         self,
-        mapper: _CachedMapper | FSMap,
+        store: _CachedMapper | FSMap,
         path: str = "",
         meta: ZarrMetadata | None = None,
     ) -> None:
@@ -367,24 +369,24 @@ class ZarrNode:
 
         Parameters
         ----------
-        mapper : _CachedMapper | FSMap
+        store : _CachedMapper | FSMap
             The mapper for the zarr store. Should be a _CachedMapper for best
-            performance, or an FSMap which will be wrapped automatically.
+            performance, or an FSMap which will be wrapped automatically.  In the future
+            it's possible we could support other mapping types.
         path : str
-            The path within the zarr store.
+            The path to this node within the zarr store (relative to the store root).
         meta : dict[str, Any] | ZarrMetadata | None
             Optional pre-loaded metadata dictionary. If not provided, it will be
             loaded from the store.
         """
         # Ensure we have a cached mapper for performance
-        if isinstance(mapper, FSMap) and not isinstance(mapper, _CachedMapper):
-            mapper = _CachedMapper(mapper)
+        if isinstance(store, FSMap) and not isinstance(store, _CachedMapper):
+            store = _CachedMapper(store)
 
-        self._mapper = mapper
+        self._store = store
         self._path = path.rstrip("/")
         if meta is None:
-            prefix = f"{self._path}/" if self._path else ""
-            self._metadata = _load_zarr_metadata(prefix, self._mapper)
+            self._metadata = _load_zarr_metadata(self._store, self._path)
         elif isinstance(meta, ZarrMetadata):
             if meta.node_type != self.node_type():  # pragma: no cover
                 raise ValueError(
@@ -409,6 +411,11 @@ class ZarrNode:
     def metadata(self) -> ZarrMetadata:
         """Return the parsed zarr metadata."""
         return self._metadata
+
+    @property
+    def store(self) -> Mapping[str, bytes]:
+        """Return the underlying store mapping (read-only)."""
+        return MappingProxyType(self._store)
 
     def to_zarr_python(self) -> zarr.Array | zarr.Group:
         """Convert to a zarr-python Array or Group object."""
@@ -442,7 +449,7 @@ class ZarrNode:
             A URI string that follows standard protocol://path format.
         """
         # Unwrap cached mapper to access underlying FSMap
-        mapper = self._mapper
+        mapper = self._store
         if isinstance(mapper, _CachedMapper):
             mapper = mapper._fsmap
 
@@ -524,7 +531,7 @@ class ZarrGroup(ZarrNode):
 
         # Batch fetch using getitems - _CachedMapper handles fallback if needed
         try:
-            self._mapper.getitems(metadata_paths)
+            self._store.getitems(metadata_paths)
         except Exception:
             # If batch fetching fails, _CachedMapper will fall back to sequential
             # access when files are actually requested via __getitem__
@@ -535,11 +542,11 @@ class ZarrGroup(ZarrNode):
         child_path = f"{self._path}/{key}" if self._path else key
 
         if self._metadata.zarr_format >= 3:
-            return f"{child_path}/zarr.json" in self._mapper
+            return f"{child_path}/zarr.json" in self._store
         else:
             return (
-                f"{child_path}/.zgroup" in self._mapper
-                or f"{child_path}/.zarray" in self._mapper
+                f"{child_path}/.zgroup" in self._store
+                or f"{child_path}/.zarray" in self._store
             )
 
     def get(self, key: str, default: Any = None) -> ZarrGroup | ZarrArray | None:
@@ -561,11 +568,11 @@ class ZarrGroup(ZarrNode):
     def _getitem_v3(self, child_path: str, key: str) -> ZarrGroup | ZarrArray:
         """Get a v3 child node."""
         prefix = f"{child_path}/"
-        if (meta := _load_zarr_json(prefix, self._mapper)) is not None:
+        if (meta := _load_zarr_json(prefix, self._store)) is not None:
             if meta.node_type == "group":
-                return ZarrGroup(self._mapper, child_path, meta)
+                return ZarrGroup(self._store, child_path, meta)
             elif meta.node_type == "array":
-                return ZarrArray(self._mapper, child_path, meta)
+                return ZarrArray(self._store, child_path, meta)
             else:  # pragma: no cover
                 raise ValueError(f"Unknown node_type: {meta.node_type}")
 
@@ -575,11 +582,11 @@ class ZarrGroup(ZarrNode):
         """Get a v2 child node."""
         prefix = f"{child_path}/"
         # Try group
-        if (meta := _load_zgroup(prefix, self._mapper)) is not None:
-            return ZarrGroup(self._mapper, child_path, meta)
+        if (meta := _load_zgroup(prefix, self._store)) is not None:
+            return ZarrGroup(self._store, child_path, meta)
 
-        if (meta := _load_zarray(prefix, self._mapper)) is not None:
-            return ZarrArray(self._mapper, child_path, meta)
+        if (meta := _load_zarray(prefix, self._store)) is not None:
+            return ZarrArray(self._store, child_path, meta)
 
         raise KeyError(key)
 
@@ -630,7 +637,7 @@ class ZarrArray(ZarrNode):
 
         spec = {
             "driver": "zarr3" if self._metadata.zarr_format == 3 else "zarr",
-            "kvstore": self.store_path,
+            "kvstore": _fsmap_to_tensorstore_kvstore(self._store._fsmap, self._path),
         }
         future = ts.open(spec)
         return future.result()
@@ -725,3 +732,101 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
             f"Expected root node to be 'group', got '{node._metadata.node_type}'"
         )
     return ZarrGroup(cached_mapper, node._path, node._metadata)
+
+
+# ---------------------------------------------------
+
+
+def _fsmap_to_tensorstore_kvstore(fsmap: FSMap, path: str = "") -> dict:
+    """Convert FSMap to tensorstore kvstore spec.
+
+    Parameters
+    ----------
+    fsmap : fsspec.mapping.FSMap
+        The fsspec mapper to convert
+    path : str, optional
+        Additional path relative to the FSMap root to use as prefix
+
+    Returns
+    -------
+    dict
+        Tensorstore kvstore spec
+    """
+    # Get the protocol from the filesystem
+    protocol = fsmap.fs.protocol
+    if isinstance(protocol, tuple):
+        protocol = protocol[0]  # Take first if multiple aliases
+
+    # Normalize the additional path (strip leading/trailing slashes)
+    if path:
+        path = path.strip("/")
+
+    # Map fsspec protocols to tensorstore kvstore drivers
+    if protocol in ("file", "local"):
+        base_path = os.path.abspath(fsmap.root)
+        if path:
+            base_path = os.path.join(base_path, path)
+        return {"driver": "file", "path": base_path}
+
+    elif protocol in ("s3", "s3a"):
+        # Extract bucket and path from root
+        parts = fsmap.root.split("/", 1)
+        bucket = parts[0]
+        base_path = parts[1] if len(parts) > 1 else ""
+
+        # Combine base path with additional path
+        if path:
+            base_path = f"{base_path}/{path}" if base_path else path
+
+        spec = {
+            "driver": "s3",
+            "bucket": bucket,
+        }
+        if base_path:
+            spec["path"] = base_path
+
+        # Include S3 credentials if available
+        if hasattr(fsmap.fs, "key") and fsmap.fs.key:
+            spec["aws_credentials"] = {
+                "access_key_id": fsmap.fs.key,
+                "secret_access_key": fsmap.fs.secret,
+            }
+
+        return spec
+
+    elif protocol in ("gcs", "gs"):
+        # Extract bucket and path from root
+        parts = fsmap.root.split("/", 1)
+        bucket = parts[0]
+        base_path = parts[1] if len(parts) > 1 else ""
+
+        # Combine base path with additional path
+        if path:
+            base_path = f"{base_path}/{path}" if base_path else path
+
+        spec = {"driver": "gcs", "bucket": bucket}
+        if base_path:
+            spec["path"] = base_path
+
+        return spec
+
+    elif protocol in ("http", "https"):
+        # fsmap.root already contains the full URL for http/https
+        base_url = fsmap.root
+        if not base_url.startswith(("http://", "https://")):
+            base_url = f"{protocol}://{base_url}"
+
+        # Append additional path to URL
+        if path:
+            base_url = f"{base_url.rstrip('/')}/{path}"
+
+        return {"driver": "http", "base_url": base_url}
+
+    elif protocol == "memory":
+        return {"driver": "memory"}
+
+    else:
+        raise ValueError(
+            f"Cannot map fsspec protocol '{protocol}' to tensorstore kvstore. "
+            f"Supported protocols: file, s3, gcs, http/https, memory"
+        )
