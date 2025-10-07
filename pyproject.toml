@@ -47,6 +47,7 @@ test-full = [
     "yaozarrs[storage]",
     "ome-zarr>=0.10.2",
     "tensorstore>=0.1.66",
+    "tensorstore>=0.1.71; python_version>='3.13'",
 ]
 dev = [
     { include-group = "test-full" },
