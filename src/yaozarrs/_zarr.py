@@ -18,7 +18,7 @@ import json
 import os
 from collections.abc import Iterator, Mapping
 from pathlib import Path
-from types import MappingProxyType
+from types import MappingProxyType, NoneType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, overload
 
 from fsspec import FSMap, get_mapper
@@ -280,9 +280,12 @@ class _CachedMapper(Mapping[str, bytes]):
         """Check if a key exists in the mapper."""
         if not isinstance(key, str):
             return False
-        if key not in self._cache:
-            self._cache[key] = self._fsmap.get(key)
-        return self._cache[key] is not None
+
+        if key in self._cache:
+            val = self._cache[key]
+        else:
+            self._cache[key] = val = self._fsmap.get(key)
+        return not isinstance(val, (Exception, NoneType))
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
         """Batch fetch multiple items and cache them.
@@ -768,6 +771,21 @@ def _fsmap_to_tensorstore_kvstore(fsmap: FSMap, path: str = "") -> dict:
             base_path = os.path.join(base_path, path)
         return {"driver": "file", "path": base_path}
 
+    elif protocol in ("http", "https"):
+        # fsmap.root already contains the full URL for http/https
+        base_url = fsmap.root
+        if not base_url.startswith(("http://", "https://")):
+            base_url = f"{protocol}://{base_url}"
+
+        # Append additional path to URL
+        if path:
+            base_url = f"{base_url.rstrip('/')}/{path}"
+
+        return {"driver": "http", "base_url": base_url}
+
+    elif protocol == "memory":
+        return {"driver": "memory"}
+
     elif protocol in ("s3", "s3a"):
         # Extract bucket and path from root
         parts = fsmap.root.split("/", 1)
@@ -778,10 +796,7 @@ def _fsmap_to_tensorstore_kvstore(fsmap: FSMap, path: str = "") -> dict:
         if path:
             base_path = f"{base_path}/{path}" if base_path else path
 
-        spec = {
-            "driver": "s3",
-            "bucket": bucket,
-        }
+        spec = {"driver": "s3", "bucket": bucket}
         if base_path:
             spec["path"] = base_path
 
@@ -810,22 +825,7 @@ def _fsmap_to_tensorstore_kvstore(fsmap: FSMap, path: str = "") -> dict:
 
         return spec
 
-    elif protocol in ("http", "https"):
-        # fsmap.root already contains the full URL for http/https
-        base_url = fsmap.root
-        if not base_url.startswith(("http://", "https://")):
-            base_url = f"{protocol}://{base_url}"
-
-        # Append additional path to URL
-        if path:
-            base_url = f"{base_url.rstrip('/')}/{path}"
-
-        return {"driver": "http", "base_url": base_url}
-
-    elif protocol == "memory":
-        return {"driver": "memory"}
-
-    else:
+    else:  # pragma: no cover
         raise ValueError(
             f"Cannot map fsspec protocol '{protocol}' to tensorstore kvstore. "
             f"Supported protocols: file, s3, gcs, http/https, memory"

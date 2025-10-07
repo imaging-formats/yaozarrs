@@ -22,13 +22,17 @@ def write_demo_ome(tmp_path_factory: pytest.TempPathFactory) -> Callable[..., Pa
     except ImportError:
         pytest.skip("ome-zarr not installed", allow_module_level=True)
 
-    def _write_demo(type: Literal["image", "labels", "plate"], **kwargs: Any) -> Path:
+    def _write_demo(
+        type: Literal["image", "labels", "plate", "image-with-labels"], **kwargs: Any
+    ) -> Path:
         if kwargs.get("version") == "0.5" and version("zarr").startswith("2"):
             pytest.skip("zarr v2 does not support OME-Zarr v0.5")
 
         path = tmp_path_factory.mktemp(f"demo_{type}")
-        if type == "image":
+        if type in ("image", "image-with-labels"):
             write_ome_image(path, **kwargs)
+            if type == "image-with-labels":
+                write_ome_labels(path, **kwargs)
         elif type == "labels":
             # XXX: write_labels is special (in ome-zarr) ...
             # it creates a group "labels"

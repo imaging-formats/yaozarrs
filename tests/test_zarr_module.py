@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Callable
 from unittest.mock import patch
 
@@ -201,6 +202,7 @@ def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
     assert node.attrs["key"] == "value"
     array = ZarrArray(node._store, node.path, node._metadata)
     assert array.ndim == 1
+    assert isinstance(node.store, Mapping)
 
 
 def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:

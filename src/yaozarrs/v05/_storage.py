@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from itertools import chain, product
 from typing import TYPE_CHECKING, Any, TypeAlias, TypedDict
 
@@ -28,27 +29,36 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def _is_integer_dtype(dtype_str: str) -> bool:
-    """Check if a dtype string represents an integer type.
+class StorageErrorType(Enum):
+    label_path_not_found = auto()
+    label_path_not_group = auto()
+    invalid_label_image = auto()
+    label_multiscale_count_mismatch = auto()
+    label_dataset_count_mismatch = auto()
+    dataset_path_not_found = auto()
+    dataset_not_array = auto()
+    dataset_dimension_mismatch = auto()
+    dimension_names_mismatch = auto()
+    well_path_not_found = auto()
+    well_path_not_group = auto()
+    invalid_well = auto()
+    field_path_not_found = auto()
+    field_path_not_group = auto()
+    bf2raw_no_images = auto()
+    bf2raw_path_not_found = auto()
+    bf2raw_path_not_group = auto()
+    bf2raw_invalid_image = auto()
+    series_path_not_found = auto()
+    series_path_not_group = auto()
+    series_invalid_image = auto()
+    labels_not_group = auto()
+    invalid_labels_metadata = auto()
+    invalid_label_image_source = auto()
+    label_image_source_not_found = auto()
+    label_non_integer_dtype = auto()
 
-    Parameters
-    ----------
-    dtype_str : str
-        The dtype string to check (e.g., '<i2', 'uint8', 'int32')
-
-    Returns
-    -------
-    bool
-        True if the dtype represents an integer type, False otherwise
-    """
-    # Remove endianness markers
-    dtype_clean = dtype_str.lstrip("<>=|")
-    # Check for integer type indicators
-    return dtype_clean.startswith(("int", "uint")) or (
-        len(dtype_clean) >= 2
-        and dtype_clean[0] in ("i", "u")
-        and dtype_clean[1].isdigit()
-    )
+    def __str__(self) -> str:
+        return self.name
 
 
 # ----------------------------------------------------------
@@ -81,28 +91,6 @@ class ErrorDetails(TypedDict):
     """A URL giving information about the error."""
 
 
-def _create_error(
-    error_type: str,
-    loc: tuple[int | str, ...],
-    msg: str,
-    input_val: Any = None,
-    ctx: dict[str, Any] | None = None,
-    url: str | None = None,
-) -> ErrorDetails:
-    """Create a standardized error detail dictionary."""
-    error: ErrorDetails = {
-        "type": error_type,
-        "loc": loc,
-        "msg": msg,
-        "input": input_val,
-    }
-    if ctx is not None:
-        error["ctx"] = ctx
-    if url is not None:
-        error["url"] = url
-    return error
-
-
 @dataclass(slots=True)
 class ValidationResult:
     """Result of a validation operation containing any errors found."""
@@ -115,7 +103,7 @@ class ValidationResult:
 
     def add_error(
         self,
-        error_type: str,
+        error_type: StorageErrorType,
         loc: tuple[int | str, ...],
         msg: str,
         input_val: Any = None,
@@ -123,7 +111,17 @@ class ValidationResult:
         url: str | None = None,
     ) -> ValidationResult:
         """Add an error to this result and return self for chaining."""
-        self.errors.append(_create_error(error_type, loc, msg, input_val, ctx, url))
+        error: ErrorDetails = {
+            "type": str(error_type),
+            "loc": loc,
+            "msg": msg,
+            "input": input_val,
+        }
+        if ctx is not None:
+            error["ctx"] = ctx
+        if url is not None:
+            error["url"] = url
+        self.errors.append(error)
         return self
 
     @property
@@ -225,7 +223,7 @@ def validate_zarr_store(
     if isinstance(obj, ZarrGroup):
         zarr_group = obj
     elif isinstance(obj, OMEZarrGroupJSON):
-        if not obj.uri:
+        if not obj.uri:  # pragma: no cover
             raise ValueError("Cannot validate OMEZarrGroupJSON without a uri")
         attrs_model = obj.attributes
         zarr_group = open_group(obj.uri)
@@ -389,7 +387,7 @@ class StorageValidatorV05:
 
             if label_path not in labels_group:
                 result.add_error(
-                    "label_path_not_found",
+                    StorageErrorType.label_path_not_found,
                     label_loc,
                     f"Label path '{label_path}' not found in labels group",
                     label_path,
@@ -399,7 +397,7 @@ class StorageValidatorV05:
             label_group = labels_group[label_path]
             if not isinstance(label_group, ZarrGroup):
                 result.add_error(
-                    "label_path_not_group",
+                    StorageErrorType.label_path_not_group,
                     label_loc,
                     f"Label path '{label_path}' is not a zarr group",
                     label_path,
@@ -407,15 +405,17 @@ class StorageValidatorV05:
                 continue
 
             # Validate as LabelImage
-            ome_attrs = validate_ome_object(label_group.attrs, OMEAttributes)
-
-            if not isinstance((label_image_model := ome_attrs.ome), Image):
+            try:
+                label_image_model = label_group.ome_metadata()
+            except ValueError:
+                label_image_model = None
+            if not isinstance(label_image_model, Image):
                 result.add_error(
-                    "invalid_label_image",
+                    StorageErrorType.invalid_label_image,
                     label_loc,
                     f"Label path '{label_path}' does not contain "
                     "valid Image ('multiscales') metadata",
-                    {"path": label_path, "type": type(ome_attrs.ome).__name__},
+                    {"path": label_path, "type": type(label_image_model).__name__},
                 )
                 continue
 
@@ -425,9 +425,10 @@ class StorageValidatorV05:
             if parent_image_model is not None:
                 n_lbl_ms = len(label_image_model.multiscales)
                 n_img_ms = len(parent_image_model.multiscales)
+
                 if n_lbl_ms != n_img_ms:
                     result.add_error(
-                        "label_multiscale_count_mismatch",
+                        StorageErrorType.label_multiscale_count_mismatch,
                         label_loc,
                         f"Label image '{label_path}' has {n_lbl_ms} "
                         f"multiscales, but parent image has {n_img_ms}",
@@ -445,7 +446,7 @@ class StorageValidatorV05:
                     n_img_ds = len(img_ms.datasets)
                     if n_lbl_ds < n_img_ds:
                         result.add_error(
-                            "label_dataset_count_mismatch",
+                            StorageErrorType.label_dataset_count_mismatch,
                             (*label_loc, "multiscales", ms_idx),
                             f"Label image '{label_path}' multiscale index {ms_idx} "
                             f"has {n_lbl_ds} datasets, but parent image multiscale "
@@ -461,7 +462,7 @@ class StorageValidatorV05:
             if not isinstance(label_image_model, LabelImage):
                 # TODO: should it just be a warning?
                 result.add_error(
-                    "invalid_label_image",
+                    StorageErrorType.invalid_label_image,
                     label_loc,
                     f"Label path '{label_path}' contains Image metadata, "
                     "but is not a LabelImage (missing 'image-label' metadata?)",
@@ -471,7 +472,7 @@ class StorageValidatorV05:
 
             # Recursively validate the label image
             result = result.merge(
-                self.visit_image(label_group, label_image_model, label_loc)
+                self.visit_label_image(label_group, label_image_model, label_loc)
             )
 
         return result
@@ -488,7 +489,7 @@ class StorageValidatorV05:
             # Check if path exists as array
             if (arr := zarr_group.get(dataset.path)) is None:
                 result.add_error(
-                    "dataset_path_not_found",
+                    StorageErrorType.dataset_path_not_found,
                     ds_loc,
                     f"Dataset path '{dataset.path}' not found in zarr group",
                     dataset.path,
@@ -497,7 +498,7 @@ class StorageValidatorV05:
 
             if not isinstance(arr, ZarrArray):
                 result.add_error(
-                    "dataset_not_array",
+                    StorageErrorType.dataset_not_array,
                     ds_loc,
                     f"Dataset path '{dataset.path}' exists but is not a zarr array",
                     dataset.path,
@@ -508,7 +509,7 @@ class StorageValidatorV05:
             expected_ndim = len(multiscale.axes)
             if arr.ndim != expected_ndim:
                 result.add_error(
-                    "dataset_dimension_mismatch",
+                    StorageErrorType.dataset_dimension_mismatch,
                     ds_loc,
                     f"Dataset '{dataset.path}' has {arr.ndim} dimensions "
                     f"but axes specify {expected_ndim}",
@@ -524,7 +525,7 @@ class StorageValidatorV05:
                 expected_names = [ax.name for ax in multiscale.axes]
                 if dim_names != expected_names:
                     result.add_error(
-                        "dimension_names_mismatch",
+                        StorageErrorType.dimension_names_mismatch,
                         (*ds_loc, "dimension_names"),
                         f"Array dimension_names {dim_names} don't match "
                         f"axes names {expected_names}",
@@ -559,7 +560,7 @@ class StorageValidatorV05:
 
             if (well_group := zarr_group.get(well.path)) is None:
                 result.add_error(
-                    "well_path_not_found",
+                    StorageErrorType.well_path_not_found,
                     (*well_loc, "path"),
                     f"Well path '{well.path}' not found in plate group",
                     well.path,
@@ -568,7 +569,7 @@ class StorageValidatorV05:
 
             if not isinstance(well_group, ZarrGroup):
                 result.add_error(
-                    "well_path_not_group",
+                    StorageErrorType.well_path_not_group,
                     (*well_loc, "path"),
                     f"Well path '{well.path}' is not a zarr group",
                     well.path,
@@ -576,10 +577,21 @@ class StorageValidatorV05:
                 continue
 
             # Validate well metadata
-            well_model = well_group.ome_metadata()
+            try:
+                well_model = well_group.ome_metadata()
+            except ValueError as e:
+                result.add_error(
+                    StorageErrorType.invalid_well,
+                    well_loc,
+                    f"Well path '{well.path}' does not "
+                    f"contain valid Well metadata:\n{e}",
+                    {"path": well.path, "error": e},
+                )
+                continue
+
             if not isinstance(well_model, Well):
                 result.add_error(
-                    "invalid_well",
+                    StorageErrorType.invalid_well,
                     well_loc,
                     f"Well path '{well.path}' does not contain valid Well metadata",
                     {"path": well.path, "type": type(well_model).__name__},
@@ -605,10 +617,9 @@ class StorageValidatorV05:
         # Validate each field image path
         for field_idx, field_image in enumerate(well_model.well.images):
             field_loc = (*loc_prefix, "well", "images", field_idx)
-
             if (field_group := zarr_group.get(field_image.path)) is None:
                 result.add_error(
-                    "field_path_not_found",
+                    StorageErrorType.field_path_not_found,
                     (*field_loc, "path"),
                     f"Field path '{field_image.path}' not found in well group",
                     field_image.path,
@@ -617,7 +628,7 @@ class StorageValidatorV05:
 
             if not isinstance(field_group, ZarrGroup):
                 result.add_error(
-                    "field_path_not_group",
+                    StorageErrorType.field_path_not_group,
                     (*field_loc, "path"),
                     f"Field path '{field_image.path}' is not a zarr group",
                     field_image.path,
@@ -625,11 +636,15 @@ class StorageValidatorV05:
                 continue
 
             # Validate field as image group
-            field_attrs_model = validate_ome_object(field_group.attrs, OMEAttributes)
-            if isinstance(field_attrs_model.ome, Image):
-                result = result.merge(
-                    self.visit_image(field_group, field_attrs_model.ome, field_loc)
-                )
+            try:
+                field_group_model = field_group.ome_metadata()
+            except Exception:
+                pass
+            else:
+                if isinstance(field_group_model, Image):
+                    result = result.merge(
+                        self.visit_image(field_group, field_group_model, field_loc)
+                    )
 
         return result
 
@@ -679,7 +694,7 @@ class StorageValidatorV05:
 
         if not numbered_paths:
             result.add_error(
-                "bf2raw_no_images",
+                StorageErrorType.bf2raw_no_images,
                 loc_prefix,
                 "Bioformats2raw group contains no numbered image directories",
                 None,
@@ -696,7 +711,7 @@ class StorageValidatorV05:
             image_group = zarr_group.get(path)
             if image_group is None:
                 result.add_error(
-                    "bf2raw_path_not_found",
+                    StorageErrorType.bf2raw_path_not_found,
                     image_loc,
                     f"Bioformats2raw path '{path}' not found",
                     path,
@@ -705,7 +720,7 @@ class StorageValidatorV05:
 
             if not isinstance(image_group, ZarrGroup):
                 result.add_error(
-                    "bf2raw_path_not_group",
+                    StorageErrorType.bf2raw_path_not_group,
                     image_loc,
                     f"Bioformats2raw path '{path}' is not a zarr group",
                     path,
@@ -721,7 +736,7 @@ class StorageValidatorV05:
                 )
             else:
                 result.add_error(
-                    "bf2raw_invalid_image",
+                    StorageErrorType.bf2raw_invalid_image,
                     image_loc,
                     f"Bioformats2raw path '{path}' does not contain "
                     "valid Image metadata",
@@ -750,7 +765,7 @@ class StorageValidatorV05:
             series_group = zarr_group.get(series_path)
             if series_group is None:
                 result.add_error(
-                    "series_path_not_found",
+                    StorageErrorType.series_path_not_found,
                     series_loc,
                     f"Series path '{series_path}' not found in series group",
                     series_path,
@@ -759,7 +774,7 @@ class StorageValidatorV05:
 
             if not isinstance(series_group, ZarrGroup):
                 result.add_error(
-                    "series_path_not_group",
+                    StorageErrorType.series_path_not_group,
                     series_loc,
                     f"Series path '{series_path}' is not a zarr group",
                     series_path,
@@ -775,7 +790,7 @@ class StorageValidatorV05:
                 )
             else:
                 result.add_error(
-                    "series_invalid_image",
+                    StorageErrorType.series_invalid_image,
                     series_loc,
                     f"Series path '{series_path}' does not contain "
                     "valid Image metadata",
@@ -839,11 +854,12 @@ class StorageValidatorV05:
         if not isinstance(first_well, ZarrGroup):
             return []
 
-        first_well_meta = validate_ome_object(first_well.attrs, OMEAttributes)
-
-        if isinstance(first_well_meta.ome, Well):
-            return [img.path for img in first_well_meta.ome.well.images]
-
+        try:
+            first_well_meta = validate_ome_object(first_well.attrs, OMEAttributes)
+            if isinstance(first_well_meta.ome, Well):
+                return [img.path for img in first_well_meta.ome.well.images]
+        except Exception:
+            pass
         return []
 
     def _get_dataset_paths_from_first_field(
@@ -880,7 +896,7 @@ class StorageValidatorV05:
 
         if not isinstance(labels_group, ZarrGroup):
             result.add_error(
-                "labels_not_group",
+                StorageErrorType.labels_not_group,
                 labels_loc,
                 f"Found 'labels' path but it is a {type(labels_group)}, "
                 "not a zarr group",
@@ -897,7 +913,7 @@ class StorageValidatorV05:
                 )
         except Exception as e:
             result.add_error(
-                "invalid_labels_metadata",
+                StorageErrorType.invalid_labels_metadata,
                 labels_loc,
                 f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
                 f"but metadata not valid LabelsGroup metadata: {e!s}",
@@ -925,7 +941,7 @@ class StorageValidatorV05:
             img = from_uri(image_source, OMEZarrGroupJSON)
             if not isinstance(img.attributes.ome, Image):
                 result.add_error(
-                    "invalid_label_image_source",
+                    StorageErrorType.invalid_label_image_source,
                     (*loc_prefix, "image_label", "source", "image"),
                     f"Label image source '{image_source}' does not contain "
                     "valid Image ('multiscales') metadata",
@@ -933,7 +949,7 @@ class StorageValidatorV05:
                 )
         except Exception as e:
             result.add_error(
-                "label_image_source_not_found",
+                StorageErrorType.label_image_source_not_found,
                 (*loc_prefix, "image_label", "source", "image"),
                 f"Label image source '{image_source}' could not be opened: {e!s}",
                 image_source,
@@ -960,18 +976,16 @@ class StorageValidatorV05:
                     continue  # pragma: no cover
 
                 # check if integer dtype
-                if not isinstance(arr, ZarrArray):
-                    continue  # pragma: no cover
-
-                dt = arr.dtype
-                if not _is_integer_dtype(dt):
-                    result.add_error(
-                        "label_non_integer_dtype",
-                        ds_loc,
-                        f"Label array '{dataset.path}' has non-integer dtype "
-                        f"'{dt}'. Labels must use integer types.",
-                        {"path": dataset.path, "dtype": str(dt)},
-                    )
+                if isinstance(arr, ZarrArray):
+                    dt = arr.dtype
+                    if not _is_integer_dtype(dt):
+                        result.add_error(
+                            StorageErrorType.label_non_integer_dtype,
+                            ds_loc,
+                            f"Label array '{dataset.path}' has non-integer dtype "
+                            f"'{dt}'. Labels must use integer types.",
+                            {"path": dataset.path, "dtype": str(dt)},
+                        )
 
         return result
 
@@ -1027,3 +1041,26 @@ def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:
         # For other filesystems, use posixpath for UNIX-style path joining
         # Most fsspec filesystems use forward slashes as separators
         return posixpath.normpath(posixpath.join(str(root), path, src_rel_path))
+
+
+def _is_integer_dtype(dtype_str: str) -> bool:
+    """Check if a dtype string represents an integer type.
+
+    Parameters
+    ----------
+    dtype_str : str
+        The dtype string to check (e.g., '<i2', 'uint8', 'int32')
+
+    Returns
+    -------
+    bool
+        True if the dtype represents an integer type, False otherwise
+    """
+    # Remove endianness markers
+    dtype_clean = dtype_str.lstrip("<>=|")
+    # Check for integer type indicators
+    return dtype_clean.startswith(("int", "uint")) or (
+        len(dtype_clean) >= 2
+        and dtype_clean[0] in ("i", "u")
+        and dtype_clean[1].isdigit()
+    )
