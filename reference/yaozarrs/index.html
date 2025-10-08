@@ -550,6 +550,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#yaozarrs.open_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;open_group
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" open_group">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.open_group(uri)" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;uri
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#yaozarrs.validate_ome_json" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;validate_ome_json
@@ -706,6 +730,13 @@
             –
             <div class="doc-md-description">
               <p>Load and validate any OME-Zarr group from a URI or local path.</p>
+            </div>
+          </li>
+          <li class="doc-section-item field-body">
+            <b><code><a class="autorefs autorefs-internal" title="            open_group (yaozarrs.open_group)" href="#yaozarrs.open_group">open_group</a></code></b>
+            –
+            <div class="doc-md-description">
+              <p>Open a zarr v2/v3 group from a URI.</p>
             </div>
           </li>
           <li class="doc-section-item field-body">
@@ -910,6 +941,200 @@ valid OME-Zarr node type, depending on the object detected.</p>
 </span><span id="__span-0-109">    <span class="n">obj</span> <span class="o">=</span> <span class="n">validate_ome_json</span><span class="p">(</span><span class="n">json_content</span><span class="p">,</span> <span class="bp">cls</span> <span class="ow">or</span> <span class="n">AnyOMEGroup</span><span class="p">)</span>
 </span><span id="__span-0-110">    <span class="n">obj</span><span class="o">.</span><span class="n">uri</span> <span class="o">=</span> <span class="n">uri_str</span>
 </span><span id="__span-0-111">    <span class="k">return</span> <span class="n">obj</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="yaozarrs.open_group" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">open_group</span>
+
+
+<a href="#yaozarrs.open_group" class="headerlink" title="Permanent link">#</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><span class="nf">open_group</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span> <span class="o">|</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ZarrGroup</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Open a zarr v2/v3 group from a URI.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<h3 id="yaozarrs.open_group(uri)" class="doc doc-heading doc-heading-parameter">              <b><code>uri</code></b>
+<a href="#yaozarrs.open_group(uri)" class="headerlink" title="Permanent link">#</a></h3>              (<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="os.PathLike" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file"),
+or a zarr-python Group.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="yaozarrs._zarr.ZarrGroup">ZarrGroup</span></code>
+          –
+          <div class="doc-md-description">
+            <p>The opened zarr group with caching enabled.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError">FileNotFoundError</a></code>
+            –
+          <div class="doc-md-description">
+            <p>If no zarr metadata is found at the specified URI.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+              <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            –
+          <div class="doc-md-description">
+            <p>If the metadata is invalid or inconsistent, or if the root node is not a group.</p>
+          </div>
+        </li>
+    </ul>
+
+
+            <details class="quote">
+              <summary>Source code in <code>src/yaozarrs/_zarr.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-661"><span class="k">def</span><span class="w"> </span><span class="nf">open_group</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ZarrGroup</span><span class="p">:</span>
+</span><span id="__span-0-662"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Open a zarr v2/v3 group from a URI.</span>
+</span><span id="__span-0-663">
+</span><span id="__span-0-664"><span class="sd">    Parameters</span>
+</span><span id="__span-0-665"><span class="sd">    ----------</span>
+</span><span id="__span-0-666"><span class="sd">    uri : str | os.PathLike</span>
+</span><span id="__span-0-667"><span class="sd">        The URI of the zarr store (e.g., &quot;https://...&quot;, &quot;s3://...&quot;, &quot;/path/to/file&quot;),</span>
+</span><span id="__span-0-668"><span class="sd">        or a zarr-python Group.</span>
+</span><span id="__span-0-669">
+</span><span id="__span-0-670"><span class="sd">    Returns</span>
+</span><span id="__span-0-671"><span class="sd">    -------</span>
+</span><span id="__span-0-672"><span class="sd">    ZarrGroup</span>
+</span><span id="__span-0-673"><span class="sd">        The opened zarr group with caching enabled.</span>
+</span><span id="__span-0-674">
+</span><span id="__span-0-675"><span class="sd">    Raises</span>
+</span><span id="__span-0-676"><span class="sd">    ------</span>
+</span><span id="__span-0-677"><span class="sd">    FileNotFoundError</span>
+</span><span id="__span-0-678"><span class="sd">        If no zarr metadata is found at the specified URI.</span>
+</span><span id="__span-0-679"><span class="sd">    ValueError</span>
+</span><span id="__span-0-680"><span class="sd">        If the metadata is invalid or inconsistent, or if the root node is not a group.</span>
+</span><span id="__span-0-681"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-682">    <span class="k">try</span><span class="p">:</span>
+</span><span id="__span-0-683">        <span class="kn">from</span><span class="w"> </span><span class="nn">fsspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSMap</span><span class="p">,</span> <span class="n">get_mapper</span>
+</span><span id="__span-0-684">    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="__span-0-685">        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+</span><span id="__span-0-686">            <span class="s2">&quot;fsspec package is required for open_group().  &quot;</span>
+</span><span id="__span-0-687">            <span class="s2">&quot;Please install with `pip install yaozarrs[io]` or &quot;</span>
+</span><span id="__span-0-688">            <span class="s2">&quot;`pip install fsspec`.&quot;</span>
+</span><span id="__span-0-689">        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+</span><span id="__span-0-690">
+</span><span id="__span-0-691">    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)):</span>
+</span><span id="__span-0-692">        <span class="n">uri</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">uri</span><span class="p">))</span>
+</span><span id="__span-0-693">    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">ZarrGroup</span><span class="p">):</span>
+</span><span id="__span-0-694">        <span class="k">return</span> <span class="n">uri</span>
+</span><span id="__span-0-695">    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="s2">&quot;store&quot;</span><span class="p">):</span>
+</span><span id="__span-0-696">        <span class="c1"># Handle both zarr v2 and v3 Group objects</span>
+</span><span id="__span-0-697">        <span class="c1"># v3: str(group.store) returns a URI like &quot;file:///path&quot;</span>
+</span><span id="__span-0-698">        <span class="c1"># v2: group.store.path returns the directory path</span>
+</span><span id="__span-0-699">        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">uri</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">):</span>
+</span><span id="__span-0-700">            <span class="c1"># Zarr v2: DirectoryStore has .path attribute</span>
+</span><span id="__span-0-701">            <span class="n">uri</span> <span class="o">=</span> <span class="n">uri</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">path</span>
+</span><span id="__span-0-702">        <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-703">            <span class="c1"># Zarr v3: LocalStore&#39;s __str__ returns URI</span>
+</span><span id="__span-0-704">            <span class="n">uri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
+</span><span id="__span-0-705">    <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="__span-0-706">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+</span><span id="__span-0-707">            <span class="s2">&quot;uri must be a string, os.PathLike, or have a &#39;store&#39; attribute&quot;</span>
+</span><span id="__span-0-708">        <span class="p">)</span>
+</span><span id="__span-0-709">
+</span><span id="__span-0-710">    <span class="n">mapper</span> <span class="o">=</span> <span class="n">get_mapper</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+</span><span id="__span-0-711">
+</span><span id="__span-0-712">    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mapper</span><span class="p">,</span> <span class="n">FSMap</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="__span-0-713">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected FSMap from get_mapper, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mapper</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-714">
+</span><span id="__span-0-715">    <span class="c1"># Wrap in caching layer for metadata-level caching</span>
+</span><span id="__span-0-716">    <span class="n">cached_mapper</span> <span class="o">=</span> <span class="n">_CachedMapper</span><span class="p">(</span><span class="n">mapper</span><span class="p">)</span>
+</span><span id="__span-0-717">    <span class="n">node</span> <span class="o">=</span> <span class="n">ZarrNode</span><span class="p">(</span><span class="n">cached_mapper</span><span class="p">)</span>
+</span><span id="__span-0-718">
+</span><span id="__span-0-719">    <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">node_type</span> <span class="o">!=</span> <span class="s2">&quot;group&quot;</span><span class="p">:</span>
+</span><span id="__span-0-720">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="__span-0-721">            <span class="sa">f</span><span class="s2">&quot;Expected root node to be &#39;group&#39;, got &#39;</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">node_type</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+</span><span id="__span-0-722">        <span class="p">)</span>
+</span><span id="__span-0-723">    <span class="k">return</span> <span class="n">ZarrGroup</span><span class="p">(</span><span class="n">cached_mapper</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">_metadata</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
