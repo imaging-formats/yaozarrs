@@ -664,7 +664,8 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     Parameters
     ----------
     uri : str | os.PathLike
-        The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file")
+        The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file"),
+        or a zarr-python Group.
 
     Returns
     -------
