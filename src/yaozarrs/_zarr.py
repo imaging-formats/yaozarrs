@@ -21,7 +21,6 @@ from pathlib import Path
 from types import MappingProxyType, NoneType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, overload
 
-from fsspec import FSMap, get_mapper
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
 from yaozarrs import v04, v05
@@ -32,6 +31,7 @@ if TYPE_CHECKING:
 
     import tensorstore  # type: ignore
     import zarr  # type: ignore
+    from fsspec import FSMap
 
     _T = TypeVar("_T")
 
@@ -383,7 +383,7 @@ class ZarrNode:
             loaded from the store.
         """
         # Ensure we have a cached mapper for performance
-        if isinstance(store, FSMap) and not isinstance(store, _CachedMapper):
+        if not isinstance(store, _CachedMapper):
             store = _CachedMapper(store)
 
         self._store = store
@@ -678,6 +678,11 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     ValueError
         If the metadata is invalid or inconsistent, or if the root node is not a group.
     """
+    try:
+        from fsspec import FSMap, get_mapper
+    except ImportError as e:
+        raise ImportError("fsspec package is required for open_group()") from e
+
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
     elif isinstance(uri, ZarrGroup):
