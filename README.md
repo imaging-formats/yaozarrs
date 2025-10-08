@@ -138,6 +138,11 @@ yaozarrs.validate_zarr_store("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0
 
 ## Open zarr arrays using zarr-python or tensorstore
 
+> [!IMPORTANT]  
+>
+> - `to_tensorstore()` requires `tensorstore`
+> - `to_zarr_python()` requires `zarr`
+
 This package does not depend on `zarr` or `tensorstore`, even for validating
 OME-Zarr stores. (It uses a minimal representation of a zarr group internally,
 backed by `fsspec`.)  If you would like to actually open arrays, you can use
