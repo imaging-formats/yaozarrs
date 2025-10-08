@@ -7,6 +7,8 @@ from typing import Any, Callable, cast
 
 import pytest
 
+from yaozarrs._zarr import open_group
+
 try:
     import zarr
 except ImportError:
@@ -154,6 +156,14 @@ def test_validate_valid_demo_storage(type: str, write_demo_ome: Callable) -> Non
         validate_zarr_store(path)
     except connection_exceptions:
         pytest.xfail("No internet")
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+def test_group_from_group(write_demo_ome: Callable, version: str) -> None:
+    """Test validation with intentionally broken storage."""
+    path = write_demo_ome("image", version=version)
+    group = open_group(path)
+    assert open_group(group) is group
 
 
 def test_validate_valid_demo_storage_bf2raw_ome_group(write_demo_ome: Callable) -> None:

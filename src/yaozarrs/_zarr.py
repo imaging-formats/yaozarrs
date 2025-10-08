@@ -501,8 +501,7 @@ class ZarrGroup(ZarrNode):
         if "ome" in attrs:
             if "version" in attrs["ome"]:
                 return attrs["ome"]["version"]
-
-        return None
+        return None  # pragma: no cover
 
     def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
@@ -763,7 +762,7 @@ def _fsmap_to_tensorstore_kvstore(fsmap: FSMap, path: str = "") -> dict:
     elif protocol == "memory":
         return {"driver": "memory"}
 
-    elif protocol in ("s3", "s3a"):
+    elif protocol in ("s3", "s3a"):  # pragma: no cover
         # Extract bucket and path from root
         parts = fsmap.root.split("/", 1)
         bucket = parts[0]
@@ -786,7 +785,7 @@ def _fsmap_to_tensorstore_kvstore(fsmap: FSMap, path: str = "") -> dict:
 
         return spec
 
-    elif protocol in ("gcs", "gs"):
+    elif protocol in ("gcs", "gs"):  # pragma: no cover
         # Extract bucket and path from root
         parts = fsmap.root.split("/", 1)
         bucket = parts[0]
