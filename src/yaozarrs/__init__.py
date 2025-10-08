@@ -10,9 +10,11 @@ except PackageNotFoundError:  # pragma: no cover
 from . import v04, v05
 from ._storage import validate_zarr_store
 from ._validate import from_uri, validate_ome_json, validate_ome_object
+from ._zarr import open_group
 
 __all__ = [
     "from_uri",
+    "open_group",
     "v04",
     "v05",
     "validate_ome_json",

@@ -5,11 +5,17 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 README = Path(__file__).parent.parent / "README.md"
 
 
 def test_readme_python_blocks(tmp_path: Path) -> None:
     """Extract and execute all Python code blocks from README.md."""
+    pytest.importorskip("tensorstore")
+    pytest.importorskip("zarr")
+    pytest.importorskip("fsspec")
+
     readme_content = README.read_text()
 
     python_blocks = re.findall(r"```python\n(.*?)```", readme_content, re.DOTALL)

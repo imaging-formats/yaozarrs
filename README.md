@@ -30,6 +30,13 @@ pip install yaozarrs[io]
 
 Here are some things you can do with `yaozarrs`.
 
+1. [Construct valid ome-zarr JSON documents for creating ome-zarr groups](#construct-valid-ome-zarr-json-documents-for-creating-ome-zarr-groups)
+2. [Validate & load existing JSON documents](#validate--load-existing-json-documents)
+3. [Validate arbitrary python objects as an OME-NGFF object](#validate-arbitrary-python-objects-as-an-ome-ngff-object)
+4. [Validate any zarr store using the CLI](#validate-any-zarr-store-using-the-cli)
+5. [Validate any zarr store programmatically](#validate-any-zarr-store-programmatically)
+6. [Open zarr arrays using zarr-python or tensorstore](#open-zarr-arrays-using-zarr-python-or-tensorstore)
+
 ### Construct valid ome-zarr JSON documents for creating ome-zarr groups
 
 ```python
@@ -91,8 +98,6 @@ obj = yaozarrs.validate_ome_json(json_string)
 # )
 ```
 
-</details>
-
 ### Validate arbitrary python objects as an OME-NGFF object
 
 ```python
@@ -129,6 +134,134 @@ $ yaozarrs validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/60012
 import yaozarrs
 
 yaozarrs.validate_zarr_store("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr")
+```
+
+## Open zarr arrays using zarr-python or tensorstore
+
+This package does not depend on `zarr` or `tensorstore`, even for validating
+OME-Zarr stores. (It uses a minimal representation of a zarr group internally,
+backed by `fsspec`.)  If you would like to actually open arrays, you can use
+either `zarr` or `tensorstore` directly.
+
+```python
+from yaozarrs import open_group
+
+group = open_group("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr")
+array = group['0']
+# <ZarrArray https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr/0>
+
+# read bytes using tensorstore or zarr-python:
+ts_array = array.to_tensorstore() # isinstance(ts_array, tensorstore.TensorStore)
+zarr_array = array.to_zarr_python() # isinstance(zarr_array, zarr.Array)
+
+# inspect the OME metadata associated with the group:
+print(group.ome_metadata())
+# Image(
+#     version='0.5',
+#     multiscales=[
+#         Multiscale(
+#             name=None,
+#             axes=[
+#                 ChannelAxis(name='c', type='channel', unit=None),
+#                 SpaceAxis(
+#                     name='z',
+#                     type='space',
+#                     unit='micrometer'
+#                 ),
+#                 SpaceAxis(
+#                     name='y',
+#                     type='space',
+#                     unit='micrometer'
+#                 ),
+#                 SpaceAxis(
+#                     name='x',
+#                     type='space',
+#                     unit='micrometer'
+#                 )
+#             ],
+#             datasets=[
+#                 Dataset(
+#                     path='0',
+#                     coordinateTransformations=[
+#                         ScaleTransformation(
+#                             type='scale',
+#                             scale=[
+#                                 1.0,
+#                                 0.5002025531914894,
+#                                 0.3603981534640209,
+#                                 0.3603981534640209
+#                             ]
+#                         )
+#                     ]
+#                 ),
+#                 Dataset(
+#                     path='1',
+#                     coordinateTransformations=[
+#                         ScaleTransformation(
+#                             type='scale',
+#                             scale=[
+#                                 1.0,
+#                                 0.5002025531914894,
+#                                 0.7207963069280418,
+#                                 0.7207963069280418
+#                             ]
+#                         )
+#                     ]
+#                 ),
+#                 Dataset(
+#                     path='2',
+#                     coordinateTransformations=[
+#                         ScaleTransformation(
+#                             type='scale',
+#                             scale=[
+#                                 1.0,
+#                                 0.5002025531914894,
+#                                 1.4415926138560835,
+#                                 1.4415926138560835
+#                             ]
+#                         )
+#                     ]
+#                 )
+#             ],
+#             coordinateTransformations=None,
+#             type=None,
+#             metadata=None
+#         )
+#     ],
+#     omero=Omero(
+#         channels=[
+#             OmeroChannel(
+#                 window=OmeroWindow(
+#                     start=0.0,
+#                     min=0.0,
+#                     end=1500.0,
+#                     max=65535.0
+#                 ),
+#                 label='LaminB1',
+#                 family='linear',
+#                 color='0000FF',
+#                 active=True,
+#                 inverted=False,
+#                 coefficient=1.0
+#             ),
+#             OmeroChannel(
+#                 window=OmeroWindow(
+#                     start=0.0,
+#                     min=0.0,
+#                     end=1500.0,
+#                     max=65535.0
+#                 ),
+#                 label='Dapi',
+#                 family='linear',
+#                 color='FFFF00',
+#                 active=True,
+#                 inverted=False,
+#                 coefficient=1.0
+#             )
+#         ],
+#         id=1
+#     )
+# )
 ```
 
 ## Existing Projects

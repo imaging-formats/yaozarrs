@@ -387,7 +387,7 @@ class ZarrNode:
             store = _CachedMapper(store)
 
         self._store = store
-        self._path = path.rstrip("/")
+        self._path = str(path).rstrip("/")
         if meta is None:
             self._metadata = _load_zarr_metadata(self._store, self._path)
         elif isinstance(meta, ZarrMetadata):
