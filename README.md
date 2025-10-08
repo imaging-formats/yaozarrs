@@ -65,7 +65,7 @@ scale = v05.Multiscale(
 img = v05.Image(multiscales=[scale])
 zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": img})
 json_data = zarr_json.model_dump_json(exclude_unset=True)
-Path("zarr.json").write_text(json_data, encoding="utf-8")
+Path("zarr.json").write_text(json_data)
 ```
 
 ### Validate & load existing JSON documents

@@ -25,7 +25,9 @@ def test_readme_python_blocks(tmp_path: Path) -> None:
     for i, block in enumerate(python_blocks):
         try:
             # replace "zarr.json" with tmp_path / "zarr.json"
-            block = block.replace("zarr.json", str(tmp_path / "zarr.json"))
+            # use repr to properly escape Windows paths with backslashes
+            tmp_json_path = repr(str(tmp_path / "zarr.json"))
+            block = block.replace('"zarr.json"', tmp_json_path)
             exec(block, namespace)
         except Exception as e:
             raise AssertionError(
