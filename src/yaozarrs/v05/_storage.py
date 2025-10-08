@@ -7,6 +7,7 @@ and metadata consistency.
 
 from __future__ import annotations
 
+import posixpath
 import warnings
 from dataclasses import dataclass
 from itertools import chain, product
@@ -802,8 +803,6 @@ def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:
     str
         The resolved absolute path
     """
-    import posixpath
-
     # Get the mapper's root path if available
     mapper = zarr_group._store
     path = zarr_group.path

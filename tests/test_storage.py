@@ -243,15 +243,6 @@ MULTI_SCALE2 = {
 
 IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
 
-# bf2raw_no_images = auto()
-# bf2raw_path_not_found = auto()
-# bf2raw_path_not_group = auto()
-# bf2raw_invalid_image = auto()
-# series_path_not_found = auto()
-# series_path_not_group = auto()
-# series_invalid_image = auto()
-# invalid_labels_metadata = auto()
-
 
 @pytest.mark.parametrize(
     "case",
@@ -364,16 +355,32 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             {"type": "image-with-labels"},
             update_meta("labels", ("attributes", "ome", "multiscales"), []),
         ),
-        # StorageTestCase(
-        #     StorageErrorType.invalid_label_image_source,
-        #     {"type": "image-with-labels"},
-        #     lambda x: None,
-        # ),
-        # StorageTestCase(
-        #     StorageErrorType.label_image_source_not_found,
-        #     {"type": "image-with-labels"},
-        #     lambda x: None,
-        # ),
+        StorageTestCase(
+            StorageErrorType.label_image_source_invalid,
+            {"type": "labels"},
+            lambda p: (
+                # Create a source group with LabelsGroup metadata (not Image)
+                zarr.group(
+                    p / "source_dummy",
+                    attributes={"ome": {"version": "0.5", "labels": ["foo"]}},
+                ),
+                # Point the label to this invalid source
+                update_meta(
+                    ("annotations",),
+                    ("attributes", "ome", "image-label"),
+                    {"source": {"image": "../source_dummy"}},
+                )(p),
+            )[1],
+        ),
+        StorageTestCase(
+            StorageErrorType.label_image_source_not_found,
+            {"type": "labels"},
+            lambda p: update_meta(
+                ("annotations",),
+                ("attributes", "ome", "image-label"),
+                {"source": {"image": "../nonexistent"}},
+            )(p),
+        ),
         StorageTestCase(
             StorageErrorType.bf2raw_no_images,
             {"type": "bioformats2raw"},
