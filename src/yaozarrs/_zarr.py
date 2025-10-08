@@ -681,7 +681,11 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     try:
         from fsspec import FSMap, get_mapper
     except ImportError as e:
-        raise ImportError("fsspec package is required for open_group()") from e
+        raise ImportError(
+            "fsspec package is required for open_group().  "
+            "Please install with `pip install yaozarrs[io]` or "
+            "`pip install fsspec`."
+        ) from e
 
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))

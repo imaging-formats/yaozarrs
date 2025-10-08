@@ -91,6 +91,9 @@ def validate_command(args: argparse.Namespace) -> int:
         validate_zarr_store(args.path)
         print_zarr_info(args.path)
         return 0
+    except ImportError as e:  # pragma: no cover
+        print(f"ImportError: {e}", file=sys.stderr)
+        return 2
     except StorageValidationError as e:
         print(f"✗ Validation failed for: {args.path}", file=sys.stderr)
         errors = e.errors(include_input=True, include_context=True, include_url=False)
