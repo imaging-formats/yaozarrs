@@ -129,40 +129,41 @@ class StorageValidationError(ValueError):
             }
             if include_input and "input" in error:
                 filtered_error["input"] = error["input"]
-            if include_context and "ctx" in error:
+            if include_context and "ctx" in error:  # pragma: no cover
                 filtered_error["ctx"] = error["ctx"]
-            if include_url and "url" in error:
+            if include_url and "url" in error:  # pragma: no cover
                 filtered_error["url"] = error["url"]
             filtered_errors.append(filtered_error)
         return filtered_errors
 
 
 class StorageErrorType(Enum):
-    label_path_not_found = auto()
-    label_path_not_group = auto()
-    invalid_label_image = auto()
-    label_multiscale_count_mismatch = auto()
-    label_dataset_count_mismatch = auto()
-    dataset_path_not_found = auto()
-    dataset_not_array = auto()
-    dataset_dimension_mismatch = auto()
-    dimension_names_mismatch = auto()
-    well_path_not_found = auto()
-    well_path_not_group = auto()
-    invalid_well = auto()
-    field_path_not_found = auto()
-    field_path_not_group = auto()
+    bf2raw_invalid_image = auto()
     bf2raw_no_images = auto()
     bf2raw_path_not_group = auto()
-    bf2raw_invalid_image = auto()
+    dataset_dimension_mismatch = auto()
+    dataset_not_array = auto()
+    dataset_path_not_found = auto()
+    dimension_names_mismatch = auto()
+    field_image_invalid = auto()
+    field_path_not_found = auto()
+    field_path_not_group = auto()
+    label_dataset_count_mismatch = auto()
+    label_image_invalid = auto()
+    label_image_source_invalid = auto()
+    label_image_source_not_found = auto()
+    label_multiscale_count_mismatch = auto()
+    label_non_integer_dtype = auto()
+    label_path_not_found = auto()
+    label_path_not_group = auto()
+    labels_metadata_invalid = auto()
+    labels_not_group = auto()
+    series_invalid_image = auto()
     series_path_not_found = auto()
     series_path_not_group = auto()
-    series_invalid_image = auto()
-    labels_not_group = auto()
-    invalid_labels_metadata = auto()
-    invalid_label_image_source = auto()
-    label_image_source_not_found = auto()
-    label_non_integer_dtype = auto()
+    well_invalid = auto()
+    well_path_not_found = auto()
+    well_path_not_group = auto()
 
     def __str__(self) -> str:
         return self.name

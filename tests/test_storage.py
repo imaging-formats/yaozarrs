@@ -1,5 +1,7 @@
 import json
 import shutil
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
@@ -27,6 +29,15 @@ except ImportError:
 
 from yaozarrs import validate_zarr_store
 from yaozarrs._storage import ErrorDetails, StorageErrorType, StorageValidationError
+
+
+@contextmanager
+def xfail_internet_error() -> Iterator[None]:
+    """Decorator to xfail tests on internet connection errors."""
+    try:
+        yield
+    except connection_exceptions:
+        pytest.xfail("No internet")
 
 
 def test_validate_missing_zarr_file() -> None:
@@ -138,10 +149,8 @@ if version("zarr").startswith("3"):
 def test_validate_storage(uri: str) -> None:
     """Test basic validation functionality."""
     # Test with real zarr file that should pass validation
-    try:
+    with xfail_internet_error():
         validate_zarr_store(uri)
-    except connection_exceptions:
-        pytest.xfail("No internet")
 
 
 @pytest.mark.parametrize(
@@ -152,10 +161,16 @@ def test_validate_valid_demo_storage(type: str, write_demo_ome: Callable) -> Non
     """Test validation on demo OME-Zarr files."""
 
     path = write_demo_ome(type, version="0.5")
-    try:
+    with xfail_internet_error():
         validate_zarr_store(path)
-    except connection_exceptions:
-        pytest.xfail("No internet")
+
+    if type == "image-with-labels":
+        # Also validate with labels only
+        validate_zarr_store(path / "labels")
+        validate_zarr_store(path / "labels" / "annotations")
+    elif type == "plate":
+        # Validate a well only
+        validate_zarr_store(path / "A" / "1")
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
@@ -170,10 +185,8 @@ def test_validate_valid_demo_storage_bf2raw_ome_group(write_demo_ome: Callable) 
     """Test validation on demo OME-Zarr files."""
 
     path = write_demo_ome("bioformats2raw", version="0.5", write_ome_group=True)
-    try:
+    with xfail_internet_error():
         validate_zarr_store(path)
-    except connection_exceptions:
-        pytest.xfail("No internet")
 
 
 def test_validate_null_storage(tmp_path: Path) -> None:
@@ -274,12 +287,12 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             update_meta(("A", "1"), ("node_type",), "array"),
         ),
         StorageTestCase(
-            StorageErrorType.invalid_well,
+            StorageErrorType.well_invalid,
             {"type": "plate"},
             update_meta(("A", "1"), ("attributes", "ome"), IMAGE_META),
         ),
         StorageTestCase(
-            StorageErrorType.invalid_well,
+            StorageErrorType.well_invalid,
             {"type": "plate"},
             update_meta(("A", "1"), ("attributes", "ome"), {}),
         ),
@@ -294,6 +307,11 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             update_meta(("A", "1", "0"), ("node_type",), "array"),
         ),
         StorageTestCase(
+            StorageErrorType.field_image_invalid,
+            {"type": "plate"},
+            update_meta(("A", "1", "0"), ("attributes", "ome"), {}),
+        ),
+        StorageTestCase(
             StorageErrorType.label_path_not_found,
             {"type": "labels"},
             lambda p: shutil.rmtree(p / "annotations"),
@@ -304,12 +322,12 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             update_meta("annotations", ("node_type",), "array"),
         ),
         StorageTestCase(
-            StorageErrorType.invalid_label_image,
+            StorageErrorType.label_image_invalid,
             {"type": "labels"},
             update_meta("annotations", ("attributes", "ome"), IMAGE_META),
         ),
         StorageTestCase(
-            StorageErrorType.invalid_label_image,
+            StorageErrorType.label_image_invalid,
             {"type": "labels"},
             update_meta("annotations", ("attributes", "ome"), {}),
         ),
@@ -342,7 +360,7 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             update_meta("labels", ("node_type",), "array"),
         ),
         StorageTestCase(
-            StorageErrorType.invalid_labels_metadata,
+            StorageErrorType.labels_metadata_invalid,
             {"type": "image-with-labels"},
             update_meta("labels", ("attributes", "ome", "multiscales"), []),
         ),
@@ -394,8 +412,6 @@ def test_validate_invalid_storage(
 ) -> None:
     path = write_demo_ome(**case.kwargs)
     case.mutator(path)
-    try:
+    with xfail_internet_error():
         with pytest.raises(StorageValidationError, match=str(case.err_type)):
             validate_zarr_store(path)
-    except connection_exceptions:
-        pytest.xfail("No internet")

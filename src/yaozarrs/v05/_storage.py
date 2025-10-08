@@ -80,11 +80,9 @@ class StorageValidatorV05:
             return validator.visit_plate(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, Well):
             return validator.visit_well(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Multiscale):
-            return validator.visit_multiscale(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, Bf2Raw):
             return validator.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Series):
+        elif isinstance(ome_metadata, Series):  # pragma: no cover
             return validator.visit_series(zarr_group, ome_metadata, loc_prefix)
         else:
             raise NotImplementedError(
@@ -196,7 +194,7 @@ class StorageValidatorV05:
                 label_image_model = None
             if not isinstance(label_image_model, Image):
                 result.add_error(
-                    StorageErrorType.invalid_label_image,
+                    StorageErrorType.label_image_invalid,
                     label_loc,
                     f"Label path '{label_path}' does not contain "
                     "valid Image ('multiscales') metadata",
@@ -247,7 +245,7 @@ class StorageValidatorV05:
             if not isinstance(label_image_model, LabelImage):
                 # TODO: should it just be a warning?
                 result.add_error(
-                    StorageErrorType.invalid_label_image,
+                    StorageErrorType.label_image_invalid,
                     label_loc,
                     f"Label path '{label_path}' contains Image metadata, "
                     "but is not a LabelImage (missing 'image-label' metadata?)",
@@ -319,15 +317,6 @@ class StorageValidatorV05:
 
         return result
 
-    def visit_multiscale(
-        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
-    ) -> ValidationResult:
-        """Validate that all dataset paths exist with correct dimensionality."""
-        # Prefetch all dataset metadata in a single batch request for performance
-        dataset_paths = [ds.path for ds in multiscale.datasets]
-        zarr_group.prefetch_children(dataset_paths)
-        return self._visit_multiscale_no_prefetch(zarr_group, multiscale, loc_prefix)
-
     def visit_plate(
         self, zarr_group: ZarrGroup, plate_model: Plate, loc_prefix: Loc
     ) -> ValidationResult:
@@ -366,7 +355,7 @@ class StorageValidatorV05:
                 well_model = well_group.ome_metadata()
             except ValueError as e:
                 result.add_error(
-                    StorageErrorType.invalid_well,
+                    StorageErrorType.well_invalid,
                     well_loc,
                     f"Well path '{well.path}' does not "
                     f"contain valid Well metadata:\n{e}",
@@ -376,7 +365,7 @@ class StorageValidatorV05:
 
             if not isinstance(well_model, Well):
                 result.add_error(
-                    StorageErrorType.invalid_well,
+                    StorageErrorType.well_invalid,
                     well_loc,
                     f"Well path '{well.path}' does not contain valid Well metadata",
                     {"path": well.path, "type": type(well_model).__name__},
@@ -423,13 +412,23 @@ class StorageValidatorV05:
             # Validate field as image group
             try:
                 field_group_model = field_group.ome_metadata()
-            except Exception:
-                pass
+            except ValueError:
+                field_group_model = None
+            if isinstance(field_group_model, Image):
+                result = result.merge(
+                    self.visit_image(field_group, field_group_model, field_loc)
+                )
             else:
-                if isinstance(field_group_model, Image):
-                    result = result.merge(
-                        self.visit_image(field_group, field_group_model, field_loc)
-                    )
+                result.add_error(
+                    StorageErrorType.field_image_invalid,
+                    field_loc,
+                    f"Field path '{field_image.path}' does not contain "
+                    "valid Image metadata",
+                    {
+                        "path": field_image.path,
+                        "type": type(field_group_model).__name__,
+                    },
+                )
 
         return result
 
@@ -466,7 +465,7 @@ class StorageValidatorV05:
             except Exception:
                 # OME group exists but doesn't have valid OME metadata
                 # Fall through to numbered directory validation
-                pass
+                pass  # pragma: no cover
 
         # No OME group with series, so validate numbered directories
         # Discover consecutively numbered directories (0, 1, 2, etc.)
@@ -530,6 +529,18 @@ class StorageValidatorV05:
 
         The series attribute is a list of paths to image groups. Each path
         should point to a valid image group with multiscales metadata.
+
+        IMPORTANT! `zarr_group` here is the *parent* of the OME group, not the
+        OME group itself.
+
+        ```
+        top_group.zarr      <-- what must be passed to `zarr_group` here
+        ├── 0/
+        │   ├── zarr.json   <-- contains multiscales metadata
+        ├── OME/
+        │   ├── zarr.json   <-- contains `ome_model` Series model
+        └── zarr.json       <-- contains bioformats2raw metadata
+        ```
         """
         result = ValidationResult()
 
@@ -608,7 +619,7 @@ class StorageValidatorV05:
         # Step 4: Get dataset structure from first field
         first_well = zarr_group.get(well_paths[0])
         if not isinstance(first_well, ZarrGroup):
-            return
+            return  # pragma: no cover
 
         dataset_paths = self._get_dataset_paths_from_first_field(
             first_well, field_paths[0]
@@ -650,7 +661,10 @@ class StorageValidatorV05:
         if not isinstance(first_field, ZarrGroup):
             return []  # pragma: no cover
 
-        first_field_meta = validate_ome_object(first_field.attrs, OMEAttributes)
+        try:
+            first_field_meta = validate_ome_object(first_field.attrs, OMEAttributes)
+        except Exception:
+            return []  # pragma: no cover
 
         if (
             not isinstance(first_field_meta.ome, Image)
@@ -690,7 +704,7 @@ class StorageValidatorV05:
                 )
         except Exception as e:
             result.add_error(
-                StorageErrorType.invalid_labels_metadata,
+                StorageErrorType.labels_metadata_invalid,
                 labels_loc,
                 f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
                 f"but metadata not valid LabelsGroup metadata: {e!s}",
@@ -718,7 +732,7 @@ class StorageValidatorV05:
             img = from_uri(image_source, OMEZarrGroupJSON)
             if not isinstance(img.attributes.ome, Image):
                 result.add_error(
-                    StorageErrorType.invalid_label_image_source,
+                    StorageErrorType.label_image_source_invalid,
                     (*loc_prefix, "image_label", "source", "image"),
                     f"Label image source '{image_source}' does not contain "
                     "valid Image ('multiscales') metadata",
