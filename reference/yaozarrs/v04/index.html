@@ -697,15 +697,16 @@
   </span>
 
 <a href="#yaozarrs.v04.OMEZarrGroupJSON" class="headerlink" title="Permanent link">#</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><span class="n">OMEZarrGroupJSON</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="__span-0-2">    <span class="n">LabelImage</span>
-</span><span id="__span-0-3">    <span class="o">|</span> <span class="n">Image</span>
-</span><span id="__span-0-4">    <span class="o">|</span> <span class="n">Plate</span>
-</span><span id="__span-0-5">    <span class="o">|</span> <span class="n">Well</span>
-</span><span id="__span-0-6">    <span class="o">|</span> <span class="n">Series</span>
-</span><span id="__span-0-7">    <span class="o">|</span> <span class="n">Bf2Raw</span>
-</span><span id="__span-0-8">    <span class="o">|</span> <span class="n">LabelsGroup</span>
-</span><span id="__span-0-9"><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><span class="n">OMEZarrGroupJSON</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+</span><span id="__span-0-2">    <span class="n">Annotated</span><span class="p">[</span><span class="n">LabelImage</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;label-image&quot;</span><span class="p">)]</span>
+</span><span id="__span-0-3">    <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">)]</span>
+</span><span id="__span-0-4">    <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Plate</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;plate&quot;</span><span class="p">)]</span>
+</span><span id="__span-0-5">    <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Bf2Raw</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;bf2raw&quot;</span><span class="p">)]</span>
+</span><span id="__span-0-6">    <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Well</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;well&quot;</span><span class="p">)]</span>
+</span><span id="__span-0-7">    <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">LabelsGroup</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;labels-group&quot;</span><span class="p">)]</span>
+</span><span id="__span-0-8">    <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Series</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s2">&quot;series&quot;</span><span class="p">)],</span>
+</span><span id="__span-0-9">    <span class="n">Discriminator</span><span class="p">(</span><span class="n">_discriminate_ome_v04_metadata</span><span class="p">),</span>
+</span><span id="__span-0-10"><span class="p">]</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
