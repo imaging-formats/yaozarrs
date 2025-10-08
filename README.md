@@ -5,19 +5,130 @@
 
 ***Yet Another Ome-ZARR Schema!***
 
-> [!IMPORTANT]
-> **Don't use this "in production".**
->
-> Feel free to copy, vendor, whatever. Read below for details.
->
-> You should first check out [ome-zarr-models-py](https://github.com/ome-zarr-models/ome-zarr-models-py)
-
 ## Oh no, not another one 🤦
 
 First, let me apologize. The last thing the world needs is yet another ome-zarr
 model. However, I was unable to find a *minimal* ome-zarr model that simply
 represents the spec, without introducing additional I/O features or
-dependencies.
+dependencies.  Please read the [Existing Projects](#existing-projects) section
+for more context.
+
+## Installation
+
+```bash
+pip install yaozarrs
+
+# or, for extra I/O features,
+# like validating local/remote zarr stores:
+pip install yaozarrs[io]
+```
+
+## Usage
+
+Here are some things you can do with `yaozarrs`.
+
+### Construct valid ome-zarr JSON documents for creating ome-zarr groups
+
+```python
+from yaozarrs import v05
+from pathlib import Path
+
+scale = v05.Multiscale(
+    name="scale0",
+    axes=[v05.SpaceAxis(name="x", type="space"), v05.SpaceAxis(name="y", type="space")],
+    datasets=[
+        v05.Dataset(
+            path="0",
+            coordinateTransformations=[v05.ScaleTransformation(scale=[1, 1])],
+        ),
+        v05.Dataset(
+            path="1",
+            coordinateTransformations=[v05.ScaleTransformation(scale=[1, 1])],
+        ),
+    ],
+)
+
+img = v05.Image(multiscales=[scale])
+zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": img})
+json_data = zarr_json.model_dump_json(exclude_unset=True)
+Path("zarr.json").write_text(json_data)
+```
+
+### Validate & load existing JSON documents
+
+```python
+from pathlib import Path
+import yaozarrs
+
+json_string = Path("zarr.json").read_text()
+obj = yaozarrs.validate_ome_json(json_string)
+
+# OMEZarrGroupJSON(
+#     zarr_format=3,
+#     node_type='group',
+#     attributes=OMEAttributes(
+#         ome=Image(
+#             version='0.5',
+#             multiscales=[
+#                 Multiscale(
+#                     name='scale0',
+#                     axes=[SpaceAxis(name='x', type='space', unit=None), SpaceAxis(name='y', type='space', unit=None)],
+#                     datasets=[
+#                         Dataset(path='0', coordinateTransformations=[ScaleTransformation(type='scale', scale=[0.0, 1.0])]),
+#                         Dataset(path='1', coordinateTransformations=[ScaleTransformation(type='scale', scale=[0.0, 1.0])])
+#                     ],
+#                     coordinateTransformations=None,
+#                     type=None,
+#                     metadata=None
+#                 )
+#             ],
+#             omero=None
+#         )
+#     )
+# )
+```
+
+</details>
+
+### Validate arbitrary python objects as an OME-NGFF object
+
+```python
+import yaozarrs
+
+obj = yaozarrs.validate_ome_object(
+  {'version': '0.5', 'series': ["0", "1"]}
+)
+print(obj)
+# Series(version='0.5', series=['0', '1'])
+```
+
+### Validate any zarr store using the CLI
+
+> [!IMPORTANT]  
+> Requires `fsspec`. install with `pip install yaozarrs[io]`
+
+"store" here refers to any URI (local path, http(s) url, s3 url, etc) or
+a zarr-python `zarr.Group`.
+
+```bash
+$ yaozarrs validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+✓ Valid OME-Zarr store
+  Version: 0.5
+  Type: Image
+```
+
+### Validate any zarr store programmatically
+
+> [!IMPORTANT]  
+> Requires `fsspec`. install with `pip install yaozarrs[io]`
+
+```python
+import yaozarrs
+
+yaozarrs.validate_zarr_store("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr")
+```
+
+## Existing Projects
 
 You should first check these existing packages to see if they meet your needs:
 
@@ -65,78 +176,3 @@ applications.  The hope would be some future unification, provided the community
 can agree on a common denominator of features.
 
 Ultimately, I want a schema-first, I/O-second library.
-
-## Installation
-
-```bash
-pip install git+https://github.com/tlambert03/yaozarrs
-```
-
-## Usage
-
-Validate any object against the OME-NGFF schema,
-where "object" here refers to any dict or JSON object that could
-live at the "ome" key of an ome-zarr file.
-
-```python
-import yaozarrs
-
-# validate from a dict or other python object:
-obj = yaozarrs.validate_ome_object(...)
-
-# or to validate from a JSON string | bytes:
-obj = yaozarrs.validate_ome_json(json_string)
-```
-
-You can also construct objects directly from python, with IDE autocompletion:
-
-```python
-from yaozarrs import v05
-
-scale = v05.Multiscale(
-    name="scale0",
-    axes=[v05.SpaceAxis(name="x", type="space"), v05.SpaceAxis(name="y", type="space")],
-    datasets=[
-        v05.Dataset(
-            path="0",
-            coordinateTransformations=[v05.ScaleTransformation(scale=[0, 1])],
-        ),
-        v05.Dataset(
-            path="1",
-            coordinateTransformations=[v05.ScaleTransformation(scale=[0, 1])],
-        ),
-    ],
-)
-
-img = v05.Image(multiscales=[scale])
-```
-
-and of course, from dicts:
-
-```python
-from yaozarrs import validate_ome_object, v05
-
-obj = {
-    'version': '0.5',
-    'multiscales': [
-        {
-            'name': 'scale0',
-            'axes': [{'name': 'x', 'type': 'space'}, {'name': 'y', 'type': 'space'}],
-            'datasets': [
-                {
-                  'path': '0', 
-                  'coordinateTransformations': [{'type': 'scale', 'scale': [0.0, 1.0]}],
-                },
-                {
-                  'path': '1', 
-                  'coordinateTransformations': [{'type': 'scale', 'scale': [0.0, 1.0]}],
-                },
-            ],
-        }
-    ],
-}
-
-node = validate_ome_object(obj)
-
-assert isinstance(node, v05.Image)
-```

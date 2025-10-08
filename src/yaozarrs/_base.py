@@ -49,4 +49,5 @@ class ZarrGroupModel(_BaseModel):
             "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr/zarr.json",
             "/path/to/some_file.zarr/zarr.json",
         ],
+        exclude=True,  # don't include in serialization
     )
