@@ -154,7 +154,7 @@ import yaozarrs
 yaozarrs.validate_zarr_store("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr")
 ```
 
-## Open zarr arrays using zarr-python or tensorstore
+### Open zarr arrays using zarr-python or tensorstore
 
 > [!IMPORTANT]  
 >
