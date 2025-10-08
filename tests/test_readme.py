@@ -16,7 +16,7 @@ def test_readme_python_blocks(tmp_path: Path) -> None:
     pytest.importorskip("zarr")
     pytest.importorskip("fsspec")
 
-    readme_content = README.read_text()
+    readme_content = README.read_text(encoding="utf-8")
 
     python_blocks = re.findall(r"```python\n(.*?)```", readme_content, re.DOTALL)
     namespace: dict[str, object] = {}
