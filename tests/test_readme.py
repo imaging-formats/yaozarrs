@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,7 @@ import pytest
 README = Path(__file__).parent.parent / "README.md"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="requires python3.11+")
 def test_readme_python_blocks(tmp_path: Path) -> None:
     """Extract and execute all Python code blocks from README.md."""
     pytest.importorskip("tensorstore")
