@@ -462,6 +462,32 @@ V05_INVALID_IMAGES: list[tuple[dict, str]] = [
         },
         "List items are not unique",
     ),
+    # Test datasets not ordered from highest to lowest resolution
+    (
+        {
+            "version": "0.5",
+            "multiscales": [
+                {
+                    "axes": [X_AXIS, Y_AXIS],
+                    "datasets": [
+                        {
+                            "path": "0",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [2.0, 2.0]}
+                            ],
+                        },
+                        {
+                            "path": "1",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 1.0]}
+                            ],
+                        },
+                    ],
+                }
+            ],
+        },
+        "The datasets are not ordered from highest to lowest resolution",
+    ),
 ]
 
 
