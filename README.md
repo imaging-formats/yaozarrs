@@ -21,8 +21,7 @@ for more context.
 ```bash
 pip install yaozarrs
 
-# or, for extra I/O features,
-# like validating local/remote zarr stores:
+# or, to load/validate local/remote zarr stores:
 pip install yaozarrs[io]
 ```
 
@@ -38,6 +37,11 @@ Here are some things you can do with `yaozarrs`.
 6. [Open zarr arrays using zarr-python or tensorstore](#open-zarr-arrays-using-zarr-python-or-tensorstore)
 
 ### Construct valid ome-zarr JSON documents for creating ome-zarr groups
+
+This is useful if you are creating OME-Zarr files directly.  Since this
+package has no dependencies beyond `pydantic`, it allows downstream projects to
+use a common model, without enforcing a specific mechanism for data I/O (e.g.
+using `zarr`, `tensorstore`, `acquire-zarr`, etc),
 
 ```python
 from yaozarrs import v05
@@ -65,6 +69,9 @@ Path("zarr.json").write_text(json_data)
 ```
 
 ### Validate & load existing JSON documents
+
+If you have an existing JSON document, you can validate and load it, and
+benefit from IDE autocompletion and type hints.
 
 ```python
 from pathlib import Path
@@ -100,6 +107,9 @@ obj = yaozarrs.validate_ome_json(json_string)
 
 ### Validate arbitrary python objects as an OME-NGFF object
 
+`validate_ome_object` and `validate_ome_json` accept a broad range of inputs,
+and will cast to an appropriate model if possible.
+
 ```python
 import yaozarrs
 
@@ -115,8 +125,9 @@ print(obj)
 > [!IMPORTANT]  
 > Requires `fsspec`. install with `pip install yaozarrs[io]`
 
-"store" here refers to any URI (local path, http(s) url, s3 url, etc) or
-a zarr-python `zarr.Group`.
+The CLI command provides a quick way to validate any zarr store as an OME-Zarr
+store.  Here, "store" here refers to any URI (local path, http(s) url, s3 url,
+etc) or a zarr-python `zarr.Group`.
 
 ```bash
 $ yaozarrs validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
@@ -124,6 +135,13 @@ $ yaozarrs validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/60012
   Version: 0.5
   Type: Image
 ```
+
+> [!TIP]  
+> Use `uvx` for quick validation of any URI, without pip installing the package.
+>
+> ```bash
+> uvx "yaozarrs[io]" validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+> ```
 
 ### Validate any zarr store programmatically
 
