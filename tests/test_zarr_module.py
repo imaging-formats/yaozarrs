@@ -22,7 +22,6 @@ from yaozarrs._zarr import (
     _CachedMapper,
     open_group,
 )
-from yaozarrs._zarr import open as open_zarr
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -206,7 +205,7 @@ def test_zarrnode_loads_v2_array_metadata(tmp_path: Path) -> None:
 
 
 def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:
-    group = open_zarr(v3_memory_store)
+    group = open_group(v3_memory_store)
     assert isinstance(group, ZarrGroup)
     assert isinstance(group.metadata, ZarrMetadata)
     assert "ZarrGroup" in repr(group)
@@ -312,22 +311,6 @@ def test_zarrarray_to_tensorstore(write_demo_ome: Callable, version: str) -> Non
     assert f"{path.name}/0" in repr(array)
     result = array.to_tensorstore()
     assert isinstance(result, ts.TensorStore)
-
-
-def test_open_returns_array_for_root_array(tmp_path: Path) -> None:
-    store = f"memory://{tmp_path.name}_array_root.zarr"
-    mapper = fsspec.get_mapper(store)
-    mapper["zarr.json"] = json.dumps(
-        {
-            "zarr_format": 3,
-            "node_type": "array",
-            "shape": [1],
-            "data_type": "<i1",
-        }
-    ).encode()
-
-    node = open_zarr(store)
-    assert isinstance(node, ZarrArray)
 
 
 def test_open_group_raises_when_root_not_group() -> None:

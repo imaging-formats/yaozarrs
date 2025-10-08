@@ -23,12 +23,8 @@ try:
 except ImportError:
     connection_exceptions = ()
 
-from yaozarrs.v05._storage import (
-    ErrorDetails,
-    StorageErrorType,
-    StorageValidationError,
-    validate_zarr_store,
-)
+from yaozarrs import validate_zarr_store
+from yaozarrs._storage import ErrorDetails, StorageErrorType, StorageValidationError
 
 
 def test_validate_missing_zarr_file() -> None:

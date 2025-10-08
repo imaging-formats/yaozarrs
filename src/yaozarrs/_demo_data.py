@@ -241,6 +241,15 @@ def write_ome_labels(
             max_layer=num_levels - 1,
         ),
     )
+    # ome-zarr writer does not appear to set version for labels, so do it here
+    # TODO: report upstream?
+    labels_group = zarr.open_group(store, path="labels", mode="a")
+    attrs = dict(labels_group.attrs)
+    if version == "0.4":
+        attrs["version"] = version
+    else:
+        attrs["ome"]["version"] = version  # type: ignore
+    labels_group.attrs.update(attrs)
 
     # Add label metadata
     colors = None

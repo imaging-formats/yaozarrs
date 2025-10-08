@@ -491,6 +491,19 @@ class ZarrGroup(ZarrNode):
 
     __slots__ = ("_ome_metadata",)
 
+    def ome_version(self) -> str | None:
+        """Return ome_version if present, else None.
+
+        Attempt to determine version as minimally as possible without
+        parsing full models.
+        """
+        attrs = self._metadata.attributes
+        if "ome" in attrs:
+            if "version" in attrs["ome"]:
+                return attrs["ome"]["version"]
+
+        return None
+
     def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
             try:
@@ -646,44 +659,6 @@ class ZarrArray(ZarrNode):
         return future.result()
 
 
-def open(uri: str | os.PathLike) -> ZarrGroup | ZarrArray:  # noqa: A001
-    """Open a zarr v2/v3 group or array from a URI.
-
-    Parameters
-    ----------
-    uri : str | os.PathLike
-        The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file")
-
-    Returns
-    -------
-    ZarrGroup | ZarrArray
-        The opened zarr group or array with caching enabled.
-
-    Raises
-    ------
-    FileNotFoundError
-        If no zarr metadata is found at the specified URI.
-    ValueError
-        If the metadata is invalid or inconsistent.
-    """
-    uri = os.fspath(uri)
-    mapper = get_mapper(uri)
-
-    if not isinstance(mapper, FSMap):  # pragma: no cover
-        raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
-
-    # Wrap in caching layer for metadata-level caching
-    cached_mapper = _CachedMapper(mapper)
-    node = ZarrNode(cached_mapper)
-
-    if node._metadata.node_type == "group":
-        return ZarrGroup(cached_mapper, node._path, node._metadata)
-    elif node._metadata.node_type == "array":
-        return ZarrArray(cached_mapper, node._path, node._metadata)
-    else:  # pragma: no cover
-        raise ValueError(f"Unknown node_type: {node._metadata.node_type}")
-
-
 def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     """Open a zarr v2/v3 group from a URI.
 
@@ -706,6 +681,8 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     """
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
+    elif isinstance(uri, ZarrGroup):
+        return uri
     elif hasattr(uri, "store"):
         # Handle both zarr v2 and v3 Group objects
         # v3: str(group.store) returns a URI like "file:///path"

@@ -88,6 +88,7 @@ class ImageLabel(_BaseModel):
 class LabelsGroup(_BaseModel):
     """Model for the labels group that contains paths to individual label images."""
 
+    version: Literal["0.5"] = "0.5"
     labels: Annotated[list[str], MinLen(1)] = Field(
         description="Array of paths to labeled multiscale images"
     )
