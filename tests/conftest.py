@@ -58,6 +58,9 @@ def write_demo_ome(tmp_path_factory: pytest.TempPathFactory) -> Callable[..., Pa
 
 @pytest.fixture
 def complex_ome_zarr(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    if version("zarr").startswith("2"):
+        pytest.skip("zarr v2 does not support OME-Zarr v0.5")
+
     _dd = dd()
     path = tmp_path_factory.mktemp("complex.ome.zarr")
     _dd.write_ome_plate(
