@@ -145,6 +145,7 @@ class StorageValidationError(ValueError):
                     indented_msg += f"\n{nested_errors}"
 
             lines.append(indented_msg)
+            lines.append("")
 
         return "\n".join(lines)
 
