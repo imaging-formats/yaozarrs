@@ -252,7 +252,7 @@ class StorageValidatorV05:
                     label_loc,
                     f"Label path '{label_path}' does not contain "
                     "valid Image ('multiscales') metadata",
-                    {"path": label_path, "type": type(label_image_model).__name__},
+                    ctx={"path": label_path, "type": type(label_image_model).__name__},
                 )
                 continue
 
@@ -269,7 +269,7 @@ class StorageValidatorV05:
                         label_loc,
                         f"Label image '{label_path}' has {n_lbl_ms} "
                         f"multiscales, but parent image has {n_img_ms}",
-                        {
+                        ctx={
                             "label_path": label_path,
                             "label_multiscales": n_lbl_ms,
                             "parent_multiscales": n_img_ms,
@@ -288,7 +288,7 @@ class StorageValidatorV05:
                             f"Label image '{label_path}' multiscale index {ms_idx} "
                             f"has {n_lbl_ds} datasets, but parent image multiscale "
                             f"index {ms_idx} has {n_img_ds}",
-                            {
+                            ctx={
                                 "label_path": label_path,
                                 "multiscale_index": ms_idx,
                                 "label_datasets": n_lbl_ds,
@@ -303,7 +303,7 @@ class StorageValidatorV05:
                     label_loc,
                     f"Label path '{label_path}' contains Image metadata, "
                     "but is not a LabelImage (missing 'image-label' metadata?)",
-                    {"path": label_path, "type": type(label_image_model).__name__},
+                    ctx={"path": label_path, "type": type(label_image_model).__name__},
                 )
                 continue
 
@@ -374,7 +374,7 @@ class StorageValidatorV05:
                         (*ds_loc, "dimension_names"),
                         f"Array dimension_names {dim_names} don't match "
                         f"axes names {expected_names}",
-                        {"actual": dim_names, "expected": expected_names},
+                        ctx={"actual": dim_names, "expected": expected_names},
                     )
 
         return result
@@ -428,7 +428,7 @@ class StorageValidatorV05:
                     well_loc,
                     f"Well path '{well.path}' does not "
                     f"contain valid Well metadata:\n{e}",
-                    {"path": well.path, "error": e},
+                    ctx={"path": well.path, "error": e},
                 )
                 continue
 

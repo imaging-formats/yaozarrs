@@ -229,6 +229,7 @@ class ValidationResult:
         error_type: StorageErrorType,
         loc: tuple[int | str, ...],
         msg: str,
+        *,
         ctx: dict[str, Any] | None = None,
         url: str | None = None,
     ) -> ValidationResult:
