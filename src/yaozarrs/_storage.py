@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
+from pydantic import ValidationError
 from typing_extensions import NotRequired, TypedDict
 
 from yaozarrs._zarr import ZarrGroup, open_group
@@ -106,14 +107,13 @@ class StorageValidationError(ValueError):
             ctx_parts = [f"type={error['type']}"]
 
             # Add context fields if present
-            if error.get("ctx"):
-                ctx = error["ctx"]
+            if ctx := error.get("ctx", {}):
                 # Add fs_path first if present (most important for debugging)
                 if "fs_path" in ctx:
                     ctx_parts.append(f"fs_path={ctx['fs_path']!r}")
 
                 # Add expected/found/actual/missing fields
-                for key in ("expected", "found", "actual", "missing"):
+                for key in ("expected", "found", "actual"):
                     if key in ctx:
                         val = ctx[key]
                         ctx_parts.append(f"{key}={val!r}")
@@ -126,7 +126,6 @@ class StorageValidationError(ValueError):
                         "expected",
                         "found",
                         "actual",
-                        "missing",
                         "error",
                     ):
                         ctx_parts.append(f"{key}={val!r}")
@@ -138,6 +137,13 @@ class StorageValidationError(ValueError):
             msg = error["msg"]
             msg_with_context = f"{msg} [{ctx_str}]"
             indented_msg = textwrap.indent(msg_with_context, "  ")
+            if "error" in ctx:
+                ctx_error = ctx["error"]
+                if isinstance(ctx_error, ValidationError):
+                    # If the error is a Pydantic ValidationError, include its errors
+                    nested_errors = textwrap.indent(str(ctx_error), "  ")
+                    indented_msg += f"\n{nested_errors}"
+
             lines.append(indented_msg)
 
         return "\n".join(lines)
@@ -252,12 +258,7 @@ class ValidationResult:
         url : str | None
             Optional URL with more information about the error.
         """
-        error: ErrorDetails = {
-            "type": str(error_type),
-            "loc": loc,
-            "msg": msg,
-        }
-
+        error: ErrorDetails = {"type": str(error_type), "loc": loc, "msg": msg}
         if ctx is not None:
             error["ctx"] = ctx
         if url is not None:

@@ -244,15 +244,20 @@ class StorageValidatorV05:
             # Validate as LabelImage
             try:
                 label_image_model = label_group.ome_metadata()
-            except ValueError:
-                label_image_model = None
+            except ValueError as e:
+                label_image_model = e
             if not isinstance(label_image_model, Image):
+                ctx: dict = {"path": label_path}
+                if isinstance(label_image_model, Exception):
+                    ctx["error"] = label_image_model
+                else:
+                    ctx["type"] = type(label_image_model).__name__
                 result.add_error(
                     StorageErrorType.label_image_invalid,
                     label_loc,
                     f"Label path '{label_path}' does not contain "
                     "valid Image ('multiscales') metadata",
-                    ctx={"path": label_path, "type": type(label_image_model).__name__},
+                    ctx=ctx,
                 )
                 continue
 
@@ -296,7 +301,12 @@ class StorageValidatorV05:
                             },
                         )
 
-            if not isinstance(label_image_model, LabelImage):
+            if isinstance(label_image_model, LabelImage):
+                # Recursively validate the label image
+                result = result.merge(
+                    self.visit_label_image(label_group, label_image_model, label_loc)
+                )
+            else:
                 # TODO: should it just be a warning?
                 result.add_error(
                     StorageErrorType.label_image_invalid,
@@ -305,12 +315,6 @@ class StorageValidatorV05:
                     "but is not a LabelImage (missing 'image-label' metadata?)",
                     ctx={"path": label_path, "type": type(label_image_model).__name__},
                 )
-                continue
-
-            # Recursively validate the label image
-            result = result.merge(
-                self.visit_label_image(label_group, label_image_model, label_loc)
-            )
 
         return result
 
@@ -423,28 +427,21 @@ class StorageValidatorV05:
             try:
                 well_model = well_group.ome_metadata()
             except ValueError as e:
-                result.add_error(
-                    StorageErrorType.well_invalid,
-                    well_loc,
-                    f"Well path '{well.path}' does not "
-                    f"contain valid Well metadata:\n{e}",
-                    ctx={"path": well.path, "error": e},
-                )
-                continue
-
-            if not isinstance(well_model, Well):
+                well_model = e
+            if isinstance(well_model, Well):
+                result = result.merge(self.visit_well(well_group, well_model, well_loc))
+            else:
+                ctx: dict = {"path": well.path}
+                if isinstance(well_model, Exception):
+                    ctx["error"] = well_model
+                else:
+                    ctx["type"] = type(well_model).__name__
                 result.add_error(
                     StorageErrorType.well_invalid,
                     well_loc,
                     f"Well path '{well.path}' does not contain valid Well metadata",
-                    ctx={
-                        "path": well.path,
-                        "type": type(well_model).__name__,
-                    },
+                    ctx=ctx,
                 )
-                continue
-
-            result = result.merge(self.visit_well(well_group, well_model, well_loc))
 
         return result
 
@@ -491,23 +488,24 @@ class StorageValidatorV05:
             # Validate field as image group
             try:
                 field_group_model = field_group.ome_metadata()
-            except ValueError:
-                field_group_model = None
+            except ValueError as e:
+                field_group_model = e
             if isinstance(field_group_model, Image):
                 result = result.merge(
                     self.visit_image(field_group, field_group_model, field_loc)
                 )
             else:
+                ctx: dict = {"fs_path": _build_fs_path(zarr_group, field_image.path)}
+                if isinstance(field_group_model, Exception):
+                    ctx["error"] = field_group_model
+                else:
+                    ctx["type"] = type(field_group_model).__name__
                 result.add_error(
                     StorageErrorType.field_image_invalid,
                     field_loc,
                     f"Field path '{field_image.path}' does not contain "
                     "valid Image metadata",
-                    ctx={
-                        "fs_path": _build_fs_path(zarr_group, field_image.path),
-                        "expected": "Image",
-                        "missing": "multiscales",
-                    },
+                    ctx=ctx,
                 )
 
         return result
@@ -584,24 +582,24 @@ class StorageValidatorV05:
             # Validate as image group
             try:
                 image_group_meta = image_group.ome_metadata()
-            except ValueError:
-                image_group_meta = None
+            except ValueError as e:
+                image_group_meta = e
             if isinstance(image_group_meta, Image):
                 result = result.merge(
                     self.visit_image(image_group, image_group_meta, image_loc)
                 )
             else:
+                ctx: dict = {"path": path}
+                if isinstance(image_group_meta, Exception):
+                    ctx["error"] = image_group_meta
+                else:
+                    ctx["type"] = type(image_group_meta).__name__
                 result.add_error(
                     StorageErrorType.bf2raw_invalid_image,
                     image_loc,
                     f"Bioformats2raw path '{path}' does not contain "
                     "valid Image metadata",
-                    ctx={
-                        "path": path,
-                        "type": type(
-                            image_group_meta,
-                        ).__name__,
-                    },
+                    ctx=ctx,
                 )
 
         return result
@@ -657,24 +655,24 @@ class StorageValidatorV05:
             # Validate series as image group
             try:
                 series_group_meta = series_group.ome_metadata()
-            except ValueError:
-                series_group_meta = None
+            except ValueError as e:
+                series_group_meta = e
             if isinstance(series_group_meta, Image):
                 result = result.merge(
                     self.visit_image(series_group, series_group_meta, series_loc)
                 )
             else:
+                ctx: dict = {"path": series_path}
+                if isinstance(series_group_meta, Exception):
+                    ctx["error"] = series_group_meta
+                else:
+                    ctx["type"] = type(series_group_meta).__name__
                 result.add_error(
                     StorageErrorType.series_invalid_image,
                     series_loc,
                     f"Series path '{series_path}' does not contain "
                     "valid Image metadata",
-                    ctx={
-                        "path": series_path,
-                        "type": type(
-                            series_group_meta,
-                        ).__name__,
-                    },
+                    ctx=ctx,
                 )
 
         return result

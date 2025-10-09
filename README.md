@@ -167,7 +167,10 @@ ome.plate.wells.0.well.images.1.labels.labels.0
 ome.plate.wells.1.path
   Well path 'A/2' is not a zarr group [type=well_path_not_group, fs_path='A/2', expected='group', found='array']
 ome.plate.wells.2.well.images.0.labels.labels.0
-  Label path 'annotations' does not contain valid Image ('multiscales') metadata [type=label_image_invalid, path='annotations', type='NoneType']
+  Label path 'annotations' does not contain valid Image ('multiscales') metadata [type=label_image_invalid, path='annotations']
+  1 validation error for tagged-union[LabelImage,Image,Plate,Bf2Raw,Well,LabelsGroup,Series]
+    Unable to extract tag using discriminator _discriminate_ome_v05_metadata() [type=union_tag_not_found, input_value={}, input_type=dict]
+      For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found
 ome.plate.wells.3.well.images.0.multiscales.0.datasets.0.path
   Dataset '0' has 5 dimensions but axes specify 3 [type=dataset_dimension_mismatch, fs_path='B/1/0/0', actual_ndim=5, expected_ndim=3, axes=['c', 'y', 'x']]
 ome.plate.wells.3.well.images.0.labels.labels.0.multiscales.0.datasets.0.path
@@ -183,14 +186,16 @@ ome.plate.wells.5.well.images.1.path
 ome.plate.wells.6.well.images.1.path
   Field path '1' not found in well group [type=field_path_not_found, fs_path='C/1/1', expected='zarr group']
 ome.plate.wells.7.well.images.0
-  Field path '0' does not contain valid Image metadata [type=field_image_invalid, fs_path='C/2/0', expected='Image', missing='multiscales']
+  Field path '0' does not contain valid Image metadata [type=field_image_invalid, fs_path='C/2/0']
+  1 validation error for tagged-union[LabelImage,Image,Plate,Bf2Raw,Well,LabelsGroup,Series]
+  image.multiscales
+    Value should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]
+      For further information visit https://errors.pydantic.dev/2.12/v/too_short
 ome.plate.wells.8
-  Well path 'C/3' does not contain valid Well metadata:
-  Failed to parse OME-Zarr metadata:
-
+  Well path 'C/3' does not contain valid Well metadata [type=well_invalid, path='C/3']
   1 validation error for tagged-union[LabelImage,Image,Plate,Bf2Raw,Well,LabelsGroup,Series]
     Unable to extract tag using discriminator _discriminate_ome_v05_metadata() [type=union_tag_not_found, input_value={}, input_type=dict]
-      For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found [type=well_invalid, path='C/3']
+      For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found
 ```
 
 ### Validate any zarr store programmatically

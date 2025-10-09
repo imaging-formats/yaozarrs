@@ -505,10 +505,7 @@ class ZarrGroup(ZarrNode):
 
     def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
-            try:
-                self._ome_metadata = self._metadata.ome_metadata()
-            except Exception as e:  # pragma: no cover
-                raise ValueError(f"Failed to parse OME-Zarr metadata:\n\n{e}") from e
+            self._ome_metadata = self._metadata.ome_metadata()
         return self._ome_metadata
 
     @classmethod

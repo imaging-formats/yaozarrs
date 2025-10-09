@@ -458,3 +458,5 @@ def test_validate_complex_ome_zarr_broken(complex_ome_zarr_broken: Path) -> None
         str(StorageErrorType.labels_not_group),
     }
     assert len(err.value.errors()) == 14
+
+    print(err.value)
