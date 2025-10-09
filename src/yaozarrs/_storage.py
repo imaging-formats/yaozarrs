@@ -60,6 +60,8 @@ class ErrorDetails(TypedDict):
     """A human readable error message."""
     input: Any
     """The input data at this `loc` that caused the error."""
+    input_type: NotRequired[str]
+    """The type of the input data (e.g., 'str', 'int', 'dict')."""
     ctx: NotRequired[dict[str, Any]]
     """
     Values which are required to render the error message, and could hence be useful in
@@ -81,15 +83,42 @@ class StorageValidationError(ValueError):
         super().__init__(self._error_message())
 
     def _error_message(self) -> str:
-        """Generate a readable error message from all validation errors."""
+        """Generate a readable error message from all validation errors.
+
+        Format matches Pydantic's ValidationError style:
+        - First line: error count and title
+        - Each error: location (dot-notation) on one line, message with metadata on next
+        """
         if not self._errors:  # pragma: no cover
             return "No validation errors"
 
-        lines = [f"{len(self._errors)} validation error(s) for storage structure:"]
-        for i, error in enumerate(self._errors, 1):
-            lines.append(
-                f"{i:>2}. {error['msg']} (type={error['type']}, loc={error['loc']})"
-            )
+        lines = [f"{len(self._errors)} validation error(s) for {self.title}"]
+
+        for error in self._errors:
+            # Format location as dot-separated path (e.g., "ome.plate.wells.0.path")
+            loc_str = ".".join(str(x) for x in error["loc"])
+            lines.append(loc_str)
+
+            # Build the metadata bracket content
+            metadata_parts = [f"type={error['type']}"]
+
+            # Add input_value if input is present
+            if "input" in error:
+                input_repr = repr(error["input"])
+                # Truncate very long input representations
+                if len(input_repr) > 80:
+                    input_repr = input_repr[:77] + "..."
+                metadata_parts.append(f"input_value={input_repr}")
+
+            # Add input_type if present
+            if "input_type" in error:
+                metadata_parts.append(f"input_type={error['input_type']}")
+
+            metadata_str = ", ".join(metadata_parts)
+
+            # Message line with 2-space indent
+            lines.append(f"  {error['msg']} [{metadata_str}]")
+
         return "\n".join(lines)
 
     @property
@@ -195,6 +224,11 @@ class ValidationResult:
             "msg": msg,
             "input": input_val,
         }
+
+        # Automatically add input_type if input_val is provided
+        if input_val is not None:
+            error["input_type"] = type(input_val).__name__
+
         if ctx is not None:
             error["ctx"] = ctx
         if url is not None:

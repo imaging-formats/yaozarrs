@@ -110,10 +110,13 @@ def test_storage_validation_error() -> None:
 
     error = StorageValidationError(errors)
 
-    # Test that error message is generated
-    assert "2 validation error(s) for storage structure:" in str(error)
+    # Test that error message is generated (now uses class title)
+    assert "2 validation error(s) for StorageValidationError" in str(error)
     assert "Test error message" in str(error)
     assert "Another error message" in str(error)
+    # Also verify the new dot-notation format is used
+    assert "ome.multiscales.0" in str(error)
+    assert "ome.datasets.1.path" in str(error)
 
     # Test errors() method
     filtered_errors = error.errors()
