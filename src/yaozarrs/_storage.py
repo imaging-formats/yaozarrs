@@ -70,7 +70,7 @@ class ErrorDetails(TypedDict):
     - found/actual: What was actually found
     - missing: What required element is missing
     - *_ndim, *_count: Specific numeric mismatches
-    - error: Exception object (included in ctx but not displayed to avoid duplication)
+    - error: Exception object
     """
     url: NotRequired[str]
     """A URL giving information about the error."""
@@ -156,7 +156,6 @@ class StorageValidationError(ValueError):
     def errors(
         self,
         *,
-        include_url: bool = True,
         include_context: bool = True,
     ) -> list[ErrorDetails]:
         """
@@ -164,8 +163,6 @@ class StorageValidationError(ValueError):
 
         Parameters
         ----------
-        include_url: bool
-            Whether to include a URL to documentation on each error.
         include_context: bool
             Whether to include the context of each error.
 
@@ -182,8 +179,6 @@ class StorageValidationError(ValueError):
             }
             if include_context and "ctx" in error:
                 filtered_error["ctx"] = error["ctx"]
-            if include_url and "url" in error:  # pragma: no cover
-                filtered_error["url"] = error["url"]
             filtered_errors.append(filtered_error)
         return filtered_errors
 
@@ -237,7 +232,6 @@ class ValidationResult:
         msg: str,
         *,
         ctx: dict[str, Any] | None = None,
-        url: str | None = None,
     ) -> ValidationResult:
         """Add an error to this result and return self for chaining.
 
@@ -255,14 +249,10 @@ class ValidationResult:
             - expected: What was expected
             - found/actual: What was actually found
             - missing: What required element is missing
-        url : str | None
-            Optional URL with more information about the error.
         """
         error: ErrorDetails = {"type": str(error_type), "loc": loc, "msg": msg}
         if ctx is not None:
             error["ctx"] = ctx
-        if url is not None:
-            error["url"] = url
         self.errors.append(error)
         return self
 
