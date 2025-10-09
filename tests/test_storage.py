@@ -98,13 +98,13 @@ def test_storage_validation_error() -> None:
             "type": "test_error",
             "loc": ("ome", "multiscales", 0),
             "msg": "Test error message",
-            "input": "test_input",
+            "ctx": {"fs_path": "test.zarr/0", "expected": "array"},
         },
         {
             "type": "another_error",
             "loc": ("ome", "datasets", 1, "path"),
             "msg": "Another error message",
-            "input": "another_input",
+            "ctx": {"fs_path": "test.zarr/1", "expected": "group", "found": "array"},
         },
     ]
 
@@ -124,9 +124,9 @@ def test_storage_validation_error() -> None:
     assert filtered_errors[0]["type"] == "test_error"
     assert filtered_errors[1]["type"] == "another_error"
 
-    # Test filtering options
-    no_input_errors = error.errors(include_input=False)
-    assert "input" not in no_input_errors[0]
+    # Test filtering options (context should be present)
+    filtered = error.errors(include_context=True)
+    assert "ctx" in filtered[0]
 
     # Test title property
     assert error.title == "StorageValidationError"

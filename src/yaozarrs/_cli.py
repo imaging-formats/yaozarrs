@@ -4,51 +4,9 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Any
 
 from yaozarrs._storage import StorageValidationError, validate_zarr_store
 from yaozarrs._zarr import open_group
-
-
-def format_error_list(errors: list[dict[str, Any]]) -> str:
-    """Format validation errors into a readable list.
-
-    Parameters
-    ----------
-    errors : list[dict[str, Any]]
-        List of error dictionaries from StorageValidationError.errors()
-
-    Returns
-    -------
-    str
-        Formatted error message string
-    """
-    lines = [f"\n{len(errors)} validation error(s) found:\n"]
-    for i, error in enumerate(errors, 1):
-        # Format location using Pydantic-style dot notation
-        loc_parts = []
-        for part in error["loc"]:
-            if isinstance(part, int):
-                # Array index: use bracket notation like list[0]
-                if loc_parts:
-                    loc_parts[-1] = f"{loc_parts[-1]}.{part}"
-                else:
-                    loc_parts.append(str(part))
-            else:
-                # String key: use dot notation
-                loc_parts.append(str(part))
-        loc = ".".join(loc_parts)
-
-        lines.append(f"{i:>2}. {loc}")
-        lines.append(f"    type: {error['type']}")
-        lines.append(f"    {error['msg']}")
-        if "input" in error and error["input"] is not None:
-            input_str = str(error["input"])
-            if len(input_str) > 80:
-                input_str = input_str[:77] + "..."
-            lines.append(f"    input: {input_str}")
-        lines.append("")
-    return "\n".join(lines)
 
 
 def print_zarr_info(path: str) -> None:
@@ -95,9 +53,8 @@ def validate_command(args: argparse.Namespace) -> int:
         print(f"ImportError: {e}", file=sys.stderr)
         return 2
     except StorageValidationError as e:
-        print(f"✗ Validation failed for: {args.path}", file=sys.stderr)
-        errors = e.errors(include_input=True, include_context=True, include_url=False)
-        print(format_error_list(errors), file=sys.stderr)
+        print(f"✗ Validation failed for: {args.path}\n", file=sys.stderr)
+        print(str(e), file=sys.stderr)
         return 1
     except Exception as e:
         print(f"✗ Error: {e}", file=sys.stderr)

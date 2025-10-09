@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import textwrap
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
@@ -55,18 +56,20 @@ class ErrorDetails(TypedDict):
     build custom error messages.
     """
     loc: tuple[int | str, ...]
-    """Tuple of strings and ints identifying where in the schema the error occurred."""
+    """Tuple of str and ints identifying where in the metadata the error occurred."""
     msg: str
     """A human readable error message."""
-    input: Any
-    """The input data at this `loc` that caused the error."""
-    input_type: NotRequired[str]
-    """The type of the input data (e.g., 'str', 'int', 'dict')."""
     ctx: NotRequired[dict[str, Any]]
     """
-    Values which are required to render the error message, and could hence be useful in
-    rendering custom error messages.
-    Also useful for passing custom error data forward.
+    Additional context about the error, specific to the validation task.
+
+    Common context fields for storage validation:
+    - fs_path: Filesystem path in the zarr store where the error occurred
+    - expected: What was expected (type, value, or state)
+    - found/actual: What was actually found
+    - missing: What required element is missing
+    - *_ndim, *_count: Specific numeric mismatches
+    - error: Exception object (included in ctx but not displayed to avoid duplication)
     """
     url: NotRequired[str]
     """A URL giving information about the error."""
@@ -85,9 +88,9 @@ class StorageValidationError(ValueError):
     def _error_message(self) -> str:
         """Generate a readable error message from all validation errors.
 
-        Format matches Pydantic's ValidationError style:
+        Format matches Pydantic's ValidationError style with storage-specific context:
         - First line: error count and title
-        - Each error: location (dot-notation) on one line, message with metadata on next
+        - Each error: location (dot-notation) on one line, message with context on next
         """
         if not self._errors:  # pragma: no cover
             return "No validation errors"
@@ -99,25 +102,43 @@ class StorageValidationError(ValueError):
             loc_str = ".".join(str(x) for x in error["loc"])
             lines.append(loc_str)
 
-            # Build the metadata bracket content
-            metadata_parts = [f"type={error['type']}"]
+            # Build the context bracket content
+            ctx_parts = [f"type={error['type']}"]
 
-            # Add input_value if input is present
-            if "input" in error:
-                input_repr = repr(error["input"])
-                # Truncate very long input representations
-                if len(input_repr) > 80:
-                    input_repr = input_repr[:77] + "..."
-                metadata_parts.append(f"input_value={input_repr}")
+            # Add context fields if present
+            if error.get("ctx"):
+                ctx = error["ctx"]
+                # Add fs_path first if present (most important for debugging)
+                if "fs_path" in ctx:
+                    ctx_parts.append(f"fs_path={ctx['fs_path']!r}")
 
-            # Add input_type if present
-            if "input_type" in error:
-                metadata_parts.append(f"input_type={error['input_type']}")
+                # Add expected/found/actual/missing fields
+                for key in ("expected", "found", "actual", "missing"):
+                    if key in ctx:
+                        val = ctx[key]
+                        ctx_parts.append(f"{key}={val!r}")
 
-            metadata_str = ", ".join(metadata_parts)
+                # Add any other context fields (like *_ndim, *_count, etc.)
+                # Skip 'error' field to avoid duplication in display
+                for key, val in ctx.items():
+                    if key not in (
+                        "fs_path",
+                        "expected",
+                        "found",
+                        "actual",
+                        "missing",
+                        "error",
+                    ):
+                        ctx_parts.append(f"{key}={val!r}")
+
+            ctx_str = ", ".join(ctx_parts)
 
             # Message line with 2-space indent
-            lines.append(f"  {error['msg']} [{metadata_str}]")
+            # Use textwrap.indent to handle multi-line messages
+            msg = error["msg"]
+            msg_with_context = f"{msg} [{ctx_str}]"
+            indented_msg = textwrap.indent(msg_with_context, "  ")
+            lines.append(indented_msg)
 
         return "\n".join(lines)
 
@@ -131,7 +152,6 @@ class StorageValidationError(ValueError):
         *,
         include_url: bool = True,
         include_context: bool = True,
-        include_input: bool = True,
     ) -> list[ErrorDetails]:
         """
         Details about each error in the validation error.
@@ -139,11 +159,9 @@ class StorageValidationError(ValueError):
         Parameters
         ----------
         include_url: bool
-            Whether to include a URL to documentation on the error each error.
+            Whether to include a URL to documentation on each error.
         include_context: bool
             Whether to include the context of each error.
-        include_input: bool
-            Whether to include the input value of each error.
 
         Returns
         -------
@@ -156,9 +174,7 @@ class StorageValidationError(ValueError):
                 "loc": error["loc"],
                 "msg": error["msg"],
             }
-            if include_input and "input" in error:
-                filtered_error["input"] = error["input"]
-            if include_context and "ctx" in error:  # pragma: no cover
+            if include_context and "ctx" in error:
                 filtered_error["ctx"] = error["ctx"]
             if include_url and "url" in error:  # pragma: no cover
                 filtered_error["url"] = error["url"]
@@ -213,21 +229,33 @@ class ValidationResult:
         error_type: StorageErrorType,
         loc: tuple[int | str, ...],
         msg: str,
-        input_val: Any = None,
         ctx: dict[str, Any] | None = None,
         url: str | None = None,
     ) -> ValidationResult:
-        """Add an error to this result and return self for chaining."""
+        """Add an error to this result and return self for chaining.
+
+        Parameters
+        ----------
+        error_type : StorageErrorType
+            The type of error that occurred.
+        loc : tuple[int | str, ...]
+            Location tuple identifying where in the metadata the error occurred.
+        msg : str
+            Human-readable error message.
+        ctx : dict[str, Any] | None
+            Additional context about the error. Common fields:
+            - fs_path: Filesystem path where the error occurred
+            - expected: What was expected
+            - found/actual: What was actually found
+            - missing: What required element is missing
+        url : str | None
+            Optional URL with more information about the error.
+        """
         error: ErrorDetails = {
             "type": str(error_type),
             "loc": loc,
             "msg": msg,
-            "input": input_val,
         }
-
-        # Automatically add input_type if input_val is provided
-        if input_val is not None:
-            error["input_type"] = type(input_val).__name__
 
         if ctx is not None:
             error["ctx"] = ctx
