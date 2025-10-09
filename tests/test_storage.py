@@ -425,3 +425,36 @@ def test_validate_invalid_storage(
     with xfail_internet_error():
         with pytest.raises(StorageValidationError, match=str(case.err_type)):
             validate_zarr_store(path)
+
+
+def test_validate_complex_ome_zarr(complex_ome_zarr: Path) -> None:
+    """Test validation on demo OME-Zarr files."""
+
+    with xfail_internet_error():
+        validate_zarr_store(complex_ome_zarr)
+
+
+def test_validate_complex_ome_zarr_broken(complex_ome_zarr_broken: Path) -> None:
+    """Test validation on demo OME-Zarr files."""
+
+    with pytest.raises(StorageValidationError) as err:
+        validate_zarr_store(complex_ome_zarr_broken)
+
+    err_types = {e["type"] for e in err.value.errors()}
+    assert err_types == {
+        str(StorageErrorType.dataset_path_not_found),
+        str(StorageErrorType.well_path_not_group),
+        str(StorageErrorType.dataset_dimension_mismatch),
+        str(StorageErrorType.dataset_not_array),
+        str(StorageErrorType.dimension_names_mismatch),
+        str(StorageErrorType.field_path_not_group),
+        str(StorageErrorType.field_path_not_found),
+        str(StorageErrorType.field_image_invalid),
+        str(StorageErrorType.well_invalid),
+        str(StorageErrorType.label_path_not_found),
+        str(StorageErrorType.label_path_not_group),
+        str(StorageErrorType.label_image_invalid),
+        str(StorageErrorType.label_non_integer_dtype),
+        str(StorageErrorType.labels_not_group),
+    }
+    assert len(err.value.errors()) == 14

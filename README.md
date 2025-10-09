@@ -143,6 +143,56 @@ $ yaozarrs validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/60012
 > uvx "yaozarrs[io]" validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
 > ```
 
+#### Storage Validation Errors
+
+Validation errors that relate to the structure of the OME-Zarr itself
+(as opposed to metadata) are collected and presented similarly to pydantic
+validation errors for the metadata:
+
+```txt
+location
+  description [context]
+```
+
+An example validation error (for a file that has *many* problems):
+
+```txt
+yaozarrs._storage.StorageValidationError: 14 validation error(s) for StorageValidationError
+ome.plate.wells.0.well.images.0.multiscales.0.datasets.0.path
+  Dataset path '0' not found in zarr group [type=dataset_path_not_found, fs_path='A/1/0/0', expected='zarr array']
+ome.plate.wells.0.well.images.0.labels.labels.0
+  Label path 'annotations' not found in labels group [type=label_path_not_found, fs_path='A/1/0/labels/annotations', expected='zarr group']
+ome.plate.wells.0.well.images.1.labels.labels.0
+  Label path 'annotations' is not a zarr group [type=label_path_not_group, fs_path='A/1/1/labels/annotations', expected='group', found='array']
+ome.plate.wells.1.path
+  Well path 'A/2' is not a zarr group [type=well_path_not_group, fs_path='A/2', expected='group', found='array']
+ome.plate.wells.2.well.images.0.labels.labels.0
+  Label path 'annotations' does not contain valid Image ('multiscales') metadata [type=label_image_invalid, path='annotations', type='NoneType']
+ome.plate.wells.3.well.images.0.multiscales.0.datasets.0.path
+  Dataset '0' has 5 dimensions but axes specify 3 [type=dataset_dimension_mismatch, fs_path='B/1/0/0', actual_ndim=5, expected_ndim=3, axes=['c', 'y', 'x']]
+ome.plate.wells.3.well.images.0.labels.labels.0.multiscales.0.datasets.0.path
+  Label array '0' has non-integer dtype 'float32'. Labels must use integer types. [type=label_non_integer_dtype, path='0', dtype='float32']
+ome.plate.wells.4.well.images.0.multiscales.0.datasets.0.path
+  Dataset path '0' exists but is not a zarr array [type=dataset_not_array, fs_path='B/2/0/0', expected='array', found='group']
+ome.plate.wells.4.well.images.1.multiscales.0.datasets.0.path.dimension_names
+  Array dimension_names ['wrong', 'names', 'here'] don't match axes names ['c', 'y', 'x'] [type=dimension_names_mismatch, expected=['c', 'y', 'x'], actual=['wrong', 'names', 'here']]
+ome.plate.wells.5.well.images.0.labels
+  Found 'labels' path but it is a <class 'yaozarrs._zarr.ZarrArray'>, not a zarr group [type=labels_not_group, expected='group', found='ZarrArray']
+ome.plate.wells.5.well.images.1.path
+  Field path '1' is not a zarr group [type=field_path_not_group, fs_path='B/3/1', expected='group', found='array']
+ome.plate.wells.6.well.images.1.path
+  Field path '1' not found in well group [type=field_path_not_found, fs_path='C/1/1', expected='zarr group']
+ome.plate.wells.7.well.images.0
+  Field path '0' does not contain valid Image metadata [type=field_image_invalid, fs_path='C/2/0', expected='Image', missing='multiscales']
+ome.plate.wells.8
+  Well path 'C/3' does not contain valid Well metadata:
+  Failed to parse OME-Zarr metadata:
+
+  1 validation error for tagged-union[LabelImage,Image,Plate,Bf2Raw,Well,LabelsGroup,Series]
+    Unable to extract tag using discriminator _discriminate_ome_v05_metadata() [type=union_tag_not_found, input_value={}, input_type=dict]
+      For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found [type=well_invalid, path='C/3']
+```
+
 ### Validate any zarr store programmatically
 
 > [!IMPORTANT]  
