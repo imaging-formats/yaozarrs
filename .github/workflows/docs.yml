@@ -30,7 +30,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: uv run --group docs mkdocs build --strict
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: docs
           path: site
