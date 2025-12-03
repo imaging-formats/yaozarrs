@@ -5,6 +5,7 @@ from pydantic import AfterValidator, Field, WrapValidator, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
+from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
 from yaozarrs._units import SpaceUnits, TimeUnits
 
@@ -239,30 +240,6 @@ class Multiscale(_BaseModel):
     @property
     def ndim(self) -> int:
         return len(self.axes)
-
-
-# ------------------------------------------------------------------------------
-# Omero model
-# ------------------------------------------------------------------------------
-
-
-class OmeroWindow(_BaseModel):
-    start: float
-    min: float
-    end: float
-    max: float
-
-
-class OmeroChannel(_BaseModel):
-    window: OmeroWindow
-    label: str | None = None
-    family: str | None = None
-    color: str
-    active: bool | None = None
-
-
-class Omero(_BaseModel):
-    channels: list[OmeroChannel]
 
 
 # ------------------------------------------------------------------------------

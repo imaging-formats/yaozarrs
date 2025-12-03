@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from yaozarrs._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
+
 from ._bf2raw import Bf2Raw
 from ._image import (
     ChannelAxis,
@@ -14,9 +16,6 @@ from ._image import (
     Dataset,
     Image,
     Multiscale,
-    Omero,
-    OmeroChannel,
-    OmeroWindow,
     ScaleTransformation,
     SpaceAxis,
     TimeAxis,
@@ -52,6 +51,7 @@ __all__ = [
     "OMEZarrGroupJSON",
     "Omero",
     "OmeroChannel",
+    "OmeroRenderingDefs",
     "OmeroWindow",
     "Plate",
     "PlateDef",

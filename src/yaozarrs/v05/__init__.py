@@ -5,6 +5,8 @@
 <https://github.com/ome/ngff/tree/8cbba216e37407bd2d4bd5c7128ab13bd0a6404e>
 """
 
+from yaozarrs._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
+
 from ._bf2raw import Bf2Raw
 from ._image import (
     ChannelAxis,
@@ -25,7 +27,6 @@ from ._label import (
     LabelsGroup,
     LabelSource,
 )
-from ._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
 from ._well import FieldOfView, Well, WellDef
