@@ -28,7 +28,8 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.5.0",
-    "pydantic-core>=2.21.0; python_version>='3.13'",
+    "pydantic-core>=2.35.0; python_version>='3.14'",
+    "pydantic-core>=2.20.0; python_version>='3.13'",
     "typing-extensions>=4.6.0",
 ]
 
