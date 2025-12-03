@@ -14,20 +14,20 @@ repos:
       - id: validate-pyproject
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: v1.7.9
     hooks:
       - id: actionlint
         files: "^\\.github/workflows/.*\\.ya?ml$"
 
   - repo: https://github.com/adhtruong/mirrors-typos
-    rev: v1.36.3
+    rev: v1.40.0
     hooks:
       - id: typos
         files: "^src/"
         args: [--force-exclude] # omitting --write-changes
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.2
+    rev: v0.14.7
     hooks:
       - id: ruff-check
       - id: ruff-format
