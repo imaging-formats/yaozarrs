@@ -12,9 +12,6 @@ from ._image import (
     Dataset,
     Image,
     Multiscale,
-    Omero,
-    OmeroChannel,
-    OmeroWindow,
     ScaleTransformation,
     SpaceAxis,
     TimeAxis,
@@ -28,6 +25,7 @@ from ._label import (
     LabelsGroup,
     LabelSource,
 )
+from ._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
 from ._well import FieldOfView, Well, WellDef
@@ -54,6 +52,7 @@ __all__ = [
     "OMEZarrGroupJSON",
     "Omero",
     "OmeroChannel",
+    "OmeroRenderingDefs",
     "OmeroWindow",
     "Plate",
     "PlateDef",

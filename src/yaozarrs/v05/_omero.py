@@ -22,7 +22,7 @@ class OmeroChannel(_BaseModel):
     coefficient: float | None = None
 
 
-class RenderingDefs(_BaseModel):
+class OmeroRenderingDefs(_BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     model: Literal["color", "greyscale"] | str | None = None
@@ -45,4 +45,4 @@ class Omero(_BaseModel):
     id: int | None = None
     name: str | None = None
     version: str | None = None
-    rdefs: RenderingDefs | None = None
+    rdefs: OmeroRenderingDefs | None = None
