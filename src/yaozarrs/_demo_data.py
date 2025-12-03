@@ -7,7 +7,7 @@ both v0.4 and v0.5 formats.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 try:
     import numpy as np
@@ -204,7 +204,7 @@ def write_ome_labels(
 
     # Create sample label data with distinct regions
     rng = np.random.default_rng(42)
-    data = np.zeros(shape, dtype=dtype)
+    data = cast("np.ndarray", np.zeros(shape, dtype=dtype))
 
     # Create some random labeled regions
     for label_id in range(1, num_labels + 1):

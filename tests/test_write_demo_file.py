@@ -115,6 +115,8 @@ def test_plate_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
 
             # Check fields
             for field in ["0", "1"]:
-                assert isinstance(well_group[field]["0"], zarr.Array)
+                field_group = well_group[field]
+                assert isinstance(field_group, zarr.Group)
+                assert isinstance(field_group["0"], zarr.Array)
 
     yaozarrs.from_uri(plate_path / ZATTRS[version])

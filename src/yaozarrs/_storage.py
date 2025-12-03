@@ -173,7 +173,7 @@ class StorageValidationError(ValueError):
         """
         filtered_errors: list[ErrorDetails] = []
         for error in self._errors:
-            filtered_error = {
+            filtered_error: ErrorDetails = {
                 "type": error["type"],
                 "loc": error["loc"],
                 "msg": error["msg"],

@@ -106,6 +106,6 @@ def from_uri(uri: str | os.PathLike, cls: type[T] | Any = None) -> T | AnyOMEGro
     from ._io import read_json_from_uri
 
     json_content, uri_str = read_json_from_uri(uri)
-    obj = validate_ome_json(json_content, cls or AnyOMEGroup)
+    obj = validate_ome_json(json_content, cls or AnyOMEGroup)  # type: ignore
     obj.uri = uri_str
     return obj

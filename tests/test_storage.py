@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 import pytest
 
@@ -84,7 +84,7 @@ def test_validation_error_cases(tmp_path: Path) -> None:
         validate_zarr_store(root)
 
     # Check that error details are properly formatted
-    errors = cast("StorageValidationError", exc_info.value).errors()
+    errors = exc_info.value.errors()
     assert len(errors) >= 1
     assert any("not found" in error["msg"].lower() for error in errors)
 
