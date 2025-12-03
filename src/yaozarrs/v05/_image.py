@@ -7,6 +7,7 @@ from typing_extensions import Self
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
 from yaozarrs._units import SpaceUnits, TimeUnits
+from yaozarrs.v05._omero import Omero
 
 # ------------------------------------------------------------------------------
 # Axis model
@@ -312,33 +313,6 @@ class Multiscale(_BaseModel):
     @property
     def ndim(self) -> int:
         return len(self.axes)
-
-
-# ------------------------------------------------------------------------------
-# Omero model
-# ------------------------------------------------------------------------------
-
-
-class OmeroWindow(_BaseModel):
-    start: float
-    min: float
-    end: float
-    max: float
-
-
-class OmeroChannel(_BaseModel):
-    window: OmeroWindow | None = None
-    label: str | None = None
-    family: str | None = None
-    color: str | None = None
-    active: bool | None = None
-    inverted: bool | None = None
-    coefficient: float | None = None
-
-
-class Omero(_BaseModel):
-    channels: list[OmeroChannel]
-    id: int | None = None
 
 
 # ------------------------------------------------------------------------------
