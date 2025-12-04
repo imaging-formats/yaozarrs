@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import VERSION, BaseModel, ConfigDict, Field
 
 __all__ = ["_BaseModel"]
+
+# validate_by_name added in pydantic 2.9, populate_by_name deprecated in 2.11
+_PYDANTIC_V2_9 = tuple(int(x) for x in VERSION.split(".")[:2]) >= (2, 9)
+_by_name_key = "validate_by_name" if _PYDANTIC_V2_9 else "populate_by_name"
 
 
 class _BaseModel(BaseModel):
@@ -12,8 +16,8 @@ class _BaseModel(BaseModel):
         extra="ignore",
         validate_assignment=True,
         validate_default=True,
-        validate_by_name=True,
         serialize_by_alias=True,
+        **{_by_name_key: True},  # type: ignore[typeddict-item]
     )
 
     if not TYPE_CHECKING:

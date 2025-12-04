@@ -221,7 +221,7 @@ def write_bioformats2raw(
     dest_path = Path(dest)
 
     # Write root zarr.json with bioformats2raw.layout
-    bf2raw = Bf2Raw(bioformats2raw_layout=3)  # pyright: ignore[reportCallIssue]
+    bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
     _create_zarr_group(dest_path, bf2raw)
 
     # Write OME/zarr.json with series list
@@ -359,9 +359,9 @@ def _write_array_zarr(
             from dask.diagnostics.progress import ProgressBar
 
             with ProgressBar():
-                da.store(data, arr, lock=False)
+                da.store(data, arr, lock=False)  # ty: ignore
         else:
-            da.store(data, arr, lock=False)
+            da.store(data, arr, lock=False)  # ty: ignore
     else:
         arr[:] = data
 

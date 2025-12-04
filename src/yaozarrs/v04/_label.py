@@ -1,7 +1,7 @@
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Literal
 
 from annotated_types import Interval, Len, MinLen
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
@@ -16,7 +16,6 @@ Int8bit = Annotated[int, Interval(ge=0, le=255)]
 
 
 class LabelColor(_BaseModel):
-    model_config: ClassVar[ConfigDict] = ConfigDict(validate_by_name=True)
     label_value: float = Field(
         description="The value of the label",
         alias="label-value",
