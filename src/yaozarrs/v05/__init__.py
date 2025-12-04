@@ -31,6 +31,7 @@ from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
 from ._well import FieldOfView, Well, WellDef
 from ._zarr_json import OMEAttributes, OMEMetadata, OMEZarrGroupJSON
+from .write import write_bioformats2raw, write_image
 
 __all__ = [
     "Acquisition",
@@ -67,4 +68,6 @@ __all__ = [
     "TranslationTransformation",
     "Well",
     "WellDef",
+    "write_bioformats2raw",
+    "write_image",
 ]
