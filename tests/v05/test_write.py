@@ -6,7 +6,6 @@ import importlib.util
 import json
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pytest
 
 import yaozarrs
@@ -18,6 +17,10 @@ if TYPE_CHECKING:
 
     ZarrBackend = Literal["zarr", "tensorstore", "auto"]
 
+try:
+    import numpy as np
+except ImportError:
+    pytest.skip("NumPy not available", allow_module_level=True)
 
 BACKENDS: list[ZarrBackend] = []
 if importlib.util.find_spec("zarr") is not None:
