@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,6 +13,7 @@ import yaozarrs
 from yaozarrs import v05
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Literal
 
     ZarrBackend = Literal["zarr", "tensorstore", "auto"]

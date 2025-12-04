@@ -133,7 +133,7 @@ def write_image(
             path=dest_path / dataset_meta.path,
             data=data,
             chunks=resolved_chunks,
-            shard_shape=shards,
+            shards=shards,
             dimension_names=dim_names,
             progress=progress,
         )
@@ -326,7 +326,7 @@ def _write_array_zarr(
     path: Path,
     data: Any,
     chunks: tuple[int, ...],
-    shard_shape: tuple[int, ...] | None = None,
+    shards: tuple[int, ...] | None = None,
     dimension_names: list[str] | None = None,
     progress: bool = False,
     zarr_format: Literal[3] = 3,
@@ -345,7 +345,7 @@ def _write_array_zarr(
         store,
         shape=data.shape,
         chunks=chunks,
-        shards=shard_shape,
+        shards=shards,
         dtype=data.dtype,
         compressors=compressor,
         dimension_names=dimension_names,
@@ -370,7 +370,7 @@ def _write_array_tensorstore(
     path: Path,
     data: Any,
     chunks: tuple[int, ...],
-    shard_shape: tuple[int, ...] | None = None,
+    shards: tuple[int, ...] | None = None,
     dimension_names: list[str] | None = None,
     progress: bool = False,
     zarr_format: Literal[3] = 3,
@@ -390,16 +390,14 @@ def _write_array_tensorstore(
         "data_type": str(data.dtype),
         "chunk_grid": {
             "name": "regular",
-            "configuration": {
-                "chunk_shape": list(shard_shape) if shard_shape else list(chunks)
-            },
+            "configuration": {"chunk_shape": list(shards) if shards else list(chunks)},
         },
     }
 
     if dimension_names:
         metadata["dimension_names"] = dimension_names
 
-    if shard_shape is not None:
+    if shards is not None:
         metadata["codecs"] = [
             {
                 "name": "sharding_indexed",
@@ -443,7 +441,42 @@ def _write_array_tensorstore(
         store[:].write(data).result()
 
 
-def _get_write_func(backend: ZarrBackend) -> Any:
+if TYPE_CHECKING:
+
+    class WriteArrayFunc(Protocol):
+        def __call__(
+            self,
+            path: Path,
+            data: Any,
+            chunks: tuple[int, ...],
+            shards: tuple[int, ...] | None = None,
+            dimension_names: list[str] | None = None,
+            progress: bool = False,
+            zarr_format: Literal[3] = 3,
+        ) -> None:
+            """Write array using any backend.
+
+            Parameters
+            ----------
+            path : Path
+                Path to write array
+            data : array-like
+                Data to write (numpy or dask array)
+            chunks : tuple[int, ...]
+                Chunk shape
+            shards : tuple[int, ...] | None
+                Shard shape for sharded storage, or None for regular chunks
+            dimension_names : list[str] | None
+                Names for each dimension
+            progress : bool
+                Whether to show progress
+            zarr_format : Literal[3]
+                Zarr format version to use. Currently only 3 is supported.
+            """
+            ...
+
+
+def _get_write_func(backend: ZarrBackend) -> WriteArrayFunc:
     """Get the appropriate array write function for the backend."""
     if backend in {"tensorstore", "auto"}:
         if importlib.util.find_spec("tensorstore"):
