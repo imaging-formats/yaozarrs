@@ -36,22 +36,18 @@ dependencies = [
 [project.optional-dependencies]
 io = ["fsspec[http]>=2025.0"]
 storage = ["yaozarrs[io]", "zarr>=2.18", "zarr>=3.1.0; python_version>='3.11'"]
-
-[project.urls]
-homepage = "https://github.com/tlambert03/yaozarrs"
-repository = "https://github.com/tlambert03/yaozarrs"
-
-[project.scripts]
-yaozarrs = "yaozarrs._cli:main"
+write-zarr = ["zarr>=3.1.0; python_version>='3.11'"]
+write-tensorstore = [
+    "tensorstore>=0.1.71; python_version>='3.13'",
+    "tensorstore>=0.1.66",
+]
 
 [dependency-groups]
 test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
 test-full = [
     { include-group = "test" },
-    "yaozarrs[storage]",
+    "yaozarrs[storage,write-tensorstore]",
     "ome-zarr>=0.10.2",
-    "tensorstore>=0.1.66",
-    "tensorstore>=0.1.71; python_version>='3.13'",
 ]
 dev = [
     { include-group = "test-full" },
@@ -71,6 +67,13 @@ docs = [
     "mkdocstrings-python>=1.18.2",
     "ruff>=0.13.2",
 ]
+
+[project.urls]
+homepage = "https://github.com/tlambert03/yaozarrs"
+repository = "https://github.com/tlambert03/yaozarrs"
+
+[project.scripts]
+yaozarrs = "yaozarrs._cli:main"
 
 [tool.uv.sources]
 yaozarrs = { workspace = true }
