@@ -46,7 +46,9 @@ write-tensorstore = [
 test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
 test-full = [
     { include-group = "test" },
-    "numpy>=2",                            # needed for creating test data to write
+    "numpy>=2.3.2; python_version >= '3.14'", # needed for creating test data to write
+    "numpy>=2.1.0; python_version >= '3.13'", # needed for creating test data to write
+    "numpy>=2",                               # needed for creating test data to write
     "yaozarrs[storage,write-tensorstore]",
     "ome-zarr>=0.10.2",
 ]

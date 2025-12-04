@@ -8,10 +8,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
-
-import numpy as np
 
 from ._bf2raw import Bf2Raw
 from ._series import Series
@@ -20,6 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from os import PathLike
 
+    import numpy as np
     from typing_extensions import Protocol, TypeAlias
 
     from ._image import Image
@@ -308,7 +308,7 @@ def _calculate_auto_chunks(
     spatial_chunks = [shape[i] for i in range(spatial_start, ndim)]
 
     # Iteratively halve largest dimension
-    while np.prod(spatial_chunks) > target_elements and max(spatial_chunks) > 1:
+    while math.prod(spatial_chunks) > target_elements and max(spatial_chunks) > 1:
         max_idx = spatial_chunks.index(max(spatial_chunks))
         spatial_chunks[max_idx] = max(1, spatial_chunks[max_idx] // 2)
 
