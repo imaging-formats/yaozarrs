@@ -30,7 +30,7 @@ from ._label import (
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
 from ._well import FieldOfView, Well, WellDef
-from ._write import write_bioformats2raw, write_image
+from ._write import WriteArrayFunc, write_bioformats2raw, write_image
 from ._zarr_json import OMEAttributes, OMEMetadata, OMEZarrGroupJSON
 
 __all__ = [
@@ -68,6 +68,7 @@ __all__ = [
     "TranslationTransformation",
     "Well",
     "WellDef",
+    "WriteArrayFunc",
     "write_bioformats2raw",
     "write_image",
 ]

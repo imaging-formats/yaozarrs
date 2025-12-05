@@ -2,35 +2,37 @@
 
 from __future__ import annotations
 
+import doctest
 import importlib.util
 import json
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
 
 import yaozarrs
 from yaozarrs import v05
+from yaozarrs.v05 import _write
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import Literal
 
-    ZarrBackend = Literal["zarr", "tensorstore", "auto"]
+    ZarrWriter = Literal["zarr", "tensorstore", "auto"]
 
 try:
     import numpy as np
 except ImportError:
     pytest.skip("NumPy not available", allow_module_level=True)
 
-BACKENDS: list[ZarrBackend] = []
+WRITERS: list[ZarrWriter] = []
 if importlib.util.find_spec("zarr") is not None:
-    BACKENDS.append("zarr")
+    WRITERS.append("zarr")
 if importlib.util.find_spec("tensorstore") is not None:
-    BACKENDS.append("tensorstore")
+    WRITERS.append("tensorstore")
 
-if not BACKENDS:
+if not WRITERS:
     pytest.skip(
-        "No supported Zarr backend (zarr or tensorstore) found",
+        "No supported Zarr writer (zarr or tensorstore) found",
         allow_module_level=True,
     )
 
@@ -126,76 +128,76 @@ def make_multiscale_image(
 # =============================================================================
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_basic(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_basic(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test basic write_image with a single resolution level."""
     dest = tmp_path / "test.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
     image = make_simple_image("basic_test", ndim=3)
 
-    result = v05.write_image(dest, [data], image, backend=backend)
+    result = v05.write_image(dest, [data], image, writer=writer)
 
     assert result == dest
     assert dest.exists()
     assert (dest / "zarr.json").exists()
     assert (dest / "0").exists()
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_2d(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_2d(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with 2D data."""
     dest = tmp_path / "test2d.zarr"
     data = np.random.rand(64, 64).astype(np.float32)
     image = make_simple_image("test2d", ndim=2)
 
-    result = v05.write_image(dest, [data], image, backend=backend)
+    result = v05.write_image(dest, [data], image, writer=writer)
 
     assert result == dest
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_4d(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_4d(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with 4D data (TCYX)."""
     dest = tmp_path / "test4d.zarr"
     data = np.random.rand(5, 2, 32, 32).astype(np.float32)
     image = make_simple_image("test4d", ndim=4)
 
-    result = v05.write_image(dest, [data], image, backend=backend)
+    result = v05.write_image(dest, [data], image, writer=writer)
 
     assert result == dest
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_multiscale(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_multiscale(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with multiple resolution levels."""
     dest = tmp_path / "multiscale.zarr"
     datasets, image = make_multiscale_image("pyramid", n_levels=3)
 
-    result = v05.write_image(dest, datasets, image, backend=backend)
+    result = v05.write_image(dest, datasets, image, writer=writer)
 
     assert result == dest
     assert (dest / "0").exists()
     assert (dest / "1").exists()
     assert (dest / "2").exists()
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_custom_chunks(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_custom_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with custom chunk shape."""
     dest = tmp_path / "chunked.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
     image = make_simple_image("chunked", ndim=3)
     custom_chunks = (1, 32, 32)
 
-    v05.write_image(dest, [data], image, chunks=custom_chunks, backend=backend)
+    v05.write_image(dest, [data], image, chunks=custom_chunks, writer=writer)
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
     # Verify chunks in metadata
     with open(dest / "0" / "zarr.json") as fh:
@@ -204,28 +206,28 @@ def test_write_image_custom_chunks(tmp_path: Path, backend: ZarrBackend) -> None
     assert chunk_shape == list(custom_chunks)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_auto_chunks(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_auto_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with auto chunk calculation."""
     dest = tmp_path / "auto_chunked.zarr"
     data = np.random.rand(2, 256, 256).astype(np.float32)
     image = make_simple_image("auto_chunked", ndim=3)
 
-    v05.write_image(dest, [data], image, chunks="auto", backend=backend)
+    v05.write_image(dest, [data], image, chunks="auto", writer=writer)
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_no_chunks(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_no_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with chunks=None (single chunk)."""
     dest = tmp_path / "single_chunk.zarr"
     data = np.random.rand(2, 32, 32).astype(np.float32)
     image = make_simple_image("single_chunk", ndim=3)
 
-    v05.write_image(dest, [data], image, chunks=None, backend=backend)
+    v05.write_image(dest, [data], image, chunks=None, writer=writer)
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
     # Verify chunks match full array shape
     with open(dest / "0" / "zarr.json") as fh:
@@ -234,14 +236,14 @@ def test_write_image_no_chunks(tmp_path: Path, backend: ZarrBackend) -> None:
     assert chunk_shape == list(data.shape)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_metadata_correct(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_metadata_correct(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test that written metadata matches input Image model."""
     dest = tmp_path / "metadata.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
     image = make_simple_image("metadata_test", ndim=3)
 
-    v05.write_image(dest, [data], image, backend=backend)
+    v05.write_image(dest, [data], image, writer=writer)
 
     with open(dest / "zarr.json") as fh:
         meta = json.load(fh)
@@ -262,7 +264,7 @@ def test_write_image_metadata_correct(tmp_path: Path, backend: ZarrBackend) -> N
     assert transforms[0]["type"] == "scale"
     assert transforms[0]["scale"] == [1.0, 0.5, 0.5]
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
 def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
@@ -306,10 +308,8 @@ def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
 # =============================================================================
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_bioformats2raw_single_series(
-    tmp_path: Path, backend: ZarrBackend
-) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_bioformats2raw with a single series."""
     dest = tmp_path / "bf2raw.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
@@ -317,7 +317,7 @@ def test_write_bioformats2raw_single_series(
 
     images = {"0": ([data], image)}
 
-    result = v05.write_bioformats2raw(dest, images, backend=backend)
+    result = v05.write_bioformats2raw(dest, images, writer=writer)
 
     assert result == dest
     assert dest.exists()
@@ -339,9 +339,9 @@ def test_write_bioformats2raw_single_series(
     yaozarrs.validate_zarr_store(str(dest / "0"))
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
+@pytest.mark.parametrize("writer", WRITERS)
 def test_write_bioformats2raw_multiple_series(
-    tmp_path: Path, backend: ZarrBackend
+    tmp_path: Path, writer: ZarrWriter
 ) -> None:
     """Test write_bioformats2raw with multiple series."""
     dest = tmp_path / "multi_series.zarr"
@@ -352,7 +352,7 @@ def test_write_bioformats2raw_multiple_series(
         image = make_simple_image(f"series_{i}", ndim=3)
         images[str(i)] = ([data], image)
 
-    result = v05.write_bioformats2raw(dest, images, backend=backend)
+    result = v05.write_bioformats2raw(dest, images, writer=writer)
 
     assert result == dest
 
@@ -372,10 +372,8 @@ def test_write_bioformats2raw_multiple_series(
         yaozarrs.validate_zarr_store(str(dest / str(i)))
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_bioformats2raw_with_ome_xml(
-    tmp_path: Path, backend: ZarrBackend
-) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_with_ome_xml(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_bioformats2raw with OME-XML metadata."""
     dest = tmp_path / "with_xml.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
@@ -384,7 +382,7 @@ def test_write_bioformats2raw_with_ome_xml(
     ome_xml = '<?xml version="1.0"?><OME xmlns="test">test content</OME>'
     images = {"0": ([data], image)}
 
-    v05.write_bioformats2raw(dest, images, ome_xml=ome_xml, backend=backend)
+    v05.write_bioformats2raw(dest, images, ome_xml=ome_xml, writer=writer)
 
     # Check METADATA.ome.xml was written
     xml_path = dest / "OME" / "METADATA.ome.xml"
@@ -394,9 +392,9 @@ def test_write_bioformats2raw_with_ome_xml(
     yaozarrs.validate_zarr_store(str(dest / "0"))
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
+@pytest.mark.parametrize("writer", WRITERS)
 def test_write_bioformats2raw_multiscale_series(
-    tmp_path: Path, backend: ZarrBackend
+    tmp_path: Path, writer: ZarrWriter
 ) -> None:
     """Test write_bioformats2raw with multiscale pyramid series."""
     dest = tmp_path / "pyramid_series.zarr"
@@ -404,7 +402,7 @@ def test_write_bioformats2raw_multiscale_series(
     datasets, image = make_multiscale_image("pyramid_series", n_levels=2)
     images = {"0": (datasets, image)}
 
-    v05.write_bioformats2raw(dest, images, backend=backend)
+    v05.write_bioformats2raw(dest, images, writer=writer)
 
     # Check pyramid levels exist
     assert (dest / "0" / "0").exists()
@@ -418,18 +416,18 @@ def test_write_bioformats2raw_multiscale_series(
 # =============================================================================
 
 
-def test_write_image_invalid_backend(tmp_path: Path) -> None:
-    """Test that invalid backend raises error."""
+def test_write_image_invalid_writer(tmp_path: Path) -> None:
+    """Test that invalid writer raises error."""
     dest = tmp_path / "invalid.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
     image = make_simple_image("invalid", ndim=3)
 
-    with pytest.raises(ValueError, match="Unknown backend"):
-        v05.write_image(dest, [data], image, backend="invalid")  # type: ignore
+    with pytest.raises(ValueError, match="Unknown writer"):
+        v05.write_image(dest, [data], image, writer="invalid")  # type: ignore
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_with_omero(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with omero metadata."""
     dest = tmp_path / "omero.zarr"
     data = np.random.rand(3, 64, 64).astype(np.float32)
@@ -463,7 +461,7 @@ def test_write_image_with_omero(tmp_path: Path, backend: ZarrBackend) -> None:
         ),
     )
 
-    v05.write_image(dest, [data], image, backend=backend)
+    v05.write_image(dest, [data], image, writer=writer)
 
     # Check omero metadata was written
     with open(dest / "zarr.json") as fh:
@@ -474,11 +472,11 @@ def test_write_image_with_omero(tmp_path: Path, backend: ZarrBackend) -> None:
     assert len(ome["omero"]["channels"]) == 3
     assert ome["omero"]["channels"][0]["color"] == "FF0000"
 
-    yaozarrs.validate_zarr_store(str(dest))
+    yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_write_image_different_dtypes(tmp_path: Path, backend: ZarrBackend) -> None:
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_different_dtypes(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with various data types."""
     for dtype in [np.uint8, np.uint16, np.float32, np.float64]:
         dest = tmp_path / f"dtype_{dtype.__name__}.zarr"
@@ -487,6 +485,22 @@ def test_write_image_different_dtypes(tmp_path: Path, backend: ZarrBackend) -> N
             data = (data * 255).astype(dtype)
         image = make_simple_image(f"dtype_{dtype.__name__}", ndim=3)
 
-        v05.write_image(dest, [data], image, backend=backend)
+        v05.write_image(dest, [data], image, writer=writer)
 
-        yaozarrs.validate_zarr_store(str(dest))
+        yaozarrs.validate_zarr_store(dest)
+
+
+def test_write_doctests(tmp_path: Path) -> None:
+    """Run doctests from the write module."""
+    # Run doctests with extraglobs
+    results = doctest.testmod(
+        _write,
+        globs={"tmpdir": str(tmp_path), "Path": Path},
+        optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE,
+    )
+
+    # Check if any tests failed
+    if results.failed > 0:
+        pytest.fail(
+            f"Doctest failed: {results.failed} failures of {results.attempted} tests"
+        )
