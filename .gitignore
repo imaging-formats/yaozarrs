@@ -112,3 +112,4 @@ ENV/
 uv.lock
 schemas/
 samples/
+demo_data/

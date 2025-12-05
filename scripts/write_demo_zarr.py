@@ -10,7 +10,39 @@
 # [tool.uv.sources]
 # yaozarrs = { path = "../" }
 # ///
-"""A script to create demo OME-ZARR datasets from the command line."""
+r"""A script to create demo OME-ZARR datasets from the command line.
+
+Examples
+--------
+Create a multiscales image with 2 channels and 3 resolution levels:
+
+    $ uv run scripts/write_demo_zarr.py --version 0.5 image \
+        --shape 2 3 512 512 \
+        --axes czyx \
+        --num-levels 3 \
+        --channels DAPI GFP \
+        --colors 0x0000FF 0x00FF00 \
+        demo_data/my_image.ome.zarr
+
+Create a group structure (plate) with wells in a 2x3 grid:
+
+    $ uv run scripts/write_demo_zarr.py --version 0.5 plate \
+        --rows A B \
+        --columns 1 2 3 \
+        --image-shape 1 256 256 \
+        --fields-per-well 2 \
+        demo_data/my_plate.ome.zarr
+
+Create a bioformats2raw-style plate with acquisitions:
+
+    $ uv run scripts/write_demo_zarr.py --version 0.5 plate \
+        --rows A B C \
+        --columns 1 2 \
+        --fields-per-well 4 \
+        --acquisitions '{"id":0,"name":"Timepoint 1"}' \
+                       '{"id":1,"name":"Timepoint 2"}' \
+        demo_data/my_bf2raw_plate.ome.zarr
+"""
 
 import json
 from pathlib import Path
@@ -170,7 +202,7 @@ def main():
     command = args.command
     if command == "image":
         write_ome_image(
-            output_path / "image",
+            output_path,
             version=version,
             shape=tuple(args.shape),
             axes=args.axes,
@@ -180,10 +212,10 @@ def main():
             channel_names=args.channels,
             channel_colors=args.colors,
         )
-        print(f"Created OME-ZARR image at {output_path / 'image'}")
+        print(f"Created OME-ZARR image at {output_path}")
     elif command == "labels":
         write_ome_labels(
-            output_path / "labels",
+            output_path,
             version=version,
             shape=tuple(args.shape),
             axes=args.axes,
@@ -194,7 +226,7 @@ def main():
             label_colors=args.label_colors,
             parent_image_path=args.parent_image,
         )
-        print(f"Created OME-ZARR labels at {output_path / 'labels'}")
+        print(f"Created OME-ZARR labels at {output_path}")
     elif command == "plate":
         acquisitions = (
             [json.loads(acq) for acq in args.acquisitions]
@@ -202,7 +234,7 @@ def main():
             else None
         )
         write_ome_plate(
-            output_path / "plate",
+            output_path,
             version=version,
             rows=args.rows,
             columns=args.columns,
@@ -214,7 +246,7 @@ def main():
             fields_per_well=args.fields_per_well,
             acquisitions=acquisitions,
         )
-        print(f"Created OME-ZARR plate at {output_path / 'plate'}")
+        print(f"Created OME-ZARR plate at {output_path}")
     else:
         raise ValueError(f"Unknown command: {command}")
 
