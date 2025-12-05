@@ -58,9 +58,11 @@ class WriteArrayFunc(Protocol):
         path: Path,
         data: Any,
         chunks: tuple[int, ...],
+        *,
         shards: tuple[int, ...] | None = None,
         dimension_names: list[str] | None = None,
         progress: bool = False,
+        overwrite: bool = False,
     ) -> None:
         """Write array using custom backend.
 
@@ -78,6 +80,8 @@ class WriteArrayFunc(Protocol):
             Names for each dimension
         progress : bool
             Show progress bar during writing
+        overwrite : bool
+            Whether to overwrite existing array
         """
         ...
 
@@ -94,6 +98,7 @@ def write_image(
     shards: tuple[int, ...] | None = None,
     writer: ZarrWriter = "auto",
     progress: bool = False,
+    overwrite: bool = False,
 ) -> Path:
     """Write an OME-Zarr image with one or more resolution levels.
 
@@ -120,11 +125,13 @@ def write_image(
         - "zarrs": use zarrs-python (Rust-accelerated zarr)
         - "tensorstore": use tensorstore
         - Custom function with signature:
-          (path, data, chunks, shards, dimension_names, progress) -> None
+          (path, data, chunks, shards, dimension_names, progress, overwrite) -> None
           This allows full control over the writing of arrays. It's up to you whether
-          you want to honor chunks, shards, dimension_names, progress, etc.
+          you want to honor chunks, shards, dimension_names, progress, overwrite, etc.
     progress : bool
         Show progress bar during writing (used by built-in writers only).
+    overwrite : bool
+        Whether to overwrite existing group (default: False).
 
     Returns
     -------
@@ -171,7 +178,9 @@ def write_image(
 
     Custom writer with full zarr-python control:
 
-    >>> def my_zarr_writer(path, data, chunks, shards, dimension_names, progress=False):
+    >>> def my_zarr_writer(
+    ...     path, data, chunks, shards, dimension_names, progress=False, overwrite=False
+    ... ):
     ...     import zarr
     ...
     ...     arr = zarr.create_array(
@@ -181,7 +190,7 @@ def write_image(
     ...         shards=shards,
     ...         dtype=data.dtype,
     ...         dimension_names=dimension_names,
-    ...         zarr_format=3,
+    ...         overwrite=overwrite,
     ...     )
     ...     arr[:] = data
     >>>
@@ -208,7 +217,7 @@ def write_image(
 
     # Create the zarr group with OME metadata
     dest_path = Path(dest)
-    _create_zarr_group(dest_path, image)
+    _create_zarr_group(dest_path, image, overwrite)
 
     dim_names = [ax.name for ax in multiscale.axes]
 
@@ -221,6 +230,7 @@ def write_image(
             shards=shards,
             dimension_names=dim_names,
             progress=progress,
+            overwrite=overwrite,
         )
 
     return dest_path
@@ -235,6 +245,7 @@ def write_bioformats2raw(
     shards: tuple[int, ...] | None = None,
     writer: ZarrWriter = "auto",
     progress: bool = False,
+    overwrite: bool = False,
 ) -> Path:
     """Write OME-Zarr with bioformats2raw layout for multiple series.
 
@@ -264,6 +275,8 @@ def write_bioformats2raw(
         for details and examples.
     progress : bool
         Show progress bar during writing (used by built-in writers only).
+    overwrite : bool
+        Whether to overwrite existing groups (default: False).
 
     Returns
     -------
@@ -318,12 +331,12 @@ def write_bioformats2raw(
 
     # Write root zarr.json with bioformats2raw.layout
     bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
-    _create_zarr_group(dest_path, bf2raw)
+    _create_zarr_group(dest_path, bf2raw, overwrite)
 
     # Write OME/zarr.json with series list
     ome_path = dest_path / "OME"
     series = Series(series=list(images))
-    _create_zarr_group(ome_path, series)
+    _create_zarr_group(ome_path, series, overwrite)
 
     # Write METADATA.ome.xml if provided
     if ome_xml is not None:
@@ -339,6 +352,7 @@ def write_bioformats2raw(
             shards=shards,
             writer=writer,
             progress=progress,
+            overwrite=overwrite,
         )
 
     return dest_path
@@ -350,18 +364,25 @@ def write_bioformats2raw(
 def _create_zarr_group(
     dest_path: Path,
     ome_model: OMEMetadata,
-    zarr_version: Literal[3] = 3,
+    overwrite: bool = False,
 ) -> None:
     """Create a zarr group directory with OME metadata in zarr.json."""
     dest_path.mkdir(parents=True, exist_ok=True)
-    meta_dict = ome_model.model_dump(mode="json", exclude_none=True)
 
+    zarr_json_path = dest_path / "zarr.json"
+    if not overwrite and zarr_json_path.exists():
+        raise FileExistsError(
+            f"Zarr group already exists at {dest_path}. "
+            "Use overwrite=True to replace it."
+        )
+
+    meta_dict = ome_model.model_dump(mode="json", exclude_none=True)
     zarr_json = {
-        "zarr_format": zarr_version,
+        "zarr_format": 3,
         "node_type": "group",
         "attributes": {"ome": meta_dict},
     }
-    (dest_path / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
+    zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
 
 
 def _resolve_chunks(
@@ -419,12 +440,13 @@ def _calculate_auto_chunks(
 
 def _write_array_zarr(
     path: Path,
-    data: Any,
+    data: ArrayLike,
     chunks: tuple[int, ...],
+    *,
     shards: tuple[int, ...] | None = None,
     dimension_names: list[str] | None = None,
     progress: bool = False,
-    zarr_format: Literal[3] = 3,
+    overwrite: bool = False,
 ) -> None:
     """Write array using zarr-python."""
     import zarr
@@ -436,7 +458,8 @@ def _write_array_zarr(
         shards=shards,
         dtype=data.dtype,
         dimension_names=dimension_names,
-        zarr_format=zarr_format,
+        zarr_format=3,
+        overwrite=overwrite,
     )
 
     is_dask = hasattr(data, "compute")
@@ -451,17 +474,18 @@ def _write_array_zarr(
         else:
             da.store(data, arr, lock=False)  # ty: ignore
     else:
-        arr[:] = data
+        arr[:] = data  # type: ignore
 
 
 def _write_array_zarrs(
     path: Path,
-    data: Any,
+    data: ArrayLike,
     chunks: tuple[int, ...],
+    *,
     shards: tuple[int, ...] | None = None,
     dimension_names: list[str] | None = None,
     progress: bool = False,
-    zarr_format: Literal[3] = 3,
+    overwrite: bool = False,
 ) -> None:
     """Write array using zarrs-python (Rust-accelerated zarr)."""
     import zarr
@@ -470,73 +494,64 @@ def _write_array_zarrs(
     # Configure zarr to use zarrs codec pipeline within this context
     with zarr.config.set({"codec_pipeline.path": "zarrs.ZarrsCodecPipeline"}):
         _write_array_zarr(
-            path, data, chunks, shards, dimension_names, progress, zarr_format
+            path,
+            data,
+            chunks,
+            shards=shards,
+            dimension_names=dimension_names,
+            progress=progress,
+            overwrite=overwrite,
         )
 
 
 def _write_array_tensorstore(
     path: Path,
-    data: Any,
+    data: ArrayLike,
     chunks: tuple[int, ...],
+    *,
     shards: tuple[int, ...] | None = None,
     dimension_names: list[str] | None = None,
     progress: bool = False,
-    zarr_format: Literal[3] = 3,
+    overwrite: bool = False,
 ) -> None:
     """Write array using tensorstore."""
     import tensorstore as ts
 
-    if zarr_format == 3:
-        zarr_driver = "zarr3"
-    else:
-        raise ValueError(f"Unsupported zarr_format: {zarr_format}")
-
-    is_dask = hasattr(data, "compute")
-
-    metadata: dict[str, Any] = {
-        "shape": list(data.shape),
-        "data_type": str(data.dtype),
-        "chunk_grid": {
-            "name": "regular",
-            "configuration": {"chunk_shape": list(shards) if shards else list(chunks)},
-        },
-    }
-
-    if dimension_names:
-        metadata["dimension_names"] = dimension_names
-
+    # Build codec chain and chunk layout
+    codecs = chunk_codecs = [
+        {"name": "bytes", "configuration": {"endian": "little"}},
+        {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}},
+    ]
+    chunk_layout = {"chunk": {"shape": list(chunks)}}
     if shards is not None:
-        metadata["codecs"] = [
+        codecs = [
             {
                 "name": "sharding_indexed",
-                "configuration": {
-                    "chunk_shape": list(chunks),
-                    "codecs": [
-                        {"name": "bytes", "configuration": {"endian": "little"}},
-                        {
-                            "name": "blosc",
-                            "configuration": {"cname": "zstd", "clevel": 3},
-                        },
-                    ],
-                },
+                "configuration": {"chunk_shape": list(chunks), "codecs": chunk_codecs},
             }
         ]
-    else:
-        metadata["codecs"] = [
-            {"name": "bytes", "configuration": {"endian": "little"}},
-            {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}},
-        ]
+        chunk_layout = {"write_chunk": {"shape": list(shards)}}
+
+    domain: dict = {"shape": list(data.shape)}
+    if dimension_names:
+        domain["labels"] = dimension_names
 
     spec = {
-        "driver": zarr_driver,
+        "driver": "zarr3",
         "kvstore": {"driver": "file", "path": str(path)},
-        "metadata": metadata,
+        "schema": {
+            "dtype": str(data.dtype),
+            "domain": domain,
+            "chunk_layout": chunk_layout,
+            "codec": {"driver": "zarr3", "codecs": codecs},
+        },
         "create": True,
-        "delete_existing": True,
+        "delete_existing": overwrite,
     }
     store = ts.open(spec).result()
 
     # could certainly be done better...
+    is_dask = hasattr(data, "compute")
     if is_dask:
         if progress:
             from dask.diagnostics.progress import ProgressBar
@@ -547,7 +562,7 @@ def _write_array_tensorstore(
             computed = data.compute()
         store[:].write(computed).result()
     else:
-        store[:].write(data).result()
+        store[:].write(data).result()  # type: ignore
 
 
 def _get_write_func(writer: str) -> WriteArrayFunc:
