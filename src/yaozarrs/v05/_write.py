@@ -191,7 +191,7 @@ def write_image(
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
-
+    >>>
     >>> data = np.zeros((2, 64, 64), dtype=np.uint16)
     >>> image = v05.Image(
     ...     multiscales=[
