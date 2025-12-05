@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import doctest
+import importlib.metadata
 import importlib.util
 import json
 from pathlib import Path
@@ -25,9 +26,12 @@ except ImportError:
 
 WRITERS: list[ZarrWriter] = []
 if importlib.util.find_spec("zarr") is not None:
-    WRITERS.append("zarr")
-if importlib.util.find_spec("zarrs") is not None:
-    WRITERS.append("zarrs")
+    zarr_version_str = importlib.metadata.version("zarr")
+    zarr_major_version = int(zarr_version_str.split(".")[0])
+    if zarr_major_version >= 3:
+        WRITERS.append("zarr")
+        if importlib.util.find_spec("zarrs") is not None:
+            WRITERS.append("zarrs")
 if importlib.util.find_spec("tensorstore") is not None:
     WRITERS.append("tensorstore")
 
@@ -554,6 +558,7 @@ def test_write_image_compression_options(
     yaozarrs.validate_zarr_store(dest)
 
 
+@pytest.mark.skipif("zarr" not in WRITERS, reason="zarr writer not available")
 def test_write_doctests(tmp_path: Path) -> None:
     """Run doctests from the write module."""
     # Run doctests with extraglobs

@@ -13,6 +13,7 @@ The general pattern is:
 
 from __future__ import annotations
 
+import importlib.metadata
 import importlib.util
 import json
 import math
@@ -652,15 +653,24 @@ def _get_write_func(writer: str) -> WriteArrayFunc:
                 "tensorstore is required for the 'tensorstore' writer. "
                 "Please pip install with yaozarrs[write-tensorstore]"
             )
+    if have_zarr := bool(importlib.util.find_spec("zarr")):
+        zarr_version_str = importlib.metadata.version("zarr")
+        zarr_major_version = int(zarr_version_str.split(".")[0])
+        if zarr_major_version < 3 and writer in {"zarr", "zarrs"}:
+            raise ImportError(
+                f"zarr v3 or higher is required for OME-Zarr v0.5 writing, "
+                f"but zarr v{zarr_version_str} is installed. "
+                "Please upgrade zarr to v3 or higher."
+            )
     if writer in {"zarrs", "auto"}:
-        if importlib.util.find_spec("zarrs") and importlib.util.find_spec("zarr"):
+        if importlib.util.find_spec("zarrs") and have_zarr:
             return _write_array_zarrs
         raise ImportError(
             "zarrs is required for the 'zarrs' writer. "
             "Please pip install with yaozarrs[write-zarrs]"
         )
     if writer in {"zarr", "auto"}:
-        if importlib.util.find_spec("zarr"):
+        if have_zarr:
             return _write_array_zarr
         raise ImportError(
             "zarr-python is required for the 'zarr' writer. "
