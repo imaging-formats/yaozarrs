@@ -45,9 +45,8 @@ if TYPE_CHECKING:
             """Data type of the array."""
             ...
 
-    ZarrWriter: TypeAlias = (
-        Literal["zarr", "zarrs", "tensorstore", "auto"] | "WriteArrayFunc"
-    )
+    WriterName = Literal["zarr", "zarrs", "tensorstore", "auto"]
+    ZarrWriter: TypeAlias = WriterName | "WriteArrayFunc"
 
 
 @runtime_checkable
