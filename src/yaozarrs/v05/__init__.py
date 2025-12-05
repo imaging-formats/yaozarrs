@@ -32,7 +32,14 @@ from ._label import (
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
 from ._well import FieldOfView, Well, WellDef
-from ._write import WriteArrayFunc, write_bioformats2raw, write_image
+from ._write import (
+    CreateArrayFunc,
+    create_array,
+    prepare_bioformats2raw,
+    prepare_image,
+    write_bioformats2raw,
+    write_image,
+)
 from ._zarr_json import OMEAttributes, OMEMetadata, OMEZarrGroupJSON
 
 if TYPE_CHECKING:
@@ -43,6 +50,7 @@ __all__ = [
     "Bf2Raw",
     "ChannelAxis",
     "Column",
+    "CreateArrayFunc",
     "CustomAxis",
     "Dataset",
     "FieldOfView",
@@ -73,7 +81,9 @@ __all__ = [
     "TranslationTransformation",
     "Well",
     "WellDef",
-    "WriteArrayFunc",
+    "create_array",
+    "prepare_bioformats2raw",
+    "prepare_image",
     "write_bioformats2raw",
     "write_image",
 ]

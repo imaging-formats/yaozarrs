@@ -47,46 +47,55 @@ if TYPE_CHECKING:
             ...
 
     WriterName = Literal["zarr", "zarrs", "tensorstore", "auto"]
-    ZarrWriter: TypeAlias = WriterName | "WriteArrayFunc"
+    ZarrWriter: TypeAlias = WriterName | "CreateArrayFunc"
     CompressionName = Literal["blosc-zstd", "blosc-lz4", "zstd", "none"]
 
 
 @runtime_checkable
-class WriteArrayFunc(Protocol):
-    """Protocol for custom array writer functions."""
+class CreateArrayFunc(Protocol):
+    """Protocol for custom array creation functions.
+
+    Custom functions should create and return an array object that supports
+    numpy-style indexing (e.g., zarr.Array or tensorstore.TensorStore).
+    """
 
     def __call__(
         self,
         path: Path,
-        data: Any,
+        shape: tuple[int, ...],
+        dtype: Any,
         chunks: tuple[int, ...],
         *,
         shards: tuple[int, ...] | None,  # = None,
         dimension_names: list[str] | None,  # = None,
-        progress: bool,  # = False,
         overwrite: bool,  # = False,
         compression: CompressionName,  # = "blosc-zstd",
-    ) -> None:
-        """Write array using custom backend.
+    ) -> Any:
+        """Create array structure without writing data.
 
         Parameters
         ----------
         path : Path
-            Path to write array
-        data : array-like
-            Data to write (numpy or dask array)
+            Path to create array
+        shape : tuple[int, ...]
+            Array shape
+        dtype : dtype
+            Data type
         chunks : tuple[int, ...]
             Chunk shape (already resolved by yaozarrs)
         shards : tuple[int, ...] | None
             Shard shape for Zarr v3 sharding, or None
         dimension_names : list[str] | None
             Names for each dimension
-        progress : bool
-            Show progress bar during writing
         overwrite : bool
             Whether to overwrite existing array
         compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
             Compression codec to use
+
+        Returns
+        -------
+        Zarr Array object that supports numpy-style indexing for writing
+        (e.g., zarr.Array or tensorstore.TensorStore).
         """
         ...
 
@@ -124,18 +133,14 @@ def write_image(
         resolution level (clamped to array size).
     shards : tuple | None
         Shard shape for Zarr v3 sharding.
-    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | WriteArrayFunc
-        Writer for array writing. Can be:
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | CreateArrayFunc
+        Writer for array creation. Can be:
         - "auto": tries tensorstore first, falls back to zarr-python
         - "zarr": use zarr-python
         - "zarrs": use zarrs-python (Rust-accelerated zarr)
         - "tensorstore": use tensorstore
-        - Custom function with signature:
-          (path, data, chunks, shards, dimension_names, progress, overwrite,
-          compression) -> None
-          This allows full control over the writing of arrays. It's up to you
-          whether you want to honor chunks, shards, dimension_names, progress,
-          overwrite, compression, etc.
+        - Custom CreateArrayFunc: A function that creates array structures.
+          See CreateArrayFunc protocol for the expected signature.
     progress : bool
         Show progress bar during writing (used by built-in writers only).
     overwrite : bool
@@ -180,7 +185,7 @@ def write_image(
     >>> import tempfile
     >>>
     >>> # Create sample data
-    >>> data = np.random.rand(10, 256, 256).astype(np.float32)
+    >>> data = np.random.rand(10, 256, 256).astype("float32")
     >>> image = v05.Image(
     ...     multiscales=[
     ...         v05.Multiscale(
@@ -208,15 +213,15 @@ def write_image(
     ...     assert (path / "zarr.json").exists()
     ...     assert (path / "0" / "zarr.json").exists()
 
-    Custom writer with full zarr-python control:
+    Custom array creator with full zarr-python control:
 
-    >>> def my_zarr_writer(
+    >>> def my_array_creator(
     ...     path,
-    ...     data,
+    ...     shape,
+    ...     dtype,
     ...     chunks,
     ...     shards=None,
     ...     dimension_names=None,
-    ...     progress=False,
     ...     overwrite=False,
     ...     compression="blosc-zstd",
     ... ):
@@ -224,24 +229,27 @@ def write_image(
     ...
     ...     arr = zarr.create_array(
     ...         str(path),
-    ...         shape=data.shape,
+    ...         shape=shape,
     ...         chunks=chunks,
     ...         shards=shards,
-    ...         dtype=data.dtype,
+    ...         dtype=dtype,
     ...         dimension_names=dimension_names,
     ...         overwrite=overwrite,
     ...     )
-    ...     arr[:] = data
+    ...     return arr
     >>>
     >>> with tempfile.TemporaryDirectory() as tmpdir:
     ...     path = v05.write_image(
-    ...         Path(tmpdir) / "custom.zarr", [data], image, writer=my_zarr_writer
+    ...         Path(tmpdir) / "custom.zarr", [data], image, writer=my_array_creator
     ...     )
     ...     assert path.exists()
 
     For cloud storage or other advanced features, pass a custom writer
     function that configures the implementation exactly as needed.
     """
+    if len(image.multiscales) != 1:
+        raise NotImplementedError("Image must have exactly one multiscale")
+
     multiscale = image.multiscales[0]
     if len(datasets) != len(multiscale.datasets):
         raise ValueError(
@@ -249,27 +257,29 @@ def write_image(
             f"number of datasets in metadata ({len(multiscale.datasets)})"
         )
 
-    # Get writer function (either custom or built-in)
-    write_func = _get_write_func(writer) if isinstance(writer, str) else writer
-    if not isinstance(write_func, WriteArrayFunc):
-        raise TypeError("writer must be a string or a WriteArrayFunc")
-
-    # Create the zarr group with OME metadata
-    dest_path = Path(dest)
-    _create_zarr_group(dest_path, image, overwrite)
-
-    # Write each resolution level
+    # Extract shapes and dtypes from data arrays
+    shapes = {}
+    dtypes = {}
     for data_array, dataset_meta in zip(datasets, multiscale.datasets):
-        write_func(
-            path=dest_path / dataset_meta.path,
-            data=data_array,
-            chunks=_resolve_chunks(data_array, chunks),
-            shards=shards,
-            dimension_names=[ax.name for ax in multiscale.axes],
-            progress=progress,
-            overwrite=overwrite,
-            compression=compression,
-        )
+        shapes[dataset_meta.path] = data_array.shape
+        dtypes[dataset_meta.path] = data_array.dtype
+
+    # Create arrays using prepare_image (handles both built-in and custom)
+    dest_path, arrays = prepare_image(
+        dest,
+        image,
+        shapes,
+        dtypes,
+        chunks=chunks,
+        shards=shards,
+        writer=writer,
+        overwrite=overwrite,
+        compression=compression,
+    )
+
+    # Write data to arrays
+    for data_array, dataset_meta in zip(datasets, multiscale.datasets):
+        _write_to_array(arrays[dataset_meta.path], data_array, progress=progress)
 
     return dest_path
 
@@ -308,10 +318,10 @@ def write_bioformats2raw(
     shards : tuple | None
         Shard shape for Zarr v3 sharding. Passed to both built-in and
         custom writers.
-    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | WriteArrayFunc
-        Writer for array writing. Can be a string ("zarr", "zarrs",
-        "tensorstore", "auto") or a custom writer function. See write_image
-        for details and examples.
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | CreateArrayFunc
+        Writer for array creation. Can be a string ("zarr", "zarrs",
+        "tensorstore", "auto") or a custom CreateArrayFunc. See write_image
+        for details.
     progress : bool
         Show progress bar during writing (used by built-in writers only).
     overwrite : bool
@@ -333,8 +343,8 @@ def write_bioformats2raw(
     >>> import tempfile
     >>>
     >>> # Create two images
-    >>> data1 = np.random.rand(256, 256).astype(np.float32)
-    >>> data2 = np.random.rand(256, 256).astype(np.float32)
+    >>> data1 = np.random.rand(256, 256).astype("float32")
+    >>> data2 = np.random.rand(256, 256).astype("float32")
     >>>
     >>> def make_image(name):
     ...     return v05.Image(
@@ -369,13 +379,417 @@ def write_bioformats2raw(
     ...     assert (path / "0" / "zarr.json").exists()
     ...     assert (path / "1" / "zarr.json").exists()
     """
+    # Extract shapes and dtypes from data arrays for each series
+    images_spec = {}
+    data_mapping = {}
+    for series_name, (datasets, image_model) in images.items():
+        shapes = {}
+        dtypes = {}
+        multiscale = image_model.multiscales[0]
+        for data_array, dataset_meta in zip(datasets, multiscale.datasets):
+            shapes[dataset_meta.path] = data_array.shape
+            dtypes[dataset_meta.path] = data_array.dtype
+        images_spec[series_name] = (image_model, shapes, dtypes)
+        data_mapping[series_name] = {
+            ds.path: data for data, ds in zip(datasets, multiscale.datasets)
+        }
+
+    # Create the zarr structure and get array objects
+    dest_path, arrays = prepare_bioformats2raw(
+        dest,
+        images_spec,
+        ome_xml=ome_xml,
+        chunks=chunks,
+        shards=shards,
+        writer=writer,
+        overwrite=overwrite,
+        compression=compression,
+    )
+
+    # Write data to each array
+    for series_name, dataset_dict in data_mapping.items():
+        for dataset_path, data_array in dataset_dict.items():
+            array_key = f"{series_name}/{dataset_path}"
+            _write_to_array(arrays[array_key], data_array, progress=progress)
+
+    return dest_path
+
+
+def create_array(
+    path: str | PathLike,
+    shape: tuple[int, ...],
+    dtype: Any,
+    *,
+    dimension_names: list[str] | None = None,
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    writer: ZarrWriter = "auto",
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+) -> Any:
+    """
+    Create a single zarr array without writing data.
+
+    This is the low-level function for creating individual arrays. Use
+    `prepare_image` or `prepare_bioformats2raw` for creating complete
+    OME-Zarr structures.
+
+    Parameters
+    ----------
+    path : str | PathLike
+        Path where the array will be created.
+    shape : tuple[int, ...]
+        Array shape.
+    dtype : dtype
+        Data type (e.g., 'float32', 'uint16', 'int8', etc.).
+        String dtypes are preferred for clarity.
+    dimension_names : list[str] | None
+        Names for each dimension (e.g., ["c", "y", "x"]).
+    chunks : tuple | "auto" | None
+        Chunk shape. "auto" calculates optimal chunks (~4MB target),
+        None uses full array shape (single chunk).
+    shards : tuple | None
+        Shard shape for Zarr v3 sharding.
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | CreateArrayFunc
+        Writer backend or custom CreateArrayFunc (default: "auto").
+    overwrite : bool
+        Whether to overwrite existing array (default: False).
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
+        Compression codec to use (default: "blosc-zstd").
+
+    Returns
+    -------
+    Array object (zarr.Array or tensorstore.TensorStore depending on writer)
+    that supports numpy-style indexing for writing.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from yaozarrs import v05
+    >>> from pathlib import Path
+    >>> import tempfile
+    >>>
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     # Create array structure
+    ...     arr = v05.create_array(
+    ...         Path(tmpdir) / "data.zarr",
+    ...         shape=(100, 512, 512),
+    ...         dtype="float32",
+    ...         dimension_names=["z", "y", "x"],
+    ...         chunks=(1, 512, 512),
+    ...     )
+    ...     # Write data plane by plane
+    ...     for i in range(100):
+    ...         plane = np.random.rand(512, 512).astype("float32")
+    ...         arr[i] = plane
+    """
+    # Normalize dtype to ensure consistent handling
+    try:
+        import numpy as np
+
+        dtype = np.dtype(dtype)
+    except ImportError:
+        # If numpy not available, assume dtype is already valid
+        pass
+
+    # Get create function
+    create_func = _get_create_func(writer) if isinstance(writer, str) else writer
+    if not isinstance(create_func, CreateArrayFunc):
+        raise TypeError("writer must be a string or a CreateArrayFunc")
+
+    # Resolve chunks
+    resolved_chunks = _resolve_chunks(shape, dtype, chunks)
+
+    # Create and return array
+    return create_func(
+        path=Path(path),
+        shape=shape,
+        dtype=dtype,
+        chunks=resolved_chunks,
+        shards=shards,
+        dimension_names=dimension_names,
+        overwrite=overwrite,
+        compression=compression,
+    )
+
+
+def prepare_image(
+    dest: str | PathLike,
+    image: Image,
+    shapes: dict[str, tuple[int, ...]],
+    dtypes: dict[str, Any],
+    *,
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    writer: ZarrWriter = "auto",
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+) -> tuple[Path, dict[str, Any]]:
+    """
+    Create OME-Zarr Image structure (metadata + arrays) without writing data.
+
+    This creates the zarr group with Image metadata and all array structures,
+    returning array objects that you can write to incrementally.
+
+    Parameters
+    ----------
+    dest : str | PathLike
+        Destination path for the Zarr store.
+    image : Image
+        yaozarrs Image model with multiscales metadata.
+    shapes : dict[str, tuple[int, ...]]
+        Mapping of dataset path -> shape. Keys must match
+        image.multiscales[0].datasets[].path
+    dtypes : dict[str, dtype]
+        Mapping of dataset path -> dtype (e.g., 'float32', 'uint16').
+    chunks : tuple | "auto" | None
+        Chunk shape (default: "auto").
+    shards : tuple | None
+        Shard shape for Zarr v3 sharding.
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | CreateArrayFunc
+        Writer backend or custom CreateArrayFunc (default: "auto").
+    overwrite : bool
+        Whether to overwrite existing group (default: False).
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
+        Compression codec to use (default: "blosc-zstd").
+
+    Returns
+    -------
+    root_path : Path
+        Path to created store.
+    arrays : dict[str, Array]
+        Mapping of dataset path -> array object.
+        Keys are dataset paths like "0", "1", "2".
+
+    Examples
+    --------
+    Single resolution, write plane by plane:
+
+    >>> from yaozarrs import v05
+    >>> import numpy as np
+    >>> from pathlib import Path
+    >>> import tempfile
+    >>>
+    >>> image = v05.Image(
+    ...     multiscales=[
+    ...         v05.Multiscale(
+    ...             axes=[
+    ...                 v05.ChannelAxis(name="c"),
+    ...                 v05.SpaceAxis(name="y", unit="micrometer"),
+    ...                 v05.SpaceAxis(name="x", unit="micrometer"),
+    ...             ],
+    ...             datasets=[
+    ...                 v05.Dataset(
+    ...                     path="0",
+    ...                     coordinateTransformations=[
+    ...                         v05.ScaleTransformation(scale=[1.0, 0.5, 0.5])
+    ...                     ],
+    ...                 )
+    ...             ],
+    ...         )
+    ...     ]
+    ... )
+    >>>
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     root_path, arrays = v05.prepare_image(
+    ...         Path(tmpdir) / "output.zarr",
+    ...         image=image,
+    ...         shapes={"0": (2, 512, 512)},
+    ...         dtypes={"0": "float32"},
+    ...         chunks=(1, 512, 512),
+    ...     )
+    ...     # Write channel by channel
+    ...     for c in range(2):
+    ...         arrays["0"][c] = np.random.rand(512, 512).astype("float32")
+
+    Multi-resolution pyramid:
+
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     pyramid_image = v05.Image(
+    ...         multiscales=[
+    ...             v05.Multiscale(
+    ...                 axes=[
+    ...                     v05.SpaceAxis(name="y", unit="micrometer"),
+    ...                     v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                 ],
+    ...                 datasets=[
+    ...                     v05.Dataset(
+    ...                         path="0",
+    ...                         coordinateTransformations=[
+    ...                             v05.ScaleTransformation(scale=[0.5, 0.5])
+    ...                         ],
+    ...                     ),
+    ...                     v05.Dataset(
+    ...                         path="1",
+    ...                         coordinateTransformations=[
+    ...                             v05.ScaleTransformation(scale=[1.0, 1.0])
+    ...                         ],
+    ...                     ),
+    ...                 ],
+    ...             )
+    ...         ]
+    ...     )
+    ...     root_path, arrays = v05.prepare_image(
+    ...         Path(tmpdir) / "pyramid.zarr",
+    ...         image=pyramid_image,
+    ...         shapes={"0": (1024, 1024), "1": (512, 512)},
+    ...         dtypes={"0": "uint16", "1": "uint16"},
+    ...     )
+    ...     # arrays["0"] is full resolution, arrays["1"] is downsampled
+    ...     arrays["0"][:] = np.random.randint(0, 1000, (1024, 1024), dtype=np.uint16)
+    ...     arrays["1"][:] = np.random.randint(0, 1000, (512, 512), dtype=np.uint16)
+    """
+    if len(image.multiscales) != 1:
+        raise NotImplementedError("Image must have exactly one multiscale")
+    multiscale = image.multiscales[0]
+
+    # Validate inputs
+    if set(shapes.keys()) != set(dtypes.keys()):
+        raise ValueError("shapes and dtypes must have the same keys")
+
+    dataset_paths = {ds.path for ds in multiscale.datasets}
+    if set(shapes.keys()) != dataset_paths:
+        raise ValueError(
+            f"shapes keys {set(shapes.keys())} must match dataset paths {dataset_paths}"
+        )
+
+    # Get create function
+    create_func = _get_create_func(writer) if isinstance(writer, str) else writer
+    if not isinstance(create_func, CreateArrayFunc):
+        raise TypeError("writer must be a string or a CreateArrayFunc")
+
+    # Create zarr group with Image metadata
+    dest_path = Path(dest)
+    _create_zarr_group(dest_path, image, overwrite)
+
+    # Create arrays for each dataset
+    arrays = {}
+    dimension_names = [ax.name for ax in multiscale.axes]
+
+    for dataset_meta in multiscale.datasets:
+        ds_path = dataset_meta.path
+        shape = shapes[ds_path]
+        dtype = dtypes[ds_path]
+
+        # Normalize dtype to ensure consistent handling
+        try:
+            import numpy as np
+
+            dtype = np.dtype(dtype)
+        except ImportError:
+            # If numpy not available, assume dtype is already valid
+            pass
+
+        # Resolve chunks for this shape
+        resolved_chunks = _resolve_chunks(shape, dtype, chunks)
+
+        # Create array
+        arr = create_func(
+            path=dest_path / ds_path,
+            shape=shape,
+            dtype=dtype,
+            chunks=resolved_chunks,
+            shards=shards,
+            dimension_names=dimension_names,
+            overwrite=overwrite,
+            compression=compression,
+        )
+        arrays[ds_path] = arr
+
+    return dest_path, arrays
+
+
+def prepare_bioformats2raw(
+    dest: str | PathLike,
+    images: dict[str, tuple[Image, dict[str, tuple[int, ...]], dict[str, Any]]],
+    *,
+    ome_xml: str | None = None,
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    writer: ZarrWriter = "auto",
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+) -> tuple[Path, dict[str, Any]]:
+    """
+    Create bioformats2raw structure without writing data.
+
+    Parameters
+    ----------
+    dest : str | PathLike
+        Destination path for the Zarr store.
+    images : dict[str, tuple[Image, shapes_dict, dtypes_dict]]
+        Mapping of series_name -> (image_metadata, shapes, dtypes).
+        shapes and dtypes are dicts mapping dataset path -> shape/dtype.
+    ome_xml : str | None
+        Optional OME-XML string for METADATA.ome.xml file.
+    chunks : tuple | "auto" | None
+        Chunk shape (default: "auto").
+    shards : tuple | None
+        Shard shape for Zarr v3 sharding.
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | CreateArrayFunc
+        Writer backend or custom CreateArrayFunc (default: "auto").
+    overwrite : bool
+        Whether to overwrite existing groups (default: False).
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
+        Compression codec to use (default: "blosc-zstd").
+
+    Returns
+    -------
+    root_path : Path
+        Path to created store.
+    arrays : dict[str, Array]
+        Flat mapping of "series/dataset" path -> array object.
+        Keys are paths like "0/0", "0/1", "1/0", "1/1".
+
+    Examples
+    --------
+    >>> from yaozarrs import v05
+    >>> import numpy as np
+    >>> from pathlib import Path
+    >>> import tempfile
+    >>>
+    >>> def make_image(name):
+    ...     return v05.Image(
+    ...         multiscales=[
+    ...             v05.Multiscale(
+    ...                 name=name,
+    ...                 axes=[
+    ...                     v05.SpaceAxis(name="y", unit="micrometer"),
+    ...                     v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                 ],
+    ...                 datasets=[
+    ...                     v05.Dataset(
+    ...                         path="0",
+    ...                         coordinateTransformations=[
+    ...                             v05.ScaleTransformation(scale=[0.5, 0.5])
+    ...                         ],
+    ...                     )
+    ...                 ],
+    ...             )
+    ...         ]
+    ...     )
+    >>>
+    >>> images_spec = {
+    ...     "0": (make_image("series_0"), {"0": (256, 256)}, {"0": "float32"}),
+    ...     "1": (make_image("series_1"), {"0": (256, 256)}, {"0": "float32"}),
+    ... }
+    >>>
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     root_path, arrays = v05.prepare_bioformats2raw(
+    ...         Path(tmpdir) / "output.zarr", images_spec
+    ...     )
+    ...     # Write to series 0
+    ...     arrays["0/0"][:] = np.random.rand(256, 256).astype("float32")
+    ...     # Write to series 1
+    ...     arrays["1/0"][:] = np.random.rand(256, 256).astype("float32")
+    """
     dest_path = Path(dest)
 
-    # Write root zarr.json with bioformats2raw.layout
+    # Create root zarr.json with bioformats2raw.layout
     bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
     _create_zarr_group(dest_path, bf2raw, overwrite)
 
-    # Write OME/zarr.json with series list
+    # Create OME/zarr.json with series list
     ome_path = dest_path / "OME"
     series = Series(series=list(images))
     _create_zarr_group(ome_path, series, overwrite)
@@ -384,21 +798,25 @@ def write_bioformats2raw(
     if ome_xml is not None:
         (ome_path / "METADATA.ome.xml").write_text(ome_xml)
 
-    # Write each image
-    for series_name, (datasets, image_model) in images.items():
-        write_image(
+    # Create arrays for each series
+    all_arrays = {}
+    for series_name, (image_model, shapes_dict, dtypes_dict) in images.items():
+        _, series_arrays = prepare_image(
             dest_path / series_name,
-            datasets,
             image_model,
+            shapes_dict,
+            dtypes_dict,
             chunks=chunks,
             shards=shards,
             writer=writer,
-            progress=progress,
             overwrite=overwrite,
             compression=compression,
         )
+        # Flatten into all_arrays with "series/dataset" keys
+        for dataset_path, arr in series_arrays.items():
+            all_arrays[f"{series_name}/{dataset_path}"] = arr
 
-    return dest_path
+    return dest_path, all_arrays
 
 
 # ######################## Internal Helpers ####################################
@@ -429,17 +847,26 @@ def _create_zarr_group(
 
 
 def _resolve_chunks(
-    data: ArrayLike,
+    shape: tuple[int, ...],
+    dtype: Any,
     chunk_shape: tuple[int, ...] | Literal["auto"] | None,
 ) -> tuple[int, ...]:
     """Resolve chunk shape based on user input."""
     if chunk_shape == "auto":
-        return _calculate_auto_chunks(data.shape, data.dtype.itemsize)
+        # Need dtype.itemsize for auto calculation, so normalize it
+        try:
+            import numpy as np
+
+            dtype = np.dtype(dtype)
+        except ImportError:
+            # Assume dtype already has itemsize attribute
+            pass
+        return _calculate_auto_chunks(shape, dtype.itemsize)
     elif chunk_shape is None:
-        return data.shape
+        return shape
     else:
         # Clamp to array shape
-        return tuple(min(c, s) for c, s in zip(chunk_shape, data.shape))
+        return tuple(min(c, s) for c, s in zip(chunk_shape, shape))
 
 
 def _calculate_auto_chunks(
@@ -478,21 +905,21 @@ def _calculate_auto_chunks(
     return tuple(chunks)
 
 
-# ######################## Array Writing Functions #############################
+# ######################## Array Creation Functions #############################
 
 
-def _write_array_zarr(
+def _create_array_zarr(
     path: Path,
-    data: ArrayLike,
+    shape: tuple[int, ...],
+    dtype: Any,
     chunks: tuple[int, ...],
     *,
     shards: tuple[int, ...] | None,
     dimension_names: list[str] | None,
-    progress: bool,
     overwrite: bool,
     compression: CompressionName,
-) -> None:
-    """Write array using zarr-python."""
+) -> Any:
+    """Create zarr array structure using zarr-python, return array object."""
     import zarr
     from zarr.codecs import BloscCodec, BytesCodec, ZstdCodec
 
@@ -511,73 +938,60 @@ def _write_array_zarr(
 
     arr = zarr.create_array(
         str(path),
-        shape=data.shape,
+        shape=shape,
         chunks=chunks,
         shards=shards,
-        dtype=data.dtype,
+        dtype=dtype,
         dimension_names=dimension_names,
         zarr_format=3,
         overwrite=overwrite,
         serializer=serializer,
         compressors=compressors,
     )
-
-    is_dask = hasattr(data, "compute")
-    if is_dask:
-        import dask.array as da
-
-        if progress:
-            from dask.diagnostics.progress import ProgressBar
-
-            with ProgressBar():
-                da.store(data, arr, lock=False)  # ty: ignore
-        else:
-            da.store(data, arr, lock=False)  # ty: ignore
-    else:
-        arr[:] = data  # type: ignore
+    return arr
 
 
-def _write_array_zarrs(
+def _create_array_zarrs(
     path: Path,
-    data: ArrayLike,
+    shape: tuple[int, ...],
+    dtype: Any,
     chunks: tuple[int, ...],
     *,
     shards: tuple[int, ...] | None,
     dimension_names: list[str] | None,
-    progress: bool,
     overwrite: bool,
     compression: CompressionName,
-) -> None:
-    """Write array using zarrs-python (Rust-accelerated zarr)."""
+) -> Any:
+    """Create zarr array using zarrs-python, return array object."""
     import zarr
     import zarrs  # noqa: F401
 
     # Configure zarr to use zarrs codec pipeline within this context
     with zarr.config.set({"codec_pipeline.path": "zarrs.ZarrsCodecPipeline"}):
-        _write_array_zarr(
+        return _create_array_zarr(
             path,
-            data,
+            shape,
+            dtype,
             chunks,
             shards=shards,
             dimension_names=dimension_names,
-            progress=progress,
             overwrite=overwrite,
             compression=compression,
         )
 
 
-def _write_array_tensorstore(
+def _create_array_tensorstore(
     path: Path,
-    data: ArrayLike,
+    shape: tuple[int, ...],
+    dtype: Any,
     chunks: tuple[int, ...],
     *,
     shards: tuple[int, ...] | None,
     dimension_names: list[str] | None,
-    progress: bool,
     overwrite: bool,
     compression: CompressionName,
-) -> None:
-    """Write array using tensorstore."""
+) -> Any:
+    """Create zarr array using tensorstore, return store object."""
     import tensorstore as ts
 
     # Configure compression codecs
@@ -610,15 +1024,21 @@ def _write_array_tensorstore(
         ]
         chunk_layout = {"write_chunk": {"shape": list(shards)}}
 
-    domain: dict = {"shape": list(data.shape)}
+    domain: dict = {"shape": list(shape)}
     if dimension_names:
         domain["labels"] = dimension_names
+
+    # Get dtype string - handle both np.dtype objects and type classes
+    try:
+        dtype_str = dtype.name  # np.dtype object
+    except AttributeError:
+        dtype_str = str(dtype)  # fallback
 
     spec = {
         "driver": "zarr3",
         "kvstore": {"driver": "file", "path": str(path)},
         "schema": {
-            "dtype": str(data.dtype),
+            "dtype": dtype_str,
             "domain": domain,
             "chunk_layout": chunk_layout,
             "codec": {"driver": "zarr3", "codecs": codecs},
@@ -627,27 +1047,46 @@ def _write_array_tensorstore(
         "delete_existing": overwrite,
     }
     store = ts.open(spec).result()
+    return store
 
-    # could certainly be done better...
+
+def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
+    """Write data to an already-created array (zarr or tensorstore)."""
     is_dask = hasattr(data, "compute")
     if is_dask:
+        import dask.array as da
+
         if progress:
             from dask.diagnostics.progress import ProgressBar
 
             with ProgressBar():
-                computed = data.compute()
+                # Handle both zarr and tensorstore
+                if hasattr(array, "store"):  # zarr.Array
+                    da.store(data, array, lock=False)  # type: ignore
+                else:  # tensorstore
+                    computed = data.compute()
+                    array[:].write(computed).result()
         else:
-            computed = data.compute()
-        store[:].write(computed).result()
+            if hasattr(array, "store"):  # zarr.Array
+                da.store(data, array, lock=False)  # type: ignore
+            else:  # tensorstore
+                computed = data.compute()
+                array[:].write(computed).result()
     else:
-        store[:].write(data).result()  # type: ignore
+        if hasattr(array, "store"):  # zarr.Array
+            array[:] = data  # type: ignore
+        else:  # tensorstore
+            array[:].write(data).result()  # type: ignore
 
 
-def _get_write_func(writer: str) -> WriteArrayFunc:
-    """Get the appropriate array write function for the writer."""
+# ######################## Array Writing Functions #############################
+
+
+def _get_create_func(writer: str) -> Any:
+    """Get the appropriate array create function for the writer."""
     if writer in {"tensorstore", "auto"}:
         if importlib.util.find_spec("tensorstore"):
-            return _write_array_tensorstore
+            return _create_array_tensorstore
         elif writer == "tensorstore":
             raise ImportError(
                 "tensorstore is required for the 'tensorstore' writer. "
@@ -664,14 +1103,14 @@ def _get_write_func(writer: str) -> WriteArrayFunc:
             )
     if writer in {"zarrs", "auto"}:
         if importlib.util.find_spec("zarrs") and have_zarr:
-            return _write_array_zarrs
+            return _create_array_zarrs
         raise ImportError(
             "zarrs is required for the 'zarrs' writer. "
             "Please pip install with yaozarrs[write-zarrs]"
         )
     if writer in {"zarr", "auto"}:
         if have_zarr:
-            return _write_array_zarr
+            return _create_array_zarr
         raise ImportError(
             "zarr-python is required for the 'zarr' writer. "
             "Please pip install with yaozarrs[write-zarr]"
