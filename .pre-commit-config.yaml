@@ -32,15 +32,6 @@ repos:
       - id: ruff-check
       - id: ruff-format
 
-  # out with the old, in with the ty!
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.18.2
-  #   hooks:
-  #     - id: mypy
-  #       files: "^src/"
-  #       additional_dependencies:
-  #         - pydantic
-
   - repo: local
     hooks:
       - id: ty

@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 
     WriterName = Literal["zarr", "zarrs", "tensorstore", "auto"]
     ZarrWriter: TypeAlias = WriterName | "WriteArrayFunc"
+    CompressionName = Literal["blosc-zstd", "blosc-lz4", "zstd", "none"]
 
 
 @runtime_checkable
@@ -59,10 +60,11 @@ class WriteArrayFunc(Protocol):
         data: Any,
         chunks: tuple[int, ...],
         *,
-        shards: tuple[int, ...] | None = None,
-        dimension_names: list[str] | None = None,
-        progress: bool = False,
-        overwrite: bool = False,
+        shards: tuple[int, ...] | None,  # = None,
+        dimension_names: list[str] | None,  # = None,
+        progress: bool,  # = False,
+        overwrite: bool,  # = False,
+        compression: CompressionName,  # = "blosc-zstd",
     ) -> None:
         """Write array using custom backend.
 
@@ -82,6 +84,8 @@ class WriteArrayFunc(Protocol):
             Show progress bar during writing
         overwrite : bool
             Whether to overwrite existing array
+        compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
+            Compression codec to use
         """
         ...
 
@@ -99,6 +103,7 @@ def write_image(
     writer: ZarrWriter = "auto",
     progress: bool = False,
     overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
 ) -> Path:
     """Write an OME-Zarr image with one or more resolution levels.
 
@@ -125,13 +130,39 @@ def write_image(
         - "zarrs": use zarrs-python (Rust-accelerated zarr)
         - "tensorstore": use tensorstore
         - Custom function with signature:
-          (path, data, chunks, shards, dimension_names, progress, overwrite) -> None
-          This allows full control over the writing of arrays. It's up to you whether
-          you want to honor chunks, shards, dimension_names, progress, overwrite, etc.
+          (path, data, chunks, shards, dimension_names, progress, overwrite,
+          compression) -> None
+          This allows full control over the writing of arrays. It's up to you
+          whether you want to honor chunks, shards, dimension_names, progress,
+          overwrite, compression, etc.
     progress : bool
         Show progress bar during writing (used by built-in writers only).
     overwrite : bool
         Whether to overwrite existing group (default: False).
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
+        Compression codec to use. Choose based on your priorities:
+
+        - **"blosc-zstd"** (default): Good balance for imaging data
+            - Uses: blosc meta-compressor with zstd + shuffle filter
+            - Speed: Good (multi-threaded)
+            - Compression: Excellent for correlated imaging data
+              (2-3x better than plain zstd)
+            - Use when: You want good compression with reasonable speed
+        - **"blosc-lz4"**: Fastest with good compression
+            - Uses: blosc meta-compressor with lz4 + shuffle filter
+            - Speed: Fastest compression/decompression
+            - Compression: Good (shuffle helps with imaging data)
+            - Use when: Speed is critical, file size is less important
+        - **"zstd"**: Simple, reliable compression
+            - Uses: zstd at level 3 (zarr-python's default)
+            - Speed: Good
+            - Compression: Good, but misses shuffle benefits for imaging data
+            - Use when: You want standard compression without blosc's complexity
+        - **"none"**: No compression
+            - Uses: Raw bytes only
+            - Speed: Fastest I/O (no CPU overhead)
+            - Compression: None (largest files)
+            - Use when: Local SSD storage, need maximum read speed
 
     Returns
     -------
@@ -179,7 +210,14 @@ def write_image(
     Custom writer with full zarr-python control:
 
     >>> def my_zarr_writer(
-    ...     path, data, chunks, shards, dimension_names, progress=False, overwrite=False
+    ...     path,
+    ...     data,
+    ...     chunks,
+    ...     shards=None,
+    ...     dimension_names=None,
+    ...     progress=False,
+    ...     overwrite=False,
+    ...     compression="blosc-zstd",
     ... ):
     ...     import zarr
     ...
@@ -219,8 +257,6 @@ def write_image(
     dest_path = Path(dest)
     _create_zarr_group(dest_path, image, overwrite)
 
-    dim_names = [ax.name for ax in multiscale.axes]
-
     # Write each resolution level
     for data_array, dataset_meta in zip(datasets, multiscale.datasets):
         write_func(
@@ -228,9 +264,10 @@ def write_image(
             data=data_array,
             chunks=_resolve_chunks(data_array, chunks),
             shards=shards,
-            dimension_names=dim_names,
+            dimension_names=[ax.name for ax in multiscale.axes],
             progress=progress,
             overwrite=overwrite,
+            compression=compression,
         )
 
     return dest_path
@@ -246,6 +283,7 @@ def write_bioformats2raw(
     writer: ZarrWriter = "auto",
     progress: bool = False,
     overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
 ) -> Path:
     """Write OME-Zarr with bioformats2raw layout for multiple series.
 
@@ -277,6 +315,9 @@ def write_bioformats2raw(
         Show progress bar during writing (used by built-in writers only).
     overwrite : bool
         Whether to overwrite existing groups (default: False).
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none"
+        Compression codec to use. See write_image for detailed descriptions.
+        Default is "blosc-zstd" (best balance for imaging data).
 
     Returns
     -------
@@ -353,6 +394,7 @@ def write_bioformats2raw(
             writer=writer,
             progress=progress,
             overwrite=overwrite,
+            compression=compression,
         )
 
     return dest_path
@@ -443,13 +485,28 @@ def _write_array_zarr(
     data: ArrayLike,
     chunks: tuple[int, ...],
     *,
-    shards: tuple[int, ...] | None = None,
-    dimension_names: list[str] | None = None,
-    progress: bool = False,
-    overwrite: bool = False,
+    shards: tuple[int, ...] | None,
+    dimension_names: list[str] | None,
+    progress: bool,
+    overwrite: bool,
+    compression: CompressionName,
 ) -> None:
     """Write array using zarr-python."""
     import zarr
+    from zarr.codecs import BloscCodec, BytesCodec, ZstdCodec
+
+    # Configure compression codecs
+    serializer = BytesCodec(endian="little")
+    if compression == "blosc-zstd":
+        compressors = (BloscCodec(cname="zstd", clevel=3, shuffle="shuffle"),)
+    elif compression == "blosc-lz4":
+        compressors = (BloscCodec(cname="lz4", clevel=5, shuffle="shuffle"),)
+    elif compression == "zstd":
+        compressors = (ZstdCodec(level=3),)
+    elif compression == "none":
+        compressors = ()
+    else:
+        raise ValueError(f"Unknown compression: {compression}")
 
     arr = zarr.create_array(
         str(path),
@@ -460,6 +517,8 @@ def _write_array_zarr(
         dimension_names=dimension_names,
         zarr_format=3,
         overwrite=overwrite,
+        serializer=serializer,
+        compressors=compressors,
     )
 
     is_dask = hasattr(data, "compute")
@@ -482,10 +541,11 @@ def _write_array_zarrs(
     data: ArrayLike,
     chunks: tuple[int, ...],
     *,
-    shards: tuple[int, ...] | None = None,
-    dimension_names: list[str] | None = None,
-    progress: bool = False,
-    overwrite: bool = False,
+    shards: tuple[int, ...] | None,
+    dimension_names: list[str] | None,
+    progress: bool,
+    overwrite: bool,
+    compression: CompressionName,
 ) -> None:
     """Write array using zarrs-python (Rust-accelerated zarr)."""
     import zarr
@@ -501,6 +561,7 @@ def _write_array_zarrs(
             dimension_names=dimension_names,
             progress=progress,
             overwrite=overwrite,
+            compression=compression,
         )
 
 
@@ -509,19 +570,35 @@ def _write_array_tensorstore(
     data: ArrayLike,
     chunks: tuple[int, ...],
     *,
-    shards: tuple[int, ...] | None = None,
-    dimension_names: list[str] | None = None,
-    progress: bool = False,
-    overwrite: bool = False,
+    shards: tuple[int, ...] | None,
+    dimension_names: list[str] | None,
+    progress: bool,
+    overwrite: bool,
+    compression: CompressionName,
 ) -> None:
     """Write array using tensorstore."""
     import tensorstore as ts
 
+    # Configure compression codecs
+    if compression == "blosc-zstd":
+        chunk_codecs = [
+            {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}},
+        ]
+    elif compression == "blosc-lz4":
+        chunk_codecs = [
+            {"name": "blosc", "configuration": {"cname": "lz4", "clevel": 5}},
+        ]
+    elif compression == "zstd":
+        chunk_codecs = [
+            {"name": "zstd", "configuration": {"level": 3}},
+        ]
+    elif compression == "none":
+        chunk_codecs = []
+    else:
+        raise ValueError(f"Unknown compression: {compression}")
+
     # Build codec chain and chunk layout
-    codecs = chunk_codecs = [
-        {"name": "bytes", "configuration": {"endian": "little"}},
-        {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}},
-    ]
+    codecs = chunk_codecs
     chunk_layout = {"chunk": {"shape": list(chunks)}}
     if shards is not None:
         codecs = [

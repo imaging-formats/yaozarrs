@@ -15,9 +15,8 @@ from yaozarrs import v05
 from yaozarrs.v05 import _write
 
 if TYPE_CHECKING:
-    from typing import Literal
+    from yaozarrs.v05._write import CompressionName, ZarrWriter
 
-    ZarrWriter = Literal["zarr", "zarrs", "tensorstore", "auto"]
 
 try:
     import numpy as np
@@ -490,6 +489,69 @@ def test_write_image_different_dtypes(tmp_path: Path, writer: ZarrWriter) -> Non
         v05.write_image(dest, [data], image, writer=writer)
 
         yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+@pytest.mark.parametrize(
+    "compression",
+    ["blosc-zstd", "blosc-lz4", "zstd", "none"],
+)
+def test_write_image_compression_options(
+    tmp_path: Path, writer: ZarrWriter, compression: CompressionName
+) -> None:
+    """Test that each writer backend correctly honors each compression option."""
+    dest = tmp_path / f"{writer}_{compression}.zarr"
+    data = np.random.rand(2, 32, 32).astype(np.float32)
+    image = make_simple_image(f"{compression}_test", ndim=3)
+
+    v05.write_image(
+        dest,
+        [data],
+        image,
+        writer=writer,
+        compression=compression,  # type: ignore
+    )
+
+    # Read the array metadata
+    with open(dest / "0" / "zarr.json") as fh:
+        arr_meta = json.load(fh)
+
+    codecs = arr_meta.get("codecs", [])
+
+    # All codecs should start with bytes serializer
+    assert len(codecs) >= 1
+    assert codecs[0]["name"] == "bytes"
+    assert codecs[0]["configuration"]["endian"] == "little"
+
+    # Check compression-specific codecs
+    if compression == "blosc-zstd":
+        assert len(codecs) == 2
+        assert codecs[1]["name"] == "blosc"
+        config = codecs[1]["configuration"]
+        assert config["cname"] == "zstd"
+        assert config["clevel"] == 3
+        assert config["shuffle"] == "shuffle"
+
+    elif compression == "blosc-lz4":
+        assert len(codecs) == 2
+        assert codecs[1]["name"] == "blosc"
+        config = codecs[1]["configuration"]
+        assert config["cname"] == "lz4"
+        assert config["clevel"] == 5
+        assert config["shuffle"] == "shuffle"
+
+    elif compression == "zstd":
+        assert len(codecs) == 2
+        assert codecs[1]["name"] == "zstd"
+        config = codecs[1]["configuration"]
+        assert config["level"] == 3
+        assert config["checksum"] is False
+
+    elif compression == "none":
+        # Only bytes codec, no compression
+        assert len(codecs) == 1
+
+    yaozarrs.validate_zarr_store(dest)
 
 
 def test_write_doctests(tmp_path: Path) -> None:
