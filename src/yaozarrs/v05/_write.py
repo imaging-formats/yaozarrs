@@ -17,8 +17,11 @@ import importlib.metadata
 import importlib.util
 import json
 import math
+import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict, overload, runtime_checkable
+
+import tensorstore
 
 from ._bf2raw import Bf2Raw
 from ._series import Series
@@ -28,10 +31,19 @@ if TYPE_CHECKING:
     from os import PathLike
 
     import numpy as np
-    from typing_extensions import TypeAlias
+    import zarr
+    from typing_extensions import Literal, TypeAlias, Unpack
+
+    from yaozarrs.v05._image import Multiscale
 
     from ._image import Image
     from ._zarr_json import OMEMetadata
+
+    class _PrepareKwargs(TypedDict):
+        chunks: tuple[int, ...] | Literal["auto"] | None
+        shards: tuple[int, ...] | None
+        overwrite: bool
+        compression: CompressionName
 
     class ArrayLike(Protocol):
         """Protocol for array-like objects."""
@@ -49,6 +61,7 @@ if TYPE_CHECKING:
     WriterName = Literal["zarr", "zarrs", "tensorstore", "auto"]
     ZarrWriter: TypeAlias = WriterName | "CreateArrayFunc"
     CompressionName = Literal["blosc-zstd", "blosc-lz4", "zstd", "none"]
+    AnyZarrArray: TypeAlias = zarr.Array | tensorstore.TensorStore
 
 
 @runtime_checkable
@@ -67,9 +80,9 @@ class CreateArrayFunc(Protocol):
         chunks: tuple[int, ...],
         *,
         shards: tuple[int, ...] | None,  # = None,
-        dimension_names: list[str] | None,  # = None,
         overwrite: bool,  # = False,
         compression: CompressionName,  # = "blosc-zstd",
+        dimension_names: list[str] | None,  # = None,
     ) -> Any:
         """Create array structure without writing data.
 
@@ -108,29 +121,18 @@ def write_image(
     datasets: Sequence[ArrayLike],
     image: Image,
     *,
+    writer: ZarrWriter = "auto",
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
-    writer: ZarrWriter = "auto",
-    progress: bool = False,
     overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
+    progress: bool = False,
 ) -> Path:
     if len(image.multiscales) != 1:
         raise NotImplementedError("Image must have exactly one multiscale")
 
     multiscale = image.multiscales[0]
-    if len(datasets) != len(multiscale.datasets):
-        raise ValueError(
-            f"Number of data arrays ({len(datasets)}) must match "
-            f"number of datasets in metadata ({len(multiscale.datasets)})"
-        )
-
-    # Extract shapes and dtypes from data arrays
-    shapes = {}
-    dtypes = {}
-    for data_array, dataset_meta in zip(datasets, multiscale.datasets):
-        shapes[dataset_meta.path] = data_array.shape
-        dtypes[dataset_meta.path] = data_array.dtype
+    shapes, dtypes = _shapes_and_dtypes(datasets, multiscale)
 
     # Create arrays using prepare_image (handles both built-in and custom)
     dest_path, arrays = prepare_image(
@@ -152,6 +154,98 @@ def write_image(
     return dest_path
 
 
+@overload
+def prepare_image(
+    dest: str | PathLike,
+    image: Image,
+    shapes: dict[str, tuple[int, ...]],
+    dtypes: dict[str, Any],
+    *,
+    writer: Literal["zarr", "zarrs"],
+    **kwargs: Unpack[_PrepareKwargs],
+) -> tuple[Path, dict[str, zarr.Array]]: ...
+@overload
+def prepare_image(
+    dest: str | PathLike,
+    image: Image,
+    shapes: dict[str, tuple[int, ...]],
+    dtypes: dict[str, Any],
+    *,
+    writer: Literal["tensorstore"],
+    **kwargs: Unpack[_PrepareKwargs],
+) -> tuple[Path, dict[str, tensorstore.TensorStore]]: ...
+@overload
+def prepare_image(
+    dest: str | PathLike,
+    image: Image,
+    shapes: dict[str, tuple[int, ...]],
+    dtypes: dict[str, Any],
+    *,
+    writer: Literal["auto"] | CreateArrayFunc = ...,
+    **kwargs: Unpack[_PrepareKwargs],
+) -> tuple[Path, dict[str, AnyZarrArray]]: ...
+
+
+def prepare_image(
+    dest: str | PathLike,
+    image: Image,
+    shapes: dict[str, tuple[int, ...]],
+    dtypes: dict[str, Any],
+    *,
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    writer: ZarrWriter = "auto",
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+) -> tuple[Path, dict[str, Any]]:
+    if len(image.multiscales) != 1:
+        raise NotImplementedError("Image must have exactly one multiscale")
+    multiscale = image.multiscales[0]
+
+    # Validate inputs
+    if set(shapes) != set(dtypes):
+        raise ValueError("shapes and dtypes must have the same keys")
+
+    dataset_paths = {ds.path for ds in multiscale.datasets}
+    if set(shapes) != dataset_paths:
+        extras = set(shapes) - dataset_paths
+        missing = dataset_paths - set(shapes)
+        raise ValueError(
+            "Shapes and dtypes keys must match dataset paths in metadata.\n"
+            f"  Extra keys: {extras}\n"
+            f"  Missing keys: {missing}"
+        )
+
+    # Get create function
+    create_func = _get_create_func(writer)
+
+    # Create zarr group with Image metadata
+    dest_path = Path(dest)
+    _create_zarr3_group(dest_path, image, overwrite)
+
+    dimension_names = [ax.name for ax in multiscale.axes]
+
+    # Create arrays for each dataset
+    arrays = {}
+    for dataset_meta in multiscale.datasets:
+        ds_path = dataset_meta.path
+        shape = shapes[ds_path]
+        dtype = dtypes[ds_path]
+        # Create array
+        arrays[ds_path] = create_func(
+            path=dest_path / ds_path,
+            shape=shape,
+            dtype=dtype,
+            chunks=_resolve_chunks(shape, dtype, chunks),
+            shards=shards,
+            dimension_names=dimension_names,
+            overwrite=overwrite,
+            compression=compression,
+        )
+
+    return dest_path, arrays
+
+
 def write_bioformats2raw(
     dest: str | PathLike,
     images: dict[str, tuple[Sequence[ArrayLike], Image]],
@@ -168,12 +262,10 @@ def write_bioformats2raw(
     images_spec = {}
     data_mapping = {}
     for series_name, (datasets, image_model) in images.items():
-        shapes = {}
-        dtypes = {}
+        if len(image_model.multiscales) != 1:
+            raise NotImplementedError("Image must have exactly one multiscale")
         multiscale = image_model.multiscales[0]
-        for data_array, dataset_meta in zip(datasets, multiscale.datasets):
-            shapes[dataset_meta.path] = data_array.shape
-            dtypes[dataset_meta.path] = data_array.dtype
+        shapes, dtypes = _shapes_and_dtypes(datasets, multiscale)
         images_spec[series_name] = (image_model, shapes, dtypes)
         data_mapping[series_name] = {
             ds.path: data for data, ds in zip(datasets, multiscale.datasets)
@@ -200,120 +292,6 @@ def write_bioformats2raw(
     return dest_path
 
 
-def create_array(
-    path: str | PathLike,
-    shape: tuple[int, ...],
-    dtype: Any,
-    *,
-    dimension_names: list[str] | None = None,
-    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
-    shards: tuple[int, ...] | None = None,
-    writer: ZarrWriter = "auto",
-    overwrite: bool = False,
-    compression: CompressionName = "blosc-zstd",
-) -> Any:
-    # Normalize dtype to ensure consistent handling
-    try:
-        import numpy as np
-
-        dtype = np.dtype(dtype)
-    except ImportError:
-        # If numpy not available, assume dtype is already valid
-        pass
-
-    # Get create function
-    create_func = _get_create_func(writer) if isinstance(writer, str) else writer
-    if not isinstance(create_func, CreateArrayFunc):
-        raise TypeError("writer must be a string or a CreateArrayFunc")
-
-    # Resolve chunks
-    resolved_chunks = _resolve_chunks(shape, dtype, chunks)
-
-    # Create and return array
-    return create_func(
-        path=Path(path),
-        shape=shape,
-        dtype=dtype,
-        chunks=resolved_chunks,
-        shards=shards,
-        dimension_names=dimension_names,
-        overwrite=overwrite,
-        compression=compression,
-    )
-
-
-def prepare_image(
-    dest: str | PathLike,
-    image: Image,
-    shapes: dict[str, tuple[int, ...]],
-    dtypes: dict[str, Any],
-    *,
-    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
-    shards: tuple[int, ...] | None = None,
-    writer: ZarrWriter = "auto",
-    overwrite: bool = False,
-    compression: CompressionName = "blosc-zstd",
-) -> tuple[Path, dict[str, Any]]:
-    if len(image.multiscales) != 1:
-        raise NotImplementedError("Image must have exactly one multiscale")
-    multiscale = image.multiscales[0]
-
-    # Validate inputs
-    if set(shapes.keys()) != set(dtypes.keys()):
-        raise ValueError("shapes and dtypes must have the same keys")
-
-    dataset_paths = {ds.path for ds in multiscale.datasets}
-    if set(shapes.keys()) != dataset_paths:
-        raise ValueError(
-            f"shapes keys {set(shapes.keys())} must match dataset paths {dataset_paths}"
-        )
-
-    # Get create function
-    create_func = _get_create_func(writer) if isinstance(writer, str) else writer
-    if not isinstance(create_func, CreateArrayFunc):
-        raise TypeError("writer must be a string or a CreateArrayFunc")
-
-    # Create zarr group with Image metadata
-    dest_path = Path(dest)
-    _create_zarr_group(dest_path, image, overwrite)
-
-    # Create arrays for each dataset
-    arrays = {}
-    dimension_names = [ax.name for ax in multiscale.axes]
-
-    for dataset_meta in multiscale.datasets:
-        ds_path = dataset_meta.path
-        shape = shapes[ds_path]
-        dtype = dtypes[ds_path]
-
-        # Normalize dtype to ensure consistent handling
-        try:
-            import numpy as np
-
-            dtype = np.dtype(dtype)
-        except ImportError:
-            # If numpy not available, assume dtype is already valid
-            pass
-
-        # Resolve chunks for this shape
-        resolved_chunks = _resolve_chunks(shape, dtype, chunks)
-
-        # Create array
-        arr = create_func(
-            path=dest_path / ds_path,
-            shape=shape,
-            dtype=dtype,
-            chunks=resolved_chunks,
-            shards=shards,
-            dimension_names=dimension_names,
-            overwrite=overwrite,
-            compression=compression,
-        )
-        arrays[ds_path] = arr
-
-    return dest_path, arrays
-
-
 def prepare_bioformats2raw(
     dest: str | PathLike,
     images: dict[str, tuple[Image, dict[str, tuple[int, ...]], dict[str, Any]]],
@@ -329,12 +307,12 @@ def prepare_bioformats2raw(
 
     # Create root zarr.json with bioformats2raw.layout
     bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
-    _create_zarr_group(dest_path, bf2raw, overwrite)
+    _create_zarr3_group(dest_path, bf2raw, overwrite)
 
     # Create OME/zarr.json with series list
     ome_path = dest_path / "OME"
     series = Series(series=list(images))
-    _create_zarr_group(ome_path, series, overwrite)
+    _create_zarr3_group(ome_path, series, overwrite)
 
     # Write METADATA.ome.xml if provided
     if ome_xml is not None:
@@ -343,7 +321,7 @@ def prepare_bioformats2raw(
     # Create arrays for each series
     all_arrays = {}
     for series_name, (image_model, shapes_dict, dtypes_dict) in images.items():
-        _, series_arrays = prepare_image(
+        _root_path, series_arrays = prepare_image(
             dest_path / series_name,
             image_model,
             shapes_dict,
@@ -364,30 +342,48 @@ def prepare_bioformats2raw(
 # ######################## Internal Helpers ####################################
 
 
-def _create_zarr_group(
-    dest_path: Path,
-    ome_model: OMEMetadata,
-    overwrite: bool = False,
-) -> None:
-    """Create a zarr group directory with OME metadata in zarr.json."""
-    dest_path.mkdir(parents=True, exist_ok=True)
-
-    zarr_json_path = dest_path / "zarr.json"
-    if not overwrite and zarr_json_path.exists():
-        raise FileExistsError(
-            f"Zarr group already exists at {dest_path}. "
-            "Use overwrite=True to replace it."
+def _shapes_and_dtypes(
+    datasets: Sequence[ArrayLike], multiscale: Multiscale
+) -> tuple[dict[str, tuple[int, ...]], dict[str, Any]]:
+    if len(datasets) != len(multiscale.datasets):
+        raise ValueError(
+            f"Number of data arrays ({len(datasets)}) must match "
+            f"number of datasets in metadata ({len(multiscale.datasets)})"
         )
 
-    meta_dict = ome_model.model_dump(mode="json", exclude_none=True)
+    # Extract shapes and dtypes from data arrays
+    shapes = {}
+    dtypes = {}
+    for data_array, dataset_meta in zip(datasets, multiscale.datasets):
+        shapes[dataset_meta.path] = data_array.shape
+        dtypes[dataset_meta.path] = data_array.dtype
+    return shapes, dtypes
+
+
+def _create_zarr3_group(
+    dest_path: Path, ome_model: OMEMetadata, overwrite: bool = False
+) -> None:
+    """Create a zarr group directory with OME metadata in zarr.json."""
+    if dest_path.exists():
+        if not overwrite:
+            raise FileExistsError(
+                f"Zarr group already exists at {dest_path}. "
+                "Use overwrite=True to replace it."
+            )
+        shutil.rmtree(dest_path, ignore_errors=True)
+
+    dest_path.mkdir(parents=True, exist_ok=True)
     zarr_json = {
         "zarr_format": 3,
         "node_type": "group",
-        "attributes": {"ome": meta_dict},
+        "attributes": {
+            "ome": ome_model.model_dump(mode="json", exclude_none=True),
+        },
     }
-    zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
+    (dest_path / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
 
 
+# TODO: I suspect there are better chunk calculation algorithms in the backends.
 def _resolve_chunks(
     shape: tuple[int, ...],
     dtype: Any,
@@ -395,14 +391,12 @@ def _resolve_chunks(
 ) -> tuple[int, ...]:
     """Resolve chunk shape based on user input."""
     if chunk_shape == "auto":
-        # Need dtype.itemsize for auto calculation, so normalize it
-        try:
+        # FIXME: numpy is not listed in any of our extras...
+        # this is a big assumption, and could be avoided by writing our own itemsize()
+        if isinstance(dtype, str):
             import numpy as np
 
             dtype = np.dtype(dtype)
-        except ImportError:
-            # Assume dtype already has itemsize attribute
-            pass
         return _calculate_auto_chunks(shape, dtype.itemsize)
     elif chunk_shape is None:
         return shape
@@ -478,7 +472,7 @@ def _create_array_zarr(
     else:
         raise ValueError(f"Unknown compression: {compression}")
 
-    arr = zarr.create_array(
+    return zarr.create_array(
         str(path),
         shape=shape,
         chunks=chunks,
@@ -490,7 +484,6 @@ def _create_array_zarr(
         serializer=serializer,
         compressors=compressors,
     )
-    return arr
 
 
 def _create_array_zarrs(
@@ -624,8 +617,11 @@ def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
 # ######################## Array Writing Functions #############################
 
 
-def _get_create_func(writer: str) -> Any:
+def _get_create_func(writer: str | CreateArrayFunc) -> CreateArrayFunc:
     """Get the appropriate array create function for the writer."""
+    if isinstance(writer, CreateArrayFunc):
+        return writer
+
     if writer in {"tensorstore", "auto"}:
         if importlib.util.find_spec("tensorstore"):
             return _create_array_tensorstore
