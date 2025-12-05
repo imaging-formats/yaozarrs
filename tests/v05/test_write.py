@@ -30,14 +30,12 @@ if importlib.util.find_spec("zarr") is not None:
     zarr_major_version = int(zarr_version_str.split(".")[0])
     if zarr_major_version >= 3:
         WRITERS.append("zarr")
-        if importlib.util.find_spec("zarrs") is not None:
-            WRITERS.append("zarrs")
 if importlib.util.find_spec("tensorstore") is not None:
     WRITERS.append("tensorstore")
 
 if not WRITERS:
     pytest.skip(
-        "No supported Zarr writer (zarr, zarrs, or tensorstore) found",
+        "No supported Zarr writer (zarrs, or tensorstore) found",
         allow_module_level=True,
     )
 

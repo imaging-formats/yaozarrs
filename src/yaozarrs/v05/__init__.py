@@ -33,7 +33,7 @@ from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
 from ._series import Series
 from ._well import FieldOfView, Well, WellDef
 from ._write import (
-    prepare_bioformats2raw,
+    Bf2RawBuilder,
     prepare_image,
     write_bioformats2raw,
     write_image,
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 __all__ = [
     "Acquisition",
     "Bf2Raw",
+    "Bf2RawBuilder",
     "ChannelAxis",
     "Column",
     "CustomAxis",
@@ -72,13 +73,11 @@ __all__ = [
     "Row",
     "ScaleTransformation",
     "Series",
-    "Series",
     "SpaceAxis",
     "TimeAxis",
     "TranslationTransformation",
     "Well",
     "WellDef",
-    "prepare_bioformats2raw",
     "prepare_image",
     "write_bioformats2raw",
     "write_image",

@@ -30,7 +30,7 @@ ITERATIONS = 10
 WARMUP = 1  # Number of warmup iterations to discard
 
 # Available writers
-WRITERS: list[ZarrWriter] = ["zarr", "zarrs", "tensorstore"]
+WRITERS: list[ZarrWriter] = ["zarr", "tensorstore"]
 
 print(f"Testing writers: {WRITERS}")
 print(f"Shape: {SHAPE}")
