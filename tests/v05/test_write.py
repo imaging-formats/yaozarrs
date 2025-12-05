@@ -17,7 +17,7 @@ from yaozarrs.v05 import _write
 if TYPE_CHECKING:
     from typing import Literal
 
-    ZarrWriter = Literal["zarr", "tensorstore", "auto"]
+    ZarrWriter = Literal["zarr", "zarrs", "tensorstore", "auto"]
 
 try:
     import numpy as np
@@ -27,12 +27,14 @@ except ImportError:
 WRITERS: list[ZarrWriter] = []
 if importlib.util.find_spec("zarr") is not None:
     WRITERS.append("zarr")
+if importlib.util.find_spec("zarrs") is not None:
+    WRITERS.append("zarrs")
 if importlib.util.find_spec("tensorstore") is not None:
     WRITERS.append("tensorstore")
 
 if not WRITERS:
     pytest.skip(
-        "No supported Zarr writer (zarr or tensorstore) found",
+        "No supported Zarr writer (zarr, zarrs, or tensorstore) found",
         allow_module_level=True,
     )
 

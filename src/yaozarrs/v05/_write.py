@@ -45,7 +45,9 @@ if TYPE_CHECKING:
             """Data type of the array."""
             ...
 
-    ZarrWriter: TypeAlias = Literal["zarr", "tensorstore", "auto"] | "WriteArrayFunc"
+    ZarrWriter: TypeAlias = (
+        Literal["zarr", "zarrs", "tensorstore", "auto"] | "WriteArrayFunc"
+    )
 
 
 @runtime_checkable
@@ -112,10 +114,11 @@ def write_image(
         resolution level (clamped to array size).
     shards : tuple | None
         Shard shape for Zarr v3 sharding.
-    writer : "zarr" | "tensorstore" | "auto" | WriteArrayFunc
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | WriteArrayFunc
         Writer for array writing. Can be:
         - "auto": tries tensorstore first, falls back to zarr-python
         - "zarr": use zarr-python
+        - "zarrs": use zarrs-python (Rust-accelerated zarr)
         - "tensorstore": use tensorstore
         - Custom function with signature:
           (path, data, chunks, shards, dimension_names, progress) -> None
@@ -256,10 +259,10 @@ def write_bioformats2raw(
     shards : tuple | None
         Shard shape for Zarr v3 sharding. Passed to both built-in and
         custom writers.
-    writer : "zarr" | "tensorstore" | "auto" | WriteArrayFunc
-        Writer for array writing. Can be a string ("zarr", "tensorstore",
-        "auto") or a custom writer function. See write_image for details
-        and examples.
+    writer : "zarr" | "zarrs" | "tensorstore" | "auto" | WriteArrayFunc
+        Writer for array writing. Can be a string ("zarr", "zarrs",
+        "tensorstore", "auto") or a custom writer function. See write_image
+        for details and examples.
     progress : bool
         Show progress bar during writing (used by built-in writers only).
 
@@ -452,6 +455,26 @@ def _write_array_zarr(
         arr[:] = data
 
 
+def _write_array_zarrs(
+    path: Path,
+    data: Any,
+    chunks: tuple[int, ...],
+    shards: tuple[int, ...] | None = None,
+    dimension_names: list[str] | None = None,
+    progress: bool = False,
+    zarr_format: Literal[3] = 3,
+) -> None:
+    """Write array using zarrs-python (Rust-accelerated zarr)."""
+    import zarr
+    import zarrs  # noqa: F401
+
+    # Configure zarr to use zarrs codec pipeline within this context
+    with zarr.config.set({"codec_pipeline.path": "zarrs.ZarrsCodecPipeline"}):
+        _write_array_zarr(
+            path, data, chunks, shards, dimension_names, progress, zarr_format
+        )
+
+
 def _write_array_tensorstore(
     path: Path,
     data: Any,
@@ -536,18 +559,25 @@ def _get_write_func(writer: str) -> WriteArrayFunc:
         elif writer == "tensorstore":
             raise ImportError(
                 "tensorstore is required for the 'tensorstore' writer. "
-                "Install with: pip install tensorstore"
+                "Please pip install with yaozarrs[write-tensorstore]"
             )
+    if writer in {"zarrs", "auto"}:
+        if importlib.util.find_spec("zarrs") and importlib.util.find_spec("zarr"):
+            return _write_array_zarrs
+        raise ImportError(
+            "zarrs is required for the 'zarrs' writer. "
+            "Please pip install with yaozarrs[write-zarrs]"
+        )
     if writer in {"zarr", "auto"}:
         if importlib.util.find_spec("zarr"):
             return _write_array_zarr
         raise ImportError(
             "zarr-python is required for the 'zarr' writer. "
-            "Install with: pip install zarr"
+            "Please pip install with yaozarrs[write-zarr]"
         )
     if writer == "auto":
         raise ImportError(
             "No suitable writer found for OME-Zarr writing. "
-            "Please install either tensorstore or zarr."
+            "Please install either tensorstore, zarr, or zarrs-python."
         )
     raise ValueError(f"Unknown writer: {writer}")
