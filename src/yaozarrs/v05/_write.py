@@ -19,13 +19,7 @@ import json
 import math
 import shutil
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Protocol,
-    overload,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict, overload, runtime_checkable
 
 from typing_extensions import Self
 
@@ -50,6 +44,20 @@ if TYPE_CHECKING:
     AnyZarrArray: TypeAlias = zarr.Array | tensorstore.TensorStore
     DTypeLike: TypeAlias = str | np.dtype[Any]
     ShapeLike: TypeAlias = tuple[int, ...]
+
+    class WriteKwargs(TypedDict, total=False):
+        chunk_shape: tuple[int, ...] | Literal["auto"] | None
+        """Read chunk shape. "auto" is passed to backend."""
+        shard_shape: tuple[int, ...] | None
+        """Shard shape (storage chunks). chunk_shape must evenly divide shard_shape."""
+        fill_value: Any
+        """Fill value for uninitialized regions."""
+        compression: CompressionName | None
+        """Compression codec."""
+        compression_level: int | None
+        """Compression level (0-9 for most, 0-22 for zstd)."""
+        overwrite: bool
+        """Whether to overwrite existing array at this location."""
 
     class ArrayLike(Protocol):
         """Protocol for array-like objects (numpy arrays, dask arrays, etc.)."""
@@ -123,8 +131,8 @@ class CreateArrayFunc(Protocol):
 
 def write_image(
     dest: str | PathLike,
-    datasets: Sequence[ArrayLike],
     image: Image,
+    datasets: Sequence[ArrayLike],
     *,
     writer: ZarrWriter = "auto",
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -143,17 +151,17 @@ def write_image(
     ----------
     dest : str | PathLike
         Destination path for the Zarr group. Will be created if it doesn't exist.
-    datasets : Sequence[ArrayLike]
-        Data arrays to write (numpy, dask, or any array with shape/dtype).
-        Must be in the same order as ``image.multiscales[0].datasets``.
-        For a multiscale pyramid, provide one array per resolution level.
     image : Image
         OME-Zarr Image metadata model. Must have exactly one multiscale, with
-        one Dataset entry per array in ``datasets``.
+        one Dataset entry per array in `datasets`.
+    datasets : Sequence[ArrayLike]
+        Data arrays to write (numpy, dask, or any array with shape/dtype).
+        Must be in the same order as `image.multiscales[0].datasets`.
+        For a multiscale pyramid, provide one array per resolution level.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. "auto" prefers tensorstore if
         available, otherwise falls back to zarr-python. Pass a custom function
-        matching the ``CreateArrayFunc`` protocol for custom backends.
+        matching the `CreateArrayFunc` protocol for custom backends.
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape for storage. "auto" (default) calculates ~4MB chunks with
         non-spatial dims set to 1. None uses the full array shape (single chunk).
@@ -161,7 +169,7 @@ def write_image(
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding codec. None (default) disables sharding.
     overwrite : bool, optional
-        If True, overwrite existing Zarr group at ``dest``. Default is False.
+        If True, overwrite existing Zarr group at `dest`. Default is False.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. "blosc-zstd" (default) provides good compression with
         shuffle filter. "zstd" uses raw zstd without blosc container.
@@ -180,7 +188,7 @@ def write_image(
     ValueError
         If the number of datasets doesn't match the metadata.
     FileExistsError
-        If ``dest`` exists and ``overwrite`` is False.
+        If `dest` exists and `overwrite` is False.
     ImportError
         If no suitable writer backend is installed.
 
@@ -213,7 +221,7 @@ def write_image(
     ...     ]
     ... )
     >>> dest = Path(tmpdir) / "example.zarr"
-    >>> result = v05.write_image(dest, [data], image)
+    >>> result = v05.write_image(dest, image, [data])
     >>> assert result.exists()
 
     See Also
@@ -229,8 +237,8 @@ def write_image(
     # Create arrays using prepare_image (handles both built-in and custom)
     dest_path, arrays = prepare_image(
         dest,
-        datasets,
         image,
+        datasets,
         chunks=chunks,
         shards=shards,
         writer=writer,
@@ -247,7 +255,7 @@ def write_image(
 
 def write_bioformats2raw(
     dest: str | PathLike,
-    images: dict[str, tuple[Sequence[ArrayLike], Image]],
+    images: dict[str, tuple[Image, Sequence[ArrayLike]]],
     *,
     ome_xml: str | None = None,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -261,25 +269,44 @@ def write_bioformats2raw(
 
     The bioformats2raw layout is a convention for storing multiple images
     (series) in a single Zarr hierarchy. It includes a root group with
-    ``bioformats2raw.layout`` version, an ``OME/`` group with series metadata,
+    `bioformats2raw.layout` version, an `OME/` group with series metadata,
     and each series as a separate Image subgroup.
 
     This is the high-level function for writing all series at once. For
-    incremental writes, use ``Bf2RawBuilder`` directly.
+    incremental writes, use `Bf2RawBuilder` directly.
+
+    Writes the following structure:
+
+        dest/
+        ├── zarr.json              # root: attributes["ome"]["bioformats2raw.layout"]
+        ├── 0/                     # first series (images["0"])
+        │   ├── zarr.json          # Image metadata (images["0"][0])
+        │   ├── 0/                 # first resolution level
+        │   │   ├── zarr.json      # array metadata
+        │   │   └── c/             # chunks directory
+        │   └── 1/                 # second resolution level (if multiscale)
+        │       ├── zarr.json
+        │       └── c/
+        ├── 1/                     # second series (images["1"])
+        │   └── ...
+        └── OME/
+            ├── zarr.json          # attributes["ome"]["series"] = ["0", "1", ...]
+            └── METADATA.ome.xml   # optional OME-XML (if ome_xml provided)
 
     Parameters
     ----------
     dest : str | PathLike
         Destination path for the root Zarr group.
-    images : dict[str, tuple[Sequence[ArrayLike], Image]]
-        Mapping of series name to (datasets, image_model). Each series name
-        becomes a subgroup (e.g., "0", "1", or custom names). The datasets
-        are arrays for each resolution level, matching the Image metadata.
+    images : dict[str, tuple[Image, Sequence[ArrayLike]]]
+        Mapping of `{series_name -> (image_model, [datasets, ...])}`.
+        Each series name (e.g., "0", "1") becomes a subgroup in the root group, with
+        the Image model defining the zarr.json and the datasets providing the data
+        arrays.
     ome_xml : str | None, optional
-        Original OME-XML string to store as ``OME/METADATA.ome.xml``.
+        OME-XML string to store as `OME/METADATA.ome.xml`.
         Useful for preserving full metadata from converted files.
     chunks : tuple[int, ...] | "auto" | None, optional
-        Chunk shape for all arrays. See ``write_image`` for details.
+        Chunk shape for all arrays. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding. None disables sharding.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
@@ -299,7 +326,7 @@ def write_bioformats2raw(
     Raises
     ------
     FileExistsError
-        If ``dest`` exists and ``overwrite`` is False.
+        If `dest` exists and `overwrite` is False.
     ValueError
         If any series has mismatched datasets/metadata.
     ImportError
@@ -332,8 +359,8 @@ def write_bioformats2raw(
     ...         ]
     ...     )
     >>> images = {
-    ...     "0": ([np.zeros((64, 64), dtype=np.uint16)], make_image()),
-    ...     "1": ([np.zeros((32, 32), dtype=np.uint16)], make_image()),
+    ...     "0": (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
+    ...     "1": (make_image(), [np.zeros((32, 32), dtype=np.uint16)]),
     ... }
     >>> dest = Path(tmpdir) / "multi_series.zarr"
     >>> result = v05.write_bioformats2raw(dest, images)
@@ -357,8 +384,8 @@ def write_bioformats2raw(
         compression=compression,
     )
 
-    for series_name, (datasets, image_model) in images.items():
-        builder.write_image(series_name, datasets, image_model, progress=progress)
+    for series_name, (image_model, datasets) in images.items():
+        builder.write_image(series_name, image_model, datasets, progress=progress)
 
     return builder.root_path
 
@@ -369,8 +396,8 @@ def write_bioformats2raw(
 @overload
 def prepare_image(
     dest: str | PathLike,
-    datasets: Sequence[ArraySpec],
     image: Image,
+    datasets: Sequence[ArraySpec],
     *,
     writer: Literal["zarr"],
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
@@ -381,8 +408,8 @@ def prepare_image(
 @overload
 def prepare_image(
     dest: str | PathLike,
-    datasets: Sequence[ArraySpec],
     image: Image,
+    datasets: Sequence[ArraySpec],
     *,
     writer: Literal["tensorstore"],
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
@@ -393,8 +420,8 @@ def prepare_image(
 @overload
 def prepare_image(
     dest: str | PathLike,
-    datasets: Sequence[ArraySpec],
     image: Image,
+    datasets: Sequence[ArraySpec],
     *,
     writer: Literal["auto"] | CreateArrayFunc = ...,
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
@@ -406,8 +433,8 @@ def prepare_image(
 
 def prepare_image(
     dest: str | PathLike,
-    datasets: Sequence[ArraySpec],
     image: Image,
+    datasets: Sequence[ArraySpec],
     *,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
@@ -425,18 +452,18 @@ def prepare_image(
     ----------
     dest : str | PathLike
         Destination path for the Zarr group.
+    image : Image
+        OME-Zarr Image metadata model.
     datasets : Sequence[ArraySpec]
         Specifications for each dataset. Can be either:
 
-        - Array-like objects with ``shape`` and ``dtype`` attributes
+        - Array-like objects with `shape` and `dtype` attributes
           (numpy arrays, dask arrays, etc.)
-        - Tuples of ``(dtype, shape)`` for specifying without actual data
+        - Tuples of `(dtype, shape)` for specifying without actual data
 
-        Must match the order of ``image.multiscales[0].datasets``.
-    image : Image
-        OME-Zarr Image metadata model.
+        Must match the order of `image.multiscales[0].datasets`.
     chunks : tuple[int, ...] | "auto" | None, optional
-        Chunk shape. See ``write_image`` for details.
+        Chunk shape. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
@@ -450,12 +477,12 @@ def prepare_image(
     Returns
     -------
     tuple[Path, dict[str, Array]]
-        A tuple of (path, arrays) where ``arrays`` maps dataset paths (e.g., "0")
+        A tuple of (path, arrays) where `arrays` maps dataset paths (e.g., "0")
         to array objects. The array type depends on the writer:
 
-        - ``writer="zarr"``: Returns ``dict[str, zarr.Array]``
-        - ``writer="tensorstore"``: Returns ``dict[str, tensorstore.TensorStore]``
-        - ``writer="auto"``: Returns whichever is available
+        - `writer="zarr"`: Returns `dict[str, zarr.Array]`
+        - `writer="tensorstore"`: Returns `dict[str, tensorstore.TensorStore]`
+        - `writer="auto"`: Returns whichever is available
 
     Raises
     ------
@@ -466,7 +493,7 @@ def prepare_image(
     TypeError
         If a dataset spec is not ArrayLike or (dtype, shape) tuple.
     FileExistsError
-        If ``dest`` exists and ``overwrite`` is False.
+        If `dest` exists and `overwrite` is False.
     ImportError
         If no suitable writer backend is installed.
 
@@ -499,8 +526,8 @@ def prepare_image(
     >>> dest = Path(tmpdir) / "prepared.zarr"
     >>> path, arrays = v05.prepare_image(
     ...     dest,
-    ...     [(np.dtype("uint16"), (64, 64))],  # (dtype, shape) tuple
     ...     image,
+    ...     [(np.dtype("uint16"), (64, 64))],  # (dtype, shape) tuple
     ... )
     >>> # Write data yourself
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
@@ -566,19 +593,19 @@ class Bf2RawBuilder:
     The bioformats2raw layout is a convention for storing multiple OME-Zarr
     images in a single hierarchy. It includes:
 
-    - A root group with ``bioformats2raw.layout`` version attribute
-    - An ``OME/`` subgroup listing all series names
-    - Each series as a separate Image subgroup (e.g., ``0/``, ``1/``)
-    - Optional ``OME/METADATA.ome.xml`` with full OME-XML metadata
+    - A root group with `bioformats2raw.layout` version attribute
+    - An `OME/` subgroup listing all series names
+    - Each series as a separate Image subgroup (e.g., `0/`, `1/`)
+    - Optional `OME/METADATA.ome.xml` with full OME-XML metadata
 
     This builder supports two workflows:
 
-    1. **Immediate write** (simpler): Use ``write_image()`` to write each series
+    1. **Immediate write** (simpler): Use `write_image()` to write each series
        with its data immediately. The builder manages root structure and series
        list automatically.
 
-    2. **Prepare-only** (flexible): Use ``add_series()`` to register all series,
-       then ``prepare()`` to create the hierarchy with empty arrays. Write data
+    2. **Prepare-only** (flexible): Use `add_series()` to register all series,
+       then `prepare()` to create the hierarchy with empty arrays. Write data
        to the returned arrays yourself.
 
     Parameters
@@ -586,7 +613,7 @@ class Bf2RawBuilder:
     dest : str | PathLike
         Destination path for the root Zarr group.
     ome_xml : str | None, optional
-        Original OME-XML string to store as ``OME/METADATA.ome.xml``.
+        Original OME-XML string to store as `OME/METADATA.ome.xml`.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. Default is "auto".
     chunks : tuple[int, ...] | "auto" | None, optional
@@ -623,9 +650,9 @@ class Bf2RawBuilder:
     ...     )
     >>> dest = Path(tmpdir) / "builder_immediate.zarr"
     >>> builder = v05.Bf2RawBuilder(dest)
-    >>> builder.write_image("0", [np.zeros((32, 32), dtype=np.uint16)], make_image())
+    >>> builder.write_image("0", make_image(), [np.zeros((32, 32), dtype=np.uint16)])
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
-    >>> builder.write_image("1", [np.zeros((16, 16), dtype=np.uint16)], make_image())
+    >>> builder.write_image("1", make_image(), [np.zeros((16, 16), dtype=np.uint16)])
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
     >>> (dest / "0" / "zarr.json").exists()
     True
@@ -636,9 +663,9 @@ class Bf2RawBuilder:
     >>> builder2 = v05.Bf2RawBuilder(dest2)
     >>> data1 = np.zeros((32, 32), dtype=np.uint16)
     >>> data2 = np.zeros((16, 16), dtype=np.uint16)
-    >>> builder2.add_series("0", [data1], make_image())
+    >>> builder2.add_series("0", make_image(), [data1])
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
-    >>> builder2.add_series("1", [data2], make_image())
+    >>> builder2.add_series("1", make_image(), [data2])
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
     >>> path, arrays = builder2.prepare()
     >>> arrays["0/0"][:] = data1  # Write data yourself
@@ -685,8 +712,8 @@ class Bf2RawBuilder:
     def write_image(
         self,
         name: str,
-        datasets: Sequence[ArrayLike],
         image: Image,
+        datasets: Sequence[ArrayLike],
         *,
         progress: bool = False,
     ) -> Self:
@@ -700,10 +727,10 @@ class Bf2RawBuilder:
         ----------
         name : str
             Series name (becomes the subgroup path, e.g., "0", "1").
-        datasets : Sequence[ArrayLike]
-            Data arrays for each resolution level.
         image : Image
             OME-Zarr Image metadata model for this series.
+        datasets : Sequence[ArrayLike]
+            Data arrays for each resolution level.
         progress : bool, optional
             Show progress bar for dask arrays. Default is False.
 
@@ -731,8 +758,8 @@ class Bf2RawBuilder:
         # Write the series using the existing write_image function
         write_image(
             self._dest / name,
-            datasets,
             image,
+            datasets,
             writer=self._writer,
             chunks=self._chunks,
             shards=self._shards,
@@ -746,25 +773,25 @@ class Bf2RawBuilder:
     def add_series(
         self,
         name: str,
-        datasets: Sequence[ArrayLike],
         image: Image,
+        datasets: Sequence[ArrayLike],
     ) -> Self:
         """Add a series for the prepare-only workflow.
 
-        Registers a series to be created when ``prepare()`` is called. Use this
+        Registers a series to be created when `prepare()` is called. Use this
         when you want to create the Zarr structure without writing data
-        immediately. After calling ``prepare()``, write data to the returned
+        immediately. After calling `prepare()`, write data to the returned
         array handles.
 
         Parameters
         ----------
         name : str
             Series name (becomes the subgroup path, e.g., "0", "1").
+        image : Image
+            OME-Zarr Image metadata model for this series.
         datasets : Sequence[ArrayLike]
             Array-like objects specifying shape and dtype for each resolution
             level. These provide the array specifications; data is not written.
-        image : Image
-            OME-Zarr Image metadata model for this series.
 
         Returns
         -------
@@ -802,25 +829,25 @@ class Bf2RawBuilder:
 
         Creates the complete bioformats2raw structure including root metadata,
         OME directory with series list, and empty arrays for all registered
-        series. Call this after registering all series with ``add_series()``.
+        series. Call this after registering all series with `add_series()`.
 
         The returned arrays support numpy-style indexing for writing data:
-        ``arrays["series/dataset"][:] = data``.
+        `arrays["series/dataset"][:] = data`.
 
         Returns
         -------
         tuple[Path, dict[str, Any]]
-            A tuple of (root_path, arrays) where ``arrays`` maps composite keys
-            like ``"0/0"`` (series name / dataset path) to array objects. The
+            A tuple of (root_path, arrays) where `arrays` maps composite keys
+            like `"0/0"` (series name / dataset path) to array objects. The
             array type depends on the configured writer (zarr.Array or
             tensorstore.TensorStore).
 
         Raises
         ------
         ValueError
-            If no series have been added with ``add_series()``.
+            If no series have been added with `add_series()`.
         FileExistsError
-            If destination exists and ``overwrite`` is False.
+            If destination exists and `overwrite` is False.
         ImportError
             If no suitable writer backend is installed.
         """
@@ -845,8 +872,8 @@ class Bf2RawBuilder:
         for series_name, (image_model, dataset_specs) in self._series.items():
             _root_path, series_arrays = prepare_image(
                 self._dest / series_name,
-                dataset_specs,
                 image_model,
+                dataset_specs,
                 chunks=self._chunks,
                 shards=self._shards,
                 writer=self._writer,
