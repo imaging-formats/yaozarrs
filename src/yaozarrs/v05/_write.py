@@ -624,10 +624,8 @@ class Bf2RawBuilder:
     >>> dest = Path(tmpdir) / "builder_immediate.zarr"
     >>> builder = v05.Bf2RawBuilder(dest)
     >>> builder.write_image("0", [np.zeros((32, 32), dtype=np.uint16)], make_image())
-    ... # doctest: +ELLIPSIS
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
     >>> builder.write_image("1", [np.zeros((16, 16), dtype=np.uint16)], make_image())
-    ... # doctest: +ELLIPSIS
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
     >>> (dest / "0" / "zarr.json").exists()
     True
@@ -639,10 +637,8 @@ class Bf2RawBuilder:
     >>> data1 = np.zeros((32, 32), dtype=np.uint16)
     >>> data2 = np.zeros((16, 16), dtype=np.uint16)
     >>> builder2.add_series("0", [data1], make_image())
-    ... # doctest: +ELLIPSIS
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
     >>> builder2.add_series("1", [data2], make_image())
-    ... # doctest: +ELLIPSIS
     <yaozarrs.v05._write.Bf2RawBuilder object at ...>
     >>> path, arrays = builder2.prepare()
     >>> arrays["0/0"][:] = data1  # Write data yourself
