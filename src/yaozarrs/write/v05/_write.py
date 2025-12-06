@@ -23,8 +23,8 @@ from typing import TYPE_CHECKING, Any, Protocol, TypedDict, overload, runtime_ch
 
 from typing_extensions import Self
 
-from ._bf2raw import Bf2Raw
-from ._series import Series
+from yaozarrs.v05._bf2raw import Bf2Raw
+from yaozarrs.v05._series import Series
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -35,8 +35,8 @@ if TYPE_CHECKING:
     import zarr
     from typing_extensions import Literal, TypeAlias
 
-    from ._image import Image
-    from ._zarr_json import OMEMetadata
+    from yaozarrs.v05._image import Image
+    from yaozarrs.v05._zarr_json import OMEMetadata
 
     WriterName = Literal["zarr", "tensorstore", "auto"]
     ZarrWriter: TypeAlias = WriterName | "CreateArrayFunc"
@@ -199,6 +199,7 @@ def write_image(
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import write_image
     >>>
     >>> data = np.zeros((2, 64, 64), dtype=np.uint16)
     >>> image = v05.Image(
@@ -221,7 +222,7 @@ def write_image(
     ...     ]
     ... )
     >>> dest = Path(tmpdir) / "example.zarr"
-    >>> result = v05.write_image(dest, image, [data])
+    >>> result = write_image(dest, image, [data])
     >>> assert result.exists()
 
     See Also
@@ -339,6 +340,8 @@ def write_bioformats2raw(
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import write_bioformats2raw
+    >>>
     >>> def make_image():
     ...     return v05.Image(
     ...         multiscales=[
@@ -363,7 +366,7 @@ def write_bioformats2raw(
     ...     "1": (make_image(), [np.zeros((32, 32), dtype=np.uint16)]),
     ... }
     >>> dest = Path(tmpdir) / "multi_series.zarr"
-    >>> result = v05.write_bioformats2raw(dest, images)
+    >>> result = write_bioformats2raw(dest, images)
     >>> (result / "OME" / "zarr.json").exists()
     True
     >>> (result / "0" / "zarr.json").exists()
@@ -504,6 +507,7 @@ def prepare_image(
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import prepare_image
     >>> image = v05.Image(
     ...     multiscales=[
     ...         v05.Multiscale(
@@ -522,14 +526,8 @@ def prepare_image(
     ...         )
     ...     ]
     ... )
-    >>> # Prepare with just shape/dtype (no data yet)
     >>> dest = Path(tmpdir) / "prepared.zarr"
-    >>> path, arrays = v05.prepare_image(
-    ...     dest,
-    ...     image,
-    ...     [(np.dtype("uint16"), (64, 64))],  # (dtype, shape) tuple
-    ... )
-    >>> # Write data yourself
+    >>> path, arrays = prepare_image(dest, image, [(np.dtype("uint16"), (64, 64))])
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> path.exists()
     True
@@ -632,6 +630,7 @@ class Bf2RawBuilder:
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import Bf2RawBuilder
     >>> def make_image():
     ...     return v05.Image(
     ...         multiscales=[
@@ -649,24 +648,24 @@ class Bf2RawBuilder:
     ...         ]
     ...     )
     >>> dest = Path(tmpdir) / "builder_immediate.zarr"
-    >>> builder = v05.Bf2RawBuilder(dest)
+    >>> builder = Bf2RawBuilder(dest)
     >>> builder.write_image("0", make_image(), [np.zeros((32, 32), dtype=np.uint16)])
-    <yaozarrs.v05._write.Bf2RawBuilder object at ...>
+    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
     >>> builder.write_image("1", make_image(), [np.zeros((16, 16), dtype=np.uint16)])
-    <yaozarrs.v05._write.Bf2RawBuilder object at ...>
+    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
     >>> (dest / "0" / "zarr.json").exists()
     True
 
     Prepare-only workflow:
 
     >>> dest2 = Path(tmpdir) / "builder_prepare.zarr"
-    >>> builder2 = v05.Bf2RawBuilder(dest2)
+    >>> builder2 = Bf2RawBuilder(dest2)
     >>> data1 = np.zeros((32, 32), dtype=np.uint16)
     >>> data2 = np.zeros((16, 16), dtype=np.uint16)
     >>> builder2.add_series("0", make_image(), [data1])
-    <yaozarrs.v05._write.Bf2RawBuilder object at ...>
+    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
     >>> builder2.add_series("1", make_image(), [data2])
-    <yaozarrs.v05._write.Bf2RawBuilder object at ...>
+    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
     >>> path, arrays = builder2.prepare()
     >>> arrays["0/0"][:] = data1  # Write data yourself
     >>> arrays["1/0"][:] = data2

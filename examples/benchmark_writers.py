@@ -17,11 +17,11 @@ from yaozarrs.v05 import (
     ScaleTransformation,
     SpaceAxis,
     TimeAxis,
-    write_image,
 )
+from yaozarrs.write.v05 import write_image
 
 if TYPE_CHECKING:
-    from yaozarrs.v05._write import ZarrWriter
+    from yaozarrs.write.v05._write import ZarrWriter
 
 # Test configuration
 SHAPE = (10, 3, 25, 1024, 1024)  # TCZYX
@@ -79,7 +79,7 @@ for writer in WRITERS:
     for i in range(WARMUP):
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / f"test_{writer}.zarr"
-            write_image(dest, [data], image, writer=writer)
+            write_image(dest, image, [data], writer=writer)
             print(f"{writer} warmup {i + 1}/{WARMUP}")
 
     # Actual benchmark iterations
@@ -89,7 +89,7 @@ for writer in WRITERS:
 
             # Time the write operation
             start = time.perf_counter()
-            write_image(dest, [data], image, writer=writer)
+            write_image(dest, image, [data], writer=writer)
             elapsed = time.perf_counter() - start
 
             times.append(elapsed)

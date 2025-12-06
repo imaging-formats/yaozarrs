@@ -13,10 +13,10 @@ import pytest
 
 import yaozarrs
 from yaozarrs import v05
-from yaozarrs.v05 import _write
+from yaozarrs.write.v05 import _write, write_bioformats2raw, write_image
 
 if TYPE_CHECKING:
-    from yaozarrs.v05._write import CompressionName, ZarrWriter
+    from yaozarrs.write.v05._write import CompressionName, ZarrWriter
 
 
 try:
@@ -138,7 +138,7 @@ def test_write_image_basic(tmp_path: Path, writer: ZarrWriter) -> None:
     data = np.random.rand(2, 64, 64).astype(np.float32)
     image = make_simple_image("basic_test", ndim=3)
 
-    result = v05.write_image(dest, image, datasets=[data], writer=writer)
+    result = write_image(dest, image, datasets=[data], writer=writer)
 
     assert result == dest
     assert dest.exists()
@@ -155,7 +155,7 @@ def test_write_image_2d(tmp_path: Path, writer: ZarrWriter) -> None:
     data = np.random.rand(64, 64).astype(np.float32)
     image = make_simple_image("test2d", ndim=2)
 
-    result = v05.write_image(dest, image, datasets=[data], writer=writer)
+    result = write_image(dest, image, datasets=[data], writer=writer)
 
     assert result == dest
     yaozarrs.validate_zarr_store(dest)
@@ -168,7 +168,7 @@ def test_write_image_4d(tmp_path: Path, writer: ZarrWriter) -> None:
     data = np.random.rand(5, 2, 32, 32).astype(np.float32)
     image = make_simple_image("test4d", ndim=4)
 
-    result = v05.write_image(dest, image, datasets=[data], writer=writer)
+    result = write_image(dest, image, datasets=[data], writer=writer)
 
     assert result == dest
     yaozarrs.validate_zarr_store(dest)
@@ -180,7 +180,7 @@ def test_write_image_multiscale(tmp_path: Path, writer: ZarrWriter) -> None:
     dest = tmp_path / "multiscale.zarr"
     datasets, image = make_multiscale_image("pyramid", n_levels=3)
 
-    result = v05.write_image(dest, image, datasets=datasets, writer=writer)
+    result = write_image(dest, image, datasets=datasets, writer=writer)
 
     assert result == dest
     assert (dest / "0").exists()
@@ -198,7 +198,7 @@ def test_write_image_custom_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     image = make_simple_image("chunked", ndim=3)
     custom_chunks = (1, 32, 32)
 
-    v05.write_image(dest, image, datasets=[data], chunks=custom_chunks, writer=writer)
+    write_image(dest, image, datasets=[data], chunks=custom_chunks, writer=writer)
 
     yaozarrs.validate_zarr_store(dest)
 
@@ -216,7 +216,7 @@ def test_write_image_auto_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     data = np.random.rand(2, 256, 256).astype(np.float32)
     image = make_simple_image("auto_chunked", ndim=3)
 
-    v05.write_image(dest, image, datasets=[data], chunks="auto", writer=writer)
+    write_image(dest, image, datasets=[data], chunks="auto", writer=writer)
 
     yaozarrs.validate_zarr_store(dest)
 
@@ -228,7 +228,7 @@ def test_write_image_no_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     data = np.random.rand(2, 32, 32).astype(np.float32)
     image = make_simple_image("single_chunk", ndim=3)
 
-    v05.write_image(dest, image, datasets=[data], chunks=None, writer=writer)
+    write_image(dest, image, datasets=[data], chunks=None, writer=writer)
 
     yaozarrs.validate_zarr_store(dest)
 
@@ -246,7 +246,7 @@ def test_write_image_metadata_correct(tmp_path: Path, writer: ZarrWriter) -> Non
     data = np.random.rand(2, 64, 64).astype(np.float32)
     image = make_simple_image("metadata_test", ndim=3)
 
-    v05.write_image(dest, image, datasets=[data], writer=writer)
+    write_image(dest, image, datasets=[data], writer=writer)
 
     with open(dest / "zarr.json") as fh:
         meta = json.load(fh)
@@ -303,7 +303,7 @@ def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError, match="Number of data arrays"):
-        v05.write_image(dest, image, datasets=data)
+        write_image(dest, image, datasets=data)
 
 
 # =============================================================================
@@ -320,7 +320,7 @@ def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) 
 
     images = {"0": (image, [data])}
 
-    result = v05.write_bioformats2raw(dest, images, writer=writer)
+    result = write_bioformats2raw(dest, images, writer=writer)
 
     assert result == dest
     assert dest.exists()
@@ -355,7 +355,7 @@ def test_write_bioformats2raw_multiple_series(
         image = make_simple_image(f"series_{i}", ndim=3)
         images[str(i)] = (image, [data])
 
-    result = v05.write_bioformats2raw(dest, images, writer=writer)
+    result = write_bioformats2raw(dest, images, writer=writer)
 
     assert result == dest
 
@@ -385,7 +385,7 @@ def test_write_bioformats2raw_with_ome_xml(tmp_path: Path, writer: ZarrWriter) -
     ome_xml = '<?xml version="1.0"?><OME xmlns="test">test content</OME>'
     images = {"0": (image, [data])}
 
-    v05.write_bioformats2raw(dest, images, ome_xml=ome_xml, writer=writer)
+    write_bioformats2raw(dest, images, ome_xml=ome_xml, writer=writer)
 
     # Check METADATA.ome.xml was written
     xml_path = dest / "OME" / "METADATA.ome.xml"
@@ -405,7 +405,7 @@ def test_write_bioformats2raw_multiscale_series(
     datasets, image = make_multiscale_image("pyramid_series", n_levels=2)
     images = {"0": (image, datasets)}
 
-    v05.write_bioformats2raw(dest, images, writer=writer)
+    write_bioformats2raw(dest, images, writer=writer)
 
     # Check pyramid levels exist
     assert (dest / "0" / "0").exists()
@@ -426,7 +426,7 @@ def test_write_image_invalid_writer(tmp_path: Path) -> None:
     image = make_simple_image("invalid", ndim=3)
 
     with pytest.raises(ValueError, match="Unknown writer"):
-        v05.write_image(dest, image, datasets=[data], writer="invalid")  # type: ignore
+        write_image(dest, image, datasets=[data], writer="invalid")  # type: ignore
 
 
 @pytest.mark.parametrize("writer", WRITERS)
@@ -464,7 +464,7 @@ def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
         ),
     )
 
-    v05.write_image(dest, image, datasets=[data], writer=writer)
+    write_image(dest, image, datasets=[data], writer=writer)
 
     # Check omero metadata was written
     with open(dest / "zarr.json") as fh:
@@ -488,7 +488,7 @@ def test_write_image_different_dtypes(tmp_path: Path, writer: ZarrWriter) -> Non
             data = (data * 255).astype(dtype)
         image = make_simple_image(f"dtype_{dtype.__name__}", ndim=3)
 
-        v05.write_image(dest, image, datasets=[data], writer=writer)
+        write_image(dest, image, datasets=[data], writer=writer)
 
         yaozarrs.validate_zarr_store(dest)
 
@@ -506,7 +506,7 @@ def test_write_image_compression_options(
     data = np.random.rand(2, 32, 32).astype(np.float32)
     image = make_simple_image(f"{compression}_test", ndim=3)
 
-    v05.write_image(
+    write_image(
         dest,
         image,
         datasets=[data],
