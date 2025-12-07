@@ -271,13 +271,6 @@ class Image(ZarrGroupModel):
     def _serialize_model(self, serializer: Any, info: Any) -> dict[str, Any]:
         """Custom serializer to exclude image-label when None or empty."""
         data = serializer(self)
-        # Remove image-label if None or if all meaningful fields are None
-        if "image-label" in data:
-            image_label = data["image-label"]
-            if not image_label or (
-                isinstance(image_label, dict)
-                and not any(val for k, val in image_label.items() if k != "version")
-            ):
-                del data["image-label"]
-
+        if "image-label" in data and not data["image-label"]:
+            del data["image-label"]
         return data
