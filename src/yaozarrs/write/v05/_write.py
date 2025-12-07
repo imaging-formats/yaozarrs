@@ -18,8 +18,18 @@ import importlib.util
 import json
 import math
 import shutil
+import sys
+from contextlib import nullcontext
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict, overload, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    TypedDict,
+    cast,
+    overload,
+    runtime_checkable,
+)
 
 from typing_extensions import Self
 
@@ -526,11 +536,11 @@ def prepare_image(
     ...         )
     ...     ]
     ... )
+    >>> # Prepare with just shape/dtype (no data yet)
     >>> dest = Path(tmpdir) / "prepared.zarr"
     >>> path, arrays = prepare_image(dest, image, [(np.dtype("uint16"), (64, 64))])
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
-    >>> path.exists()
-    True
+    >>> assert path.exists()
 
     See Also
     --------
@@ -625,7 +635,7 @@ class Bf2RawBuilder:
 
     Examples
     --------
-    Immediate write workflow:
+    **Immediate write workflow:**
 
     >>> import numpy as np
     >>> from pathlib import Path
@@ -650,32 +660,34 @@ class Bf2RawBuilder:
     >>> dest = Path(tmpdir) / "builder_immediate.zarr"
     >>> builder = Bf2RawBuilder(dest)
     >>> builder.write_image("0", make_image(), [np.zeros((32, 32), dtype=np.uint16)])
-    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
+    <Bf2RawBuilder: 1 images>
     >>> builder.write_image("1", make_image(), [np.zeros((16, 16), dtype=np.uint16)])
-    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
-    >>> (dest / "0" / "zarr.json").exists()
-    True
+    <Bf2RawBuilder: 2 images>
+    >>> assert (dest / "0" / "zarr.json").exists()
 
-    Prepare-only workflow:
+    **Prepare-only workflow:**
 
     >>> dest2 = Path(tmpdir) / "builder_prepare.zarr"
     >>> builder2 = Bf2RawBuilder(dest2)
     >>> data1 = np.zeros((32, 32), dtype=np.uint16)
     >>> data2 = np.zeros((16, 16), dtype=np.uint16)
     >>> builder2.add_series("0", make_image(), [data1])
-    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
+    <Bf2RawBuilder: 1 images>
     >>> builder2.add_series("1", make_image(), [data2])
-    <yaozarrs.write.v05._write.Bf2RawBuilder object at ...>
+    <Bf2RawBuilder: 2 images>
     >>> path, arrays = builder2.prepare()
     >>> arrays["0/0"][:] = data1  # Write data yourself
     >>> arrays["1/0"][:] = data2
-    >>> path.exists()
-    True
+    >>> assert path.exists()
 
     See Also
     --------
     write_bioformats2raw : High-level function to write all series at once.
     """
+
+    def __repr__(self) -> str:
+        total_images = len(self._series) + len(self._written_series)
+        return f"<{self.__class__.__name__}: {total_images} images>"
 
     def __init__(
         self,
@@ -707,6 +719,12 @@ class Bf2RawBuilder:
     def root_path(self) -> Path:
         """Path to the root of the bioformats2raw hierarchy."""
         return self._dest
+
+    def _validate_series_name(self, name: str) -> None:
+        if name in self._written_series:
+            raise ValueError(f"Series '{name}' already written via write_image().")
+        if name in self._series:
+            raise ValueError(f"Series '{name}' already added via add_series().")
 
     def write_image(
         self,
@@ -741,12 +759,11 @@ class Bf2RawBuilder:
         Raises
         ------
         ValueError
-            If a series with this name was already written.
+            If a series with this name was already written or added.
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        if name in self._written_series:
-            raise ValueError(f"Series '{name}' already written")
+        self._validate_series_name(name)
 
         # Initialize root structure if needed
         self._ensure_initialized()
@@ -800,13 +817,12 @@ class Bf2RawBuilder:
         Raises
         ------
         ValueError
-            If a series with this name was already added, or if the number of
-            datasets doesn't match the metadata.
+            If a series with this name was already added or written, or if the
+            number of datasets doesn't match the metadata.
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        if name in self._series:
-            raise ValueError(f"Series '{name}' already added")
+        self._validate_series_name(name)
 
         if len(image.multiscales) != 1:
             raise NotImplementedError(
@@ -850,7 +866,7 @@ class Bf2RawBuilder:
         ImportError
             If no suitable writer backend is installed.
         """
-        if not self._series:
+        if not self._series:  # pragma: no cover
             raise ValueError("No series added. Use add_series() before prepare().")
 
         # Create root zarr.json with bioformats2raw.layout
@@ -906,7 +922,7 @@ class Bf2RawBuilder:
         """Update OME/zarr.json with new series name."""
         if series_name in self._written_series:
             # already added ... this is an internal method, don't need to raise
-            return
+            return  # pragma: no cover
 
         self._written_series.append(series_name)
         series_model = Series(series=self._written_series)
@@ -1130,26 +1146,27 @@ def _create_array_tensorstore(
 
 def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
     """Write data to an already-created array (zarr or tensorstore)."""
-    is_dask = hasattr(data, "compute")
+    is_dask = "dask" in sys.modules and hasattr(data, "compute")
     if is_dask:
         import dask.array as da
+
+        dask_data = cast("da.Array", data)
 
         if progress:
             from dask.diagnostics.progress import ProgressBar
 
-            with ProgressBar():
-                # Handle both zarr and tensorstore
-                if hasattr(array, "store"):  # zarr.Array
-                    da.store(data, array, lock=False)  # type: ignore
-                else:  # tensorstore
-                    computed = data.compute()
-                    array[:].write(computed).result()
+            ctx = ProgressBar()
         else:
+            ctx = nullcontext()
+
+        with ctx:
+            # Handle both zarr and tensorstore
             if hasattr(array, "store"):  # zarr.Array
-                da.store(data, array, lock=False)  # type: ignore
+                da.store(dask_data, array, lock=False)  # type: ignore
             else:  # tensorstore
-                computed = data.compute()
+                computed = dask_data.compute()
                 array[:].write(computed).result()
+
     else:
         if hasattr(array, "store"):  # zarr.Array
             array[:] = data  # type: ignore

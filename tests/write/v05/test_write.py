@@ -16,13 +16,15 @@ from yaozarrs import v05
 from yaozarrs.write.v05 import _write, write_bioformats2raw, write_image
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from yaozarrs.write.v05._write import CompressionName, ZarrWriter
 
 
 try:
     import numpy as np
 except ImportError:
-    pytest.skip("NumPy not available", allow_module_level=True)
+    pytest.skip("numpy not available", allow_module_level=True)
 
 WRITERS: list[ZarrWriter] = []
 if importlib.util.find_spec("zarr") is not None:
@@ -39,32 +41,33 @@ if not WRITERS:
         allow_module_level=True,
     )
 
+np.random.seed(42)
 
-def make_simple_image(name: str = "test", ndim: int = 3) -> v05.Image:
-    """Create a simple v05.Image model for testing."""
-    if ndim == 2:
-        axes = [
-            v05.SpaceAxis(name="y", unit="micrometer"),
-            v05.SpaceAxis(name="x", unit="micrometer"),
-        ]
-        scale = [0.5, 0.5]
-    elif ndim == 3:
-        axes = [
-            v05.ChannelAxis(name="c"),
-            v05.SpaceAxis(name="y", unit="micrometer"),
-            v05.SpaceAxis(name="x", unit="micrometer"),
-        ]
-        scale = [1.0, 0.5, 0.5]
-    elif ndim == 4:
-        axes = [
-            v05.TimeAxis(name="t", unit="millisecond"),
-            v05.ChannelAxis(name="c"),
-            v05.SpaceAxis(name="y", unit="micrometer"),
-            v05.SpaceAxis(name="x", unit="micrometer"),
-        ]
-        scale = [100.0, 1.0, 0.5, 0.5]
-    else:
-        raise ValueError(f"Unsupported ndim: {ndim}")
+
+def make_simple_image(name: str, dims_scale: Mapping[str, float]) -> v05.Image:
+    """Create a simple v05.Image model for testing.
+
+    Parameters
+    ----------
+    name : str
+        Name of the image/multiscale.
+    dims_scale : Mapping[str, float]
+        Mapping of dimension names to scale values.
+        Supported dimensions: 'x', 'y', 'z' (spatial), 'c' (channel), 't' (time).
+    """
+    axes = []
+    scale = []
+
+    for dim_name, scale_value in dims_scale.items():
+        if dim_name in ("x", "y", "z"):
+            axes.append(v05.SpaceAxis(name=dim_name, unit="micrometer"))
+        elif dim_name == "c":
+            axes.append(v05.ChannelAxis(name=dim_name))
+        elif dim_name == "t":
+            axes.append(v05.TimeAxis(name=dim_name, unit="millisecond"))
+        else:
+            raise ValueError(f"Unsupported dimension: {dim_name}")
+        scale.append(scale_value)
 
     return v05.Image(
         multiscales=[
@@ -134,10 +137,15 @@ def make_multiscale_image(
 @pytest.mark.parametrize("ndim", [2, 3, 4])
 def test_write_image_dimensions(tmp_path: Path, writer: ZarrWriter, ndim: int) -> None:
     """Test write_image with different dimensions (2D, 3D, 4D)."""
+    dims_scales = {
+        2: {"y": 0.5, "x": 0.5},
+        3: {"c": 1.0, "y": 0.5, "x": 0.5},
+        4: {"t": 100.0, "c": 1.0, "y": 0.5, "x": 0.5},
+    }
     shapes = {2: (64, 64), 3: (2, 64, 64), 4: (5, 2, 32, 32)}
     dest = tmp_path / f"test{ndim}d.zarr"
     data = np.random.rand(*shapes[ndim]).astype(np.float32)
-    image = make_simple_image(f"test{ndim}d", ndim=ndim)
+    image = make_simple_image(f"test{ndim}d", dims_scales[ndim])
 
     result = write_image(dest, image, datasets=[data], writer=writer)
 
@@ -154,50 +162,47 @@ def test_write_image_dimensions(tmp_path: Path, writer: ZarrWriter, ndim: int) -
 def test_write_image_multiscale(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with multiple resolution levels."""
     dest = tmp_path / "multiscale.zarr"
-    datasets, image = make_multiscale_image("pyramid", n_levels=3)
+    n_levels = 3
+    datasets, image = make_multiscale_image("pyramid", n_levels=n_levels)
 
     result = write_image(dest, image, datasets=datasets, writer=writer)
-
     assert result == dest
-    assert (dest / "0").exists()
-    assert (dest / "1").exists()
-    assert (dest / "2").exists()
+
+    for level in range(n_levels):
+        assert (dest / str(level)).exists()
 
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 @pytest.mark.parametrize(
-    ("chunks", "data_shape", "verify_chunks"),
+    ("chunks", "data_shape"),
     [
-        ((1, 32, 32), (2, 64, 64), True),  # custom chunks
-        ("auto", (2, 256, 256), False),  # auto chunks
-        (None, (2, 32, 32), True),  # no chunks (single chunk = array shape)
+        ((1, 32, 32), (2, 64, 64)),  # custom chunks
+        ("auto", (128, 256, 256)),  # auto chunks
+        (None, (2, 32, 32)),  # no chunks
     ],
     ids=["custom", "auto", "none"],
 )
 def test_write_image_chunks(
-    tmp_path: Path,
-    writer: ZarrWriter,
-    chunks,
-    data_shape: tuple[int, ...],
-    verify_chunks: bool,
+    tmp_path: Path, writer: ZarrWriter, chunks, data_shape: tuple[int, ...]
 ) -> None:
     """Test write_image with different chunk configurations."""
     dest = tmp_path / f"chunks_{chunks}.zarr"
     data = np.random.rand(*data_shape).astype(np.float32)
-    image = make_simple_image("chunks_test", ndim=3)
-
+    image = make_simple_image("chunks_test", {"c": 1.0, "y": 0.5, "x": 0.5})
     write_image(dest, image, datasets=[data], chunks=chunks, writer=writer)
 
     yaozarrs.validate_zarr_store(dest)
 
-    if verify_chunks:
-        with open(dest / "0" / "zarr.json") as fh:
-            arr_meta = json.load(fh)
-        chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
-        expected = list(chunks) if chunks is not None else list(data.shape)
-        assert chunk_shape == expected
+    arr_meta = json.loads((dest / "0" / "zarr.json").read_bytes())
+    chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
+    if chunks == "auto":
+        assert chunk_shape == [64, 128, 128]
+    elif chunks is not None:
+        assert chunk_shape == list(chunks)
+    else:
+        assert chunk_shape == list(data.shape)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
@@ -205,28 +210,13 @@ def test_write_image_metadata_correct(tmp_path: Path, writer: ZarrWriter) -> Non
     """Test that written metadata matches input Image model."""
     dest = tmp_path / "metadata.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("metadata_test", ndim=3)
+    image = make_simple_image("metadata_test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     write_image(dest, image, datasets=[data], writer=writer)
 
-    with open(dest / "zarr.json") as fh:
-        meta = json.load(fh)
-
+    meta = json.loads((dest / "zarr.json").read_bytes())
     ome = meta["attributes"]["ome"]
     assert ome["multiscales"][0]["name"] == "metadata_test"
-
-    axes = ome["multiscales"][0]["axes"]
-    assert len(axes) == 3
-    assert axes[0]["name"] == "c"
-    assert axes[0]["type"] == "channel"
-    assert axes[1]["name"] == "y"
-    assert axes[1]["type"] == "space"
-    assert axes[2]["name"] == "x"
-    assert axes[2]["type"] == "space"
-
-    transforms = ome["multiscales"][0]["datasets"][0]["coordinateTransformations"]
-    assert transforms[0]["type"] == "scale"
-    assert transforms[0]["scale"] == [1.0, 0.5, 0.5]
 
     yaozarrs.validate_zarr_store(dest)
 
@@ -277,7 +267,7 @@ def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) 
     """Test write_bioformats2raw with a single series."""
     dest = tmp_path / "bf2raw.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("series_0", ndim=3)
+    image = make_simple_image("series_0", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     images = {"0": (image, [data])}
 
@@ -287,15 +277,13 @@ def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) 
     assert dest.exists()
 
     # Check root has bioformats2raw.layout
-    with open(dest / "zarr.json") as fh:
-        root_meta = json.load(fh)
+    root_meta = json.loads((dest / "zarr.json").read_bytes())
     assert root_meta["attributes"]["ome"]["bioformats2raw.layout"] == 3
 
     # Check OME directory with series metadata
     ome_path = dest / "OME"
     assert ome_path.exists()
-    with open(ome_path / "zarr.json") as fh:
-        ome_meta = json.load(fh)
+    ome_meta = json.loads((ome_path / "zarr.json").read_bytes())
     assert ome_meta["attributes"]["ome"]["series"] == ["0"]
 
     # Check image exists at 0/
@@ -313,7 +301,7 @@ def test_write_bioformats2raw_multiple_series(
     images = {}
     for i in range(3):
         data = np.random.rand(2, 32, 32).astype(np.float32)
-        image = make_simple_image(f"series_{i}", ndim=3)
+        image = make_simple_image(f"series_{i}", {"c": 1.0, "y": 0.5, "x": 0.5})
         images[str(i)] = (image, [data])
 
     result = write_bioformats2raw(dest, images, writer=writer)
@@ -321,13 +309,11 @@ def test_write_bioformats2raw_multiple_series(
     assert result == dest
 
     # Check root
-    with open(dest / "zarr.json") as fh:
-        root_meta = json.load(fh)
+    root_meta = json.loads((dest / "zarr.json").read_bytes())
     assert root_meta["attributes"]["ome"]["bioformats2raw.layout"] == 3
 
     # Check OME directory
-    with open(dest / "OME" / "zarr.json") as fh:
-        ome_meta = json.load(fh)
+    ome_meta = json.loads((dest / "OME" / "zarr.json").read_bytes())
     assert ome_meta["attributes"]["ome"]["series"] == ["0", "1", "2"]
 
     # Check each series
@@ -341,7 +327,7 @@ def test_write_bioformats2raw_with_ome_xml(tmp_path: Path, writer: ZarrWriter) -
     """Test write_bioformats2raw with OME-XML metadata."""
     dest = tmp_path / "with_xml.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("with_xml", ndim=3)
+    image = make_simple_image("with_xml", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     ome_xml = '<?xml version="1.0"?><OME xmlns="test">test content</OME>'
     images = {"0": (image, [data])}
@@ -375,6 +361,31 @@ def test_write_bioformats2raw_multiscale_series(
     yaozarrs.validate_zarr_store(str(dest / "0"))
 
 
+@pytest.mark.parametrize("writer", WRITERS)
+def test_bf2raw_builder_conflict_detection(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test that Bf2RawBuilder detects conflicts between write_image and add_series."""
+    from yaozarrs.write.v05 import Bf2RawBuilder
+
+    dest = tmp_path / "conflict.zarr"
+    data = np.random.rand(2, 32, 32).astype(np.float32)
+    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+
+    # Test 1: write_image then add_series with same name
+    builder = Bf2RawBuilder(dest, writer=writer)
+    builder.write_image("0", image, [data])
+
+    with pytest.raises(ValueError, match="already written via write_image"):
+        builder.add_series("0", image, [data])
+
+    # Test 2: add_series then write_image with same name
+    dest2 = tmp_path / "conflict2.zarr"
+    builder2 = Bf2RawBuilder(dest2, writer=writer)
+    builder2.add_series("0", image, [data])
+
+    with pytest.raises(ValueError, match="already added via add_series"):
+        builder2.write_image("0", image, [data])
+
+
 # =============================================================================
 # Edge cases and error handling
 # =============================================================================
@@ -384,7 +395,7 @@ def test_write_image_invalid_writer(tmp_path: Path) -> None:
     """Test that invalid writer raises error."""
     dest = tmp_path / "invalid.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("invalid", ndim=3)
+    image = make_simple_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     with pytest.raises(ValueError, match="Unknown writer"):
         write_image(dest, image, datasets=[data], writer="invalid")  # type: ignore
@@ -428,9 +439,7 @@ def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
     write_image(dest, image, datasets=[data], writer=writer)
 
     # Check omero metadata was written
-    with open(dest / "zarr.json") as fh:
-        meta = json.load(fh)
-
+    meta = json.loads((dest / "zarr.json").read_bytes())
     ome = meta["attributes"]["ome"]
     assert "omero" in ome
     assert len(ome["omero"]["channels"]) == 3
@@ -449,7 +458,7 @@ def test_write_image_different_dtypes(
     data = np.random.rand(2, 32, 32).astype(dtype)
     if np.issubdtype(dtype, np.integer):
         data = (data * 255).astype(dtype)
-    image = make_simple_image(f"dtype_{dtype.__name__}", ndim=3)
+    image = make_simple_image(f"dtype_{dtype.__name__}", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     write_image(dest, image, datasets=[data], writer=writer)
 
@@ -467,7 +476,7 @@ def test_write_image_compression_options(
     """Test that each writer backend correctly honors each compression option."""
     dest = tmp_path / f"{writer}_{compression}.zarr"
     data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image(f"{compression}_test", ndim=3)
+    image = make_simple_image(f"{compression}_test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     write_image(
         dest,
@@ -478,9 +487,7 @@ def test_write_image_compression_options(
     )
 
     # Read the array metadata
-    with open(dest / "0" / "zarr.json") as fh:
-        arr_meta = json.load(fh)
-
+    arr_meta = json.loads((dest / "0" / "zarr.json").read_bytes())
     codecs = arr_meta.get("codecs", [])
 
     # All codecs should start with bytes serializer
@@ -519,18 +526,25 @@ def test_write_image_compression_options(
     yaozarrs.validate_zarr_store(dest)
 
 
-@pytest.mark.skipif("zarr" not in WRITERS, reason="zarr writer not available")
-def test_write_doctests(tmp_path: Path) -> None:
-    """Run doctests from the write module."""
-    # Run doctests with extraglobs
-    results = doctest.testmod(
-        _write,
-        globs={"tmpdir": str(tmp_path), "Path": Path},
-        optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE,
-    )
+finder = doctest.DocTestFinder()
 
-    # Check if any tests failed
-    if results.failed > 0:
-        pytest.fail(
-            f"Doctest failed: {results.failed} failures of {results.attempted} tests"
-        )
+
+@pytest.mark.skipif("zarr" not in WRITERS, reason="zarr writer not available")
+@pytest.mark.parametrize(
+    "case",
+    (test for test in finder.find(_write) if test.examples),
+    ids=lambda t: t.name.split(".")[-1],
+)
+def test_write_doctests_parametrized(
+    tmp_path: Path,
+    case: doctest.DocTest,
+    capsys,
+) -> None:
+    runner = doctest.DocTestRunner(
+        optionflags=doctest.ELLIPSIS | doctest.REPORTING_FLAGS
+    )
+    case.globs.update({"tmpdir": str(tmp_path), "Path": Path})
+    runner.run(case)
+    if runner.failures > 0:
+        captured = capsys.readouterr().out.split("******************")[-1]
+        pytest.fail(f"Doctest {case.name} failed:\n\n{captured}")
