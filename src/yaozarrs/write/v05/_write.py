@@ -88,6 +88,16 @@ if TYPE_CHECKING:
     ImageWithDatasets: TypeAlias = tuple[Image, Sequence[ArrayLike]]
 
 
+__all__ = [
+    "Bf2RawBuilder",
+    "PlateBuilder",
+    "prepare_image",
+    "write_bioformats2raw",
+    "write_image",
+    "write_plate",
+]
+
+
 @runtime_checkable
 class CreateArrayFunc(Protocol):
     """Protocol for custom array creation functions.
@@ -234,8 +244,7 @@ def write_image(
     ...         )
     ...     ]
     ... )
-    >>> dest = Path(tmpdir) / "example.zarr"
-    >>> result = write_image(dest, image, [data])
+    >>> result = write_image("example.ome.zarr", image, [data])
     >>> assert result.exists()
 
     See Also
@@ -347,7 +356,6 @@ def write_plate(
     Write a simple 2x2 plate with auto-generated metadata:
 
     >>> import numpy as np
-    >>> from pathlib import Path
     >>> from yaozarrs import v05
     >>> from yaozarrs.write.v05 import write_plate
     >>>
@@ -380,17 +388,16 @@ def write_plate(
     ...     ("B", "2", "0"): (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
     ... }
     >>>
-    >>> dest = Path(tmpdir) / "my_plate.zarr"
-    >>> result = write_plate(dest, images)
+    >>> result = write_plate("my_plate1.ome.zarr", images)
     >>> assert (result / "A" / "1" / "0" / "zarr.json").exists()
     >>>
     >>> # Or add custom metadata like a name
     >>> result2 = write_plate(
-    ...     dest,
+    ...     "my_plate2.ome.zarr",
     ...     images,
     ...     plate={"name": "My Experiment"},
     ...     overwrite=True,
-    ... )  # doctest: +ELLIPSIS
+    ... )
 
     See Also
     --------
@@ -535,8 +542,7 @@ def write_bioformats2raw(
     ...     "0": (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
     ...     "1": (make_image(), [np.zeros((32, 32), dtype=np.uint16)]),
     ... }
-    >>> dest = Path(tmpdir) / "multi_series.zarr"
-    >>> result = write_bioformats2raw(dest, images)
+    >>> result = write_bioformats2raw("multi_series.zarr", images)
     >>> (result / "OME" / "zarr.json").exists()
     True
     >>> (result / "0" / "zarr.json").exists()
@@ -697,8 +703,9 @@ def prepare_image(
     ...     ]
     ... )
     >>> # Prepare with just shape/dtype (no data yet)
-    >>> dest = Path(tmpdir) / "prepared.zarr"
-    >>> path, arrays = prepare_image(dest, image, [(np.dtype("uint16"), (64, 64))])
+    >>> path, arrays = prepare_image(
+    ...     "prepared.zarr", image, [(np.dtype("uint16"), (64, 64))]
+    ... )
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
 
@@ -817,18 +824,16 @@ class Bf2RawBuilder:
     ...             )
     ...         ]
     ...     )
-    >>> dest = Path(tmpdir) / "builder_immediate.zarr"
-    >>> builder = Bf2RawBuilder(dest)
+    >>> builder = Bf2RawBuilder("builder_immediate.zarr")
     >>> builder.write_image("0", make_image(), [np.zeros((32, 32), dtype=np.uint16)])
     <Bf2RawBuilder: 1 images>
     >>> builder.write_image("1", make_image(), [np.zeros((16, 16), dtype=np.uint16)])
     <Bf2RawBuilder: 2 images>
-    >>> assert (dest / "0" / "zarr.json").exists()
+    >>> assert (builder.root_path / "0" / "zarr.json").exists()
 
     **Prepare-only workflow:**
 
-    >>> dest2 = Path(tmpdir) / "builder_prepare.zarr"
-    >>> builder2 = Bf2RawBuilder(dest2)
+    >>> builder2 = Bf2RawBuilder("builder_prepare.zarr")
     >>> data1 = np.zeros((32, 32), dtype=np.uint16)
     >>> data2 = np.zeros((16, 16), dtype=np.uint16)
     >>> builder2.add_series("0", make_image(), [data1])
@@ -1165,8 +1170,7 @@ class PlateBuilder:
     ...     )
     >>>
     >>> # No plate metadata needed - it's auto-generated!
-    >>> dest = Path(tmpdir) / "plate_auto.zarr"
-    >>> builder = PlateBuilder(dest)
+    >>> builder = PlateBuilder("plate_auto.zarr")
     >>> builder.write_well(
     ...     row="A",
     ...     col="1",
@@ -1179,7 +1183,7 @@ class PlateBuilder:
     ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
     ... )
     <PlateBuilder: 2 wells>
-    >>> assert (dest / "zarr.json").exists()  # Plate metadata auto-updated
+    >>> assert (builder.root_path / "zarr.json").exists()  # Plate metadata auto-updated
 
     **With explicit plate metadata:**
 
@@ -1190,8 +1194,7 @@ class PlateBuilder:
     ...         wells=[v05.PlateWell(path="A/1", rowIndex=0, columnIndex=0)],
     ...     )
     ... )
-    >>> dest2 = Path(tmpdir) / "plate_explicit.zarr"
-    >>> builder2 = PlateBuilder(dest2, plate=plate)
+    >>> builder2 = PlateBuilder("plate_explicit.zarr", plate=plate)
     >>> builder2.write_well(
     ...     row="A",
     ...     col="1",

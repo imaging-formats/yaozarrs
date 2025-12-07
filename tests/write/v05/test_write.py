@@ -6,7 +6,6 @@ import doctest
 import importlib.metadata
 import importlib.util
 import json
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -17,6 +16,7 @@ from yaozarrs.write.v05 import _write, write_bioformats2raw, write_image
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from pathlib import Path
 
     from yaozarrs.write.v05._write import CompressionName, ZarrWriter
 
@@ -1012,12 +1012,15 @@ finder = doctest.DocTestFinder()
 def test_write_doctests_parametrized(
     tmp_path: Path,
     case: doctest.DocTest,
-    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
 ) -> None:
     runner = doctest.DocTestRunner(
         optionflags=doctest.ELLIPSIS | doctest.REPORTING_FLAGS
     )
-    case.globs.update({"tmpdir": str(tmp_path), "Path": Path})
+
+    # put all paths inside the test tmp_path
+    monkeypatch.setattr(_write, "Path", lambda p: tmp_path / p)
     runner.run(case)
     if runner.failures > 0:
         captured = capsys.readouterr().out.split("******************")[-1]
