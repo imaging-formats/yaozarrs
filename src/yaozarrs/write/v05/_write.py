@@ -3,12 +3,19 @@
 This module provides convenience functions to write OME-Zarr v0.5 groups.
 
 The general pattern is:
-1. Create your OME-Zarr metadata model using the yaozarrs.v05 models.
-2. Prepare your array data as numpy or dask arrays.
-3. Use the appropriate write function (e.g. `write_image` or `write_bioformats2raw`)
-   to write the data and metadata to a Zarr store.
-4. optionally: Customize chunking, sharding, and writing backend (zarr, tensorstore, or
-   your own function) as needed.
+1. Decide what kind of OME-Zarr best matches your data:
+   - Single Image (<=5D): use Image model and write_image function.
+   - Multi-Well Plate: use Plate model and write_plate function.
+   - Collection of images (e.g. 5D images at multiple positions, or any other 6+D data):
+     use bioformats2raw layout with Bf2Raw model and write_bioformats2raw function.
+2. Create your OME-Zarr metadata model using the yaozarrs.v05 models.
+3. Decide whether to use high level write functions (write_image, write_plate, etc...)
+   or lower level prepare functions (prepare_image, etc...) for custom write logic.
+   - Use high level functions for simple one-shot writes, where you can provide the full
+     data arrays up front (either as numpy, dask, etc...)
+   - Use lower level prepare functions when you need to customize how data is written,
+     perhaps in a streaming, or slice-by-slice manner.
+4. Call the appropriate function with your metadata model and data arrays.
 """
 
 from __future__ import annotations
