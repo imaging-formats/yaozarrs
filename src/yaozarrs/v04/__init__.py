@@ -63,7 +63,3 @@ __all__ = [
     "Well",
     "WellDef",
 ]
-
-# Rebuild Image model now that ImageLabel is fully defined
-# This resolves the forward reference "ImageLabel | None" in Image.image_label
-Image.model_rebuild()
