@@ -327,17 +327,17 @@ OMEMetadata: TypeAlias = Annotated[
     ),
     Discriminator(_discriminate_ome_v05_metadata),
 ]
-"""Anything that can live in the "ome" key of a v0.5 ome-zarr file."""
+"""Union type for anything that can live in the "ome" key of a v0.5 `zarr.json` file."""
 
 
 class OMEAttributes(_BaseModel):
-    """The attributes field of a zarr.json document in an ome-zarr group."""
+    """The attributes field of a `zarr.json` document in an ome-zarr group."""
 
     ome: OMEMetadata
 
 
 class OMEZarrGroupJSON(ZarrGroupModel):
-    """A zarr.json document found in any ome-zarr group."""
+    """A `zarr.json` document found in any ome-zarr group."""
 
     zarr_format: Literal[3] = 3
     node_type: Literal["group"] = "group"

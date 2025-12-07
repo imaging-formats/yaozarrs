@@ -13,33 +13,40 @@ from yaozarrs._types import UniqueList
 
 
 class Acquisition(_BaseModel):
+    """An imaging acquisition run within a plate.
+
+    In high-content screening, multiple acquisition runs may be performed on the
+    same plate (e.g., at different timepoints or with different settings).
+    This class groups related images from a single acquisition session.
+    """
+
     id: NonNegativeInt = Field(
-        description="A unique identifier within the context of the plate",
+        description="Unique identifier within the plate for this acquisition",
     )
     maximumfieldcount: PositiveInt | None = Field(
         default=None,
-        description="The maximum number of fields of view for the acquisition",
+        description=(
+            "Maximum number of fields-of-view across all wells in this acquisition"
+        ),
     )
     name: str | None = Field(
         default=None,
-        description="The name of the acquisition",
+        description="Human-readable name for this acquisition",
     )
     description: str | None = Field(
         default=None,
-        description="The description of the acquisition",
+        description="Detailed description of the acquisition parameters or purpose",
     )
     starttime: NonNegativeInt | None = Field(
         default=None,
         description=(
-            "The start timestamp of the acquisition, expressed as epoch time "
-            "i.e. the number seconds since the Epoch"
+            "Acquisition start time as Unix epoch timestamp (seconds since 1970-01-01)"
         ),
     )
     endtime: NonNegativeInt | None = Field(
         default=None,
         description=(
-            "The end timestamp of the acquisition, expressed as epoch time "
-            "i.e. the number seconds since the Epoch"
+            "Acquisition end time as Unix epoch timestamp (seconds since 1970-01-01)"
         ),
     )
 
@@ -50,8 +57,14 @@ class Acquisition(_BaseModel):
 
 
 class Column(_BaseModel):
+    """A column in the plate grid.
+
+    Columns are typically numbered (1, 2, 3, ...) but can use any
+    alphanumeric identifier.
+    """
+
     name: str = Field(
-        description="The column name",
+        description="Column identifier (typically numeric, e.g., '1', '2', '3')",
         pattern=r"^[A-Za-z0-9]+$",
     )
 
@@ -62,8 +75,13 @@ class Column(_BaseModel):
 
 
 class Row(_BaseModel):
+    """A row in the plate grid.
+
+    Rows are typically lettered (A, B, C, ...) but can use any alphanumeric identifier.
+    """
+
     name: str = Field(
-        description="The row name",
+        description="Row identifier (typically alphabetic, e.g., 'A', 'B', 'C')",
         pattern=r"^[A-Za-z0-9]+$",
     )
 
@@ -75,17 +93,24 @@ class Row(_BaseModel):
 
 # naming this PlateWell to disambiguate from a top level Well (see _well.py)
 class PlateWell(_BaseModel):
-    """Individual well in a plate."""
+    """A well location reference within a plate.
+
+    Maps a well's row/column position to its data location. This is a
+    lightweight reference used in plate metadata, not the full well group
+    (see [`Well`][yaozarrs.v05.Well] for the complete well metadata).
+    """
 
     path: str = Field(
-        description="The path to the well subgroup",
+        description=(
+            "Relative path to the well's group (format: 'row/column', e.g., 'A/1')"
+        ),
         pattern=r"^[A-Za-z0-9]+/[A-Za-z0-9]+$",
     )
     rowIndex: NonNegativeInt = Field(
-        description="The index of the well in the rows list",
+        description="Zero-based index into the plate's rows list",
     )
     columnIndex: NonNegativeInt = Field(
-        description="The index of the well in the columns list",
+        description="Zero-based index into the plate's columns list",
     )
 
 
@@ -95,27 +120,33 @@ class PlateWell(_BaseModel):
 
 
 class PlateDef(_BaseModel):
+    """Plate layout and well organization.
+
+    Defines the grid structure of a microplate and maps wells to their data.
+    This is the core content of the `plate` metadata field.
+    """
+
     columns: Annotated[UniqueList[Column], MinLen(1)] = Field(
-        description="The columns of the plate"
+        description="Column definitions for the plate grid"
     )
     rows: Annotated[UniqueList[Row], MinLen(1)] = Field(
-        description="The rows of the plate"
+        description="Row definitions for the plate grid"
     )
     wells: Annotated[UniqueList[PlateWell], MinLen(1)] = Field(
-        description="The wells of the plate"
+        description="List of all wells present in this plate with their grid positions"
     )
 
     acquisitions: list[Acquisition] | None = Field(
         default=None,
-        description="The acquisitions for this plate",
+        description="Imaging acquisition runs performed on this plate",
     )
     field_count: PositiveInt | None = Field(
         default=None,
-        description="The maximum number of fields per view across all wells",
+        description="Maximum number of fields-of-view per well across the entire plate",
     )
     name: str | None = Field(
         default=None,
-        description="The name of the plate",
+        description="Human-readable name for this plate",
     )
 
     @model_validator(mode="after")
@@ -140,13 +171,38 @@ class PlateDef(_BaseModel):
 
 
 class Plate(_BaseModel):
-    version: Literal["0.5"] = "0.5"
-    plate: PlateDef
+    """Top-level plate metadata for high-content screening.
 
-    # this may be present... for docs created by bioformats2raw
-    # it's here just to allow round-tripping, and show that if was present in the doc.
+    This model corresponds to the `zarr.json` file in a plate group, organizing
+    a microplate's wells in a grid layout. Each well contains one or more
+    fields-of-view, which in turn contain multiscale images.
+
+    !!! example "Typical Structure"
+        ```
+        my_plate/
+        ├── zarr.json          # Contains this metadata
+        ├── A/
+        │   ├── 1/             # Well at row A, column 1
+        │   │   ├── zarr.json  # Well metadata
+        │   │   └── 0/         # First field-of-view
+        │   └── 2/             # Well at row A, column 2
+        └── B/
+            └── 1/             # Well at row B, column 1
+        ```
+    """
+
+    version: Literal["0.5"] = Field(
+        default="0.5",
+        description="OME-NGFF specification version",
+    )
+    plate: PlateDef = Field(
+        description="Plate layout and well organization",
+    )
+
     bioformats2raw_layout: Literal[3] | None = Field(
         default=None,
         alias="bioformats2raw.layout",
-        description="The top-level identifier metadata added by bioformats2raw",
+        description=(
+            "Marker indicating this plate was created by bioformats2raw version 3"
+        ),
     )
