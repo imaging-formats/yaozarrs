@@ -179,16 +179,32 @@ class Plate(_BaseModel):
 
     !!! example "Typical Structure"
         ```
-        my_plate/
-        ├── zarr.json          # Contains this metadata
-        ├── A/
-        │   ├── 1/             # Well at row A, column 1
-        │   │   ├── zarr.json  # Well metadata
-        │   │   └── 0/         # First field-of-view
-        │   └── 2/             # Well at row A, column 2
-        └── B/
-            └── 1/             # Well at row B, column 1
+        my_plate.ome.zarr
+        ├── A                       # Col A
+        │   ├── 1                   # Row 1
+        │   │   ├── 0               # FOV 0 (in A1)
+        │   │   │   ├── 0           # FOV 0 - Multiscale level 0
+        │   │   │   └── zarr.json   # contains ["ome"]["multiscales"]
+        │   │   ├── 1               # FOV 1 (in A1)
+        │   │   │   ├── 0           # FOV 1 - Multiscale level 0
+        │   │   │   └── zarr.json   # contains ["ome"]["multiscales"]
+        │   │   └── zarr.json       # well metadata (contains ['ome']['well'])
+        │   ├── 2
+        │   │   └── ...
+        │   └── 3
+        │       └── ...
+        ├── B
+        │   └── ...
+        ├── C
+        │   └── ...
+        └── zarr.json                # plate metadata (contains ['ome']['plate'])
         ```
+
+    !!! note
+        See also:
+
+        - [`Well`][yaozarrs.v05.Well]
+        - [`FieldOfView`][yaozarrs.v05.FieldOfView]
     """
 
     version: Literal["0.5"] = Field(

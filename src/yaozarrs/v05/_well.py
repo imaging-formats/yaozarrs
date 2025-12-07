@@ -12,6 +12,8 @@ class FieldOfView(_BaseModel):
 
     Wells typically contain multiple fields-of-view when the well area is larger
     than a single camera frame. Each field-of-view is a complete multiscale image.
+
+    This class appears within the `images` list of a [`WellDef`][yaozarrs.v05.WellDef].
     """
 
     path: str = Field(
