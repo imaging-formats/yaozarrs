@@ -35,9 +35,10 @@ from typing_extensions import Self
 
 from yaozarrs.v05._bf2raw import Bf2Raw
 from yaozarrs.v05._series import Series
+from yaozarrs.v05._well import FieldOfView, Well, WellDef
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
     from os import PathLike
 
     import numpy as np
@@ -46,6 +47,7 @@ if TYPE_CHECKING:
     from typing_extensions import Literal, TypeAlias
 
     from yaozarrs.v05._image import Image
+    from yaozarrs.v05._plate import Plate
     from yaozarrs.v05._zarr_json import OMEMetadata
 
     WriterName = Literal["zarr", "tensorstore", "auto"]
@@ -83,6 +85,7 @@ if TYPE_CHECKING:
             ...
 
     ArraySpec: TypeAlias = ArrayLike | tuple[DTypeLike, ShapeLike]
+    ImageWithDatasets: TypeAlias = tuple[Image, Sequence[ArrayLike]]
 
 
 @runtime_checkable
@@ -264,9 +267,166 @@ def write_image(
     return dest_path
 
 
+def write_plate(
+    dest: str | PathLike,
+    images: Mapping[tuple[str, str, str], ImageWithDatasets],
+    *,
+    plate: Plate | dict[str, Any] | None = None,
+    writer: ZarrWriter = "auto",
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+    progress: bool = False,
+) -> Path:
+    """Write an OME-Zarr v0.5 Plate group with data.
+
+    This is the high-level function for writing a complete OME-Zarr plate.
+    It creates the plate hierarchy (plate/wells/fields), writes metadata,
+    and stores image data in a single call.
+
+    The plate structure::
+
+        dest/
+        ├── zarr.json          # Plate metadata
+        ├── A/
+        │   ├── 1/
+        │   │   ├── zarr.json  # Well metadata (auto-generated)
+        │   │   ├── 0/         # Field 0
+        │   │   │   ├── zarr.json  # Image metadata
+        │   │   │   └── 0/     # dataset arrays
+        │   │   └── 1/         # Field 1 (if multiple fields)
+        │   └── 2/
+        └── B/
+            └── ...
+
+    Parameters
+    ----------
+    dest : str | PathLike
+        Destination path for the Plate Zarr group.
+    images : Mapping[tuple[str, str, str], ImageWithDatasets]
+        Mapping of `{(row, col, fov) -> (image_model, [datasets, ...])}`.
+        Each tuple key specifies (row_name, column_name, field_of_view) like
+        ("A", "1", "0"). Row and column names are auto-extracted from the keys.
+    plate : Plate | dict[str, Any] | None, optional
+        Optional plate metadata. Can be:
+        - None (default): Auto-generate from images dict keys
+        - dict: Merge with auto-generated metadata (user values take precedence)
+        - Plate: Use as-is (must match images dict)
+        Common dict keys: 'name', 'acquisitions', 'field_count'.
+        Auto-generated: 'rows', 'columns', 'wells'.
+    writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
+        Backend to use for writing arrays. Default is "auto".
+    chunks : tuple[int, ...] | "auto" | None, optional
+        Chunk shape for all arrays. See `write_image` for details.
+    shards : tuple[int, ...] | None, optional
+        Shard shape for Zarr v3 sharding. Default is None.
+    overwrite : bool, optional
+        If True, overwrite existing Zarr groups. Default is False.
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
+        Compression codec. Default is "blosc-zstd".
+    progress : bool, optional
+        Show progress bar when writing dask arrays. Default is False.
+
+    Returns
+    -------
+    Path
+        Path to the created Plate Zarr group.
+
+    Raises
+    ------
+    ValueError
+        If image keys don't match plate wells, or if datasets don't match metadata.
+    FileExistsError
+        If `dest` exists and `overwrite` is False.
+    ImportError
+        If no suitable writer backend is installed.
+
+    Examples
+    --------
+    Write a simple 2x2 plate with auto-generated metadata:
+
+    >>> import numpy as np
+    >>> from pathlib import Path
+    >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import write_plate
+    >>>
+    >>> # Create image metadata (same for all fields)
+    >>> def make_image():
+    ...     return v05.Image(
+    ...         multiscales=[
+    ...             v05.Multiscale(
+    ...                 axes=[
+    ...                     v05.SpaceAxis(name="y", unit="micrometer"),
+    ...                     v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                 ],
+    ...                 datasets=[
+    ...                     v05.Dataset(
+    ...                         path="0",
+    ...                         coordinateTransformations=[
+    ...                             v05.ScaleTransformation(scale=[0.5, 0.5])
+    ...                         ],
+    ...                     )
+    ...                 ],
+    ...             )
+    ...         ]
+    ...     )
+    >>>
+    >>> # Rows, columns, and wells are auto-generated from the images dict!
+    >>> images = {
+    ...     ("A", "1", "0"): (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
+    ...     ("A", "2", "0"): (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
+    ...     ("B", "1", "0"): (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
+    ...     ("B", "2", "0"): (make_image(), [np.zeros((64, 64), dtype=np.uint16)]),
+    ... }
+    >>>
+    >>> dest = Path(tmpdir) / "my_plate.zarr"
+    >>> result = write_plate(dest, images)
+    >>> assert (result / "A" / "1" / "0" / "zarr.json").exists()
+    >>>
+    >>> # Or add custom metadata like a name
+    >>> result2 = write_plate(
+    ...     dest,
+    ...     images,
+    ...     plate={"name": "My Experiment"},
+    ...     overwrite=True,
+    ... )  # doctest: +ELLIPSIS
+
+    See Also
+    --------
+    PlateBuilder : Builder class for incremental well/field writing.
+    write_image : Write a single Image group.
+    """
+    # Merge user-provided plate metadata with auto-generated
+    plate_obj = _merge_plate_metadata(images, plate)
+
+    # Use PlateBuilder to handle the writing
+    builder = PlateBuilder(
+        dest,
+        plate=plate_obj,
+        writer=writer,
+        chunks=chunks,
+        shards=shards,
+        overwrite=overwrite,
+        compression=compression,
+    )
+
+    # Group images by well: {(row, col): {fov: (Image, datasets)}}
+    wells_data: dict[tuple[str, str], dict[str, ImageWithDatasets]] = {}
+    for (row, col, fov), image_data in images.items():
+        wells_data.setdefault((row, col), {})[fov] = image_data
+
+    # Write each well with all its fields
+    for (row, col), fields_data in wells_data.items():
+        builder.write_well(row=row, col=col, fields=fields_data, progress=progress)
+
+    return builder.root_path
+
+
 def write_bioformats2raw(
     dest: str | PathLike,
-    images: dict[str, tuple[Image, Sequence[ArrayLike]]],
+    # mapping of {series_name -> ( Image, [datasets, ...] )}
+    images: Mapping[str, ImageWithDatasets],
     *,
     ome_xml: str | None = None,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -308,7 +468,7 @@ def write_bioformats2raw(
     ----------
     dest : str | PathLike
         Destination path for the root Zarr group.
-    images : dict[str, tuple[Image, Sequence[ArrayLike]]]
+    images : dict[str, ImageWithDatasets]
         Mapping of `{series_name -> (image_model, [datasets, ...])}`.
         Each series name (e.g., "0", "1") becomes a subgroup in the root group, with
         the Image model defining the zarr.json and the datasets providing the data
@@ -685,10 +845,6 @@ class Bf2RawBuilder:
     write_bioformats2raw : High-level function to write all series at once.
     """
 
-    def __repr__(self) -> str:
-        total_images = len(self._series) + len(self._written_series)
-        return f"<{self.__class__.__name__}: {total_images} images>"
-
     def __init__(
         self,
         dest: str | PathLike,
@@ -699,6 +855,7 @@ class Bf2RawBuilder:
         shards: ShapeLike | None = None,
         overwrite: bool = False,
         compression: CompressionName = "blosc-zstd",
+        indent: int = 2,
     ) -> None:
         self._dest = Path(dest)
         self._ome_xml = ome_xml
@@ -707,9 +864,10 @@ class Bf2RawBuilder:
         self._shards = shards
         self._overwrite = overwrite
         self._compression: CompressionName = compression
+        self._indent = indent
 
         # For prepare-only workflow: {series_name: (image, dataset_specs)}
-        self._series: dict[str, tuple[Image, Sequence[ArrayLike]]] = {}
+        self._series: dict[str, ImageWithDatasets] = {}
 
         # For immediate write workflow
         self._initialized = False
@@ -719,6 +877,10 @@ class Bf2RawBuilder:
     def root_path(self) -> Path:
         """Path to the root of the bioformats2raw hierarchy."""
         return self._dest
+
+    def __repr__(self) -> str:
+        total_images = len(self._series) + len(self._written_series)
+        return f"<{self.__class__.__name__}: {total_images} images>"
 
     def _validate_series_name(self, name: str) -> None:
         if name in self._written_series:
@@ -933,16 +1095,588 @@ class Bf2RawBuilder:
                 "ome": series_model.model_dump(mode="json", exclude_none=True),
             },
         }
-        (self._dest / "OME" / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
+        (self._dest / "OME" / "zarr.json").write_text(
+            json.dumps(zarr_json, indent=self._indent)
+        )
+
+
+class PlateBuilder:
+    """Builder for OME-Zarr v0.5 Plate hierarchies.
+
+    The Plate hierarchy includes:
+    - A root Plate group with metadata
+    - Well subgroups (e.g., A/1/, B/2/, etc...) each containing Well metadata
+    - Field subgroups (e.g., 0/, 1/) within each well, each an Image
+
+    This builder supports two workflows:
+
+    1. **Immediate write** (simpler): Use `write_well()` to write each well
+       with its field data immediately. The builder manages the plate structure
+       and well metadata automatically.
+
+    2. **Prepare-only** (flexible): Use `add_well()` to register all wells,
+       then `prepare()` to create the hierarchy with empty arrays. Write data
+       to the returned arrays yourself.
+
+    Parameters
+    ----------
+    dest : str | PathLike
+        Destination path for the Plate Zarr group.
+    plate : Plate
+        OME-Zarr Plate metadata model. Defines rows, columns, and wells.
+        Well.images lists will be auto-generated from added fields.
+    writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
+        Backend to use for writing arrays. Default is "auto".
+    chunks : tuple[int, ...] | "auto" | None, optional
+        Chunk shape for all arrays. Default is "auto".
+    shards : tuple[int, ...] | None, optional
+        Shard shape for Zarr v3 sharding. Default is None (no sharding).
+    overwrite : bool, optional
+        If True, overwrite existing groups. Default is False.
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
+        Compression codec. Default is "blosc-zstd".
+
+    Examples
+    --------
+    **Immediate write workflow:**
+
+    >>> import numpy as np
+    >>> from pathlib import Path
+    >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import PlateBuilder
+    >>>
+    >>> plate = v05.Plate(
+    ...     plate=v05.PlateDef(
+    ...         columns=[v05.Column(name="1")],
+    ...         rows=[v05.Row(name="A")],
+    ...         wells=[v05.PlateWell(path="A/1", rowIndex=0, columnIndex=0)],
+    ...     )
+    ... )
+    >>>
+    >>> def make_image():
+    ...     return v05.Image(
+    ...         multiscales=[
+    ...             v05.Multiscale(
+    ...                 axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
+    ...                 datasets=[
+    ...                     v05.Dataset(
+    ...                         path="0",
+    ...                         coordinateTransformations=[
+    ...                             v05.ScaleTransformation(scale=[1.0, 1.0])
+    ...                         ],
+    ...                     )
+    ...                 ],
+    ...             )
+    ...         ]
+    ...     )
+    >>>
+    >>> dest = Path(tmpdir) / "plate_immediate.zarr"
+    >>> builder = PlateBuilder(dest, plate=plate)
+    >>> builder.write_well(
+    ...     row="A",
+    ...     col="1",
+    ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
+    ... )
+    <PlateBuilder: 1 wells>
+    >>> assert (dest / "A" / "1" / "0" / "zarr.json").exists()
+
+    **Prepare-only workflow:**
+
+    >>> dest2 = Path(tmpdir) / "plate_prepare.zarr"
+    >>> builder2 = PlateBuilder(dest2, plate=plate)
+    >>> data = np.zeros((32, 32), dtype=np.uint16)
+    >>> builder2.add_well(row="A", col="1", fields={"0": (make_image(), [data])})
+    <PlateBuilder: 1 wells>
+    >>> path, arrays = builder2.prepare()
+    >>> arrays["A/1/0/0"][:] = data  # Write data yourself
+    >>> assert path.exists()
+
+    See Also
+    --------
+    write_plate : High-level function to write all wells at once.
+    """
+
+    def __init__(
+        self,
+        dest: str | PathLike,
+        *,
+        plate: Plate,
+        writer: ZarrWriter = "auto",
+        chunks: ShapeLike | Literal["auto"] | None = "auto",
+        shards: ShapeLike | None = None,
+        overwrite: bool = False,
+        compression: CompressionName = "blosc-zstd",
+    ) -> None:
+        self._dest = Path(dest)
+        self._plate = plate
+        self._writer: ZarrWriter = writer
+        self._chunks: ShapeLike | Literal["auto"] | None = chunks
+        self._shards = shards
+        self._overwrite = overwrite
+        self._compression: CompressionName = compression
+
+        # For prepare-only workflow: {well_path: {fov: (Image, datasets)}}
+        self._wells: dict[str, dict[str, ImageWithDatasets]] = {}
+
+        # For immediate write workflow
+        self._initialized = False
+        self._written_wells: set[str] = set()
+
+    @property
+    def root_path(self) -> Path:
+        """Path to the root of the plate hierarchy."""
+        return self._dest
+
+    def __repr__(self) -> str:
+        total_wells = len(self._wells) + len(self._written_wells)
+        return f"<{self.__class__.__name__}: {total_wells} wells>"
+
+    def _validate_well_path(self, well_path: str) -> None:
+        """Validate that well_path exists in plate metadata and hasn't been used."""
+        # Check if already written or added
+        if well_path in self._written_wells:
+            raise ValueError(f"Well '{well_path}' already written via write_well().")
+        if well_path in self._wells:
+            raise ValueError(f"Well '{well_path}' already added via add_well().")
+
+        # Check if well_path exists in plate metadata
+        valid_well_paths = [well.path for well in self._plate.plate.wells]
+        if well_path not in valid_well_paths:
+            raise ValueError(
+                f"Well path '{well_path}' not found in plate metadata. "
+                f"Valid wells are: {valid_well_paths}"
+            )
+
+    def _ensure_initialized(self) -> None:
+        """Create plate structure if not already done."""
+        if self._initialized:
+            return
+
+        # Create plate zarr.json
+        _create_zarr3_group(self._dest, self._plate, self._overwrite)
+
+        # Create row directories with simple zarr.json
+        row_names = {well.path.split("/")[0] for well in self._plate.plate.wells}
+        for row_name in row_names:
+            row_path = self._dest / row_name
+            _create_zarr3_group(row_path, ome_model=None, overwrite=self._overwrite)
+
+        self._initialized = True
+
+    def _generate_well_metadata(self, well_path: str, field_names: list[str]) -> Well:
+        """Generate Well metadata from field names.
+
+        Parameters
+        ----------
+        well_path : str
+            Well path like "A/1"
+        field_names : list[str]
+            List of field of view identifiers like ["0", "1"]
+
+        Returns
+        -------
+        Well
+            Well metadata with images list populated.
+        """
+        # Auto-generate Well metadata
+        # Sort field_names for consistent ordering
+        images = [
+            FieldOfView(path=fov, acquisition=None) for fov in sorted(field_names)
+        ]
+
+        return Well(well=WellDef(images=images))
+
+    def write_well(
+        self,
+        *,
+        row: str,
+        col: str,
+        fields: Mapping[str, ImageWithDatasets],
+        progress: bool = False,
+    ) -> Self:
+        """Write a well immediately with its field images and data.
+
+        This method creates the well structure and writes all field data in one
+        call. The plate structure and well metadata are created/updated
+        automatically. Use this for the "immediate write" workflow.
+
+        Parameters
+        ----------
+        row : str
+            Row name like "A", "B", etc.
+        col : str
+            Column name like "1", "2", etc.
+        fields : Mapping[str, ImageWithDatasets]
+            Mapping of `{fov -> (image_model, datasets)}` where fov is the
+            field of view identifier like "0", "1", etc.
+        progress : bool, optional
+            Show progress bar for dask arrays. Default is False.
+
+        Returns
+        -------
+        Self
+            The builder instance (for method chaining).
+
+        Raises
+        ------
+        ValueError
+            If row/col combination is not in the plate metadata, or if the well
+            was already written or added.
+        NotImplementedError
+            If any Image has multiple multiscales.
+        """
+        well_path = f"{row}/{col}"
+        self._validate_well_path(well_path)
+
+        # Initialize plate structure if needed
+        self._ensure_initialized()
+
+        # Generate Well metadata for this well
+        well_metadata = self._generate_well_metadata(well_path, list(fields.keys()))
+
+        # Create well subgroup with metadata
+        well_group_path = self._dest / well_path
+        _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
+
+        # Write each field image
+        for fov, (image_model, datasets) in fields.items():
+            field_path = well_group_path / fov
+            write_image(
+                field_path,
+                image_model,
+                datasets,
+                writer=self._writer,
+                chunks=self._chunks,
+                shards=self._shards,
+                overwrite=self._overwrite,
+                compression=self._compression,
+                progress=progress,
+            )
+
+        self._written_wells.add(well_path)
+        return self
+
+    def add_well(
+        self,
+        *,
+        row: str,
+        col: str,
+        fields: Mapping[str, ImageWithDatasets],
+    ) -> Self:
+        """Add a well for the prepare-only workflow.
+
+        Registers a well with its fields to be created when `prepare()` is called.
+        Use this when you want to create the Zarr structure without writing data
+        immediately. After calling `prepare()`, write data to the returned array
+        handles.
+
+        Parameters
+        ----------
+        row : str
+            Row name like "A", "B", etc.
+        col : str
+            Column name like "1", "2", etc.
+        fields : Mapping[str, ImageWithDatasets]
+            Mapping of `{fov -> (image_model, datasets)}` where datasets can
+            be array-like objects or (dtype, shape) tuples.
+
+        Returns
+        -------
+        Self
+            The builder instance (for method chaining).
+
+        Raises
+        ------
+        ValueError
+            If row/col combination is not in plate metadata, or if already
+            added/written, or if field datasets don't match Image metadata.
+        NotImplementedError
+            If any Image has multiple multiscales.
+        """
+        well_path = f"{row}/{col}"
+        self._validate_well_path(well_path)
+
+        # Validate all fields before accepting
+        for fov, (image_model, datasets) in fields.items():
+            if len(image_model.multiscales) != 1:
+                raise NotImplementedError(
+                    f"Well '{well_path}', field '{fov}': "
+                    "Image must have exactly one multiscale"
+                )
+
+            multiscale = image_model.multiscales[0]
+            if len(datasets) != len(multiscale.datasets):
+                raise ValueError(
+                    f"Well '{well_path}', field '{fov}': "
+                    f"Number of data arrays ({len(datasets)}) must match "
+                    f"number of datasets in metadata ({len(multiscale.datasets)})"
+                )
+
+        self._wells[well_path] = dict(fields)
+        return self
+
+    def prepare(self) -> tuple[Path, dict[str, Any]]:
+        """Create the Zarr hierarchy and return array handles.
+
+        Creates the complete Plate structure including plate metadata, well
+        subgroups with Well metadata, and empty arrays for all registered
+        fields. Call this after registering all wells with `add_well()`.
+
+        The returned arrays support numpy-style indexing for writing data:
+        `arrays["well/field/dataset"][:] = data`.
+
+        Returns
+        -------
+        tuple[Path, dict[str, Any]]
+            A tuple of (root_path, arrays) where `arrays` maps composite keys
+            like `"A/1/0/0"` (well_path / field / dataset_path) to array
+            objects. The array type depends on the configured writer
+            (zarr.Array or tensorstore.TensorStore).
+
+        Raises
+        ------
+        ValueError
+            If no wells have been added with `add_well()`.
+        FileExistsError
+            If destination exists and `overwrite` is False.
+        ImportError
+            If no suitable writer backend is installed.
+        """
+        if not self._wells:
+            raise ValueError("No wells added. Use add_well() before prepare().")
+
+        # Create plate zarr.json
+        _create_zarr3_group(self._dest, self._plate, self._overwrite)
+
+        # Create arrays for each well/field combination
+        all_arrays: dict[str, Any] = {}
+
+        for well_path, fields in self._wells.items():
+            # Generate Well metadata
+            well_metadata = self._generate_well_metadata(well_path, list(fields.keys()))
+
+            # Create well group with metadata
+            well_group_path = self._dest / well_path
+            _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
+
+            # Create arrays for each field
+            for fov, (image_model, datasets) in fields.items():
+                field_path = well_group_path / fov
+
+                _field_path, field_arrays = prepare_image(
+                    field_path,
+                    image_model,
+                    datasets,
+                    chunks=self._chunks,
+                    shards=self._shards,
+                    writer=self._writer,
+                    overwrite=self._overwrite,
+                    compression=self._compression,
+                )
+
+                # Flatten into all_arrays with "well/field/dataset" keys
+                for dataset_path, arr in field_arrays.items():
+                    composite_key = f"{well_path}/{fov}/{dataset_path}"
+                    all_arrays[composite_key] = arr
+
+        return self._dest, all_arrays
 
 
 # ######################## Internal Helpers ####################################
 
 
-def _create_zarr3_group(
-    dest_path: Path, ome_model: OMEMetadata, overwrite: bool = False
+def _row_name_to_index(row_name: str) -> int:
+    """Convert row name to index (A=0, B=1, ..., Z=25, AA=26, etc.)."""
+    if not row_name or not row_name.isalpha() or not row_name.isupper():
+        raise ValueError(
+            f"Row name must be uppercase letters (A-Z, AA-ZZ, etc.), got: {row_name}"
+        )
+
+    # Convert like Excel columns: A=0, B=1, ..., Z=25, AA=26, AB=27, etc.
+    index = 0
+    for char in row_name:
+        index = index * 26 + (ord(char) - ord("A") + 1)
+    return index - 1
+
+
+def _column_name_to_index(col_name: str) -> int:
+    """Convert column name to index (1=0, 2=1, 10=9, etc.)."""
+    try:
+        # Try parsing as integer (handles "1", "2", "10", "1", etc.)
+        return int(col_name) - 1
+    except ValueError:
+        raise ValueError(
+            f"Column name must be numeric (1, 2, 10, etc.), got: {col_name}"
+        ) from None
+
+
+def _autogenerate_plate_metadata(
+    images: Mapping[tuple[str, str, str], ImageWithDatasets],
+) -> dict[str, Any]:
+    """Auto-generate plate metadata from images dict keys.
+
+    Row indices follow the convention: A=0, B=1, ..., Z=25, AA=26, etc.
+    Column indices follow: 1=0, 2=1, ..., 10=9, etc.
+
+    All intermediate rows/columns are created (e.g., if you have rows A and D,
+    rows B and C are also created, even if they have no wells).
+
+    Parameters
+    ----------
+    images : Mapping[tuple[str, str, str], ImageWithDatasets]
+        Images mapping with (row, col, fov) keys.
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with 'rows', 'columns', 'wells' keys for PlateDef.
+    """
+    from yaozarrs.v05._plate import Column, PlateWell, Row
+
+    # Extract unique row and column names
+    rows_set: set[str] = set()
+    cols_set: set[int] = set()
+    wells_set: set[tuple[str, str]] = set()
+
+    for row, col, _fov in images.keys():
+        rows_set.add(row)
+        cols_set.add(int(col))
+        wells_set.add((row, col))
+
+    # Find the maximum row and column to fill in all intermediates
+    max_row_idx = max(_row_name_to_index(r) for r in rows_set)
+    max_col_idx = max(cols_set) - 1  # Convert to 0-indexed
+
+    # Create all rows from A to max_row (e.g., A, B, C, D if max is D)
+    rows = []
+    for idx in range(max_row_idx + 1):
+        # Convert index back to row name (0=A, 1=B, etc.)
+        if idx < 26:
+            row_name = chr(ord("A") + idx)
+        else:
+            # Handle AA, AB, etc. (Excel-style)
+            first = chr(ord("A") + (idx // 26) - 1)
+            second = chr(ord("A") + (idx % 26))
+            row_name = first + second
+        rows.append(Row(name=row_name))
+
+    # Create all columns from 1 to max_col (e.g., 1, 2, 3, 4, 5 if max is 5)
+    columns = [Column(name=str(i + 1)) for i in range(max_col_idx + 1)]
+
+    # Create well objects only for wells that have images
+    wells = []
+    for row, col in sorted(wells_set):
+        row_idx = _row_name_to_index(row)
+        col_idx = _column_name_to_index(col)
+        wells.append(
+            PlateWell(path=f"{row}/{col}", rowIndex=row_idx, columnIndex=col_idx)
+        )
+
+    return {"rows": rows, "columns": columns, "wells": wells}
+
+
+def _merge_plate_metadata(
+    images: Mapping[tuple[str, str, str], ImageWithDatasets],
+    user_plate: Plate | dict[str, Any] | None,
+) -> Plate:
+    """Merge auto-generated and user-provided plate metadata.
+
+    Parameters
+    ----------
+    images : Mapping[tuple[str, str, str], ImageWithDatasets]
+        Images mapping used to auto-generate metadata.
+    user_plate : Plate | dict[str, Any] | None
+        User-provided plate metadata (takes precedence over auto-generated).
+
+    Returns
+    -------
+    Plate
+        Final Plate object with merged metadata.
+
+    Raises
+    ------
+    ValueError
+        If user-provided metadata conflicts with images dict.
+    """
+    from yaozarrs.v05._plate import Plate, PlateDef
+
+    # Auto-generate base metadata from images
+    auto_metadata = _autogenerate_plate_metadata(images)
+
+    # If user provided a full Plate object, validate and return
+    if isinstance(user_plate, Plate):
+        _validate_plate_matches_images(user_plate, images)
+        return user_plate
+
+    # If user provided a dict, merge with auto-generated
+    if user_plate is not None:
+        # User-provided values take precedence
+        merged = auto_metadata.copy()
+        for key, value in user_plate.items():
+            merged[key] = value
+    else:
+        merged = auto_metadata
+
+    # Construct Plate object from merged metadata
+    plate = Plate(plate=PlateDef(**merged))
+
+    # Validate that all images have valid coordinates
+    _validate_plate_matches_images(plate, images)
+
+    return plate
+
+
+def _validate_plate_matches_images(
+    plate: Plate,
+    images: Mapping[tuple[str, str, str], ImageWithDatasets],
 ) -> None:
-    """Create a zarr group directory with OME metadata in zarr.json."""
+    """Validate that plate metadata matches images dict.
+
+    Parameters
+    ----------
+    plate : Plate
+        Plate metadata to validate.
+    images : Mapping[tuple[str, str, str], ImageWithDatasets]
+        Images mapping to validate against.
+
+    Raises
+    ------
+    ValueError
+        If any image coordinates don't match plate metadata.
+    """
+    # Get valid row and column names from plate
+    valid_rows = {row.name for row in plate.plate.rows}
+    valid_cols = {col.name for col in plate.plate.columns}
+    valid_wells = {well.path for well in plate.plate.wells}
+
+    # Check all images have valid coordinates
+    for row, col, _fov in images.keys():
+        if row not in valid_rows:
+            raise ValueError(
+                f"Image row '{row}' not found in plate rows: {sorted(valid_rows)}"
+            )
+        if col not in valid_cols:
+            raise ValueError(
+                f"Image column '{col}' not found in plate columns: {sorted(valid_cols)}"
+            )
+        well_path = f"{row}/{col}"
+        if well_path not in valid_wells:
+            raise ValueError(
+                f"Image well '{well_path}' not found in plate wells: "
+                f"{sorted(valid_wells)}"
+            )
+
+
+# ######################## Zarr Group Creation ##################################
+
+
+def _create_zarr3_group(
+    dest_path: Path,
+    ome_model: OMEMetadata | None = None,
+    overwrite: bool = False,
+    indent: int = 2,
+) -> None:
+    """Create a zarr group directory with optional OME metadata in zarr.json."""
     zarr_json_path = dest_path / "zarr.json"
     if dest_path.exists():
         if not overwrite:
@@ -961,14 +1695,15 @@ def _create_zarr3_group(
         shutil.rmtree(dest_path, ignore_errors=True)
 
     dest_path.mkdir(parents=True, exist_ok=True)
-    zarr_json = {
+    zarr_json: dict[str, Any] = {
         "zarr_format": 3,
         "node_type": "group",
-        "attributes": {
-            "ome": ome_model.model_dump(mode="json", exclude_none=True),
-        },
     }
-    zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
+    if ome_model is not None:
+        zarr_json["attributes"] = {
+            "ome": ome_model.model_dump(mode="json", exclude_none=True),
+        }
+    zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
 
 
 # TODO: I suspect there are better chunk calculation algorithms in the backends.

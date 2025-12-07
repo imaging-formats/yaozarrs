@@ -526,6 +526,480 @@ def test_write_image_compression_options(
     yaozarrs.validate_zarr_store(dest)
 
 
+# =============================================================================
+# write_plate and PlateBuilder tests
+# =============================================================================
+
+
+def make_simple_plate(
+    n_rows: int = 2, n_cols: int = 2
+) -> tuple[v05.Plate, dict[tuple[str, str, str], tuple[v05.Image, list[np.ndarray]]]]:
+    """Create a simple plate for testing.
+
+    Parameters
+    ----------
+    n_rows : int
+        Number of rows (default 2, will use names A, B, ...)
+    n_cols : int
+        Number of columns (default 2, will use names 01, 02, ...)
+
+    Returns
+    -------
+    tuple[Plate, dict]
+        Plate metadata and images mapping
+    """
+    # Create plate structure
+    row_names = [chr(ord("A") + i) for i in range(n_rows)]
+    col_names = [f"{i + 1:02d}" for i in range(n_cols)]
+
+    wells = []
+    for row_idx, row_name in enumerate(row_names):
+        for col_idx, col_name in enumerate(col_names):
+            wells.append(
+                v05.PlateWell(
+                    path=f"{row_name}/{col_name}",
+                    rowIndex=row_idx,
+                    columnIndex=col_idx,
+                )
+            )
+
+    plate = v05.Plate(
+        plate=v05.PlateDef(
+            columns=[v05.Column(name=name) for name in col_names],
+            rows=[v05.Row(name=name) for name in row_names],
+            wells=wells,
+        )
+    )
+
+    # Create image data
+    images = {}
+    for row_name in row_names:
+        for col_name in col_names:
+            data = np.random.rand(2, 64, 64).astype(np.float32)
+            image = make_simple_image(
+                f"{row_name}/{col_name}/0", {"c": 1.0, "y": 0.5, "x": 0.5}
+            )
+            images[(row_name, col_name, "0")] = (image, [data])
+
+    return plate, images
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_simple_2x2(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_plate with a simple 2x2 plate."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / "plate_2x2.zarr"
+    plate, images = make_simple_plate(n_rows=2, n_cols=2)
+
+    result = write_plate(dest, images, plate=plate, writer=writer)
+
+    assert result == dest
+    assert dest.exists()
+
+    # Check plate zarr.json
+    plate_meta = json.loads((dest / "zarr.json").read_bytes())
+    assert plate_meta["attributes"]["ome"]["version"] == "0.5"
+    assert len(plate_meta["attributes"]["ome"]["plate"]["wells"]) == 4
+
+    # Check well structure
+    for row in ["A", "B"]:
+        for col in ["01", "02"]:
+            well_path = dest / row / col
+            assert well_path.exists()
+            assert (well_path / "zarr.json").exists()
+
+            # Check well metadata
+            well_meta = json.loads((well_path / "zarr.json").read_bytes())
+            assert well_meta["attributes"]["ome"]["version"] == "0.5"
+            assert len(well_meta["attributes"]["ome"]["well"]["images"]) == 1
+
+            # Check field image
+            assert (well_path / "0" / "zarr.json").exists()
+            assert (well_path / "0" / "0").exists()
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_plate with multiple fields per well."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / "plate_multi_field.zarr"
+
+    # Create simple 1x1 plate with 2 fields
+    plate = v05.Plate(
+        plate=v05.PlateDef(
+            columns=[v05.Column(name="01")],
+            rows=[v05.Row(name="A")],
+            wells=[v05.PlateWell(path="A/01", rowIndex=0, columnIndex=0)],
+        )
+    )
+
+    images = {}
+    for fov in ["0", "1"]:
+        data = np.random.rand(2, 32, 32).astype(np.float32)
+        image = make_simple_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
+        images[("A", "01", fov)] = (image, [data])
+
+    result = write_plate(dest, images, plate=plate, writer=writer)
+    assert result == dest
+
+    # Check both fields exist
+    well_path = dest / "A" / "01"
+    assert (well_path / "0").exists()
+    assert (well_path / "1").exists()
+
+    # Check well metadata has both images
+    well_meta = json.loads((well_path / "zarr.json").read_bytes())
+    assert len(well_meta["attributes"]["ome"]["well"]["images"]) == 2
+    assert well_meta["attributes"]["ome"]["well"]["images"][0]["path"] == "0"
+    assert well_meta["attributes"]["ome"]["well"]["images"][1]["path"] == "1"
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_single_well(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_plate with a single well (1x1 plate)."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / "plate_1x1.zarr"
+    plate, images = make_simple_plate(n_rows=1, n_cols=1)
+
+    result = write_plate(dest, images, plate=plate, writer=writer)
+    assert result == dest
+
+    assert (dest / "A" / "01" / "0" / "zarr.json").exists()
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test PlateBuilder immediate write workflow."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "builder_immediate.zarr"
+    plate, images_mapping = make_simple_plate(n_rows=1, n_cols=2)
+
+    builder = PlateBuilder(dest, plate=plate, writer=writer)
+
+    # Group images by well
+    wells_data: dict[tuple[str, str], dict[str, tuple[v05.Image, list]]] = {}
+    for (row, col, fov), (image, datasets) in images_mapping.items():
+        if (row, col) not in wells_data:
+            wells_data[(row, col)] = {}
+        wells_data[(row, col)][fov] = (image, datasets)
+
+    # Write each well
+    for (row, col), fields in wells_data.items():
+        result = builder.write_well(row=row, col=col, fields=fields)
+        assert result is builder  # Check method chaining
+
+    assert repr(builder) == "<PlateBuilder: 2 wells>"
+    assert builder.root_path == dest
+
+    # Check structure
+    assert (dest / "A" / "01" / "0" / "zarr.json").exists()
+    assert (dest / "A" / "02" / "0" / "zarr.json").exists()
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test PlateBuilder prepare-only workflow."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "builder_prepare.zarr"
+    plate, images_mapping = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer=writer)
+
+    # Add wells
+    for (row, col, fov), (image, datasets) in images_mapping.items():
+        result = builder.add_well(row=row, col=col, fields={fov: (image, datasets)})
+        assert result is builder
+
+    # Prepare
+    path, arrays = builder.prepare()
+    assert path == dest
+    assert "A/01/0/0" in arrays
+
+    # Write data to arrays
+    for _key, arr in arrays.items():
+        # Get shape from array and write matching data
+        data = np.random.rand(*arr.shape).astype(np.float32)
+        arr[:] = data
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+def test_plate_builder_invalid_well_path(tmp_path: Path) -> None:
+    """Test that PlateBuilder raises error for invalid well path."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "invalid_well.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer="zarr")
+    data = np.random.rand(2, 32, 32).astype(np.float32)
+    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+
+    # Try to write well that doesn't exist in plate metadata
+    with pytest.raises(ValueError, match="not found in plate metadata"):
+        builder.write_well(row="B", col="01", fields={"0": (image, [data])})
+
+
+def test_plate_builder_duplicate_well_write_write(tmp_path: Path) -> None:
+    """Test that PlateBuilder raises error when writing same well twice."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "duplicate_well.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer="zarr")
+    data = np.random.rand(2, 32, 32).astype(np.float32)
+    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+
+    # Write well first time
+    builder.write_well(row="A", col="01", fields={"0": (image, [data])})
+
+    # Try to write same well again
+    with pytest.raises(ValueError, match="already written via write_well"):
+        builder.write_well(row="A", col="01", fields={"0": (image, [data])})
+
+
+def test_plate_builder_duplicate_well_add_write(tmp_path: Path) -> None:
+    """Test that PlateBuilder raises error when adding then writing same well."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "duplicate_add_write.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer="zarr")
+    data = np.random.rand(2, 32, 32).astype(np.float32)
+    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+
+    # Add well first
+    builder.add_well(row="A", col="01", fields={"0": (image, [data])})
+
+    # Try to write same well
+    with pytest.raises(ValueError, match="already added via add_well"):
+        builder.write_well(row="A", col="01", fields={"0": (image, [data])})
+
+
+def test_plate_builder_prepare_empty(tmp_path: Path) -> None:
+    """Test that PlateBuilder.prepare() raises error when no wells added."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "empty_prepare.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer="zarr")
+
+    with pytest.raises(ValueError, match="No wells added"):
+        builder.prepare()
+
+
+def test_plate_builder_dataset_count_mismatch(tmp_path: Path) -> None:
+    """Test that PlateBuilder raises error for dataset count mismatch."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "dataset_mismatch.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer="zarr")
+    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+
+    # Image expects 1 dataset but we provide 2
+    data1 = np.random.rand(2, 32, 32).astype(np.float32)
+    data2 = np.random.rand(2, 16, 16).astype(np.float32)
+
+    with pytest.raises(ValueError, match="must match"):
+        builder.add_well(row="A", col="01", fields={"0": (image, [data1, data2])})
+
+
+def test_plate_builder_multiscale_error(tmp_path: Path) -> None:
+    """Test that PlateBuilder raises error for multiple multiscales."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "multiscale_error.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer="zarr")
+    data = np.random.rand(2, 32, 32).astype(np.float32)
+
+    # Create image with 2 multiscales (not supported)
+    image = v05.Image(
+        multiscales=[
+            v05.Multiscale(
+                name="multiscale_0",
+                axes=[
+                    v05.ChannelAxis(name="c"),
+                    v05.SpaceAxis(name="y"),
+                    v05.SpaceAxis(name="x"),
+                ],
+                datasets=[
+                    v05.Dataset(
+                        path="0",
+                        coordinateTransformations=[
+                            v05.ScaleTransformation(scale=[1.0, 0.5, 0.5])
+                        ],
+                    )
+                ],
+            ),
+            v05.Multiscale(
+                name="multiscale_1",
+                axes=[
+                    v05.ChannelAxis(name="c"),
+                    v05.SpaceAxis(name="y"),
+                    v05.SpaceAxis(name="x"),
+                ],
+                datasets=[
+                    v05.Dataset(
+                        path="1",
+                        coordinateTransformations=[
+                            v05.ScaleTransformation(scale=[1.0, 1.0, 1.0])
+                        ],
+                    )
+                ],
+            ),
+        ]
+    )
+
+    with pytest.raises(NotImplementedError, match="exactly one multiscale"):
+        builder.add_well(row="A", col="01", fields={"0": (image, [data])})
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_plate_builder_well_metadata_generation(
+    tmp_path: Path, writer: ZarrWriter
+) -> None:
+    """Test that PlateBuilder correctly generates well metadata."""
+    from yaozarrs.write.v05 import PlateBuilder
+
+    dest = tmp_path / "well_metadata.zarr"
+    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
+
+    builder = PlateBuilder(dest, plate=plate, writer=writer)
+
+    # Create well with multiple fields in non-sorted order
+    fields = {}
+    for fov in ["2", "0", "1"]:
+        data = np.random.rand(2, 32, 32).astype(np.float32)
+        image = make_simple_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
+        fields[fov] = (image, [data])
+
+    builder.write_well(row="A", col="01", fields=fields)
+
+    # Check well metadata - fields should be sorted
+    well_meta = json.loads((dest / "A" / "01" / "zarr.json").read_bytes())
+    images_meta = well_meta["attributes"]["ome"]["well"]["images"]
+    assert len(images_meta) == 3
+    assert images_meta[0]["path"] == "0"
+    assert images_meta[1]["path"] == "1"
+    assert images_meta[2]["path"] == "2"
+    # acquisition=None is excluded from JSON by pydantic's exclude_none=True
+    for img in images_meta:
+        assert img.get("acquisition") is None
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_with_different_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_plate with custom chunk settings."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / "plate_chunks.zarr"
+    plate, images = make_simple_plate(n_rows=1, n_cols=1)
+
+    write_plate(dest, images, plate=plate, chunks=(1, 32, 32), writer=writer)
+
+    # Check chunk shape in array metadata
+    arr_meta = json.loads((dest / "A" / "01" / "0" / "0" / "zarr.json").read_bytes())
+    chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
+    assert chunk_shape == [1, 32, 32]
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+@pytest.mark.parametrize(
+    "compression",
+    ["blosc-zstd", "blosc-lz4", "zstd", "none"],
+)
+def test_write_plate_compression(
+    tmp_path: Path, writer: ZarrWriter, compression: CompressionName
+) -> None:
+    """Test write_plate with different compression options."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / f"plate_{compression}.zarr"
+    plate, images = make_simple_plate(n_rows=1, n_cols=1)
+
+    write_plate(dest, images, plate=plate, compression=compression, writer=writer)  # type: ignore
+
+    # Verify compression was applied
+    arr_meta = json.loads((dest / "A" / "01" / "0" / "0" / "zarr.json").read_bytes())
+    codecs = arr_meta.get("codecs", [])
+
+    if compression == "none":
+        assert len(codecs) == 1  # Only bytes codec
+    else:
+        assert len(codecs) >= 2  # Bytes + compression codec
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_overwrite(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_plate with overwrite=True."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / "plate_overwrite.zarr"
+    plate, images = make_simple_plate(n_rows=1, n_cols=1)
+
+    # Write first time
+    write_plate(dest, images, plate=plate, writer=writer)
+    first_write_time = (dest / "zarr.json").stat().st_mtime
+
+    # Write again without overwrite - should raise error
+    with pytest.raises(FileExistsError):
+        write_plate(dest, images, plate=plate, writer=writer, overwrite=False)
+
+    # Write again with overwrite - should succeed
+    write_plate(dest, images, plate=plate, writer=writer, overwrite=True)
+    second_write_time = (dest / "zarr.json").stat().st_mtime
+
+    # Verify file was updated
+    assert second_write_time >= first_write_time
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_large_grid(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_plate with a larger plate grid (4x6)."""
+    from yaozarrs.write.v05 import write_plate
+
+    dest = tmp_path / "plate_4x6.zarr"
+    plate, images = make_simple_plate(n_rows=4, n_cols=6)
+
+    result = write_plate(dest, images, plate=plate, writer=writer)
+    assert result == dest
+
+    # Verify all 24 wells exist
+    plate_meta = json.loads((dest / "zarr.json").read_bytes())
+    assert len(plate_meta["attributes"]["ome"]["plate"]["wells"]) == 24
+
+    # Spot check a few wells
+    assert (dest / "A" / "01" / "0" / "zarr.json").exists()
+    assert (dest / "D" / "06" / "0" / "zarr.json").exists()
+
+    yaozarrs.validate_zarr_store(dest)
+
+
 finder = doctest.DocTestFinder()
 
 
