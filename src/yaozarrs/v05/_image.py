@@ -403,11 +403,16 @@ class Image(_BaseModel):
     !!! example "Typical Structure"
         ```
         my_image/
-        ├── zarr.json          # Contains this metadata
+        ├── zarr.json          # contains ["ome"]["multiscales"]
         ├── 0/                 # Highest resolution array
         ├── 1/                 # Next resolution level
         └── labels/            # Optional segmentation masks
+            ├── zarr.json      # contains ["ome"]["labels"]
+            └── 0              # Multiscale, labeled image.
         ```
+
+    !!! note
+        For the optional `labels` group, see [LabelsGroup][yaozarrs.v05.LabelsGroup].
     """
 
     version: Literal["0.5"] = Field(

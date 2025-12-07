@@ -45,10 +45,10 @@ typically nested inside the directory structure of the top-level models.
 - **[`Well`][yaozarrs.v05.Well]**: Collection of fields-of-view within a single
   well. *Found inside plates.*
 
-- **[`LabelsGroup`][yaozarrs.v05.LabelsGroup]**: Collection of multiple label
-  images. *Container for multiple segmentations.*
+- **[`LabelsGroup`][yaozarrs.v05.LabelsGroup]**: Annotations/labels for an Image.
+  *Usually found in a subdirectory of an Image group.*
 
-- **[`Series`][yaozarrs.v05.Series]**: Represents `OME/zarr.json` files inside of
+- **[`Series`][yaozarrs.v05.Series]**: Represents `OME/zarr.json` files found inside of
   [`Bf2Raw`][yaozarrs.v05.Bf2Raw] collections.
 
 ## Quick Start
