@@ -1101,30 +1101,32 @@ class Bf2RawBuilder:
 
 
 class PlateBuilder:
-    """Builder for OME-Zarr v0.5 Plate hierarchies.
+    """Builder for OME-Zarr v0.5 Plate hierarchies with auto-generated metadata.
 
     The Plate hierarchy includes:
-    - A root Plate group with metadata
+    - A root Plate group with metadata (auto-generated from written wells)
     - Well subgroups (e.g., A/1/, B/2/, etc...) each containing Well metadata
     - Field subgroups (e.g., 0/, 1/) within each well, each an Image
 
     This builder supports two workflows:
 
     1. **Immediate write** (simpler): Use `write_well()` to write each well
-       with its field data immediately. The builder manages the plate structure
-       and well metadata automatically.
+       with its field data immediately. The builder auto-generates and updates
+       plate metadata (rows, columns, wells) after each call, similar to how
+       Bf2RawBuilder auto-updates the series list.
 
     2. **Prepare-only** (flexible): Use `add_well()` to register all wells,
-       then `prepare()` to create the hierarchy with empty arrays. Write data
-       to the returned arrays yourself.
+       then `prepare()` to create the hierarchy with empty arrays. Plate
+       metadata is auto-generated from all registered wells.
 
     Parameters
     ----------
     dest : str | PathLike
         Destination path for the Plate Zarr group.
-    plate : Plate
-        OME-Zarr Plate metadata model. Defines rows, columns, and wells.
-        Well.images lists will be auto-generated from added fields.
+    plate : Plate | None, optional
+        Optional OME-Zarr Plate metadata model. If None (default), plate
+        metadata (rows, columns, wells) is auto-generated from written/added
+        wells. If provided, validates that written wells match the metadata.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. Default is "auto".
     chunks : tuple[int, ...] | "auto" | None, optional
@@ -1138,20 +1140,12 @@ class PlateBuilder:
 
     Examples
     --------
-    **Immediate write workflow:**
+    **Auto-generation workflow (recommended):**
 
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
     >>> from yaozarrs.write.v05 import PlateBuilder
-    >>>
-    >>> plate = v05.Plate(
-    ...     plate=v05.PlateDef(
-    ...         columns=[v05.Column(name="1")],
-    ...         rows=[v05.Row(name="A")],
-    ...         wells=[v05.PlateWell(path="A/1", rowIndex=0, columnIndex=0)],
-    ...     )
-    ... )
     >>>
     >>> def make_image():
     ...     return v05.Image(
@@ -1170,26 +1164,40 @@ class PlateBuilder:
     ...         ]
     ...     )
     >>>
-    >>> dest = Path(tmpdir) / "plate_immediate.zarr"
-    >>> builder = PlateBuilder(dest, plate=plate)
+    >>> # No plate metadata needed - it's auto-generated!
+    >>> dest = Path(tmpdir) / "plate_auto.zarr"
+    >>> builder = PlateBuilder(dest)
     >>> builder.write_well(
     ...     row="A",
     ...     col="1",
     ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
     ... )
     <PlateBuilder: 1 wells>
-    >>> assert (dest / "A" / "1" / "0" / "zarr.json").exists()
+    >>> builder.write_well(
+    ...     row="A",
+    ...     col="2",
+    ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
+    ... )
+    <PlateBuilder: 2 wells>
+    >>> assert (dest / "zarr.json").exists()  # Plate metadata auto-updated
 
-    **Prepare-only workflow:**
+    **With explicit plate metadata:**
 
-    >>> dest2 = Path(tmpdir) / "plate_prepare.zarr"
+    >>> plate = v05.Plate(
+    ...     plate=v05.PlateDef(
+    ...         columns=[v05.Column(name="1")],
+    ...         rows=[v05.Row(name="A")],
+    ...         wells=[v05.PlateWell(path="A/1", rowIndex=0, columnIndex=0)],
+    ...     )
+    ... )
+    >>> dest2 = Path(tmpdir) / "plate_explicit.zarr"
     >>> builder2 = PlateBuilder(dest2, plate=plate)
-    >>> data = np.zeros((32, 32), dtype=np.uint16)
-    >>> builder2.add_well(row="A", col="1", fields={"0": (make_image(), [data])})
+    >>> builder2.write_well(
+    ...     row="A",
+    ...     col="1",
+    ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
+    ... )
     <PlateBuilder: 1 wells>
-    >>> path, arrays = builder2.prepare()
-    >>> arrays["A/1/0/0"][:] = data  # Write data yourself
-    >>> assert path.exists()
 
     See Also
     --------
@@ -1200,7 +1208,7 @@ class PlateBuilder:
         self,
         dest: str | PathLike,
         *,
-        plate: Plate,
+        plate: Plate | None = None,
         writer: ZarrWriter = "auto",
         chunks: ShapeLike | Literal["auto"] | None = "auto",
         shards: ShapeLike | None = None,
@@ -1208,7 +1216,7 @@ class PlateBuilder:
         compression: CompressionName = "blosc-zstd",
     ) -> None:
         self._dest = Path(dest)
-        self._plate = plate
+        self._user_plate = plate  # Store user-provided plate (if any)
         self._writer: ZarrWriter = writer
         self._chunks: ShapeLike | Literal["auto"] | None = chunks
         self._shards = shards
@@ -1220,7 +1228,10 @@ class PlateBuilder:
 
         # For immediate write workflow
         self._initialized = False
-        self._written_wells: set[str] = set()
+        # Track written wells: {(row, col): {fov: (Image, datasets)}}
+        self._written_wells_data: dict[
+            tuple[str, str], dict[str, ImageWithDatasets]
+        ] = {}
 
     @property
     def root_path(self) -> Path:
@@ -1228,40 +1239,85 @@ class PlateBuilder:
         return self._dest
 
     def __repr__(self) -> str:
-        total_wells = len(self._wells) + len(self._written_wells)
+        total_wells = len(self._wells) + len(self._written_wells_data)
         return f"<{self.__class__.__name__}: {total_wells} wells>"
 
-    def _validate_well_path(self, well_path: str) -> None:
-        """Validate that well_path exists in plate metadata and hasn't been used."""
+    def _validate_well_coordinates(self, row: str, col: str) -> None:
+        """Validate that well coordinates haven't been used yet."""
         # Check if already written or added
-        if well_path in self._written_wells:
-            raise ValueError(f"Well '{well_path}' already written via write_well().")
+        well_coords = (row, col)
+        if well_coords in self._written_wells_data:
+            raise ValueError(f"Well ({row}, {col}) already written via write_well().")
+        well_path = f"{row}/{col}"
         if well_path in self._wells:
             raise ValueError(f"Well '{well_path}' already added via add_well().")
 
-        # Check if well_path exists in plate metadata
-        valid_well_paths = [well.path for well in self._plate.plate.wells]
-        if well_path not in valid_well_paths:
-            raise ValueError(
-                f"Well path '{well_path}' not found in plate metadata. "
-                f"Valid wells are: {valid_well_paths}"
-            )
+        # If user provided a plate, validate against it
+        if self._user_plate is not None:
+            valid_well_paths = [well.path for well in self._user_plate.plate.wells]
+            if well_path not in valid_well_paths:
+                raise ValueError(
+                    f"Well path '{well_path}' not found in plate metadata. "
+                    f"Valid wells are: {valid_well_paths}"
+                )
 
     def _ensure_initialized(self) -> None:
-        """Create plate structure if not already done."""
+        """Create plate root directory if not already done.
+
+        Note: Plate zarr.json is created/updated by _update_plate_metadata(),
+        not here. This allows starting with zero wells.
+        """
         if self._initialized:
             return
 
-        # Create plate zarr.json
-        _create_zarr3_group(self._dest, self._plate, self._overwrite)
+        # Create root directory
+        self._dest.mkdir(parents=True, exist_ok=True)
+        self._initialized = True
 
-        # Create row directories with simple zarr.json
-        row_names = {well.path.split("/")[0] for well in self._plate.plate.wells}
+    def _generate_current_plate_metadata(self) -> Plate:
+        """Generate plate metadata from currently written wells.
+
+        If user provided a Plate, use that. Otherwise, auto-generate from
+        written wells (similar to write_plate auto-generation).
+        """
+        # If user provided a complete Plate, use it
+        if self._user_plate is not None:
+            return self._user_plate
+
+        # Auto-generate from written wells
+        # Convert written wells to the format expected by _autogenerate_plate_metadata
+        images_dict: dict[tuple[str, str, str], ImageWithDatasets] = {}
+        for (row, col), fields in self._written_wells_data.items():
+            for fov, image_data in fields.items():
+                images_dict[(row, col, fov)] = image_data
+
+        # Generate and merge with user-provided dict (if any)
+        return _merge_plate_metadata(images_dict, self._user_plate)
+
+    def _update_plate_metadata(self) -> None:
+        """Update plate zarr.json with current wells.
+
+        Similar to Bf2RawBuilder._update_ome_series(), this regenerates
+        the plate metadata from currently written wells and rewrites zarr.json.
+        """
+        plate = self._generate_current_plate_metadata()
+        zarr_json = {
+            "zarr_format": 3,
+            "node_type": "group",
+            "attributes": {
+                "ome": plate.model_dump(mode="json", exclude_none=True),
+            },
+        }
+        (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
+
+        # Create row directories if needed
+        row_names = {row for (row, _col) in self._written_wells_data.keys()} | {
+            row for row_path in self._wells.keys() for row in [row_path.split("/")[0]]
+        }
         for row_name in row_names:
             row_path = self._dest / row_name
-            _create_zarr3_group(row_path, ome_model=None, overwrite=self._overwrite)
-
-        self._initialized = True
+            if not row_path.exists():
+                _create_zarr3_group(row_path, ome_model=None, overwrite=self._overwrite)
 
     def _generate_well_metadata(self, well_path: str, field_names: list[str]) -> Well:
         """Generate Well metadata from field names.
@@ -1298,7 +1354,8 @@ class PlateBuilder:
 
         This method creates the well structure and writes all field data in one
         call. The plate structure and well metadata are created/updated
-        automatically. Use this for the "immediate write" workflow.
+        automatically. Plate metadata (rows, columns, wells) is auto-generated
+        from all written wells and rewritten after each call.
 
         Parameters
         ----------
@@ -1320,18 +1377,26 @@ class PlateBuilder:
         Raises
         ------
         ValueError
-            If row/col combination is not in the plate metadata, or if the well
-            was already written or added.
+            If row/col combination was already written or added, or if a user-
+            provided Plate doesn't include this well.
         NotImplementedError
             If any Image has multiple multiscales.
         """
-        well_path = f"{row}/{col}"
-        self._validate_well_path(well_path)
+        # Validate well hasn't been used
+        self._validate_well_coordinates(row, col)
 
         # Initialize plate structure if needed
         self._ensure_initialized()
 
+        # Track this well's data before writing
+        well_coords = (row, col)
+        self._written_wells_data[well_coords] = dict(fields)
+
+        # Update plate metadata with the new well
+        self._update_plate_metadata()
+
         # Generate Well metadata for this well
+        well_path = f"{row}/{col}"
         well_metadata = self._generate_well_metadata(well_path, list(fields.keys()))
 
         # Create well subgroup with metadata
@@ -1353,7 +1418,6 @@ class PlateBuilder:
                 progress=progress,
             )
 
-        self._written_wells.add(well_path)
         return self
 
     def add_well(
@@ -1388,15 +1452,17 @@ class PlateBuilder:
         Raises
         ------
         ValueError
-            If row/col combination is not in plate metadata, or if already
-            added/written, or if field datasets don't match Image metadata.
+            If row/col combination was already added/written, or if a user-
+            provided Plate doesn't include this well, or if field datasets
+            don't match Image metadata.
         NotImplementedError
             If any Image has multiple multiscales.
         """
-        well_path = f"{row}/{col}"
-        self._validate_well_path(well_path)
+        # Validate well hasn't been used
+        self._validate_well_coordinates(row, col)
 
         # Validate all fields before accepting
+        well_path = f"{row}/{col}"
         for fov, (image_model, datasets) in fields.items():
             if len(image_model.multiscales) != 1:
                 raise NotImplementedError(
@@ -1418,9 +1484,10 @@ class PlateBuilder:
     def prepare(self) -> tuple[Path, dict[str, Any]]:
         """Create the Zarr hierarchy and return array handles.
 
-        Creates the complete Plate structure including plate metadata, well
-        subgroups with Well metadata, and empty arrays for all registered
-        fields. Call this after registering all wells with `add_well()`.
+        Creates the complete Plate structure including plate metadata (auto-
+        generated from registered wells), well subgroups with Well metadata,
+        and empty arrays for all registered fields. Call this after registering
+        all wells with `add_well()`.
 
         The returned arrays support numpy-style indexing for writing data:
         `arrays["well/field/dataset"][:] = data`.
@@ -1445,8 +1512,18 @@ class PlateBuilder:
         if not self._wells:
             raise ValueError("No wells added. Use add_well() before prepare().")
 
+        # Generate plate metadata from registered wells
+        # Convert wells dict to the format expected by _autogenerate_plate_metadata
+        images_dict: dict[tuple[str, str, str], ImageWithDatasets] = {}
+        for well_path, fields in self._wells.items():
+            row, col = well_path.split("/")
+            for fov, image_data in fields.items():
+                images_dict[(row, col, fov)] = image_data
+
+        plate = _merge_plate_metadata(images_dict, self._user_plate)
+
         # Create plate zarr.json
-        _create_zarr3_group(self._dest, self._plate, self._overwrite)
+        _create_zarr3_group(self._dest, plate, self._overwrite)
 
         # Create arrays for each well/field combination
         all_arrays: dict[str, Any] = {}
