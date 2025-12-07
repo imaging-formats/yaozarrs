@@ -18,7 +18,7 @@ from yaozarrs._validate import from_uri, validate_ome_object
 from yaozarrs._zarr import ZarrArray, ZarrGroup
 from yaozarrs.v05._bf2raw import Bf2Raw
 from yaozarrs.v05._image import Image, Multiscale
-from yaozarrs.v05._label import LabelImage, LabelsGroup
+from yaozarrs.v05._label import LabelsGroup
 from yaozarrs.v05._plate import Plate
 from yaozarrs.v05._series import Series
 from yaozarrs.v05._well import Well
@@ -117,9 +117,7 @@ class StorageValidatorV05:
         loc_prefix = ("ome",)
 
         # Dispatch to appropriate visitor method based on metadata type
-        if isinstance(ome_metadata, LabelImage):
-            return validator.visit_label_image(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Image):
+        if isinstance(ome_metadata, Image):
             return validator.visit_image(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, LabelsGroup):
             return validator.visit_labels_group(zarr_group, ome_metadata, loc_prefix)
@@ -137,25 +135,29 @@ class StorageValidatorV05:
             )
 
     def visit_label_image(
-        self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
     ) -> ValidationResult:
-        """Validate a LabelImage group."""
+        """Validate label-specific metadata for an Image with image_label.
+
+        This should only be called for images where image_model.image_label is not None.
+        """
         result = ValidationResult()
 
         # The value of the source key MUST be a JSON object containing information
         # about the original image from which the label image derives. This object
         # MAY include a key image, whose value MUST be a string specifying the
         # relative path to a Zarr image group.
-        src = label_image_model.image_label.source
-        if src is not None and (src_img := src.image) is not None:
-            result = result.merge(
-                self._validate_labels_image_source(zarr_group, src_img, loc_prefix)
-            )
+        if image_model.image_label is not None:
+            src = image_model.image_label.source
+            if src is not None and (src_img := src.image) is not None:
+                result = result.merge(
+                    self._validate_labels_image_source(zarr_group, src_img, loc_prefix)
+                )
 
-        # For label images, validate integer data types
-        result = result.merge(
-            self._validate_label_data_types(label_image_model, zarr_group, loc_prefix)
-        )
+            # For label images, validate integer data types
+            result = result.merge(
+                self._validate_label_data_types(image_model, zarr_group, loc_prefix)
+            )
 
         return result
 
@@ -179,6 +181,12 @@ class StorageValidatorV05:
             # Note: datasets already prefetched above, no need to prefetch again
             result = result.merge(
                 self._visit_multiscale_no_prefetch(zarr_group, multiscale, ms_loc)
+            )
+
+        # If this is a label image, validate label-specific aspects
+        if image_model.image_label is not None:
+            result = result.merge(
+                self.visit_label_image(zarr_group, image_model, loc_prefix)
             )
 
         # Check whether this image has a labels group, and validate if so
@@ -301,20 +309,23 @@ class StorageValidatorV05:
                             },
                         )
 
-            if isinstance(label_image_model, LabelImage):
-                # Recursively validate the label image
-                result = result.merge(
-                    self.visit_label_image(label_group, label_image_model, label_loc)
-                )
-            else:
+            # Check if this is actually a label image (has image-label metadata)
+            if label_image_model.image_label is None:
                 # TODO: should it just be a warning?
                 result.add_error(
                     StorageErrorType.label_image_invalid,
                     label_loc,
                     f"Label path '{label_path}' contains Image metadata, "
-                    "but is not a LabelImage (missing 'image-label' metadata?)",
+                    "but is missing 'image-label' metadata",
                     ctx={"path": label_path, "type": type(label_image_model).__name__},
                 )
+                continue
+
+            # Recursively validate the label image
+            # Note: visit_image will validate multiscales AND label-specific aspects
+            result = result.merge(
+                self.visit_image(label_group, label_image_model, label_loc)
+            )
 
         return result
 
@@ -833,7 +844,7 @@ class StorageValidatorV05:
         return result
 
     def _validate_label_data_types(
-        self, image_model: LabelImage, zarr_group: ZarrGroup, loc_prefix: Loc
+        self, image_model: Image, zarr_group: ZarrGroup, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate that label arrays contain only integer data types."""
         result = ValidationResult()

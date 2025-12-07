@@ -9,6 +9,8 @@ from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
 from yaozarrs._units import SpaceUnits, TimeUnits
 
+from ._label import ImageLabel
+
 # ------------------------------------------------------------------------------
 # Axis model
 # ------------------------------------------------------------------------------
@@ -321,6 +323,19 @@ class Multiscale(_BaseModel):
 
 
 class Image(_BaseModel):
+    """Top-level OME-NGFF image metadata.
+
+    When `image_label` is present, this represents a label/segmentation image.
+    """
+
     version: Literal["0.5"] = "0.5"
     multiscales: Annotated[UniqueList[Multiscale], MinLen(1)]
     omero: Omero | None = None
+    image_label: ImageLabel | None = Field(
+        default=None,
+        alias="image-label",
+        description=(
+            "Label-specific metadata for segmentation images. "
+            "When present, indicates this is a label/segmentation image."
+        ),
+    )

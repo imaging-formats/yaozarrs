@@ -275,7 +275,7 @@ from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs.v05._bf2raw import Bf2Raw
 
 from ._image import Image
-from ._label import LabelImage, LabelsGroup
+from ._label import LabelsGroup
 from ._plate import Plate
 from ._series import Series
 from ._well import Well
@@ -283,8 +283,6 @@ from ._well import Well
 
 def _discriminate_ome_v05_metadata(v: Any) -> str | None:
     if isinstance(v, dict):
-        if "image-label" in v:
-            return "label-image"
         if "multiscales" in v:
             return "image"
         if "plate" in v:
@@ -298,8 +296,6 @@ def _discriminate_ome_v05_metadata(v: Any) -> str | None:
         if "series" in v:
             return "series"
     elif isinstance(v, BaseModel):
-        if isinstance(v, LabelImage):
-            return "label-image"
         if isinstance(v, Image):
             return "image"
         if isinstance(v, Plate):
@@ -317,8 +313,7 @@ def _discriminate_ome_v05_metadata(v: Any) -> str | None:
 
 OMEMetadata: TypeAlias = Annotated[
     (
-        Annotated[LabelImage, Tag("label-image")]
-        | Annotated[Image, Tag("image")]
+        Annotated[Image, Tag("image")]
         | Annotated[Plate, Tag("plate")]
         | Annotated[Bf2Raw, Tag("bf2raw")]
         | Annotated[Well, Tag("well")]

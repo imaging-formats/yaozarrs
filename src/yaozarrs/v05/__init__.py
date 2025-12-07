@@ -22,7 +22,6 @@ from ._image import (
 from ._label import (
     ImageLabel,
     LabelColor,
-    LabelImage,
     LabelProperty,
     LabelsGroup,
     LabelSource,
@@ -43,7 +42,6 @@ __all__ = [
     "Image",
     "ImageLabel",
     "LabelColor",
-    "LabelImage",
     "LabelProperty",
     "LabelSource",
     "LabelsGroup",
@@ -60,7 +58,6 @@ __all__ = [
     "PlateWell",
     "Row",
     "ScaleTransformation",
-    "Series",
     "Series",
     "SpaceAxis",
     "TimeAxis",
