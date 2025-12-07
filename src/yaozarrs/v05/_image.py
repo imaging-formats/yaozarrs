@@ -1,7 +1,13 @@
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Len, MinLen
-from pydantic import AfterValidator, Field, WrapValidator, model_validator
+from pydantic import (
+    AfterValidator,
+    Field,
+    WrapValidator,
+    model_serializer,
+    model_validator,
+)
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
@@ -339,3 +345,17 @@ class Image(_BaseModel):
             "When present, indicates this is a label/segmentation image."
         ),
     )
+
+    @model_serializer(mode="wrap")
+    def _serialize_model(self, serializer: Any, info: Any) -> dict[str, Any]:
+        """Custom serializer to exclude image-label when None or empty."""
+        data = serializer(self)
+        # Remove image-label if None or if all meaningful fields are None
+        if "image-label" in data:
+            image_label = data["image-label"]
+            if not image_label or (
+                isinstance(image_label, dict)
+                and not any(val for k, val in image_label.items() if k != "version")
+            ):
+                del data["image-label"]
+        return data

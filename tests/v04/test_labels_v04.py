@@ -124,7 +124,7 @@ V04_INVALID_LABELS = [
 @pytest.mark.parametrize("data", V04_VALID_LABELS)
 def test_valid_v04_labels(data: dict) -> None:
     """Test that valid v04 label metadata can be parsed."""
-    label = v04.LabelImage.model_validate(data)
+    label = v04.Image.model_validate(data)
     assert label.image_label is not None
 
 
@@ -214,11 +214,12 @@ V04_INVALID_LABELS_EXTENDED: list[tuple[dict, str]] = [
 
 # Convert V04_INVALID_LABELS to same format as v05, with better error patterns
 V04_INVALID_LABELS_WITH_MESSAGES: list[tuple[dict, str]] = [
-    # Missing image-label
+    # Missing multiscales (required for Image)
     ({}, "Field required"),
     # Invalid RGBA values (out of range)
     (
         {
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {
@@ -226,13 +227,14 @@ V04_INVALID_LABELS_WITH_MESSAGES: list[tuple[dict, str]] = [
                         "rgba": [256, 0, 0, 255],  # 256 is out of range
                     }
                 ]
-            }
+            },
         },
         "Input should be less than or equal to 255",
     ),
     # Invalid RGBA array length
     (
         {
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {
@@ -240,33 +242,38 @@ V04_INVALID_LABELS_WITH_MESSAGES: list[tuple[dict, str]] = [
                         "rgba": [255, 0, 0],  # Should be 4 elements
                     }
                 ]
-            }
+            },
         },
         "at least 4 items",
     ),
     # Empty colors array (should have minItems: 1)
-    ({"image-label": {"colors": []}}, "at least 1 item"),
+    ({"multiscales": MULTISCALES_2D, "image-label": {"colors": []}}, "at least 1 item"),
     # Empty properties array (should have minItems: 1)
-    ({"image-label": {"properties": []}}, "at least 1 item"),
+    (
+        {"multiscales": MULTISCALES_2D, "image-label": {"properties": []}},
+        "at least 1 item",
+    ),
     # Missing required label-value in colors
     (
         {
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"rgba": [255, 0, 0, 255]}  # Missing label-value
                 ]
-            }
+            },
         },
         "Field required",
     ),
     # Missing required label-value in properties
     (
         {
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "properties": [
                     {}  # Missing label-value
                 ]
-            }
+            },
         },
         "Field required",
     ),
@@ -282,4 +289,4 @@ V04_ALL_INVALID_LABELS: list[tuple[dict, str]] = (
 def test_invalid_v04_labels(obj: dict, msg: str) -> None:
     """Test that invalid v04 label metadata raises validation errors."""
     with pytest.raises(ValidationError, match=msg):
-        v04.LabelImage.model_validate(obj)
+        v04.Image.model_validate(obj)

@@ -24,7 +24,6 @@ from ._image import (
 from ._label import (
     ImageLabel,
     LabelColor,
-    LabelImage,
     LabelProperty,
     LabelSource,
 )
@@ -44,7 +43,6 @@ __all__ = [
     "Image",
     "ImageLabel",
     "LabelColor",
-    "LabelImage",
     "LabelProperty",
     "LabelSource",
     "Multiscale",
@@ -65,3 +63,7 @@ __all__ = [
     "Well",
     "WellDef",
 ]
+
+# Rebuild Image model now that ImageLabel is fully defined
+# This resolves the forward reference "ImageLabel | None" in Image.image_label
+Image.model_rebuild()
