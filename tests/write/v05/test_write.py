@@ -97,7 +97,6 @@ def make_multiscale_image(
         level_shape = (shape[0], shape[1] // scale_factor, shape[2] // scale_factor)
         data = np.random.rand(*level_shape).astype(np.float32)
         datasets_data.append(data)
-
         datasets_meta.append(
             v05.Dataset(
                 path=str(level),
@@ -132,45 +131,22 @@ def make_multiscale_image(
 
 
 @pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_basic(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test basic write_image with a single resolution level."""
-    dest = tmp_path / "test.zarr"
-    data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("basic_test", ndim=3)
+@pytest.mark.parametrize("ndim", [2, 3, 4])
+def test_write_image_dimensions(tmp_path: Path, writer: ZarrWriter, ndim: int) -> None:
+    """Test write_image with different dimensions (2D, 3D, 4D)."""
+    shapes = {2: (64, 64), 3: (2, 64, 64), 4: (5, 2, 32, 32)}
+    dest = tmp_path / f"test{ndim}d.zarr"
+    data = np.random.rand(*shapes[ndim]).astype(np.float32)
+    image = make_simple_image(f"test{ndim}d", ndim=ndim)
 
     result = write_image(dest, image, datasets=[data], writer=writer)
 
     assert result == dest
     assert dest.exists()
-    assert (dest / "zarr.json").exists()
-    assert (dest / "0").exists()
+    if ndim == 3:  # Only check these for basic case
+        assert (dest / "zarr.json").exists()
+        assert (dest / "0").exists()
 
-    yaozarrs.validate_zarr_store(dest)
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_2d(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_image with 2D data."""
-    dest = tmp_path / "test2d.zarr"
-    data = np.random.rand(64, 64).astype(np.float32)
-    image = make_simple_image("test2d", ndim=2)
-
-    result = write_image(dest, image, datasets=[data], writer=writer)
-
-    assert result == dest
-    yaozarrs.validate_zarr_store(dest)
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_4d(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_image with 4D data (TCYX)."""
-    dest = tmp_path / "test4d.zarr"
-    data = np.random.rand(5, 2, 32, 32).astype(np.float32)
-    image = make_simple_image("test4d", ndim=4)
-
-    result = write_image(dest, image, datasets=[data], writer=writer)
-
-    assert result == dest
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -191,52 +167,37 @@ def test_write_image_multiscale(tmp_path: Path, writer: ZarrWriter) -> None:
 
 
 @pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_custom_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_image with custom chunk shape."""
-    dest = tmp_path / "chunked.zarr"
-    data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("chunked", ndim=3)
-    custom_chunks = (1, 32, 32)
+@pytest.mark.parametrize(
+    ("chunks", "data_shape", "verify_chunks"),
+    [
+        ((1, 32, 32), (2, 64, 64), True),  # custom chunks
+        ("auto", (2, 256, 256), False),  # auto chunks
+        (None, (2, 32, 32), True),  # no chunks (single chunk = array shape)
+    ],
+    ids=["custom", "auto", "none"],
+)
+def test_write_image_chunks(
+    tmp_path: Path,
+    writer: ZarrWriter,
+    chunks,
+    data_shape: tuple[int, ...],
+    verify_chunks: bool,
+) -> None:
+    """Test write_image with different chunk configurations."""
+    dest = tmp_path / f"chunks_{chunks}.zarr"
+    data = np.random.rand(*data_shape).astype(np.float32)
+    image = make_simple_image("chunks_test", ndim=3)
 
-    write_image(dest, image, datasets=[data], chunks=custom_chunks, writer=writer)
-
-    yaozarrs.validate_zarr_store(dest)
-
-    # Verify chunks in metadata
-    with open(dest / "0" / "zarr.json") as fh:
-        arr_meta = json.load(fh)
-    chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
-    assert chunk_shape == list(custom_chunks)
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_auto_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_image with auto chunk calculation."""
-    dest = tmp_path / "auto_chunked.zarr"
-    data = np.random.rand(2, 256, 256).astype(np.float32)
-    image = make_simple_image("auto_chunked", ndim=3)
-
-    write_image(dest, image, datasets=[data], chunks="auto", writer=writer)
+    write_image(dest, image, datasets=[data], chunks=chunks, writer=writer)
 
     yaozarrs.validate_zarr_store(dest)
 
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_no_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_image with chunks=None (single chunk)."""
-    dest = tmp_path / "single_chunk.zarr"
-    data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image("single_chunk", ndim=3)
-
-    write_image(dest, image, datasets=[data], chunks=None, writer=writer)
-
-    yaozarrs.validate_zarr_store(dest)
-
-    # Verify chunks match full array shape
-    with open(dest / "0" / "zarr.json") as fh:
-        arr_meta = json.load(fh)
-    chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
-    assert chunk_shape == list(data.shape)
+    if verify_chunks:
+        with open(dest / "0" / "zarr.json") as fh:
+            arr_meta = json.load(fh)
+        chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
+        expected = list(chunks) if chunks is not None else list(data.shape)
+        assert chunk_shape == expected
 
 
 @pytest.mark.parametrize("writer", WRITERS)
@@ -479,18 +440,20 @@ def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
 
 
 @pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_different_dtypes(tmp_path: Path, writer: ZarrWriter) -> None:
+@pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.float32, np.float64])
+def test_write_image_different_dtypes(
+    tmp_path: Path, writer: ZarrWriter, dtype
+) -> None:
     """Test write_image with various data types."""
-    for dtype in [np.uint8, np.uint16, np.float32, np.float64]:
-        dest = tmp_path / f"dtype_{dtype.__name__}.zarr"
-        data = np.random.rand(2, 32, 32).astype(dtype)
-        if np.issubdtype(dtype, np.integer):
-            data = (data * 255).astype(dtype)
-        image = make_simple_image(f"dtype_{dtype.__name__}", ndim=3)
+    dest = tmp_path / f"dtype_{dtype.__name__}.zarr"
+    data = np.random.rand(2, 32, 32).astype(dtype)
+    if np.issubdtype(dtype, np.integer):
+        data = (data * 255).astype(dtype)
+    image = make_simple_image(f"dtype_{dtype.__name__}", ndim=3)
 
-        write_image(dest, image, datasets=[data], writer=writer)
+    write_image(dest, image, datasets=[data], writer=writer)
 
-        yaozarrs.validate_zarr_store(dest)
+    yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
