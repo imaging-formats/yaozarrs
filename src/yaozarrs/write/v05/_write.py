@@ -10,7 +10,8 @@ The general pattern is:
      use bioformats2raw layout with Bf2Raw model and write_bioformats2raw function.
 2. Create your OME-Zarr metadata model using the yaozarrs.v05 models.
 3. Decide whether to use high level write functions (write_image, write_plate, etc...)
-   or lower level prepare functions (prepare_image, etc...) for custom write logic.
+   or lower level prepare/Builder methods (`prepare_image`, `PlateBuilder`, etc...).
+   (Note: for Plates and Bf2Raw collections, lower level builders are recommended)
    - Use high level functions for simple one-shot writes, where you can provide the full
      data arrays up front (either as numpy, dask, etc...)
    - Use lower level prepare functions when you need to customize how data is written,
@@ -92,7 +93,8 @@ if TYPE_CHECKING:
             ...
 
     ArraySpec: TypeAlias = ArrayLike | tuple[DTypeLike, ShapeLike]
-    ImageWithDatasets: TypeAlias = tuple[Image, Sequence[ArrayLike]]
+    ArrayOrPyramid = ArrayLike | Sequence[ArrayLike]
+    ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
 
 
 __all__ = [
@@ -159,10 +161,38 @@ class CreateArrayFunc(Protocol):
 # ------------------------ High Level Write Functions --------------------------
 
 
+@overload
+def write_image(
+    dest: str | PathLike,
+    image: Image,
+    datasets: ArrayLike,
+    *,
+    writer: ZarrWriter = "auto",
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+    progress: bool = False,
+) -> Path: ...
+@overload
 def write_image(
     dest: str | PathLike,
     image: Image,
     datasets: Sequence[ArrayLike],
+    *,
+    writer: ZarrWriter = "auto",
+    chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
+    shards: tuple[int, ...] | None = None,
+    overwrite: bool = False,
+    compression: CompressionName = "blosc-zstd",
+    progress: bool = False,
+) -> Path: ...
+
+
+def write_image(
+    dest: str | PathLike,
+    image: Image,
+    datasets: ArrayOrPyramid,
     *,
     writer: ZarrWriter = "auto",
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -184,10 +214,13 @@ def write_image(
     image : Image
         OME-Zarr Image metadata model. Must have exactly one multiscale, with
         one Dataset entry per array in `datasets`.
-    datasets : Sequence[ArrayLike]
-        Data arrays to write (numpy, dask, or any array with shape/dtype).
-        Must be in the same order as `image.multiscales[0].datasets`.
-        For a multiscale pyramid, provide one array per resolution level.
+    datasets : ArrayOrPyramid
+        Data array(s) to write (numpy, dask, or any array with shape/dtype).
+        - For a single dataset, pass the array directly:
+          `write_image(dest, image, data)`
+        - For multiple datasets (e.g., multiscale pyramid), pass a sequence:
+          `write_image(dest, image, [data0, data1, ...])`
+        Must match the number and order of `image.multiscales[0].datasets`.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. "auto" prefers tensorstore if
         available, otherwise falls back to zarr-python. Pass a custom function
@@ -224,10 +257,9 @@ def write_image(
 
     Examples
     --------
-    Write a simple 3D image (CYX):
+    Write a simple 3D image (CYX) - single dataset, no list wrapping needed:
 
     >>> import numpy as np
-    >>> from pathlib import Path
     >>> from yaozarrs import v05
     >>> from yaozarrs.write.v05 import write_image
     >>>
@@ -251,7 +283,7 @@ def write_image(
     ...         )
     ...     ]
     ... )
-    >>> result = write_image("example.ome.zarr", image, [data])
+    >>> result = write_image("example.ome.zarr", image, data)
     >>> assert result.exists()
 
     See Also
@@ -263,6 +295,12 @@ def write_image(
         raise NotImplementedError("Image must have exactly one multiscale")
 
     multiscale = image.multiscales[0]
+
+    # Normalize datasets to a sequence
+    if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
+        datasets_seq: Sequence[ArrayLike] = [cast("ArrayLike", datasets)]
+    else:
+        datasets_seq = cast("Sequence[ArrayLike]", datasets)
 
     # Create arrays using prepare_image (handles both built-in and custom)
     dest_path, arrays = prepare_image(
@@ -277,7 +315,7 @@ def write_image(
     )
 
     # Write data to arrays
-    for data_array, dataset_meta in zip(datasets, multiscale.datasets):
+    for data_array, dataset_meta in zip(datasets_seq, multiscale.datasets):
         _write_to_array(arrays[dataset_meta.path], data_array, progress=progress)
 
     return dest_path
@@ -579,11 +617,12 @@ def write_bioformats2raw(
 # ------------------------ Lower Level Prepare Functions --------------------------
 
 
+# Overloads for single ArraySpec
 @overload
 def prepare_image(
     dest: str | PathLike,
     image: Image,
-    datasets: Sequence[ArraySpec],
+    datasets: ArraySpec | Sequence[ArraySpec],
     *,
     writer: Literal["zarr"],
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
@@ -595,7 +634,7 @@ def prepare_image(
 def prepare_image(
     dest: str | PathLike,
     image: Image,
-    datasets: Sequence[ArraySpec],
+    datasets: ArraySpec | Sequence[ArraySpec],
     *,
     writer: Literal["tensorstore"],
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
@@ -607,7 +646,7 @@ def prepare_image(
 def prepare_image(
     dest: str | PathLike,
     image: Image,
-    datasets: Sequence[ArraySpec],
+    datasets: ArraySpec | Sequence[ArraySpec],
     *,
     writer: Literal["auto"] | CreateArrayFunc = ...,
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
@@ -620,7 +659,7 @@ def prepare_image(
 def prepare_image(
     dest: str | PathLike,
     image: Image,
-    datasets: Sequence[ArraySpec],
+    datasets: ArraySpec | Sequence[ArraySpec],
     *,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
@@ -640,14 +679,17 @@ def prepare_image(
         Destination path for the Zarr group.
     image : Image
         OME-Zarr Image metadata model.
-    datasets : Sequence[ArraySpec]
-        Specifications for each dataset. Can be either:
+    datasets : ArraySpec | Sequence[ArraySpec]
+        Specification(s) for each dataset. Can be:
 
-        - Array-like objects with `shape` and `dtype` attributes
-          (numpy arrays, dask arrays, etc.)
-        - Tuples of `(dtype, shape)` for specifying without actual data
+        - Single ArraySpec: For one dataset, no wrapping needed
+        - Sequence[ArraySpec]: For multiple datasets (multiscale pyramid)
 
-        Must match the order of `image.multiscales[0].datasets`.
+        Each ArraySpec can be:
+        - Array-like object with `shape` and `dtype` (numpy, dask, etc.)
+        - Tuple of `(dtype, shape)` for specifying without actual data
+
+        Must match the number and order of `image.multiscales[0].datasets`.
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
@@ -685,10 +727,9 @@ def prepare_image(
 
     Examples
     --------
-    Create arrays and write data in chunks:
+    Create arrays and write data in chunks - single dataset, no list needed:
 
     >>> import numpy as np
-    >>> from pathlib import Path
     >>> from yaozarrs import v05
     >>> from yaozarrs.write.v05 import prepare_image
     >>> image = v05.Image(
@@ -709,9 +750,9 @@ def prepare_image(
     ...         )
     ...     ]
     ... )
-    >>> # Prepare with just shape/dtype (no data yet)
+    >>> # Prepare with just shape/dtype (no data yet) - no list wrapping!
     >>> path, arrays = prepare_image(
-    ...     "prepared.zarr", image, [(np.dtype("uint16"), (64, 64))]
+    ...     "prepared.zarr", image, (np.dtype("uint16"), (64, 64))
     ... )
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
@@ -726,9 +767,26 @@ def prepare_image(
 
     multiscale = image.multiscales[0]
 
-    if len(datasets) != len(multiscale.datasets):
+    # Normalize datasets to a sequence
+    datasets_seq: Sequence[ArraySpec]
+    # Check if it's a single (dtype, shape) tuple by looking for the pattern
+    if (
+        isinstance(datasets, tuple)
+        and len(datasets) == 2
+        and isinstance(datasets[1], tuple)
+    ):
+        # Single (dtype, shape) ArraySpec - wrap in a list
+        datasets_seq = [datasets]  # type: ignore[list-item]
+    elif hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
+        # Single ArrayLike object - wrap in a list
+        datasets_seq = [datasets]  # type: ignore[list-item]
+    else:
+        # Already a sequence
+        datasets_seq = datasets  # type: ignore[assignment]
+
+    if len(datasets_seq) != len(multiscale.datasets):
         raise ValueError(
-            f"Number of data arrays ({len(datasets)}) must match "
+            f"Number of data arrays ({len(datasets_seq)}) must match "
             f"number of datasets in metadata ({len(multiscale.datasets)})"
         )
 
@@ -743,7 +801,7 @@ def prepare_image(
 
     # Create arrays for each dataset
     arrays = {}
-    for array_spec, dataset_meta in zip(datasets, multiscale.datasets):
+    for array_spec, dataset_meta in zip(datasets_seq, multiscale.datasets):
         ds_path = dataset_meta.path
         if isinstance(array_spec, tuple) and len(array_spec) == 2:
             dtype, shape = array_spec
@@ -832,9 +890,9 @@ class Bf2RawBuilder:
     ...         ]
     ...     )
     >>> builder = Bf2RawBuilder("builder_immediate.zarr")
-    >>> builder.write_image("0", make_image(), [np.zeros((32, 32), dtype=np.uint16)])
+    >>> builder.write_image("0", make_image(), np.zeros((32, 32), dtype=np.uint16))
     <Bf2RawBuilder: 1 images>
-    >>> builder.write_image("1", make_image(), [np.zeros((16, 16), dtype=np.uint16)])
+    >>> builder.write_image("1", make_image(), np.zeros((16, 16), dtype=np.uint16))
     <Bf2RawBuilder: 2 images>
     >>> assert (builder.root_path / "0" / "zarr.json").exists()
 
@@ -843,9 +901,9 @@ class Bf2RawBuilder:
     >>> builder2 = Bf2RawBuilder("builder_prepare.zarr")
     >>> data1 = np.zeros((32, 32), dtype=np.uint16)
     >>> data2 = np.zeros((16, 16), dtype=np.uint16)
-    >>> builder2.add_series("0", make_image(), [data1])
+    >>> builder2.add_series("0", make_image(), data1)
     <Bf2RawBuilder: 1 images>
-    >>> builder2.add_series("1", make_image(), [data2])
+    >>> builder2.add_series("1", make_image(), data2)
     <Bf2RawBuilder: 2 images>
     >>> path, arrays = builder2.prepare()
     >>> arrays["0/0"][:] = data1  # Write data yourself
@@ -904,7 +962,7 @@ class Bf2RawBuilder:
         self,
         name: str,
         image: Image,
-        datasets: Sequence[ArrayLike],
+        datasets: ArrayOrPyramid,
         *,
         progress: bool = False,
     ) -> Self:
@@ -920,8 +978,9 @@ class Bf2RawBuilder:
             Series name (becomes the subgroup path, e.g., "0", "1").
         image : Image
             OME-Zarr Image metadata model for this series.
-        datasets : Sequence[ArrayLike]
-            Data arrays for each resolution level.
+        datasets : ArrayLike | Sequence[ArrayLike]
+            Data array(s) for each resolution level. For a single dataset,
+            pass the array directly without wrapping in a list.
         progress : bool, optional
             Show progress bar for dask arrays. Default is False.
 
@@ -964,7 +1023,7 @@ class Bf2RawBuilder:
         self,
         name: str,
         image: Image,
-        datasets: Sequence[ArrayLike],
+        datasets: ArrayOrPyramid,
     ) -> Self:
         """Add a series for the prepare-only workflow.
 
@@ -979,9 +1038,10 @@ class Bf2RawBuilder:
             Series name (becomes the subgroup path, e.g., "0", "1").
         image : Image
             OME-Zarr Image metadata model for this series.
-        datasets : Sequence[ArrayLike]
-            Array-like objects specifying shape and dtype for each resolution
-            level. These provide the array specifications; data is not written.
+        datasets : ArrayLike | Sequence[ArrayLike]
+            Array-like object(s) specifying shape and dtype for each resolution
+            level. For a single dataset, pass the array directly without
+            wrapping in a list.
 
         Returns
         -------
@@ -1004,13 +1064,24 @@ class Bf2RawBuilder:
             )
 
         multiscale = image.multiscales[0]
-        if len(datasets) != len(multiscale.datasets):
+
+        # Normalize datasets to a sequence
+        datasets_seq: Sequence[ArrayLike]
+        if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
+            # Single array - wrap in a list
+            datasets_seq = [datasets]  # type: ignore[list-item]
+        else:
+            # Already a sequence
+            datasets_seq = datasets  # type: ignore[assignment]
+
+        if len(datasets_seq) != len(multiscale.datasets):
             raise ValueError(
-                f"Series '{name}': Number of data arrays ({len(datasets)}) must match "
-                f"number of datasets in metadata ({len(multiscale.datasets)})"
+                f"Series '{name}': Number of data arrays ({len(datasets_seq)}) "
+                f"must match number of datasets in metadata "
+                f"({len(multiscale.datasets)})"
             )
 
-        self._series[name] = (image, datasets)
+        self._series[name] = (image, datasets_seq)
         return self
 
     def prepare(self) -> tuple[Path, dict[str, Any]]:
@@ -1181,13 +1252,13 @@ class PlateBuilder:
     >>> builder.write_well(
     ...     row="A",
     ...     col="1",
-    ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
+    ...     fields={"0": (make_image(), np.zeros((32, 32), dtype=np.uint16))},
     ... )
     <PlateBuilder: 1 wells>
     >>> builder.write_well(
     ...     row="A",
     ...     col="2",
-    ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
+    ...     fields={"0": (make_image(), np.zeros((32, 32), dtype=np.uint16))},
     ... )
     <PlateBuilder: 2 wells>
     >>> assert (builder.root_path / "zarr.json").exists()  # Plate metadata auto-updated
@@ -1205,7 +1276,7 @@ class PlateBuilder:
     >>> builder2.write_well(
     ...     row="A",
     ...     col="1",
-    ...     fields={"0": (make_image(), [np.zeros((32, 32), dtype=np.uint16)])},
+    ...     fields={"0": (make_image(), np.zeros((32, 32), dtype=np.uint16))},
     ... )
     <PlateBuilder: 1 wells>
 
@@ -1374,8 +1445,11 @@ class PlateBuilder:
         col : str
             Column name like "1", "2", etc.
         fields : Mapping[str, ImageWithDatasets]
-            Mapping of `{fov -> (image_model, datasets)}` where fov is the
-            field of view identifier like "0", "1", etc.
+            Mapping of `{fov -> (image_model, datasets)}` where:
+            - fov: Field of view identifier like "0", "1", etc.
+            - datasets can be:
+              - Single array (for one dataset): `{"0": (image, data)}`
+              - Sequence (for multiple datasets): `{"0": (image, [data1, data2])}`
         progress : bool, optional
             Show progress bar for dask arrays. Default is False.
 
@@ -1398,9 +1472,23 @@ class PlateBuilder:
         # Initialize plate structure if needed
         self._ensure_initialized()
 
+        # Normalize fields (convert single arrays to sequences)
+        normalized_fields: dict[str, ImageWithDatasets] = {}
+        for fov, (image_model, datasets) in fields.items():
+            # Normalize datasets to a sequence
+            datasets_seq: Sequence[ArrayLike]
+            if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
+                # Single array - wrap in a list
+                datasets_seq = [datasets]  # type: ignore[list-item]
+            else:
+                # Already a sequence
+                datasets_seq = datasets  # type: ignore[assignment]
+
+            normalized_fields[fov] = (image_model, datasets_seq)
+
         # Track this well's data before writing
         well_coords = (row, col)
-        self._written_wells_data[well_coords] = dict(fields)
+        self._written_wells_data[well_coords] = normalized_fields
 
         # Update plate metadata with the new well
         self._update_plate_metadata()
@@ -1414,12 +1502,12 @@ class PlateBuilder:
         _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
 
         # Write each field image
-        for fov, (image_model, datasets) in fields.items():
+        for fov, (image_model, datasets_seq) in normalized_fields.items():
             field_path = well_group_path / fov
             write_image(
                 field_path,
                 image_model,
-                datasets,
+                datasets_seq,
                 writer=self._writer,
                 chunks=self._chunks,
                 shards=self._shards,
@@ -1451,8 +1539,9 @@ class PlateBuilder:
         col : str
             Column name like "1", "2", etc.
         fields : Mapping[str, ImageWithDatasets]
-            Mapping of `{fov -> (image_model, datasets)}` where datasets can
-            be array-like objects or (dtype, shape) tuples.
+            Mapping of `{fov -> (image_model, datasets)}` where datasets can be:
+            - Single array (for one dataset): `(image, data)`
+            - Sequence of arrays (for multiple datasets): `(image, [data1, data2])`
 
         Returns
         -------
@@ -1471,8 +1560,10 @@ class PlateBuilder:
         # Validate well hasn't been used
         self._validate_well_coordinates(row, col)
 
-        # Validate all fields before accepting
+        # Validate and normalize all fields before accepting
         well_path = f"{row}/{col}"
+        normalized_fields: dict[str, ImageWithDatasets] = {}
+
         for fov, (image_model, datasets) in fields.items():
             if len(image_model.multiscales) != 1:
                 raise NotImplementedError(
@@ -1481,14 +1572,26 @@ class PlateBuilder:
                 )
 
             multiscale = image_model.multiscales[0]
-            if len(datasets) != len(multiscale.datasets):
+
+            # Normalize datasets to a sequence
+            datasets_seq: Sequence[ArrayLike]
+            if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
+                # Single array - wrap in a list
+                datasets_seq = [datasets]  # type: ignore[list-item]
+            else:
+                # Already a sequence
+                datasets_seq = datasets  # type: ignore[assignment]
+
+            if len(datasets_seq) != len(multiscale.datasets):
                 raise ValueError(
                     f"Well '{well_path}', field '{fov}': "
-                    f"Number of data arrays ({len(datasets)}) must match "
+                    f"Number of data arrays ({len(datasets_seq)}) must match "
                     f"number of datasets in metadata ({len(multiscale.datasets)})"
                 )
 
-        self._wells[well_path] = dict(fields)
+            normalized_fields[fov] = (image_model, datasets_seq)
+
+        self._wells[well_path] = normalized_fields
         return self
 
     def prepare(self) -> tuple[Path, dict[str, Any]]:
