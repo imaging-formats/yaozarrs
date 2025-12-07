@@ -24,7 +24,6 @@ from ._image import (
 from ._label import (
     ImageLabel,
     LabelColor,
-    LabelImage,
     LabelProperty,
     LabelSource,
 )
@@ -44,7 +43,6 @@ __all__ = [
     "Image",
     "ImageLabel",
     "LabelColor",
-    "LabelImage",
     "LabelProperty",
     "LabelSource",
     "Multiscale",

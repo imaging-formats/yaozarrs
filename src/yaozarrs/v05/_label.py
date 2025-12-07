@@ -6,8 +6,6 @@ from pydantic import Field
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
 
-from ._image import Image
-
 # ------------------------------------------------------------------------------
 # Color model
 # ------------------------------------------------------------------------------
@@ -92,14 +90,3 @@ class LabelsGroup(_BaseModel):
     labels: Annotated[list[str], MinLen(1)] = Field(
         description="Array of paths to labeled multiscale images"
     )
-
-
-# ------------------------------------------------------------------------------
-# Label model (top-level for individual label images)
-# ------------------------------------------------------------------------------
-
-
-class LabelImage(Image):
-    """Model for individual label images with multiscales + image-label metadata."""
-
-    image_label: ImageLabel = Field(alias="image-label")

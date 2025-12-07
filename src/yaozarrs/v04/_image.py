@@ -1,13 +1,21 @@
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Len, MinLen
-from pydantic import AfterValidator, Field, WrapValidator, model_validator
+from pydantic import (
+    AfterValidator,
+    Field,
+    WrapValidator,
+    model_serializer,
+    model_validator,
+)
 from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
 from yaozarrs._units import SpaceUnits, TimeUnits
+
+from ._label import ImageLabel
 
 # ------------------------------------------------------------------------------
 # Axis model
@@ -250,3 +258,19 @@ class Multiscale(_BaseModel):
 class Image(ZarrGroupModel):
     multiscales: Annotated[UniqueList[Multiscale], MinLen(1)]
     omero: Omero | None = None
+    image_label: ImageLabel | None = Field(
+        default=None,
+        alias="image-label",
+        description=(
+            "Label-specific metadata for segmentation images. "
+            "When present, indicates this is a label/segmentation image."
+        ),
+    )
+
+    @model_serializer(mode="wrap")
+    def _serialize_model(self, serializer: Any, info: Any) -> dict[str, Any]:
+        """Custom serializer to exclude image-label when None or empty."""
+        data = serializer(self)
+        if "image-label" in data and not data["image-label"]:
+            del data["image-label"]
+        return data

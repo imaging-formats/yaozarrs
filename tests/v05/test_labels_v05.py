@@ -111,7 +111,7 @@ V05_VALID_LABELS_GROUPS = [
 
 @pytest.mark.parametrize("obj", V05_VALID_LABEL_IMAGES)
 def test_valid_v05_labels(obj: dict) -> None:
-    validate_ome_object(obj, v05.LabelImage)
+    validate_ome_object(obj, v05.Image)
 
 
 @pytest.mark.parametrize("obj", V05_VALID_LABELS_GROUPS)
@@ -125,6 +125,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"label-value": 1, "rgba": [256, 0, 0, 255]},  # 256 > 255
@@ -136,6 +137,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"label-value": 1, "rgba": [-1, 0, 0, 255]},  # -1 < 0
@@ -148,6 +150,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"label-value": 1, "rgba": [255, 0, 0]},  # only 3 values
@@ -159,6 +162,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"label-value": 1, "rgba": [255, 0, 0, 255, 128]},  # 5 values
@@ -171,6 +175,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [],  # empty
             },
@@ -181,6 +186,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "properties": [],  # empty
             },
@@ -191,6 +197,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [COLOR_1, COLOR_1],  # duplicate
             },
@@ -201,6 +208,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "properties": [PROPERTY_1, PROPERTY_1],  # duplicate
             },
@@ -211,6 +219,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"rgba": [255, 0, 0, 255]},  # missing label-value
@@ -223,6 +232,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "properties": [
                     {},  # missing label-value
@@ -235,6 +245,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "properties": [
                     {"label-value": 1.5},  # float not allowed for properties
@@ -247,6 +258,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
     (
         {
             "version": "0.5",
+            "multiscales": MULTISCALES_2D,
             "image-label": {
                 "colors": [
                     {"label-value": 1, "rgba": [255.5, 0, 0, 255]},  # float not int
@@ -261,7 +273,7 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
 @pytest.mark.parametrize("obj, msg", V05_INVALID_LABELS)
 def test_invalid_v05_labels(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=msg):
-        v05.LabelImage.model_validate(obj)
+        v05.Image.model_validate(obj)
 
 
 V05_INVALID_LABELS_GROUPS: list[tuple[dict, str]] = [
