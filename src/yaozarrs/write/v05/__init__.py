@@ -2,6 +2,7 @@
 
 from ._write import (
     Bf2RawBuilder,
+    LabelsBuilder,
     PlateBuilder,
     prepare_image,
     write_bioformats2raw,
@@ -11,6 +12,7 @@ from ._write import (
 
 __all__ = [
     "Bf2RawBuilder",
+    "LabelsBuilder",
     "PlateBuilder",
     "prepare_image",
     "write_bioformats2raw",

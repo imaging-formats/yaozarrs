@@ -46,6 +46,7 @@ from typing import (
 from typing_extensions import Self
 
 from yaozarrs.v05._bf2raw import Bf2Raw
+from yaozarrs.v05._label import LabelImage, LabelsGroup
 from yaozarrs.v05._series import Series
 from yaozarrs.v05._well import FieldOfView, Well, WellDef
 
@@ -59,6 +60,7 @@ if TYPE_CHECKING:
     from typing_extensions import Literal, TypeAlias
 
     from yaozarrs.v05._image import Image
+    from yaozarrs.v05._label import LabelImage
     from yaozarrs.v05._plate import Plate
     from yaozarrs.v05._zarr_json import OMEMetadata
 
@@ -99,10 +101,12 @@ if TYPE_CHECKING:
     ArraySpec: TypeAlias = ArrayLike | tuple[DTypeLike, ShapeLike]
     ArrayOrPyramid = ArrayLike | Sequence[ArrayLike]
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
+    LabelsMapping: TypeAlias = Mapping[str, tuple[LabelImage, ArrayOrPyramid]]
 
 
 __all__ = [
     "Bf2RawBuilder",
+    "LabelsBuilder",
     "PlateBuilder",
     "prepare_image",
     "write_bioformats2raw",
@@ -177,6 +181,7 @@ def write_image(
     overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
     progress: bool = False,
+    labels: LabelsMapping | None = None,
 ) -> Path: ...
 @overload
 def write_image(
@@ -190,6 +195,7 @@ def write_image(
     overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
     progress: bool = False,
+    labels: LabelsMapping | None = None,
 ) -> Path: ...
 
 
@@ -204,6 +210,7 @@ def write_image(
     overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
     progress: bool = False,
+    labels: LabelsMapping | None = None,
 ) -> Path:
     """Write an OME-Zarr v0.5 Image group with data.
 
@@ -242,6 +249,10 @@ def write_image(
         shuffle filter. "zstd" uses raw zstd without blosc container.
     progress : bool, optional
         Show progress bar when writing dask arrays. Default is False.
+    labels : Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None, optional
+        Optional label images to write alongside the image. Keys are label names
+        (e.g., "cells", "nuclei"), values are (LabelImage, datasets) tuples.
+        Labels will be written to `dest/labels/{name}/`. Default is None.
 
     Returns
     -------
@@ -261,7 +272,7 @@ def write_image(
 
     Examples
     --------
-    Write a simple 3D image (CYX) - single dataset, no list wrapping needed:
+    Write a simple 3D image (CYX) - single dataset:
 
     >>> import numpy as np
     >>> from yaozarrs import v05
@@ -289,6 +300,28 @@ def write_image(
     ... )
     >>> result = write_image("example.ome.zarr", image, data)
     >>> assert result.exists()
+
+    Write a 3D image (CYX) with associated labels:
+
+    >>> # Create label images for segmentation
+    >>> cells_label = v05.LabelImage(
+    ...     **image.model_dump(),
+    ...     image_label={"colors": [{"label_value": 1, "rgba": [255, 0, 0, 255]}]},
+    ... )
+    >>> cells_data = np.zeros((2, 64, 64), dtype=np.uint8)
+    >>> nuclei_label = v05.LabelImage(**image.model_dump(), image_label={})
+    >>> nuclei_data = np.zeros((2, 64, 64), dtype=np.uint8)
+    >>> result = write_image(
+    ...     "example.ome.zarr",
+    ...     image,
+    ...     data,
+    ...     labels={
+    ...         "cells": (cells_label, cells_data),
+    ...         "nuclei": (nuclei_label, nuclei_data),
+    ...     },
+    ...     overwrite=True,
+    ... )
+    >>> assert (result / "labels" / "cells" / "0" / "zarr.json").exists()
 
     See Also
     --------
@@ -321,6 +354,21 @@ def write_image(
     # Write data to arrays
     for data_array, dataset_meta in zip(datasets_seq, multiscale.datasets):
         _write_to_array(arrays[dataset_meta.path], data_array, progress=progress)
+
+    # Write labels if provided
+    if labels:
+        labels_builder = LabelsBuilder(
+            dest_path / "labels",
+            writer=writer,
+            chunks=chunks,
+            shards=shards,
+            overwrite=overwrite,
+            compression=compression,
+        )
+        for label_name, (label_image, label_datasets) in labels.items():
+            labels_builder.write_label(
+                label_name, label_image, label_datasets, progress=progress
+            )
 
     return dest_path
 
@@ -1674,6 +1722,343 @@ class PlateBuilder:
                     all_arrays[composite_key] = arr
 
         return self._dest, all_arrays
+
+
+class LabelsBuilder:
+    """Builder for labels groups within an Image.
+
+    The labels group structure includes:
+    - A labels group with LabelsGroup metadata listing all label names
+    - Each label as a separate LabelImage subgroup (e.g., `cells/`, `nuclei/`)
+
+    This builder supports two workflows:
+
+    1. **Immediate write** (simpler): Use `write_label()` to write each label
+       with its data immediately. The builder auto-generates and updates
+       LabelsGroup metadata after each call.
+
+    2. **Prepare-only** (flexible): Use `add_label()` to register all labels,
+       then `prepare()` to create the hierarchy with empty arrays. Write data
+       to the returned array handles yourself.
+
+    Parameters
+    ----------
+    dest : str | PathLike
+        Destination path for the labels Zarr group (typically `image_path/labels`).
+    writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
+        Backend to use for writing arrays. Default is "auto".
+    chunks : tuple[int, ...] | "auto" | None, optional
+        Chunk shape for all arrays. Default is "auto".
+    shards : tuple[int, ...] | None, optional
+        Shard shape for Zarr v3 sharding. Default is None (no sharding).
+    overwrite : bool, optional
+        If True, overwrite existing groups. Default is False.
+    compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
+        Compression codec. Default is "blosc-zstd".
+
+    Examples
+    --------
+    **Immediate write workflow:**
+
+    >>> import numpy as np
+    >>> from yaozarrs import v05
+    >>> from yaozarrs.write.v05 import LabelsBuilder
+    >>> def make_label_image():
+    ...     return v05.LabelImage(
+    ...         multiscales=[
+    ...             v05.Multiscale(
+    ...                 axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
+    ...                 datasets=[
+    ...                     v05.Dataset(
+    ...                         path="0",
+    ...                         coordinateTransformations=[
+    ...                             v05.ScaleTransformation(scale=[1.0, 1.0])
+    ...                         ],
+    ...                     )
+    ...                 ],
+    ...             )
+    ...         ],
+    ...         image_label=v05.ImageLabel(),
+    ...     )
+    >>> builder = LabelsBuilder("my_image.zarr/labels")
+    >>> builder.write_label(
+    ...     "cells", make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+    ... )
+    <LabelsBuilder: 1 labels>
+    >>> builder.write_label(
+    ...     "nuclei", make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+    ... )
+    <LabelsBuilder: 2 labels>
+
+    **Prepare-only workflow:**
+
+    >>> builder2 = LabelsBuilder("my_image2.zarr/labels")
+    >>> builder2.add_label(
+    ...     "cells", make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+    ... )
+    <LabelsBuilder: 1 labels>
+    >>> path, arrays = builder2.prepare()
+    >>> arrays["cells/0"][:] = np.random.randint(0, 10, (64, 64), dtype=np.uint32)
+
+    See Also
+    --------
+    write_image : High-level function with labels parameter for writing everything at
+    once.
+    """
+
+    def __init__(
+        self,
+        dest: str | PathLike,
+        *,
+        writer: ZarrWriter = "auto",
+        chunks: ShapeLike | Literal["auto"] | None = "auto",
+        shards: ShapeLike | None = None,
+        overwrite: bool = False,
+        compression: CompressionName = "blosc-zstd",
+    ) -> None:
+        self._dest = Path(dest)
+        self._writer: ZarrWriter = writer
+        self._chunks: ShapeLike | Literal["auto"] | None = chunks
+        self._shards = shards
+        self._overwrite = overwrite
+        self._compression: CompressionName = compression
+
+        # For prepare-only workflow: {label_name: (LabelImage, datasets)}
+        self._labels: dict[str, tuple[LabelImage, ArrayOrPyramid]] = {}
+
+        # For immediate write workflow
+        self._initialized = False
+        self._written_labels: list[str] = []
+
+    @property
+    def root_path(self) -> Path:
+        """Path to the labels group."""
+        return self._dest
+
+    def __repr__(self) -> str:
+        total_labels = len(self._labels) + len(self._written_labels)
+        return f"<{self.__class__.__name__}: {total_labels} labels>"
+
+    def _validate_label_name(self, name: str) -> None:
+        if name in self._written_labels:
+            raise ValueError(f"Label '{name}' already written via write_label().")
+        if name in self._labels:
+            raise ValueError(f"Label '{name}' already added via add_label().")
+
+    def write_label(
+        self,
+        name: str,
+        label_image: LabelImage,
+        datasets: ArrayOrPyramid,
+        *,
+        progress: bool = False,
+    ) -> Self:
+        """Write a label immediately with its data.
+
+        This method creates the label structure and writes data in one call.
+        The labels group structure and LabelsGroup metadata are created/updated
+        automatically. Use this for the "immediate write" workflow.
+
+        Parameters
+        ----------
+        name : str
+            Label name (becomes the subgroup path, e.g., "cells", "nuclei").
+        label_image : LabelImage
+            OME-Zarr LabelImage metadata model for this label.
+        datasets : ArrayLike | Sequence[ArrayLike]
+            Data array(s) for each resolution level. For a single dataset,
+            pass the array directly without wrapping in a list.
+        progress : bool, optional
+            Show progress bar for dask arrays. Default is False.
+
+        Returns
+        -------
+        Self
+            The builder instance (for method chaining).
+
+        Raises
+        ------
+        ValueError
+            If a label with this name was already written or added.
+        NotImplementedError
+            If the LabelImage has multiple multiscales.
+        """
+        self._validate_label_name(name)
+
+        # Initialize labels group structure if needed
+        self._ensure_initialized()
+
+        # Update labels/zarr.json with this label
+        self._update_labels_group(name)
+
+        # Write the label using the existing write_image function
+        # (LabelImage is a subclass of Image)
+        write_image(
+            self._dest / name,
+            label_image,
+            datasets,
+            writer=self._writer,
+            chunks=self._chunks,
+            shards=self._shards,
+            overwrite=self._overwrite,
+            compression=self._compression,
+            progress=progress,
+        )
+
+        return self
+
+    def add_label(
+        self,
+        name: str,
+        label_image: LabelImage,
+        datasets: ArrayOrPyramid,
+    ) -> Self:
+        """Add a label for the prepare-only workflow.
+
+        Registers a label to be created when `prepare()` is called. Use this
+        when you want to create the Zarr structure without writing data
+        immediately. After calling `prepare()`, write data to the returned
+        array handles.
+
+        Parameters
+        ----------
+        name : str
+            Label name (becomes the subgroup path, e.g., "cells", "nuclei").
+        label_image : LabelImage
+            OME-Zarr LabelImage metadata model for this label.
+        datasets : ArrayLike | Sequence[ArrayLike]
+            Array-like object(s) specifying shape and dtype for each resolution
+            level. For a single dataset, pass the array directly without
+            wrapping in a list.
+
+        Returns
+        -------
+        Self
+            The builder instance (for method chaining).
+
+        Raises
+        ------
+        ValueError
+            If a label with this name was already added or written, or if the
+            number of datasets doesn't match the metadata.
+        NotImplementedError
+            If the LabelImage has multiple multiscales.
+        """
+        self._validate_label_name(name)
+
+        if len(label_image.multiscales) != 1:
+            raise NotImplementedError(
+                f"Label '{name}': LabelImage must have exactly one multiscale"
+            )
+
+        multiscale = label_image.multiscales[0]
+
+        # Normalize datasets to a sequence
+        datasets_seq: Sequence[ArrayLike]
+        if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
+            # Single array - wrap in a list
+            datasets_seq = [datasets]  # type: ignore[list-item]
+        else:
+            # Already a sequence
+            datasets_seq = datasets  # type: ignore[assignment]
+
+        if len(datasets_seq) != len(multiscale.datasets):
+            raise ValueError(
+                f"Label '{name}': Number of data arrays ({len(datasets_seq)}) "
+                f"must match number of datasets in metadata "
+                f"({len(multiscale.datasets)})"
+            )
+
+        self._labels[name] = (label_image, datasets_seq)
+        return self
+
+    def prepare(self) -> tuple[Path, dict[str, Any]]:
+        """Create the Zarr hierarchy and return array handles.
+
+        Creates the complete labels group structure including LabelsGroup
+        metadata, and empty arrays for all registered labels. Call this after
+        registering all labels with `add_label()`.
+
+        The returned arrays support numpy-style indexing for writing data:
+        `arrays["label_name/dataset"][:] = data`.
+
+        Returns
+        -------
+        tuple[Path, dict[str, Any]]
+            A tuple of (root_path, arrays) where `arrays` maps composite keys
+            like `"cells/0"` (label name / dataset path) to array objects. The
+            array type depends on the configured writer (zarr.Array or
+            tensorstore.TensorStore).
+
+        Raises
+        ------
+        ValueError
+            If no labels have been added with `add_label()`.
+        FileExistsError
+            If destination exists and `overwrite` is False.
+        ImportError
+            If no suitable writer backend is installed.
+        """
+        if not self._labels:
+            raise ValueError("No labels added. Use add_label() before prepare().")
+
+        # Create labels/zarr.json with LabelsGroup metadata
+        labels_group = LabelsGroup(labels=list(self._labels.keys()))
+        _create_zarr3_group(self._dest, labels_group, self._overwrite)
+
+        # Create arrays for each label using prepare_image
+        all_arrays: dict[str, Any] = {}
+        for label_name, (label_image, datasets) in self._labels.items():
+            _label_path, label_arrays = prepare_image(
+                self._dest / label_name,
+                label_image,
+                datasets,
+                chunks=self._chunks,
+                shards=self._shards,
+                writer=self._writer,
+                overwrite=self._overwrite,
+                compression=self._compression,
+            )
+            # Flatten into all_arrays with "label_name/dataset" keys
+            for dataset_path, arr in label_arrays.items():
+                all_arrays[f"{label_name}/{dataset_path}"] = arr
+
+        return self._dest, all_arrays
+
+    def _ensure_initialized(self) -> None:
+        """Create labels group directory if not already done.
+
+        Note: labels/zarr.json is created/updated by _update_labels_group(),
+        not here. This allows starting with zero labels.
+        """
+        if self._initialized:
+            return
+
+        # Create root directory
+        self._dest.mkdir(parents=True, exist_ok=True)
+        self._initialized = True
+
+    def _update_labels_group(self, label_name: str) -> None:
+        """Update labels/zarr.json with new label name.
+
+        Similar to Bf2RawBuilder._update_ome_series(), this regenerates
+        the LabelsGroup metadata from currently written labels and rewrites
+        zarr.json.
+        """
+        if label_name in self._written_labels:
+            # already added ... this is an internal method, don't need to raise
+            return  # pragma: no cover
+
+        self._written_labels.append(label_name)
+        labels_group = LabelsGroup(labels=self._written_labels)
+        zarr_json = {
+            "zarr_format": 3,
+            "node_type": "group",
+            "attributes": {
+                "ome": labels_group.model_dump(mode="json", exclude_none=True),
+            },
+        }
+        (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
 
 
 # ######################## Internal Helpers ####################################

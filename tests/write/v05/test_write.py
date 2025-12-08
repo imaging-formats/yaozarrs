@@ -1025,3 +1025,7 @@ def test_write_doctests_parametrized(
     if runner.failures > 0:
         captured = capsys.readouterr().out.split("******************")[-1]
         pytest.fail(f"Doctest {case.name} failed:\n\n{captured}")
+
+    for result in tmp_path.glob("*.zarr"):
+        if result.is_dir() and (result / "zarr.json").exists():
+            yaozarrs.validate_zarr_store(result)
