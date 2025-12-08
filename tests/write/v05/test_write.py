@@ -6,6 +6,7 @@ import doctest
 import importlib.metadata
 import importlib.util
 import json
+import math
 from typing import TYPE_CHECKING
 
 import pytest
@@ -698,7 +699,7 @@ def test_write_plate_overwrite(tmp_path: Path, writer: ZarrWriter) -> None:
 def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test prepare_image with frame-by-frame streaming writes (microscope pattern)."""
     dest = tmp_path / "streaming_5d.zarr"
-    shape = (2, 3, 4, 16, 16)  # TCZYX
+    (nt, nc, nz, *_) = shape = (2, 3, 4, 16, 16)  # TCZYX
     image = _make_image(
         "streaming_test", {"t": 100.0, "c": 1.0, "z": 1.0, "y": 0.5, "x": 0.5}
     )
@@ -708,16 +709,12 @@ def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> N
     # Simulate microscope acquiring frames one at a time
     reference = np.zeros(shape, dtype="uint16")
     frame_count = 0
-    for t in range(shape[0]):
-        for c in range(shape[1]):
-            for z in range(shape[2]):
-                frame = np.full((16, 16), frame_count, dtype="uint16")
-                reference[t, c, z] = frame
-                arr[t, c, z, :, :] = frame
-                frame_count += 1
+    for idx in np.ndindex(nt, nc, nz):
+        arr[idx] = reference[idx] = np.full((16, 16), frame_count, dtype="uint16")
+        frame_count += 1
 
-    assert frame_count == shape[0] * shape[1] * shape[2]
-    np.testing.assert_array_equal(np.asarray(arr[:]), reference)
+    assert frame_count == math.prod(shape[:-2])
+    np.testing.assert_array_equal(arr, reference)
     yaozarrs.validate_zarr_store(dest)
 
 
