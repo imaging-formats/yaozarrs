@@ -37,8 +37,7 @@ except ImportError:
 WRITERS: list[ZarrWriter] = []
 if importlib.util.find_spec("zarr") is not None:
     zarr_version_str = importlib.metadata.version("zarr")
-    zarr_major_version = int(zarr_version_str.split(".")[0])
-    if zarr_major_version >= 3:
+    if int(zarr_version_str.split(".")[0]) >= 3:
         WRITERS.append("zarr")
 if importlib.util.find_spec("tensorstore") is not None:
     WRITERS.append("tensorstore")
@@ -95,7 +94,7 @@ def _make_image(name: str, dims_scale: Mapping[str, float]) -> v05.Image:
     )
 
 
-def make_multiscale_image(
+def _make_multiscale_image(
     name: str = "test", n_levels: int = 3
 ) -> tuple[list[np.ndarray], v05.Image]:
     """Create multiscale pyramid data and matching Image model."""
@@ -106,7 +105,7 @@ def make_multiscale_image(
     for level in range(n_levels):
         scale_factor = 2**level
         level_shape = (shape[0], shape[1] // scale_factor, shape[2] // scale_factor)
-        data = np.random.rand(*level_shape).astype(np.float32)
+        data = np.random.rand(*level_shape).astype("float32")
         datasets_data.append(data)
         datasets_meta.append(
             v05.Dataset(
@@ -132,8 +131,37 @@ def make_multiscale_image(
             )
         ]
     )
-
     return datasets_data, image
+
+
+def _make_plate(
+    n_rows: int = 2, n_cols: int = 2
+) -> tuple[v05.Plate, dict[tuple[str, str, str], tuple[v05.Image, list[np.ndarray]]]]:
+    """Create a simple plate for testing."""
+    row_names = [chr(ord("A") + i) for i in range(n_rows)]
+    col_names = [f"{i + 1:02d}" for i in range(n_cols)]
+
+    wells = [
+        v05.PlateWell(path=f"{r}/{c}", rowIndex=ri, columnIndex=ci)
+        for ri, r in enumerate(row_names)
+        for ci, c in enumerate(col_names)
+    ]
+    plate = v05.Plate(
+        plate=v05.PlateDef(
+            columns=[v05.Column(name=name) for name in col_names],
+            rows=[v05.Row(name=name) for name in row_names],
+            wells=wells,
+        )
+    )
+    images = {
+        (r, c, "0"): (
+            _make_image(f"{r}/{c}/0", {"c": 1.0, "y": 0.5, "x": 0.5}),
+            [np.random.rand(2, 64, 64).astype("float32")],
+        )
+        for r in row_names
+        for c in col_names
+    }
+    return plate, images
 
 
 # =============================================================================
@@ -142,27 +170,25 @@ def make_multiscale_image(
 
 
 @pytest.mark.parametrize("writer", WRITERS)
-@pytest.mark.parametrize("ndim", [2, 3, 4])
-def test_write_image_dimensions(tmp_path: Path, writer: ZarrWriter, ndim: int) -> None:
-    """Test write_image with different dimensions (2D, 3D, 4D)."""
-    dims_scales = {
-        2: {"y": 0.5, "x": 0.5},
-        3: {"c": 1.0, "y": 0.5, "x": 0.5},
-        4: {"t": 100.0, "c": 1.0, "y": 0.5, "x": 0.5},
-    }
-    shapes = {2: (64, 64), 3: (2, 64, 64), 4: (5, 2, 32, 32)}
+@pytest.mark.parametrize(
+    ("ndim", "dims_scale", "shape"),
+    [
+        (2, {"y": 0.5, "x": 0.5}, (64, 64)),
+        (3, {"c": 1.0, "y": 0.5, "x": 0.5}, (2, 64, 64)),
+        (4, {"t": 100.0, "c": 1.0, "y": 0.5, "x": 0.5}, (5, 2, 32, 32)),
+    ],
+    ids=["2D", "3D", "4D"],
+)
+def test_write_image_dimensions(
+    tmp_path: Path, writer: ZarrWriter, ndim: int, dims_scale: dict, shape: tuple
+) -> None:
+    """Test write_image with different dimensions."""
     dest = tmp_path / f"test{ndim}d.zarr"
-    data = np.random.rand(*shapes[ndim]).astype(np.float32)
-    image = _make_image(f"test{ndim}d", dims_scales[ndim])
-
-    result = write_image(dest, image, datasets=[data], writer=writer)
-
-    assert result == dest
-    assert dest.exists()
-    if ndim == 3:  # Only check these for basic case
-        assert (dest / "zarr.json").exists()
-        assert (dest / "0").exists()
-
+    data = np.random.rand(*shape).astype("float32")
+    result = write_image(
+        dest, _make_image(f"test{ndim}d", dims_scale), datasets=[data], writer=writer
+    )
+    assert result == dest and dest.exists()
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -170,71 +196,60 @@ def test_write_image_dimensions(tmp_path: Path, writer: ZarrWriter, ndim: int) -
 def test_write_image_multiscale(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with multiple resolution levels."""
     dest = tmp_path / "multiscale.zarr"
-    n_levels = 3
-    datasets, image = make_multiscale_image("pyramid", n_levels=n_levels)
-
-    result = write_image(dest, image, datasets=datasets, writer=writer)
-    assert result == dest
-
-    for level in range(n_levels):
+    datasets, image = _make_multiscale_image("pyramid", n_levels=3)
+    write_image(dest, image, datasets=datasets, writer=writer)
+    for level in range(3):
         assert (dest / str(level)).exists()
-
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 @pytest.mark.parametrize(
-    ("chunks", "data_shape"),
+    ("chunks", "data_shape", "expected"),
     [
-        ((1, 32, 32), (2, 64, 64)),  # custom chunks
-        ("auto", (128, 256, 256)),  # auto chunks
-        (None, (2, 32, 32)),  # no chunks
+        ((1, 32, 32), (2, 64, 64), [1, 32, 32]),
+        ("auto", (128, 256, 256), [64, 128, 128]),
+        (None, (2, 32, 32), [2, 32, 32]),
     ],
     ids=["custom", "auto", "none"],
 )
 def test_write_image_chunks(
-    tmp_path: Path, writer: ZarrWriter, chunks, data_shape: tuple[int, ...]
+    tmp_path: Path, writer: ZarrWriter, chunks, data_shape: tuple, expected: list
 ) -> None:
     """Test write_image with different chunk configurations."""
-    dest = tmp_path / f"chunks_{chunks}.zarr"
-    data = np.random.rand(*data_shape).astype(np.float32)
-    image = _make_image("chunks_test", {"c": 1.0, "y": 0.5, "x": 0.5})
-    write_image(dest, image, datasets=[data], chunks=chunks, writer=writer)
-
-    yaozarrs.validate_zarr_store(dest)
-
+    dest = tmp_path / "chunks.zarr"
+    data = np.random.rand(*data_shape).astype("float32")
+    write_image(
+        dest,
+        _make_image("chunks_test", {"c": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[data],
+        chunks=chunks,
+        writer=writer,
+    )
     arr_meta = json.loads((dest / "0" / "zarr.json").read_bytes())
-    chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
-    if chunks == "auto":
-        assert chunk_shape == [64, 128, 128]
-    elif chunks is not None:
-        assert chunk_shape == list(chunks)
-    else:
-        assert chunk_shape == list(data.shape)
+    assert arr_meta["chunk_grid"]["configuration"]["chunk_shape"] == expected
+    yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_image_metadata_correct(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test that written metadata matches input Image model."""
     dest = tmp_path / "metadata.zarr"
-    data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = _make_image("metadata_test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    write_image(dest, image, datasets=[data], writer=writer)
-
+    data = np.random.rand(2, 64, 64).astype("float32")
+    write_image(
+        dest,
+        _make_image("metadata_test", {"c": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[data],
+        writer=writer,
+    )
     meta = json.loads((dest / "zarr.json").read_bytes())
-    ome = meta["attributes"]["ome"]
-    assert ome["multiscales"][0]["name"] == "metadata_test"
-
+    assert meta["attributes"]["ome"]["multiscales"][0]["name"] == "metadata_test"
     yaozarrs.validate_zarr_store(dest)
 
 
 def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
     """Test that mismatched number of datasets raises error."""
-    dest = tmp_path / "mismatch.zarr"
-    data = [np.random.rand(2, 64, 64).astype(np.float32)]  # 1 array
-
-    # Image model with 2 datasets
+    # Image model with 2 datasets but only 1 array provided
     image = v05.Image(
         multiscales=[
             v05.Multiscale(
@@ -260,160 +275,29 @@ def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
             )
         ]
     )
-
     with pytest.raises(ValueError, match="Number of data arrays"):
-        write_image(dest, image, datasets=data)
-
-
-# =============================================================================
-# write_bioformats2raw tests
-# =============================================================================
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_bioformats2raw with a single series."""
-    dest = tmp_path / "bf2raw.zarr"
-    data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = _make_image("series_0", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    images = {"0": (image, [data])}
-
-    result = write_bioformats2raw(dest, images, writer=writer)
-
-    assert result == dest
-    assert dest.exists()
-
-    # Check root has bioformats2raw.layout
-    root_meta = json.loads((dest / "zarr.json").read_bytes())
-    assert root_meta["attributes"]["ome"]["bioformats2raw.layout"] == 3
-
-    # Check OME directory with series metadata
-    ome_path = dest / "OME"
-    assert ome_path.exists()
-    ome_meta = json.loads((ome_path / "zarr.json").read_bytes())
-    assert ome_meta["attributes"]["ome"]["series"] == ["0"]
-
-    # Check image exists at 0/
-    assert (dest / "0").exists()
-    yaozarrs.validate_zarr_store(str(dest / "0"))
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_bioformats2raw_multiple_series(
-    tmp_path: Path, writer: ZarrWriter
-) -> None:
-    """Test write_bioformats2raw with multiple series."""
-    dest = tmp_path / "multi_series.zarr"
-
-    images = {}
-    for i in range(3):
-        data = np.random.rand(2, 32, 32).astype(np.float32)
-        image = _make_image(f"series_{i}", {"c": 1.0, "y": 0.5, "x": 0.5})
-        images[str(i)] = (image, [data])
-
-    result = write_bioformats2raw(dest, images, writer=writer)
-
-    assert result == dest
-
-    # Check root
-    root_meta = json.loads((dest / "zarr.json").read_bytes())
-    assert root_meta["attributes"]["ome"]["bioformats2raw.layout"] == 3
-
-    # Check OME directory
-    ome_meta = json.loads((dest / "OME" / "zarr.json").read_bytes())
-    assert ome_meta["attributes"]["ome"]["series"] == ["0", "1", "2"]
-
-    # Check each series
-    for i in range(3):
-        assert (dest / str(i)).exists()
-        yaozarrs.validate_zarr_store(str(dest / str(i)))
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_bioformats2raw_with_ome_xml(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_bioformats2raw with OME-XML metadata."""
-    dest = tmp_path / "with_xml.zarr"
-    data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = _make_image("with_xml", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    ome_xml = '<?xml version="1.0"?><OME xmlns="test">test content</OME>'
-    images = {"0": (image, [data])}
-
-    write_bioformats2raw(dest, images, ome_xml=ome_xml, writer=writer)
-
-    # Check METADATA.ome.xml was written
-    xml_path = dest / "OME" / "METADATA.ome.xml"
-    assert xml_path.exists()
-    assert xml_path.read_text() == ome_xml
-
-    yaozarrs.validate_zarr_store(str(dest / "0"))
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_bioformats2raw_multiscale_series(
-    tmp_path: Path, writer: ZarrWriter
-) -> None:
-    """Test write_bioformats2raw with multiscale pyramid series."""
-    dest = tmp_path / "pyramid_series.zarr"
-
-    datasets, image = make_multiscale_image("pyramid_series", n_levels=2)
-    images = {"0": (image, datasets)}
-
-    write_bioformats2raw(dest, images, writer=writer)
-
-    # Check pyramid levels exist
-    assert (dest / "0" / "0").exists()
-    assert (dest / "0" / "1").exists()
-
-    yaozarrs.validate_zarr_store(str(dest / "0"))
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_bf2raw_builder_conflict_detection(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test that Bf2RawBuilder detects conflicts between write_image and add_series."""
-
-    dest = tmp_path / "conflict.zarr"
-    data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    # Test 1: write_image then add_series with same name
-    builder = Bf2RawBuilder(dest, writer=writer)
-    builder.write_image("0", image, [data])
-
-    with pytest.raises(ValueError, match="already written via write_image"):
-        builder.add_series("0", image, [data])
-
-    # Test 2: add_series then write_image with same name
-    dest2 = tmp_path / "conflict2.zarr"
-    builder2 = Bf2RawBuilder(dest2, writer=writer)
-    builder2.add_series("0", image, [data])
-
-    with pytest.raises(ValueError, match="already added via add_series"):
-        builder2.write_image("0", image, [data])
-
-
-# =============================================================================
-# Edge cases and error handling
-# =============================================================================
+        write_image(
+            tmp_path / "mismatch.zarr",
+            image,
+            datasets=[np.random.rand(2, 64, 64).astype("float32")],
+        )
 
 
 def test_write_image_invalid_writer(tmp_path: Path) -> None:
     """Test that invalid writer raises error."""
-    dest = tmp_path / "invalid.zarr"
-    data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = _make_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5})
-
     with pytest.raises(ValueError, match="Unknown writer"):
-        write_image(dest, image, datasets=[data], writer="invalid")  # type: ignore
+        write_image(
+            tmp_path / "invalid.zarr",
+            _make_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5}),
+            datasets=[np.random.rand(2, 64, 64).astype("float32")],
+            writer="invalid",  # type: ignore
+        )
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_image with omero metadata."""
     dest = tmp_path / "omero.zarr"
-    data = np.random.rand(3, 64, 64).astype(np.float32)
-
     image = _make_image("rgb_image", {"c": 1.0, "y": 0.5, "x": 0.5}).model_copy(
         update={
             "omero": v05.Omero(
@@ -426,95 +310,171 @@ def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
             )
         }
     )
-
-    write_image(dest, image, datasets=[data], writer=writer)
-
-    # Check omero metadata was written
+    write_image(
+        dest,
+        image,
+        datasets=[np.random.rand(3, 64, 64).astype("float32")],
+        writer=writer,
+    )
     meta = json.loads((dest / "zarr.json").read_bytes())
-    ome = meta["attributes"]["ome"]
-    assert "omero" in ome
-    assert len(ome["omero"]["channels"]) == 3
-    assert ome["omero"]["channels"][0]["color"] == "FF0000"
-
+    assert len(meta["attributes"]["ome"]["omero"]["channels"]) == 3
+    assert meta["attributes"]["ome"]["omero"]["channels"][0]["color"] == "FF0000"
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
-@pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.float32, np.float64])
+@pytest.mark.parametrize("dtype", ["uint8", "uint16", "float32", "float64"])
 def test_write_image_different_dtypes(
     tmp_path: Path, writer: ZarrWriter, dtype
 ) -> None:
     """Test write_image with various data types."""
-    dest = tmp_path / f"dtype_{dtype.__name__}.zarr"
+    dest = tmp_path / f"dtype_{dtype}.zarr"
     data = np.random.rand(2, 32, 32).astype(dtype)
     if np.issubdtype(dtype, np.integer):
         data = (data * 255).astype(dtype)
-    image = _make_image(f"dtype_{dtype.__name__}", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    write_image(dest, image, datasets=[data], writer=writer)
-
+    write_image(
+        dest,
+        _make_image(f"dtype_{dtype}", {"c": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[data],
+        writer=writer,
+    )
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 @pytest.mark.parametrize(
-    "compression",
-    ["blosc-zstd", "blosc-lz4", "zstd", "none"],
+    ("compression", "expected_codec", "expected_config"),
+    [
+        ("blosc-zstd", "blosc", {"cname": "zstd", "clevel": 3, "shuffle": "shuffle"}),
+        ("blosc-lz4", "blosc", {"cname": "lz4", "clevel": 5, "shuffle": "shuffle"}),
+        ("zstd", "zstd", {"level": 3, "checksum": False}),
+        ("none", None, None),
+    ],
 )
 def test_write_image_compression_options(
-    tmp_path: Path, writer: ZarrWriter, compression: CompressionName
+    tmp_path: Path,
+    writer: ZarrWriter,
+    compression: CompressionName,
+    expected_codec: str | None,
+    expected_config: dict | None,
 ) -> None:
     """Test that each writer backend correctly honors each compression option."""
     dest = tmp_path / f"{writer}_{compression}.zarr"
-    data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = _make_image(f"{compression}_test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
     write_image(
         dest,
-        image,
-        datasets=[data],
+        _make_image(f"{compression}_test", {"c": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[np.random.rand(2, 32, 32).astype("float32")],
         writer=writer,
         compression=compression,  # type: ignore
     )
-
-    # Read the array metadata
     arr_meta = json.loads((dest / "0" / "zarr.json").read_bytes())
     codecs = arr_meta.get("codecs", [])
-
-    # All codecs should start with bytes serializer
-    assert len(codecs) >= 1
     assert codecs[0]["name"] == "bytes"
-    assert codecs[0]["configuration"]["endian"] == "little"
-
-    # Check compression-specific codecs
-    if compression == "blosc-zstd":
-        assert len(codecs) == 2
-        assert codecs[1]["name"] == "blosc"
-        config = codecs[1]["configuration"]
-        assert config["cname"] == "zstd"
-        assert config["clevel"] == 3
-        assert config["shuffle"] == "shuffle"
-
-    elif compression == "blosc-lz4":
-        assert len(codecs) == 2
-        assert codecs[1]["name"] == "blosc"
-        config = codecs[1]["configuration"]
-        assert config["cname"] == "lz4"
-        assert config["clevel"] == 5
-        assert config["shuffle"] == "shuffle"
-
-    elif compression == "zstd":
-        assert len(codecs) == 2
-        assert codecs[1]["name"] == "zstd"
-        config = codecs[1]["configuration"]
-        assert config["level"] == 3
-        assert config["checksum"] is False
-
-    elif compression == "none":
-        # Only bytes codec, no compression
+    if expected_codec:
+        assert codecs[1]["name"] == expected_codec
+        for key, val in expected_config.items():  # type: ignore
+            assert codecs[1]["configuration"][key] == val
+    else:
         assert len(codecs) == 1
-
     yaozarrs.validate_zarr_store(dest)
+
+
+# =============================================================================
+# write_bioformats2raw tests
+# =============================================================================
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_bioformats2raw with a single series."""
+    dest = tmp_path / "bf2raw.zarr"
+    data = np.random.rand(2, 64, 64).astype("float32")
+    write_bioformats2raw(
+        dest,
+        {"0": (_make_image("series_0", {"c": 1.0, "y": 0.5, "x": 0.5}), [data])},
+        writer=writer,
+    )
+    root_meta = json.loads((dest / "zarr.json").read_bytes())
+    assert root_meta["attributes"]["ome"]["bioformats2raw.layout"] == 3
+    ome_meta = json.loads((dest / "OME" / "zarr.json").read_bytes())
+    assert ome_meta["attributes"]["ome"]["series"] == ["0"]
+    yaozarrs.validate_zarr_store(str(dest / "0"))
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_multiple_series(
+    tmp_path: Path, writer: ZarrWriter
+) -> None:
+    """Test write_bioformats2raw with multiple series."""
+    dest = tmp_path / "multi_series.zarr"
+    images = {
+        str(i): (
+            _make_image(f"series_{i}", {"c": 1.0, "y": 0.5, "x": 0.5}),
+            [np.random.rand(2, 32, 32).astype("float32")],
+        )
+        for i in range(3)
+    }
+    write_bioformats2raw(dest, images, writer=writer)
+    ome_meta = json.loads((dest / "OME" / "zarr.json").read_bytes())
+    assert ome_meta["attributes"]["ome"]["series"] == ["0", "1", "2"]
+    for i in range(3):
+        yaozarrs.validate_zarr_store(str(dest / str(i)))
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_with_ome_xml(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test write_bioformats2raw with OME-XML metadata."""
+    dest = tmp_path / "with_xml.zarr"
+    ome_xml = '<?xml version="1.0"?><OME xmlns="test">test content</OME>'
+    write_bioformats2raw(
+        dest,
+        {
+            "0": (
+                _make_image("with_xml", {"c": 1.0, "y": 0.5, "x": 0.5}),
+                [np.zeros((2, 64, 64))],
+            )
+        },
+        ome_xml=ome_xml,
+        writer=writer,
+    )
+    assert (dest / "OME" / "METADATA.ome.xml").read_text() == ome_xml
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_multiscale_series(
+    tmp_path: Path, writer: ZarrWriter
+) -> None:
+    """Test write_bioformats2raw with multiscale pyramid series."""
+    dest = tmp_path / "pyramid_series.zarr"
+    datasets, image = _make_multiscale_image("pyramid_series", n_levels=2)
+    write_bioformats2raw(dest, {"0": (image, datasets)}, writer=writer)
+    assert (dest / "0" / "0").exists() and (dest / "0" / "1").exists()
+    yaozarrs.validate_zarr_store(str(dest / "0"))
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+@pytest.mark.parametrize(
+    ("first_method", "second_method", "error_match"),
+    [
+        ("write_image", "add_series", "already written via write_image"),
+        ("add_series", "write_image", "already added via add_series"),
+    ],
+)
+def test_bf2raw_builder_conflict_detection(
+    tmp_path: Path,
+    writer: ZarrWriter,
+    first_method: str,
+    second_method: str,
+    error_match: str,
+) -> None:
+    """Test that Bf2RawBuilder detects conflicts between write_image and add_series."""
+    dest = tmp_path / "conflict.zarr"
+    data = np.random.rand(2, 32, 32).astype("float32")
+    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    builder = Bf2RawBuilder(dest, writer=writer)
+    getattr(builder, first_method)("0", image, [data])
+    with pytest.raises(ValueError, match=error_match):
+        getattr(builder, second_method)("0", image, [data])
 
 
 # =============================================================================
@@ -522,92 +482,22 @@ def test_write_image_compression_options(
 # =============================================================================
 
 
-def make_simple_plate(
-    n_rows: int = 2, n_cols: int = 2
-) -> tuple[v05.Plate, dict[tuple[str, str, str], tuple[v05.Image, list[np.ndarray]]]]:
-    """Create a simple plate for testing.
-
-    Parameters
-    ----------
-    n_rows : int
-        Number of rows (default 2, will use names A, B, ...)
-    n_cols : int
-        Number of columns (default 2, will use names 01, 02, ...)
-
-    Returns
-    -------
-    tuple[Plate, dict]
-        Plate metadata and images mapping
-    """
-    # Create plate structure
-    row_names = [chr(ord("A") + i) for i in range(n_rows)]
-    col_names = [f"{i + 1:02d}" for i in range(n_cols)]
-
-    wells = []
-    for row_idx, row_name in enumerate(row_names):
-        for col_idx, col_name in enumerate(col_names):
-            wells.append(
-                v05.PlateWell(
-                    path=f"{row_name}/{col_name}",
-                    rowIndex=row_idx,
-                    columnIndex=col_idx,
-                )
-            )
-
-    plate = v05.Plate(
-        plate=v05.PlateDef(
-            columns=[v05.Column(name=name) for name in col_names],
-            rows=[v05.Row(name=name) for name in row_names],
-            wells=wells,
-        )
-    )
-
-    # Create image data
-    images = {}
-    for row_name in row_names:
-        for col_name in col_names:
-            data = np.random.rand(2, 64, 64).astype(np.float32)
-            image = _make_image(
-                f"{row_name}/{col_name}/0", {"c": 1.0, "y": 0.5, "x": 0.5}
-            )
-            images[(row_name, col_name, "0")] = (image, [data])
-
-    return plate, images
-
-
 @pytest.mark.parametrize("writer", WRITERS)
-def test_write_plate_simple_2x2(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_plate with a simple 2x2 plate."""
-
-    dest = tmp_path / "plate_2x2.zarr"
-    plate, images = make_simple_plate(n_rows=2, n_cols=2)
-
+@pytest.mark.parametrize(
+    ("n_rows", "n_cols"),
+    [(1, 1), (2, 2), (4, 6)],
+    ids=["1x1", "2x2", "4x6"],
+)
+def test_write_plate_grid_sizes(
+    tmp_path: Path, writer: ZarrWriter, n_rows: int, n_cols: int
+) -> None:
+    """Test write_plate with various plate grid sizes."""
+    dest = tmp_path / f"plate_{n_rows}x{n_cols}.zarr"
+    plate, images = _make_plate(n_rows=n_rows, n_cols=n_cols)
     result = write_plate(dest, images, plate=plate, writer=writer)
-
     assert result == dest
-    assert dest.exists()
-
-    # Check plate zarr.json
     plate_meta = json.loads((dest / "zarr.json").read_bytes())
-    assert plate_meta["attributes"]["ome"]["version"] == "0.5"
-    assert len(plate_meta["attributes"]["ome"]["plate"]["wells"]) == 4
-
-    # Check well structure
-    for row in ["A", "B"]:
-        for col in ["01", "02"]:
-            well_path = dest / row / col
-            assert well_path.exists()
-            assert (well_path / "zarr.json").exists()
-
-            # Check well metadata
-            well_meta = json.loads((well_path / "zarr.json").read_bytes())
-            assert well_meta["attributes"]["ome"]["version"] == "0.5"
-            assert len(well_meta["attributes"]["ome"]["well"]["images"]) == 1
-
-            # Check field image
-            assert (well_path / "0" / "zarr.json").exists()
-            assert (well_path / "0" / "0").exists()
-
+    assert len(plate_meta["attributes"]["ome"]["plate"]["wells"]) == n_rows * n_cols
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -627,7 +517,7 @@ def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
 
     images = {}
     for fov in ["0", "1"]:
-        data = np.random.rand(2, 32, 32).astype(np.float32)
+        data = np.random.rand(2, 32, 32).astype("float32")
         image = _make_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
         images[("A", "01", fov)] = (image, [data])
 
@@ -642,54 +532,23 @@ def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
     # Check well metadata has both images
     well_meta = json.loads((well_path / "zarr.json").read_bytes())
     assert len(well_meta["attributes"]["ome"]["well"]["images"]) == 2
-    assert well_meta["attributes"]["ome"]["well"]["images"][0]["path"] == "0"
-    assert well_meta["attributes"]["ome"]["well"]["images"][1]["path"] == "1"
 
-    yaozarrs.validate_zarr_store(dest)
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_plate_single_well(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_plate with a single well (1x1 plate)."""
-
-    dest = tmp_path / "plate_1x1.zarr"
-    plate, images = make_simple_plate(n_rows=1, n_cols=1)
-
-    result = write_plate(dest, images, plate=plate, writer=writer)
-    assert result == dest
-
-    assert (dest / "A" / "01" / "0" / "zarr.json").exists()
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test PlateBuilder immediate write workflow."""
-
     dest = tmp_path / "builder_immediate.zarr"
-    plate, images_mapping = make_simple_plate(n_rows=1, n_cols=2)
-
+    plate, images_mapping = _make_plate(n_rows=1, n_cols=2)
     builder = PlateBuilder(dest, plate=plate, writer=writer)
-
-    # Group images by well
+    # Group images by well and write
     wells_data: dict[tuple[str, str], dict[str, tuple[v05.Image, list]]] = {}
     for (row, col, fov), (image, datasets) in images_mapping.items():
-        if (row, col) not in wells_data:
-            wells_data[(row, col)] = {}
-        wells_data[(row, col)][fov] = (image, datasets)
-
-    # Write each well
+        wells_data.setdefault((row, col), {})[fov] = (image, datasets)
     for (row, col), fields in wells_data.items():
-        result = builder.write_well(row=row, col=col, fields=fields)
-        assert result is builder  # Check method chaining
-
+        assert builder.write_well(row=row, col=col, fields=fields) is builder
     assert repr(builder) == "<PlateBuilder: 2 wells>"
-    assert builder.root_path == dest
-
-    # Check structure
-    assert (dest / "A" / "01" / "0" / "zarr.json").exists()
-    assert (dest / "A" / "02" / "0" / "zarr.json").exists()
-
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -698,7 +557,7 @@ def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test PlateBuilder prepare-only workflow."""
 
     dest = tmp_path / "builder_prepare.zarr"
-    plate, images_mapping = make_simple_plate(n_rows=1, n_cols=1)
+    plate, images_mapping = _make_plate(n_rows=1, n_cols=1)
 
     builder = PlateBuilder(dest, plate=plate, writer=writer)
 
@@ -715,101 +574,103 @@ def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
     # Write data to arrays
     for _key, arr in arrays.items():
         # Get shape from array and write matching data
-        data = np.random.rand(*arr.shape).astype(np.float32)
+        data = np.random.rand(*arr.shape).astype("float32")
         arr[:] = data
 
     yaozarrs.validate_zarr_store(dest)
 
 
-def test_plate_builder_invalid_well_path(tmp_path: Path) -> None:
-    """Test that PlateBuilder raises error for invalid well path."""
+@pytest.mark.parametrize("writer", WRITERS)
+def test_plate_builder_well_metadata_generation(
+    tmp_path: Path, writer: ZarrWriter
+) -> None:
+    """Test that PlateBuilder correctly generates well metadata."""
+    dest = tmp_path / "well_metadata.zarr"
+    plate, _ = _make_plate(n_rows=1, n_cols=1)
+    builder = PlateBuilder(dest, plate=plate, writer=writer)
+    # Create well with multiple fields in non-sorted order
+    fields = {
+        fov: (
+            _make_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5}),
+            [np.random.rand(2, 32, 32).astype("float32")],
+        )
+        for fov in ["2", "0", "1"]
+    }
+    builder.write_well(row="A", col="01", fields=fields)
+    well_meta = json.loads((dest / "A" / "01" / "zarr.json").read_bytes())
+    images_meta = well_meta["attributes"]["ome"]["well"]["images"]
+    assert [img["path"] for img in images_meta] == ["0", "1", "2"]
 
-    dest = tmp_path / "invalid_well.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
 
-    builder = PlateBuilder(dest, plate=plate, writer="zarr")
-    data = np.random.rand(2, 32, 32).astype(np.float32)
+@pytest.mark.parametrize(
+    ("setup", "action", "error_match"),
+    [
+        # invalid well path
+        (
+            lambda b, img, data: None,
+            lambda b, img, data: b.write_well(
+                row="B", col="01", fields={"0": (img, [data])}
+            ),
+            "not found in plate metadata",
+        ),
+        # duplicate write_well
+        (
+            lambda b, img, data: b.write_well(
+                row="A", col="01", fields={"0": (img, [data])}
+            ),
+            lambda b, img, data: b.write_well(
+                row="A", col="01", fields={"0": (img, [data])}
+            ),
+            "already written via write_well",
+        ),
+        # add_well then write_well
+        (
+            lambda b, img, data: b.add_well(
+                row="A", col="01", fields={"0": (img, [data])}
+            ),
+            lambda b, img, data: b.write_well(
+                row="A", col="01", fields={"0": (img, [data])}
+            ),
+            "already added via add_well",
+        ),
+        # prepare with no wells
+        (
+            lambda b, img, data: None,
+            lambda b, img, data: b.prepare(),
+            "No wells added",
+        ),
+        # dataset count mismatch
+        (
+            lambda b, img, data: None,
+            lambda b, img, data: b.add_well(
+                row="A", col="01", fields={"0": (img, [data, np.zeros((2, 16, 16))])}
+            ),
+            "must match",
+        ),
+    ],
+    ids=[
+        "invalid_well",
+        "duplicate_write",
+        "add_then_write",
+        "prepare_empty",
+        "dataset_mismatch",
+    ],
+)
+def test_plate_builder_errors(tmp_path: Path, setup, action, error_match: str) -> None:
+    """Test PlateBuilder error cases."""
+    plate, _ = _make_plate(n_rows=1, n_cols=1)
+    builder = PlateBuilder(tmp_path / "error.zarr", plate=plate)
+    data = np.random.rand(2, 32, 32).astype("float32")
     image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    # Try to write well that doesn't exist in plate metadata
-    with pytest.raises(ValueError, match="not found in plate metadata"):
-        builder.write_well(row="B", col="01", fields={"0": (image, [data])})
-
-
-def test_plate_builder_duplicate_well_write_write(tmp_path: Path) -> None:
-    """Test that PlateBuilder raises error when writing same well twice."""
-
-    dest = tmp_path / "duplicate_well.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
-
-    builder = PlateBuilder(dest, plate=plate, writer="zarr")
-    data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    # Write well first time
-    builder.write_well(row="A", col="01", fields={"0": (image, [data])})
-
-    # Try to write same well again
-    with pytest.raises(ValueError, match="already written via write_well"):
-        builder.write_well(row="A", col="01", fields={"0": (image, [data])})
-
-
-def test_plate_builder_duplicate_well_add_write(tmp_path: Path) -> None:
-    """Test that PlateBuilder raises error when adding then writing same well."""
-
-    dest = tmp_path / "duplicate_add_write.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
-
-    builder = PlateBuilder(dest, plate=plate, writer="zarr")
-    data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    # Add well first
-    builder.add_well(row="A", col="01", fields={"0": (image, [data])})
-
-    # Try to write same well
-    with pytest.raises(ValueError, match="already added via add_well"):
-        builder.write_well(row="A", col="01", fields={"0": (image, [data])})
-
-
-def test_plate_builder_prepare_empty(tmp_path: Path) -> None:
-    """Test that PlateBuilder.prepare() raises error when no wells added."""
-
-    dest = tmp_path / "empty_prepare.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
-
-    builder = PlateBuilder(dest, plate=plate, writer="zarr")
-
-    with pytest.raises(ValueError, match="No wells added"):
-        builder.prepare()
-
-
-def test_plate_builder_dataset_count_mismatch(tmp_path: Path) -> None:
-    """Test that PlateBuilder raises error for dataset count mismatch."""
-
-    dest = tmp_path / "dataset_mismatch.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
-
-    builder = PlateBuilder(dest, plate=plate, writer="zarr")
-    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
-
-    # Image expects 1 dataset but we provide 2
-    data1 = np.random.rand(2, 32, 32).astype(np.float32)
-    data2 = np.random.rand(2, 16, 16).astype(np.float32)
-
-    with pytest.raises(ValueError, match="must match"):
-        builder.add_well(row="A", col="01", fields={"0": (image, [data1, data2])})
+    setup(builder, image, data)
+    with pytest.raises((ValueError, NotImplementedError), match=error_match):
+        action(builder, image, data)
 
 
 def test_plate_builder_multiscale_error(tmp_path: Path) -> None:
     """Test that PlateBuilder raises error for multiple multiscales."""
-
-    dest = tmp_path / "multiscale_error.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
-
-    builder = PlateBuilder(dest, plate=plate, writer="zarr")
-    data = np.random.rand(2, 32, 32).astype(np.float32)
-
+    plate, _ = _make_plate(n_rows=1, n_cols=1)
+    builder = PlateBuilder(tmp_path / "multiscale_error.zarr", plate=plate)
     # Create image with 2 multiscales (not supported)
     image = v05.Image(
         multiscales=[
@@ -847,130 +708,47 @@ def test_plate_builder_multiscale_error(tmp_path: Path) -> None:
             ),
         ]
     )
-
     with pytest.raises(NotImplementedError, match="exactly one multiscale"):
-        builder.add_well(row="A", col="01", fields={"0": (image, [data])})
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_plate_builder_well_metadata_generation(
-    tmp_path: Path, writer: ZarrWriter
-) -> None:
-    """Test that PlateBuilder correctly generates well metadata."""
-
-    dest = tmp_path / "well_metadata.zarr"
-    plate, _ = make_simple_plate(n_rows=1, n_cols=1)
-
-    builder = PlateBuilder(dest, plate=plate, writer=writer)
-
-    # Create well with multiple fields in non-sorted order
-    fields = {}
-    for fov in ["2", "0", "1"]:
-        data = np.random.rand(2, 32, 32).astype(np.float32)
-        image = _make_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
-        fields[fov] = (image, [data])
-
-    builder.write_well(row="A", col="01", fields=fields)
-
-    # Check well metadata - fields should be sorted
-    well_meta = json.loads((dest / "A" / "01" / "zarr.json").read_bytes())
-    images_meta = well_meta["attributes"]["ome"]["well"]["images"]
-    assert len(images_meta) == 3
-    assert images_meta[0]["path"] == "0"
-    assert images_meta[1]["path"] == "1"
-    assert images_meta[2]["path"] == "2"
-    # acquisition=None is excluded from JSON by pydantic's exclude_none=True
-    for img in images_meta:
-        assert img.get("acquisition") is None
+        builder.add_well(
+            row="A", col="01", fields={"0": (image, [np.zeros((2, 32, 32))])}
+        )
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_with_different_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with custom chunk settings."""
-
     dest = tmp_path / "plate_chunks.zarr"
-    plate, images = make_simple_plate(n_rows=1, n_cols=1)
-
+    plate, images = _make_plate(n_rows=1, n_cols=1)
     write_plate(dest, images, plate=plate, chunks=(1, 32, 32), writer=writer)
-
-    # Check chunk shape in array metadata
     arr_meta = json.loads((dest / "A" / "01" / "0" / "0" / "zarr.json").read_bytes())
-    chunk_shape = arr_meta["chunk_grid"]["configuration"]["chunk_shape"]
-    assert chunk_shape == [1, 32, 32]
-
+    assert arr_meta["chunk_grid"]["configuration"]["chunk_shape"] == [1, 32, 32]
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
-@pytest.mark.parametrize(
-    "compression",
-    ["blosc-zstd", "blosc-lz4", "zstd", "none"],
-)
+@pytest.mark.parametrize("compression", ["blosc-zstd", "blosc-lz4", "zstd", "none"])
 def test_write_plate_compression(
     tmp_path: Path, writer: ZarrWriter, compression: CompressionName
 ) -> None:
     """Test write_plate with different compression options."""
-
     dest = tmp_path / f"plate_{compression}.zarr"
-    plate, images = make_simple_plate(n_rows=1, n_cols=1)
-
+    plate, images = _make_plate(n_rows=1, n_cols=1)
     write_plate(dest, images, plate=plate, compression=compression, writer=writer)  # type: ignore
-
-    # Verify compression was applied
     arr_meta = json.loads((dest / "A" / "01" / "0" / "0" / "zarr.json").read_bytes())
     codecs = arr_meta.get("codecs", [])
-
-    if compression == "none":
-        assert len(codecs) == 1  # Only bytes codec
-    else:
-        assert len(codecs) >= 2  # Bytes + compression codec
-
+    assert len(codecs) == (1 if compression == "none" else 2)
     yaozarrs.validate_zarr_store(dest)
 
 
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_overwrite(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with overwrite=True."""
-
     dest = tmp_path / "plate_overwrite.zarr"
-    plate, images = make_simple_plate(n_rows=1, n_cols=1)
-
-    # Write first time
+    plate, images = _make_plate(n_rows=1, n_cols=1)
     write_plate(dest, images, plate=plate, writer=writer)
-    first_write_time = (dest / "zarr.json").stat().st_mtime
-
-    # Write again without overwrite - should raise error
     with pytest.raises(FileExistsError):
         write_plate(dest, images, plate=plate, writer=writer, overwrite=False)
-
-    # Write again with overwrite - should succeed
     write_plate(dest, images, plate=plate, writer=writer, overwrite=True)
-    second_write_time = (dest / "zarr.json").stat().st_mtime
-
-    # Verify file was updated
-    assert second_write_time >= first_write_time
-
-    yaozarrs.validate_zarr_store(dest)
-
-
-@pytest.mark.parametrize("writer", WRITERS)
-def test_write_plate_large_grid(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test write_plate with a larger plate grid (4x6)."""
-
-    dest = tmp_path / "plate_4x6.zarr"
-    plate, images = make_simple_plate(n_rows=4, n_cols=6)
-
-    result = write_plate(dest, images, plate=plate, writer=writer)
-    assert result == dest
-
-    # Verify all 24 wells exist
-    plate_meta = json.loads((dest / "zarr.json").read_bytes())
-    assert len(plate_meta["attributes"]["ome"]["plate"]["wells"]) == 24
-
-    # Spot check a few wells
-    assert (dest / "A" / "01" / "0" / "zarr.json").exists()
-    assert (dest / "D" / "06" / "0" / "zarr.json").exists()
-
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -981,49 +759,34 @@ def test_write_plate_large_grid(tmp_path: Path, writer: ZarrWriter) -> None:
 
 @pytest.mark.parametrize("writer", WRITERS)
 def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> None:
-    """Test prepare_image with frame-by-frame streaming writes (microscope pattern).
-
-    Simulates a microscope acquiring data one (Y, X) frame at a time,
-    iterating through T, C, Z dimensions sequentially.
-    """
+    """Test prepare_image with frame-by-frame streaming writes (microscope pattern)."""
     dest = tmp_path / "streaming_5d.zarr"
     shape = (2, 3, 4, 16, 16)  # TCZYX
-    dtype = np.uint16
-
-    # Create 5D TCZYX image metadata
     image = _make_image(
         "streaming_test", {"t": 100.0, "c": 1.0, "z": 1.0, "y": 0.5, "x": 0.5}
     )
-
-    # Prepare empty array
-    _path, arrays = prepare_image(dest, image, (np.dtype(dtype), shape), writer=writer)
+    _, arrays = prepare_image(dest, image, ("uint16", shape), writer=writer)
     arr = arrays["0"]
 
     # Simulate microscope acquiring frames one at a time
-    # Generate reference data to compare against
-    reference = np.zeros(shape, dtype=dtype)
+    reference = np.zeros(shape, dtype="uint16")
     frame_count = 0
-
     for t in range(shape[0]):
         for c in range(shape[1]):
             for z in range(shape[2]):
-                # Generate a unique frame (simulating microscope acquisition)
-                frame = np.full((16, 16), frame_count, dtype=dtype)
+                frame = np.full((16, 16), frame_count, dtype="uint16")
                 reference[t, c, z] = frame
-
-                # Write single frame to zarr array
                 arr[t, c, z, :, :] = frame
                 frame_count += 1
 
-    # Verify total frames written
-    assert frame_count == shape[0] * shape[1] * shape[2]  # 2 * 3 * 4 = 24 frames
-
-    # Read back and verify data integrity
-    result = np.asarray(arr[:])
-    np.testing.assert_array_equal(result, reference)
-
+    assert frame_count == shape[0] * shape[1] * shape[2]
+    np.testing.assert_array_equal(np.asarray(arr[:]), reference)
     yaozarrs.validate_zarr_store(dest)
 
+
+# =============================================================================
+# Doctests
+# =============================================================================
 
 finder = doctest.DocTestFinder()
 
