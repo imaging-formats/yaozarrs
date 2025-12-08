@@ -7,18 +7,15 @@
 
 from __future__ import annotations
 
+from yaozarrs._axis import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
 from yaozarrs._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 
 from ._bf2raw import Bf2Raw
 from ._image import (
-    ChannelAxis,
-    CustomAxis,
     Dataset,
     Image,
     Multiscale,
     ScaleTransformation,
-    SpaceAxis,
-    TimeAxis,
     TranslationTransformation,
 )
 from ._label import (
@@ -35,6 +32,7 @@ from ._zarr_json import OMEZarrGroupJSON
 
 __all__ = [
     "Acquisition",
+    "Axis",
     "Bf2Raw",
     "ChannelAxis",
     "Column",

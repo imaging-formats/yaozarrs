@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v04
+from yaozarrs import DimSpec, v04, validate_ome_object
 
 X_AXIS = {"name": "x", "type": "space", "unit": "millimeter"}
 Y_AXIS = {"name": "y", "type": "space", "unit": None}
@@ -701,7 +701,7 @@ def test_v04_omero_models() -> None:
 def test_v04_axis_name_uniqueness_custom_validation() -> None:
     """Test that axis names must be unique - triggers custom validation logic."""
     # Import the validation function directly to test it
-    from yaozarrs.v04._image import _validate_axes_list
+    from yaozarrs._axis import _validate_axes_list
 
     # Create axes with same names but different types to bypass UniqueList
     axes = [
@@ -715,3 +715,53 @@ def test_v04_axis_name_uniqueness_custom_validation() -> None:
         ValueError, match=r"Axis names must be unique\. Found duplicates"
     ):
         _validate_axes_list(axes)
+
+
+def test_multiscale_from_dims() -> None:
+    """Test Multiscale.from_dims with all features."""
+    dims = [
+        DimSpec(name="t", size=10, scale=1.0, unit="second"),
+        DimSpec(name="c", size=3),
+        # z with custom scale_factor=1.0 (no downsampling)
+        DimSpec(name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0),
+        DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
+        DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
+    ]
+    ms = v04.Multiscale.from_dims(dims, name="test_image", n_levels=3)
+
+    # Basic structure
+    assert ms.name == "test_image"
+    assert ms.ndim == 5
+    assert ms.version == "0.4"
+    assert len(ms.datasets) == 3
+
+    # Axes: names, types
+    assert [ax.name for ax in ms.axes] == ["t", "c", "z", "y", "x"]
+    assert [ax.type for ax in ms.axes] == ["time", "channel", "space", "space", "space"]
+
+    # Pyramid scales: t/c don't scale, z doesn't scale (factor=1.0), xy scale by 2x
+    assert ms.datasets[0].coordinateTransformations[0].scale == [
+        1.0,
+        1.0,
+        2.0,
+        0.5,
+        0.5,
+    ]
+    assert ms.datasets[1].coordinateTransformations[0].scale == [
+        1.0,
+        1.0,
+        2.0,
+        1.0,
+        1.0,
+    ]
+    assert ms.datasets[2].coordinateTransformations[0].scale == [
+        1.0,
+        1.0,
+        2.0,
+        2.0,
+        2.0,
+    ]
+
+    # Creates valid Image
+    img = v04.Image(multiscales=[ms])
+    validate_ome_object(img)
