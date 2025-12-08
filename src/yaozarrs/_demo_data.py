@@ -368,10 +368,10 @@ def write_ome_plate(
             well_group = row_group.require_group(col_name)
 
             # Create field paths
-            field_paths = [str(i) for i in range(fields_per_well)]
+            field_paths: list[str | dict] = [str(i) for i in range(fields_per_well)]
 
             # Write well metadata
-            well_metadata = {"images": [{"path": path} for path in field_paths]}
+            well_metadata: dict = {"images": [{"path": path} for path in field_paths]}
 
             if acquisitions:
                 # Add acquisition references to images

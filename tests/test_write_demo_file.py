@@ -11,6 +11,8 @@ import pytest
 import yaozarrs
 
 if TYPE_CHECKING:
+    import zarr
+
     VersionStr: TypeAlias = Literal["0.4", "0.5"]
 
 VERSIONS = []

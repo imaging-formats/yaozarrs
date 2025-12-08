@@ -226,7 +226,7 @@ class Multiscale(_BaseModel):
         """
         from yaozarrs._dim_spec import _axes_datasets
 
-        return cls(name=name, **_axes_datasets(dims, n_levels))
+        return cls(name=name, **_axes_datasets(dims, n_levels))  # type: ignore
 
 
 # ------------------------------------------------------------------------------

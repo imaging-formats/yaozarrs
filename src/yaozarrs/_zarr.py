@@ -704,7 +704,7 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
             "uri must be a string, os.PathLike, or have a 'store' attribute"
         )
 
-    mapper = get_mapper(uri)
+    mapper = get_mapper(uri)  # type: ignore
 
     if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")

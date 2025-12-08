@@ -499,9 +499,10 @@ def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
 
     builder = PlateBuilder(dest, plate=plate, writer=writer)
 
-    # Add wells
+    # Add wells - convert arrays to specs (shape, dtype) for add_well
     for (row, col, fov), (image, datasets) in images_mapping.items():
-        result = builder.add_well(row=row, col=col, fields={fov: (image, datasets)})
+        specs = [(arr.shape, arr.dtype) for arr in datasets]
+        result = builder.add_well(row=row, col=col, images={fov: (image, specs)})
         assert result is builder
 
     # Prepare
@@ -547,27 +548,27 @@ def test_plate_builder_well_metadata_generation(
         (
             lambda b, img, data: None,
             lambda b, img, data: b.write_well(
-                row="B", col="01", fields={"0": (img, [data])}
+                row="B", col="01", images={"0": (img, [data])}
             ),
             "not found in plate metadata",
         ),
         # duplicate write_well
         (
             lambda b, img, data: b.write_well(
-                row="A", col="01", fields={"0": (img, [data])}
+                row="A", col="01", images={"0": (img, [data])}
             ),
             lambda b, img, data: b.write_well(
-                row="A", col="01", fields={"0": (img, [data])}
+                row="A", col="01", images={"0": (img, [data])}
             ),
             "already written via write_well",
         ),
         # add_well then write_well
         (
             lambda b, img, data: b.add_well(
-                row="A", col="01", fields={"0": (img, [data])}
+                row="A", col="01", images={"0": (img, [data])}
             ),
             lambda b, img, data: b.write_well(
-                row="A", col="01", fields={"0": (img, [data])}
+                row="A", col="01", images={"0": (img, [data])}
             ),
             "already added via add_well",
         ),
@@ -581,7 +582,7 @@ def test_plate_builder_well_metadata_generation(
         (
             lambda b, img, data: None,
             lambda b, img, data: b.add_well(
-                row="A", col="01", fields={"0": (img, [data, np.zeros((2, 16, 16))])}
+                row="A", col="01", images={"0": (img, [data, np.zeros((2, 16, 16))])}
             ),
             "must match",
         ),
@@ -648,7 +649,7 @@ def test_plate_builder_multiscale_error(tmp_path: Path) -> None:
     )
     with pytest.raises(NotImplementedError, match="exactly one multiscale"):
         builder.add_well(
-            row="A", col="01", fields={"0": (image, [np.zeros((2, 32, 32))])}
+            row="A", col="01", images={"0": (image, [((2, 32, 32), np.float32)])}
         )
 
 
@@ -703,7 +704,7 @@ def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> N
     image = _make_image(
         "streaming_test", {"t": 100.0, "c": 1.0, "z": 1.0, "y": 0.5, "x": 0.5}
     )
-    _, arrays = prepare_image(dest, image, ("uint16", shape), writer=writer)
+    _, arrays = prepare_image(dest, image, (shape, "uint16"), writer=writer)
     arr = arrays["0"]
 
     # Simulate microscope acquiring frames one at a time
