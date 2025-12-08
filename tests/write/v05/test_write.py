@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 import yaozarrs
-from yaozarrs import v05
+from yaozarrs import DimSpec, v05
 from yaozarrs.write.v05 import (
     Bf2RawBuilder,
     PlateBuilder,
@@ -52,46 +52,9 @@ np.random.seed(42)
 
 
 def _make_image(name: str, dims_scale: Mapping[str, float]) -> v05.Image:
-    """Create a simple v05.Image model for testing.
-
-    Parameters
-    ----------
-    name : str
-        Name of the image/multiscale.
-    dims_scale : Mapping[str, float]
-        Mapping of dimension names to scale values.
-        Supported dimensions: 'x', 'y', 'z' (spatial), 'c' (channel), 't' (time).
-    """
-    axes = []
-    scale = []
-
-    for dim_name, scale_value in dims_scale.items():
-        if dim_name in ("x", "y", "z"):
-            axes.append(v05.SpaceAxis(name=dim_name, unit="micrometer"))
-        elif dim_name == "c":
-            axes.append(v05.ChannelAxis(name=dim_name))
-        elif dim_name == "t":
-            axes.append(v05.TimeAxis(name=dim_name, unit="millisecond"))
-        else:
-            raise ValueError(f"Unsupported dimension: {dim_name}")
-        scale.append(scale_value)
-
-    return v05.Image(
-        multiscales=[
-            v05.Multiscale(
-                name=name,
-                axes=axes,
-                datasets=[
-                    v05.Dataset(
-                        path="0",
-                        coordinateTransformations=[
-                            v05.ScaleTransformation(scale=scale)
-                        ],
-                    )
-                ],
-            )
-        ]
-    )
+    """Create a simple v05.Image model for testing."""
+    dims = [DimSpec(name=n, scale=s) for n, s in dims_scale.items()]
+    return v05.Image(multiscales=[v05.Multiscale.from_dims(dims, name=name)])
 
 
 def _make_multiscale_image(
@@ -99,39 +62,13 @@ def _make_multiscale_image(
 ) -> tuple[list[np.ndarray], v05.Image]:
     """Create multiscale pyramid data and matching Image model."""
     shape = (2, 128, 128)  # CYX
-    datasets_data = []
-    datasets_meta = []
-
-    for level in range(n_levels):
-        scale_factor = 2**level
-        level_shape = (shape[0], shape[1] // scale_factor, shape[2] // scale_factor)
-        data = np.random.rand(*level_shape).astype("float32")
-        datasets_data.append(data)
-        datasets_meta.append(
-            v05.Dataset(
-                path=str(level),
-                coordinateTransformations=[
-                    v05.ScaleTransformation(
-                        scale=[1.0, 0.5 * scale_factor, 0.5 * scale_factor]
-                    )
-                ],
-            )
-        )
-
-    image = v05.Image(
-        multiscales=[
-            v05.Multiscale(
-                name=name,
-                axes=[
-                    v05.ChannelAxis(name="c"),
-                    v05.SpaceAxis(name="y", unit="micrometer"),
-                    v05.SpaceAxis(name="x", unit="micrometer"),
-                ],
-                datasets=datasets_meta,
-            )
-        ]
-    )
-    return datasets_data, image
+    dims = [DimSpec(name=n, scale=s) for n, s in [("c", 1.0), ("y", 0.5), ("x", 0.5)]]
+    data = [
+        np.random.rand(shape[0], shape[1] // 2**i, shape[2] // 2**i).astype("float32")
+        for i in range(n_levels)
+    ]
+    ms = v05.Multiscale.from_dims(dims, name=name, n_levels=n_levels)
+    return data, v05.Image(multiscales=[ms])
 
 
 def _make_plate(
