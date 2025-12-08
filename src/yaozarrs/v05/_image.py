@@ -255,7 +255,7 @@ class Multiscale(_BaseModel):
         ----------
         dims : Sequence[DimSpec]
             A sequence of dimension specifications defining the image dimensions.
-            Must follow OME-Zarr axis ordering: [time,] [channel,] space...
+            Must follow OME-Zarr axis ordering: `[time,] [channel,] space...`
         name : str | None, optional
             Name for the multiscale. Default is None.
         n_levels : int, optional
