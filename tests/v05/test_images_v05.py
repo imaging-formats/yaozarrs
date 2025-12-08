@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v05, validate_ome_object
+from yaozarrs import DimSpec, v05, validate_ome_object
 
 X_AXIS = {"name": "x", "type": "space", "unit": "millimeter"}
 Y_AXIS = {"name": "y", "type": "space", "unit": None}
@@ -495,3 +495,45 @@ V05_INVALID_IMAGES: list[tuple[dict, str]] = [
 def test_invalid_v05_images(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=msg):
         v05.Image.model_validate(obj)
+
+
+def test_multiscale_from_dims() -> None:
+    """Test Multiscale.from_dims with all features."""
+    dims = [
+        DimSpec(name="t", size=10, scale=1.0, unit="second"),
+        DimSpec(name="c", size=3),
+        # z with custom scale_factor=1.0 (no downsampling)
+        DimSpec(name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0),
+        DimSpec(name="y", size=512, scale=0.5, unit="micrometer", translation=20.0),
+        DimSpec(name="x", size=512, scale=0.5, unit="micrometer", translation=30.0),
+    ]
+    ms = v05.Multiscale.from_dims(dims, name="test_image", n_levels=3)
+
+    # Basic structure
+    assert ms.name == "test_image"
+    assert ms.ndim == 5
+    assert len(ms.datasets) == 3
+
+    # Axes: names, types, units
+    assert [ax.name for ax in ms.axes] == ["t", "c", "z", "y", "x"]
+    assert [ax.type for ax in ms.axes] == ["time", "channel", "space", "space", "space"]
+    assert ms.axes[0].unit == "second"
+    assert ms.axes[1].unit is None
+    assert ms.axes[2].unit == "micrometer"
+
+    # Pyramid scales: t/c don't scale, z doesn't scale (factor=1.0), xy scale by 2x
+
+    assert ms.datasets[0].scale_transform.scale == [1.0, 1.0, 2.0, 0.5, 0.5]
+    assert ms.datasets[1].scale_transform.scale == [1.0, 1.0, 2.0, 1.0, 1.0]
+    assert ms.datasets[2].scale_transform.scale == [1.0, 1.0, 2.0, 2.0, 2.0]
+
+    for ds in ms.datasets:
+        trans_tform = next(
+            t for t in ds.coordinateTransformations if t.type == "translation"
+        )
+        assert trans_tform.translation == [0, 0, 0, 20.0, 30.0]
+
+    # Creates valid Image
+    img = v05.Image(multiscales=[ms])
+    assert img.version == "0.5"
+    validate_ome_object(img)
