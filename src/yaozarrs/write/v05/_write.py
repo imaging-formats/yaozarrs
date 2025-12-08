@@ -522,7 +522,7 @@ def write_plate(
 
     # Write each well with all its fields
     for (row, col), fields_data in wells_data.items():
-        builder.write_well(row=row, col=col, fields=fields_data, progress=progress)
+        builder.write_well(row=row, col=col, images=fields_data, progress=progress)
 
     return builder.root_path
 
@@ -1452,7 +1452,7 @@ class PlateBuilder:
             if not row_path.exists():
                 _create_zarr3_group(row_path, ome_model=None, overwrite=self._overwrite)
 
-    def _generate_well_metadata(self, well_path: str, field_names: list[str]) -> Well:
+    def _generate_well_metadata(self, field_names: list[str]) -> Well:
         """Generate Well metadata from field names.
 
         Parameters
@@ -1477,13 +1477,13 @@ class PlateBuilder:
 
     def write_well(
         self,
-        *,
         row: str,
         col: str,
-        fields: Mapping[str, ImageWithDatasets],
+        images: Mapping[str, ImageWithDatasets],
+        *,
         progress: bool = False,
     ) -> Self:
-        """Write a well immediately with its field images and data.
+        """Write a well immediately with its `images` (fields of view) and data.
 
         This method creates the well structure and writes all field data in one
         call. The plate structure and well metadata are created/updated
@@ -1496,7 +1496,7 @@ class PlateBuilder:
             Row name like "A", "B", etc.
         col : str
             Column name like "1", "2", etc.
-        fields : Mapping[str, ImageWithDatasets]
+        images : Mapping[str, ImageWithDatasets]
             Mapping of `{fov -> (image_model, datasets)}` where:
             - fov: Field of view identifier like "0", "1", etc.
             - datasets can be:
@@ -1526,30 +1526,27 @@ class PlateBuilder:
 
         # Normalize fields (convert single arrays to sequences)
         normalized_fields: dict[str, ImageWithDatasets] = {}
-        for fov, (image_model, datasets) in fields.items():
+        for fov, (image_model, datasets) in images.items():
             # Normalize datasets to a sequence
-            datasets_seq: Sequence[ArrayLike]
             if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
-                # Single array - wrap in a list
-                datasets_seq = [datasets]  # type: ignore[list-item]
+                datasets_seq = [datasets]
             else:
-                # Already a sequence
-                datasets_seq = datasets  # type: ignore[assignment]
+                datasets_seq = datasets
 
-            normalized_fields[fov] = (image_model, datasets_seq)
+            normalized_fields[fov] = (
+                image_model,
+                cast("Sequence[ArrayLike]", datasets_seq),
+            )
 
         # Track this well's data before writing
-        well_coords = (row, col)
-        self._written_wells_data[well_coords] = normalized_fields
+        self._written_wells_data[(row, col)] = normalized_fields
 
         # Update plate metadata with the new well
         self._update_plate_metadata()
 
-        # Generate Well metadata for this well
+        # Generate Well metadata for this well and create well subgroup
         well_path = f"{row}/{col}"
-        well_metadata = self._generate_well_metadata(well_path, list(fields.keys()))
-
-        # Create well subgroup with metadata
+        well_metadata = self._generate_well_metadata(list(images))
         well_group_path = self._dest / well_path
         _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
 
@@ -1694,10 +1691,8 @@ class PlateBuilder:
         all_arrays: dict[str, Any] = {}
 
         for well_path, fields in self._wells.items():
-            # Generate Well metadata
-            well_metadata = self._generate_well_metadata(well_path, list(fields.keys()))
-
-            # Create well group with metadata
+            # Generate Well metadata and group
+            well_metadata = self._generate_well_metadata(list(fields))
             well_group_path = self._dest / well_path
             _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
 

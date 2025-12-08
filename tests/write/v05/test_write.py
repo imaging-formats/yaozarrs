@@ -224,7 +224,7 @@ def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
 def test_write_image_invalid_writer(tmp_path: Path) -> None:
     """Test that invalid writer raises error."""
     with pytest.raises(ValueError, match="Unknown writer"):
-        write_image(
+        write_image(  # ty: ignore[no-matching-overload]
             tmp_path / "invalid.zarr",
             _make_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5}),
             datasets=[np.random.rand(2, 64, 64).astype("float32")],
@@ -485,7 +485,7 @@ def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> No
     for (row, col, fov), (image, datasets) in images_mapping.items():
         wells_data.setdefault((row, col), {})[fov] = (image, datasets)
     for (row, col), fields in wells_data.items():
-        assert builder.write_well(row=row, col=col, fields=fields) is builder
+        assert builder.write_well(row=row, col=col, images=fields) is builder
     assert repr(builder) == "<PlateBuilder: 2 wells>"
     yaozarrs.validate_zarr_store(dest)
 
@@ -534,7 +534,7 @@ def test_plate_builder_well_metadata_generation(
         )
         for fov in ["2", "0", "1"]
     }
-    builder.write_well(row="A", col="01", fields=fields)
+    builder.write_well(row="A", col="01", images=fields)
     well_meta = json.loads((dest / "A" / "01" / "zarr.json").read_bytes())
     images_meta = well_meta["attributes"]["ome"]["well"]["images"]
     assert [img["path"] for img in images_meta] == ["0", "1", "2"]
@@ -709,9 +709,19 @@ def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> N
     # Simulate microscope acquiring frames one at a time
     reference = np.zeros(shape, dtype="uint16")
     frame_count = 0
+    futures = []
     for idx in np.ndindex(nt, nc, nz):
-        arr[idx] = reference[idx] = np.full((16, 16), frame_count, dtype="uint16")
+        frame = np.full((16, 16), frame_count, dtype="uint16")
+        if writer == "tensorstore":
+            # exercise the async write path for tensorstore
+            futures.append(arr[idx].write(frame))  # type: ignore
+        else:
+            arr[idx] = frame
+        reference[idx] = frame
         frame_count += 1
+
+    for fut in futures:
+        fut.result()
 
     assert frame_count == math.prod(shape[:-2])
     np.testing.assert_array_equal(arr, reference)
