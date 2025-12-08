@@ -17,6 +17,10 @@ The general pattern is:
    - Use lower level prepare functions when you need to customize how data is written,
      perhaps in a streaming, or slice-by-slice manner.
 4. Call the appropriate function with your metadata model and data arrays.
+
+A key observation here is that only the Dataset entries in any of the models actually
+corresponds to a zarr Array... the rest of the format is just metadata and group
+hierarchy.
 """
 
 from __future__ import annotations
