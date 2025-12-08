@@ -12,7 +12,15 @@ import pytest
 
 import yaozarrs
 from yaozarrs import v05
-from yaozarrs.write.v05 import _write, write_bioformats2raw, write_image
+from yaozarrs.write.v05 import (
+    Bf2RawBuilder,
+    PlateBuilder,
+    _write,
+    prepare_image,
+    write_bioformats2raw,
+    write_image,
+    write_plate,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -44,7 +52,7 @@ if not WRITERS:
 np.random.seed(42)
 
 
-def make_simple_image(name: str, dims_scale: Mapping[str, float]) -> v05.Image:
+def _make_image(name: str, dims_scale: Mapping[str, float]) -> v05.Image:
     """Create a simple v05.Image model for testing.
 
     Parameters
@@ -145,7 +153,7 @@ def test_write_image_dimensions(tmp_path: Path, writer: ZarrWriter, ndim: int) -
     shapes = {2: (64, 64), 3: (2, 64, 64), 4: (5, 2, 32, 32)}
     dest = tmp_path / f"test{ndim}d.zarr"
     data = np.random.rand(*shapes[ndim]).astype(np.float32)
-    image = make_simple_image(f"test{ndim}d", dims_scales[ndim])
+    image = _make_image(f"test{ndim}d", dims_scales[ndim])
 
     result = write_image(dest, image, datasets=[data], writer=writer)
 
@@ -190,7 +198,7 @@ def test_write_image_chunks(
     """Test write_image with different chunk configurations."""
     dest = tmp_path / f"chunks_{chunks}.zarr"
     data = np.random.rand(*data_shape).astype(np.float32)
-    image = make_simple_image("chunks_test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("chunks_test", {"c": 1.0, "y": 0.5, "x": 0.5})
     write_image(dest, image, datasets=[data], chunks=chunks, writer=writer)
 
     yaozarrs.validate_zarr_store(dest)
@@ -210,7 +218,7 @@ def test_write_image_metadata_correct(tmp_path: Path, writer: ZarrWriter) -> Non
     """Test that written metadata matches input Image model."""
     dest = tmp_path / "metadata.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("metadata_test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("metadata_test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     write_image(dest, image, datasets=[data], writer=writer)
 
@@ -267,7 +275,7 @@ def test_write_bioformats2raw_single_series(tmp_path: Path, writer: ZarrWriter) 
     """Test write_bioformats2raw with a single series."""
     dest = tmp_path / "bf2raw.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("series_0", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("series_0", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     images = {"0": (image, [data])}
 
@@ -301,7 +309,7 @@ def test_write_bioformats2raw_multiple_series(
     images = {}
     for i in range(3):
         data = np.random.rand(2, 32, 32).astype(np.float32)
-        image = make_simple_image(f"series_{i}", {"c": 1.0, "y": 0.5, "x": 0.5})
+        image = _make_image(f"series_{i}", {"c": 1.0, "y": 0.5, "x": 0.5})
         images[str(i)] = (image, [data])
 
     result = write_bioformats2raw(dest, images, writer=writer)
@@ -327,7 +335,7 @@ def test_write_bioformats2raw_with_ome_xml(tmp_path: Path, writer: ZarrWriter) -
     """Test write_bioformats2raw with OME-XML metadata."""
     dest = tmp_path / "with_xml.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("with_xml", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("with_xml", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     ome_xml = '<?xml version="1.0"?><OME xmlns="test">test content</OME>'
     images = {"0": (image, [data])}
@@ -364,11 +372,10 @@ def test_write_bioformats2raw_multiscale_series(
 @pytest.mark.parametrize("writer", WRITERS)
 def test_bf2raw_builder_conflict_detection(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test that Bf2RawBuilder detects conflicts between write_image and add_series."""
-    from yaozarrs.write.v05 import Bf2RawBuilder
 
     dest = tmp_path / "conflict.zarr"
     data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     # Test 1: write_image then add_series with same name
     builder = Bf2RawBuilder(dest, writer=writer)
@@ -395,7 +402,7 @@ def test_write_image_invalid_writer(tmp_path: Path) -> None:
     """Test that invalid writer raises error."""
     dest = tmp_path / "invalid.zarr"
     data = np.random.rand(2, 64, 64).astype(np.float32)
-    image = make_simple_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     with pytest.raises(ValueError, match="Unknown writer"):
         write_image(dest, image, datasets=[data], writer="invalid")  # type: ignore
@@ -407,33 +414,17 @@ def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
     dest = tmp_path / "omero.zarr"
     data = np.random.rand(3, 64, 64).astype(np.float32)
 
-    image = v05.Image(
-        multiscales=[
-            v05.Multiscale(
-                name="rgb_image",
-                axes=[
-                    v05.ChannelAxis(name="c"),
-                    v05.SpaceAxis(name="y", unit="micrometer"),
-                    v05.SpaceAxis(name="x", unit="micrometer"),
+    image = _make_image("rgb_image", {"c": 1.0, "y": 0.5, "x": 0.5}).model_copy(
+        update={
+            "omero": v05.Omero(
+                channels=[
+                    v05.OmeroChannel(color="FF0000", label="Red", active=True),
+                    v05.OmeroChannel(color="00FF00", label="Green", active=True),
+                    v05.OmeroChannel(color="0000FF", label="Blue", active=True),
                 ],
-                datasets=[
-                    v05.Dataset(
-                        path="0",
-                        coordinateTransformations=[
-                            v05.ScaleTransformation(scale=[1.0, 0.5, 0.5])
-                        ],
-                    )
-                ],
+                rdefs=v05.OmeroRenderingDefs(model="color"),
             )
-        ],
-        omero=v05.Omero(
-            channels=[
-                v05.OmeroChannel(color="FF0000", label="Red", active=True),
-                v05.OmeroChannel(color="00FF00", label="Green", active=True),
-                v05.OmeroChannel(color="0000FF", label="Blue", active=True),
-            ],
-            rdefs=v05.OmeroRenderingDefs(model="color"),
-        ),
+        }
     )
 
     write_image(dest, image, datasets=[data], writer=writer)
@@ -458,7 +449,7 @@ def test_write_image_different_dtypes(
     data = np.random.rand(2, 32, 32).astype(dtype)
     if np.issubdtype(dtype, np.integer):
         data = (data * 255).astype(dtype)
-    image = make_simple_image(f"dtype_{dtype.__name__}", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image(f"dtype_{dtype.__name__}", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     write_image(dest, image, datasets=[data], writer=writer)
 
@@ -476,7 +467,7 @@ def test_write_image_compression_options(
     """Test that each writer backend correctly honors each compression option."""
     dest = tmp_path / f"{writer}_{compression}.zarr"
     data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image(f"{compression}_test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image(f"{compression}_test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     write_image(
         dest,
@@ -576,7 +567,7 @@ def make_simple_plate(
     for row_name in row_names:
         for col_name in col_names:
             data = np.random.rand(2, 64, 64).astype(np.float32)
-            image = make_simple_image(
+            image = _make_image(
                 f"{row_name}/{col_name}/0", {"c": 1.0, "y": 0.5, "x": 0.5}
             )
             images[(row_name, col_name, "0")] = (image, [data])
@@ -587,7 +578,6 @@ def make_simple_plate(
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_simple_2x2(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with a simple 2x2 plate."""
-    from yaozarrs.write.v05 import write_plate
 
     dest = tmp_path / "plate_2x2.zarr"
     plate, images = make_simple_plate(n_rows=2, n_cols=2)
@@ -624,8 +614,6 @@ def test_write_plate_simple_2x2(tmp_path: Path, writer: ZarrWriter) -> None:
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with multiple fields per well."""
-    from yaozarrs.write.v05 import write_plate
-
     dest = tmp_path / "plate_multi_field.zarr"
 
     # Create simple 1x1 plate with 2 fields
@@ -640,7 +628,7 @@ def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
     images = {}
     for fov in ["0", "1"]:
         data = np.random.rand(2, 32, 32).astype(np.float32)
-        image = make_simple_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
+        image = _make_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
         images[("A", "01", fov)] = (image, [data])
 
     result = write_plate(dest, images, plate=plate, writer=writer)
@@ -663,7 +651,6 @@ def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_single_well(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with a single well (1x1 plate)."""
-    from yaozarrs.write.v05 import write_plate
 
     dest = tmp_path / "plate_1x1.zarr"
     plate, images = make_simple_plate(n_rows=1, n_cols=1)
@@ -678,7 +665,6 @@ def test_write_plate_single_well(tmp_path: Path, writer: ZarrWriter) -> None:
 @pytest.mark.parametrize("writer", WRITERS)
 def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test PlateBuilder immediate write workflow."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "builder_immediate.zarr"
     plate, images_mapping = make_simple_plate(n_rows=1, n_cols=2)
@@ -710,7 +696,6 @@ def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> No
 @pytest.mark.parametrize("writer", WRITERS)
 def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test PlateBuilder prepare-only workflow."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "builder_prepare.zarr"
     plate, images_mapping = make_simple_plate(n_rows=1, n_cols=1)
@@ -738,14 +723,13 @@ def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
 
 def test_plate_builder_invalid_well_path(tmp_path: Path) -> None:
     """Test that PlateBuilder raises error for invalid well path."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "invalid_well.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
 
     builder = PlateBuilder(dest, plate=plate, writer="zarr")
     data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     # Try to write well that doesn't exist in plate metadata
     with pytest.raises(ValueError, match="not found in plate metadata"):
@@ -754,14 +738,13 @@ def test_plate_builder_invalid_well_path(tmp_path: Path) -> None:
 
 def test_plate_builder_duplicate_well_write_write(tmp_path: Path) -> None:
     """Test that PlateBuilder raises error when writing same well twice."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "duplicate_well.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
 
     builder = PlateBuilder(dest, plate=plate, writer="zarr")
     data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     # Write well first time
     builder.write_well(row="A", col="01", fields={"0": (image, [data])})
@@ -773,14 +756,13 @@ def test_plate_builder_duplicate_well_write_write(tmp_path: Path) -> None:
 
 def test_plate_builder_duplicate_well_add_write(tmp_path: Path) -> None:
     """Test that PlateBuilder raises error when adding then writing same well."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "duplicate_add_write.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
 
     builder = PlateBuilder(dest, plate=plate, writer="zarr")
     data = np.random.rand(2, 32, 32).astype(np.float32)
-    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     # Add well first
     builder.add_well(row="A", col="01", fields={"0": (image, [data])})
@@ -792,7 +774,6 @@ def test_plate_builder_duplicate_well_add_write(tmp_path: Path) -> None:
 
 def test_plate_builder_prepare_empty(tmp_path: Path) -> None:
     """Test that PlateBuilder.prepare() raises error when no wells added."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "empty_prepare.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
@@ -805,13 +786,12 @@ def test_plate_builder_prepare_empty(tmp_path: Path) -> None:
 
 def test_plate_builder_dataset_count_mismatch(tmp_path: Path) -> None:
     """Test that PlateBuilder raises error for dataset count mismatch."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "dataset_mismatch.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
 
     builder = PlateBuilder(dest, plate=plate, writer="zarr")
-    image = make_simple_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
+    image = _make_image("test", {"c": 1.0, "y": 0.5, "x": 0.5})
 
     # Image expects 1 dataset but we provide 2
     data1 = np.random.rand(2, 32, 32).astype(np.float32)
@@ -823,7 +803,6 @@ def test_plate_builder_dataset_count_mismatch(tmp_path: Path) -> None:
 
 def test_plate_builder_multiscale_error(tmp_path: Path) -> None:
     """Test that PlateBuilder raises error for multiple multiscales."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "multiscale_error.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
@@ -878,7 +857,6 @@ def test_plate_builder_well_metadata_generation(
     tmp_path: Path, writer: ZarrWriter
 ) -> None:
     """Test that PlateBuilder correctly generates well metadata."""
-    from yaozarrs.write.v05 import PlateBuilder
 
     dest = tmp_path / "well_metadata.zarr"
     plate, _ = make_simple_plate(n_rows=1, n_cols=1)
@@ -889,7 +867,7 @@ def test_plate_builder_well_metadata_generation(
     fields = {}
     for fov in ["2", "0", "1"]:
         data = np.random.rand(2, 32, 32).astype(np.float32)
-        image = make_simple_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
+        image = _make_image(f"field_{fov}", {"c": 1.0, "y": 0.5, "x": 0.5})
         fields[fov] = (image, [data])
 
     builder.write_well(row="A", col="01", fields=fields)
@@ -909,7 +887,6 @@ def test_plate_builder_well_metadata_generation(
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_with_different_chunks(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with custom chunk settings."""
-    from yaozarrs.write.v05 import write_plate
 
     dest = tmp_path / "plate_chunks.zarr"
     plate, images = make_simple_plate(n_rows=1, n_cols=1)
@@ -933,7 +910,6 @@ def test_write_plate_compression(
     tmp_path: Path, writer: ZarrWriter, compression: CompressionName
 ) -> None:
     """Test write_plate with different compression options."""
-    from yaozarrs.write.v05 import write_plate
 
     dest = tmp_path / f"plate_{compression}.zarr"
     plate, images = make_simple_plate(n_rows=1, n_cols=1)
@@ -955,7 +931,6 @@ def test_write_plate_compression(
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_overwrite(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with overwrite=True."""
-    from yaozarrs.write.v05 import write_plate
 
     dest = tmp_path / "plate_overwrite.zarr"
     plate, images = make_simple_plate(n_rows=1, n_cols=1)
@@ -981,7 +956,6 @@ def test_write_plate_overwrite(tmp_path: Path, writer: ZarrWriter) -> None:
 @pytest.mark.parametrize("writer", WRITERS)
 def test_write_plate_large_grid(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test write_plate with a larger plate grid (4x6)."""
-    from yaozarrs.write.v05 import write_plate
 
     dest = tmp_path / "plate_4x6.zarr"
     plate, images = make_simple_plate(n_rows=4, n_cols=6)
@@ -996,6 +970,57 @@ def test_write_plate_large_grid(tmp_path: Path, writer: ZarrWriter) -> None:
     # Spot check a few wells
     assert (dest / "A" / "01" / "0" / "zarr.json").exists()
     assert (dest / "D" / "06" / "0" / "zarr.json").exists()
+
+    yaozarrs.validate_zarr_store(dest)
+
+
+# =============================================================================
+# prepare_image streaming tests
+# =============================================================================
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test prepare_image with frame-by-frame streaming writes (microscope pattern).
+
+    Simulates a microscope acquiring data one (Y, X) frame at a time,
+    iterating through T, C, Z dimensions sequentially.
+    """
+    dest = tmp_path / "streaming_5d.zarr"
+    shape = (2, 3, 4, 16, 16)  # TCZYX
+    dtype = np.uint16
+
+    # Create 5D TCZYX image metadata
+    image = _make_image(
+        "streaming_test", {"t": 100.0, "c": 1.0, "z": 1.0, "y": 0.5, "x": 0.5}
+    )
+
+    # Prepare empty array
+    _path, arrays = prepare_image(dest, image, (np.dtype(dtype), shape), writer=writer)
+    arr = arrays["0"]
+
+    # Simulate microscope acquiring frames one at a time
+    # Generate reference data to compare against
+    reference = np.zeros(shape, dtype=dtype)
+    frame_count = 0
+
+    for t in range(shape[0]):
+        for c in range(shape[1]):
+            for z in range(shape[2]):
+                # Generate a unique frame (simulating microscope acquisition)
+                frame = np.full((16, 16), frame_count, dtype=dtype)
+                reference[t, c, z] = frame
+
+                # Write single frame to zarr array
+                arr[t, c, z, :, :] = frame
+                frame_count += 1
+
+    # Verify total frames written
+    assert frame_count == shape[0] * shape[1] * shape[2]  # 2 * 3 * 4 = 24 frames
+
+    # Read back and verify data integrity
+    result = np.asarray(arr[:])
+    np.testing.assert_array_equal(result, reference)
 
     yaozarrs.validate_zarr_store(dest)
 
