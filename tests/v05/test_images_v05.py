@@ -501,7 +501,7 @@ def test_multiscale_from_dims() -> None:
     """Test Multiscale.from_dims with all features."""
     dims = [
         DimSpec(name="t", size=10, scale=1.0, unit="second"),
-        DimSpec(name="c", size=3),
+        DimSpec(name="c", type="channel", size=3),
         # z with custom scale_factor=1.0 (no downsampling)
         DimSpec(name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0),
         DimSpec(name="y", size=512, scale=0.5, unit="micrometer", translation=20.0),

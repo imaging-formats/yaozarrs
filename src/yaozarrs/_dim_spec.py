@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field
 
@@ -65,7 +65,7 @@ class DimSpec(_BaseModel):
             "If not provided, no unit will be set on the axis."
         ),
     )
-    type: str | None = Field(
+    type: Literal["space", "time", "channel"] | str | None = Field(
         default=None,
         description=(
             "The type of axis ('space', 'time', 'channel', or custom). If not "

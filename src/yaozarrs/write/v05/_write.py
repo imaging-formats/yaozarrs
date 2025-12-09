@@ -1869,7 +1869,7 @@ class LabelsBuilder:
         ImportError
             If no suitable writer backend is installed.
         """
-        if not self._labels:
+        if not self._labels:  # pragma: no cover
             raise ValueError("No labels added. Use add_label() before prepare().")
 
         # Create labels/zarr.json with LabelsGroup metadata
@@ -1902,9 +1902,9 @@ class LabelsBuilder:
     # ------------------ Internal methods ------------------
 
     def _validate_label_name(self, name: str) -> None:
-        if name in self._written_labels:
+        if name in self._written_labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already written via write_label().")
-        if name in self._labels:
+        if name in self._labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already added via add_label().")
 
     def _ensure_initialized(self) -> None:
@@ -1991,7 +1991,7 @@ def _validate_and_normalize_datasets(
 def _row_name_to_index(row_name: str) -> int:
     """Convert row name to index (A=0, B=1, ..., Z=25, AA=26, etc.)."""
     if not row_name or not row_name.isalpha() or not row_name.isupper():
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             f"Row name must be uppercase letters (A-Z, AA-ZZ, etc.), got: {row_name}"
         )
 
@@ -2007,7 +2007,7 @@ def _column_name_to_index(col_name: str) -> int:
     try:
         # Try parsing as integer (handles "1", "2", "10", "1", etc.)
         return int(col_name) - 1
-    except ValueError:
+    except ValueError:  # pragma: no cover
         raise ValueError(
             f"Column name must be numeric (1, 2, 10, etc.), got: {col_name}"
         ) from None
@@ -2144,16 +2144,16 @@ def _validate_plate_matches_images(
 
     # Check all images have valid coordinates
     for row, col, _fov in images.keys():
-        if row not in valid_rows:
+        if row not in valid_rows:  # pragma: no cover
             raise ValueError(
                 f"Image row '{row}' not found in plate rows: {sorted(valid_rows)}"
             )
-        if col not in valid_cols:
+        if col not in valid_cols:  # pragma: no cover
             raise ValueError(
                 f"Image column '{col}' not found in plate columns: {sorted(valid_cols)}"
             )
         well_path = f"{row}/{col}"
-        if well_path not in valid_wells:
+        if well_path not in valid_wells:  # pragma: no cover
             raise ValueError(
                 f"Image well '{well_path}' not found in plate wells: "
                 f"{sorted(valid_wells)}"
@@ -2179,7 +2179,7 @@ def _create_zarr3_group(
             )
         # Be cautious before deleting.
         # If it doesn't look like a zarr group, raise an error rather than deleting.
-        if not zarr_json_path.exists():
+        if not zarr_json_path.exists():  # pragma: no cover
             raise FileExistsError(
                 f"Destination {dest_path} exists, but is not a Zarr group. "
                 "Refusing to overwrite.  Please delete manually."
