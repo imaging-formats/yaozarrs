@@ -7,7 +7,7 @@ from yaozarrs import validate_ome_json
 DATA = Path(__file__).parent / "data"
 
 # ALL of the zarr.json files in the test data
-ZARR_JSONS = sorted(x for x in DATA.rglob("zarr.json"))
+ZARR_JSONS = sorted(x for x in DATA.rglob("zarr.json") if "broken" not in str(x))
 # The *contents* of all zarr.json files that contain OME metadata
 OME_ZARR_JSONS: dict[str, str] = {
     str(path.relative_to(DATA)): content

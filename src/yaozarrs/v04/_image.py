@@ -1,68 +1,15 @@
+from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
-from annotated_types import Len, MinLen
+from annotated_types import MinLen
 from pydantic import AfterValidator, Field, WrapValidator, model_validator
 from typing_extensions import Self
 
+from yaozarrs._axis import AxesList
 from yaozarrs._base import ZarrGroupModel, _BaseModel
+from yaozarrs._dim_spec import DimSpec
+from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
-from yaozarrs._units import SpaceUnits, TimeUnits
-
-# ------------------------------------------------------------------------------
-# Axis model
-# ------------------------------------------------------------------------------
-
-AxisType: TypeAlias = Literal["space", "time", "channel"]
-
-
-class _AxisBase(_BaseModel):
-    name: str = Field(description="The name of the axis.")
-
-
-class SpaceAxis(_AxisBase):
-    type: Literal["space"] = "space"
-    unit: SpaceUnits | None = None
-
-
-class TimeAxis(_AxisBase):
-    type: Literal["time"] = "time"
-    unit: TimeUnits | None = None
-
-
-class ChannelAxis(_AxisBase):
-    type: Literal["channel"] = "channel"
-
-
-class CustomAxis(_AxisBase):
-    type: str | None = None
-
-
-Axis: TypeAlias = SpaceAxis | TimeAxis | ChannelAxis | CustomAxis
-
-
-def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
-    """Validate a list of Axis for `Multiscale.axes`."""
-    names = [ax.name for ax in axes]
-    if len(names) != len(set(names)):
-        raise ValueError(f"Axis names must be unique. Found duplicates in {names}")
-
-    # There must be between 2 and 3 space axes
-    n_space_axes = len([ax for ax in axes if ax.type == "space"])
-    if n_space_axes < 2 or n_space_axes > 3:
-        raise ValueError("There must be 2 or 3 axes of type 'space'.")
-    if len([ax for ax in axes if ax.type == "time"]) > 1:
-        raise ValueError("There can be at most 1 axis of type 'time'.")
-    if len([ax for ax in axes if ax.type == "channel"]) > 1:
-        raise ValueError("There can be at most 1 axis of type 'channel'.")
-
-    return axes
-
-
-AxesList: TypeAlias = Annotated[
-    UniqueList[Axis],
-    Len(min_length=2, max_length=5),
-    WrapValidator(lambda v, h: _validate_axes_list(h(v))),
-]
 
 # ------------------------------------------------------------------------------
 # Transformations model
@@ -240,29 +187,46 @@ class Multiscale(_BaseModel):
     def ndim(self) -> int:
         return len(self.axes)
 
+    @classmethod
+    def from_dims(
+        cls,
+        dims: Sequence[DimSpec],
+        name: str | None = None,
+        n_levels: int = 1,
+    ) -> Self:
+        """Convenience constructor: Create Multiscale from a sequence of DimSpec.
 
-# ------------------------------------------------------------------------------
-# Omero model
-# ------------------------------------------------------------------------------
+        Parameters
+        ----------
+        dims : Sequence[DimSpec]
+            A sequence of dimension specifications defining the image dimensions.
+            Must follow OME-Zarr axis ordering: `[time,] [channel,] space...`
+        name : str | None, optional
+            Name for the multiscale. Default is None.
+        n_levels : int, optional
+            Number of resolution levels in the pyramid. Default is 1.
 
+        Returns
+        -------
+        Multiscale
+            A fully configured Multiscale model.
 
-class OmeroWindow(_BaseModel):
-    start: float
-    min: float
-    end: float
-    max: float
+        Examples
+        --------
+        >>> from yaozarrs import DimSpec, v04
+        >>> dims = [
+        ...     DimSpec(name="t", size=512, unit="second"),
+        ...     DimSpec(
+        ...         name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0
+        ...     ),
+        ...     DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
+        ...     DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
+        ... ]
+        >>> v04.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)
+        """
+        from yaozarrs._dim_spec import _axes_datasets
 
-
-class OmeroChannel(_BaseModel):
-    window: OmeroWindow
-    label: str | None = None
-    family: str | None = None
-    color: str
-    active: bool | None = None
-
-
-class Omero(_BaseModel):
-    channels: list[OmeroChannel]
+        return cls(name=name, **_axes_datasets(dims, n_levels))  # type: ignore
 
 
 # ------------------------------------------------------------------------------

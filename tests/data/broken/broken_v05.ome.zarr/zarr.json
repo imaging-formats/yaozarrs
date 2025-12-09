@@ -1,0 +1,88 @@
+{
+  "attributes": {
+    "ome": {
+      "version": "0.5",
+      "plate": {
+        "columns": [
+          {
+            "name": "1"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "3"
+          }
+        ],
+        "rows": [
+          {
+            "name": "A"
+          },
+          {
+            "name": "B"
+          },
+          {
+            "name": "C"
+          }
+        ],
+        "wells": [
+          {
+            "path": "A/1",
+            "rowIndex": 0,
+            "columnIndex": 0
+          },
+          {
+            "path": "A/2",
+            "rowIndex": 0,
+            "columnIndex": 1
+          },
+          {
+            "path": "A/3",
+            "rowIndex": 0,
+            "columnIndex": 2
+          },
+          {
+            "path": "B/1",
+            "rowIndex": 1,
+            "columnIndex": 0
+          },
+          {
+            "path": "B/2",
+            "rowIndex": 1,
+            "columnIndex": 1
+          },
+          {
+            "path": "B/3",
+            "rowIndex": 1,
+            "columnIndex": 2
+          },
+          {
+            "path": "C/1",
+            "rowIndex": 2,
+            "columnIndex": 0
+          },
+          {
+            "path": "C/2",
+            "rowIndex": 2,
+            "columnIndex": 1
+          },
+          {
+            "path": "C/3",
+            "rowIndex": 2,
+            "columnIndex": 2
+          }
+        ],
+        "name": "test-plate",
+        "acquisitions": [
+          {
+            "id": 0,
+            "name": "default"
+          }
+        ]
+      }
+    }
+  },
+  "zarr_format": 3,
+  "consolidated_metadata": null,
+  "node_type": "group"
+}

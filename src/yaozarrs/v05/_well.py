@@ -12,7 +12,11 @@ class FieldOfView(_BaseModel):
         description="The path for this field of view subgroup.",
         pattern=r"^[A-Za-z0-9]+$",
     )
-    acquisition: int = Field(
+    # If multiple acquisitions were performed in the plate, it MUST contain an
+    # acquisition key whose value MUST be an integer identifying the acquisition which
+    # MUST match one of the acquisition JSON objects defined in the plate metadata
+    acquisition: int | None = Field(
+        default=None,
         description="A unique identifier within the context of the plate.",
     )
 

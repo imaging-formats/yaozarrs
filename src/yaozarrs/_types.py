@@ -12,11 +12,11 @@ BASIC_TYPES = (str, int, float, bool, type(None), BaseModel)
 def _is_json_equivalent(a: Any, b: Any) -> bool:
     if isinstance(a, BASIC_TYPES) and isinstance(b, BASIC_TYPES):
         return bool(a == b)
-    if isinstance(a, Mapping) and isinstance(b, Mapping):
+    if isinstance(a, Mapping) and isinstance(b, Mapping):  # pragma: no cover
         if a.keys() != b.keys():
             return False
         return all(_is_json_equivalent(a[k], b[k]) for k in a)
-    if isinstance(a, Sequence) and isinstance(b, Sequence):
+    if isinstance(a, Sequence) and isinstance(b, Sequence):  # pragma: no cover
         return all(_is_json_equivalent(x, y) for x, y in zip(a, b, strict=True))
     raise TypeError(  # pragma: no cover
         f"Unsupported type for JSON equivalence: {type(a)}"

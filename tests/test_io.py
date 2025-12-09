@@ -4,6 +4,14 @@ from pathlib import Path
 import pytest
 
 from yaozarrs import from_uri, v04, v05
+from yaozarrs._base import ZarrGroupModel
+
+try:
+    from aiohttp.client_exceptions import ClientConnectorError
+
+    connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
+except ImportError:
+    connection_exceptions = ()
 
 HAVE_FSSPEC = importlib.util.find_spec("fsspec")
 DATA = Path(__file__).parent / "data"
@@ -23,16 +31,16 @@ SOURCES = {
 def test_from_uri(uri: str, expected_type: type) -> None:
     try:
         obj = from_uri(uri)
-    except FileNotFoundError as e:
+    except connection_exceptions as e:
         pytest.xfail(reason=f"Internet down?: {e}")
         return
 
     if isinstance(obj, v05.OMEZarrGroupJSON):
         # in v05, the ome info is inside the doc['attributes']['ome'] key
         assert isinstance(obj.attributes.ome, expected_type)
-        assert obj.uri.endswith("zarr.json")
+        assert obj.uri is not None and obj.uri.endswith("zarr.json")
     else:
         # in v04, the document is itself the ome model
-        assert isinstance(obj, v04.OMEZarrGroupJSON)
         assert isinstance(obj, expected_type)
-        assert obj.uri.endswith(".zattrs")
+        assert isinstance(obj, ZarrGroupModel)
+        assert obj.uri is not None and obj.uri.endswith(".zattrs")

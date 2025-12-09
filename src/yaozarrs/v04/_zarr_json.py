@@ -220,24 +220,66 @@ converted_file/
 }
 """
 
-from typing import TypeAlias
+from typing import Annotated, Any, TypeAlias
+
+from pydantic import BaseModel, Discriminator, Tag
 
 from ._bf2raw import Bf2Raw
 from ._image import Image
-from ._label import LabelImage
-from ._ome import OME
+from ._label import LabelImage, LabelsGroup
 from ._plate import Plate
-
-# from ._series import Series  # TODO?
+from ._series import Series
 from ._well import Well
 
-# LabelImage must come before Image because it's a subclass
-# could also use pydantic.Discriminator, but this is simpler
+
+def _discriminate_ome_v04_metadata(v: Any) -> str | None:
+    if isinstance(v, dict):
+        if "image-label" in v:
+            return "label-image"
+        if "multiscales" in v:
+            return "image"
+        if "plate" in v:
+            return "plate"
+        if "bioformats2raw.layout" in v or "bioformats2raw_layout" in v:
+            return "bf2raw"
+        if "well" in v:
+            return "well"
+        if "labels" in v:
+            return "labels-group"
+        if "series" in v:
+            return "series"
+    elif isinstance(v, BaseModel):
+        if isinstance(v, LabelImage):
+            return "label-image"
+        if isinstance(v, Image):
+            return "image"
+        if isinstance(v, Plate):
+            return "plate"
+        if isinstance(v, Bf2Raw):
+            return "bf2raw"
+        if isinstance(v, Well):
+            return "well"
+        if isinstance(v, LabelsGroup):
+            return "labels-group"
+        if isinstance(v, Series):  # pragma: no cover
+            return "series"
+    return None
 
 
 # NOTE:
 # these are ALL also ZarrGroupModels (i.e. have a "uri" attribute)
-OMEZarrGroupJSON: TypeAlias = LabelImage | Image | Plate | Well | OME | Bf2Raw
+OMEZarrGroupJSON: TypeAlias = Annotated[
+    (
+        Annotated[LabelImage, Tag("label-image")]
+        | Annotated[Image, Tag("image")]
+        | Annotated[Plate, Tag("plate")]
+        | Annotated[Bf2Raw, Tag("bf2raw")]
+        | Annotated[Well, Tag("well")]
+        | Annotated[LabelsGroup, Tag("labels-group")]
+        | Annotated[Series, Tag("series")]
+    ),
+    Discriminator(_discriminate_ome_v04_metadata),
+]
 """A .zattrs document found in any ome-zarr group.
 
 OME-ZARR v0.4 uses zarr format version 2:

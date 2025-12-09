@@ -1,0 +1,13 @@
+{
+  "attributes": {
+    "ome": {
+      "labels": [
+        "annotations"
+      ],
+      "version": "0.5"
+    }
+  },
+  "zarr_format": 3,
+  "consolidated_metadata": null,
+  "node_type": "group"
+}

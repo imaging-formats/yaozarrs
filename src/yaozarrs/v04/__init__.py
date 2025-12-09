@@ -7,21 +7,15 @@
 
 from __future__ import annotations
 
-from yaozarrs.v04._bf2raw import Bf2Raw
-from yaozarrs.v04._ome import OME
+from yaozarrs._axis import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
+from yaozarrs._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 
+from ._bf2raw import Bf2Raw
 from ._image import (
-    ChannelAxis,
-    CustomAxis,
     Dataset,
     Image,
     Multiscale,
-    Omero,
-    OmeroChannel,
-    OmeroWindow,
     ScaleTransformation,
-    SpaceAxis,
-    TimeAxis,
     TranslationTransformation,
 )
 from ._label import (
@@ -32,12 +26,13 @@ from ._label import (
     LabelSource,
 )
 from ._plate import Acquisition, Column, Plate, PlateDef, PlateWell, Row
+from ._series import Series
 from ._well import FieldOfView, Well, WellDef
 from ._zarr_json import OMEZarrGroupJSON
 
 __all__ = [
-    "OME",
     "Acquisition",
+    "Axis",
     "Bf2Raw",
     "ChannelAxis",
     "Column",
@@ -54,12 +49,14 @@ __all__ = [
     "OMEZarrGroupJSON",
     "Omero",
     "OmeroChannel",
+    "OmeroRenderingDefs",
     "OmeroWindow",
     "Plate",
     "PlateDef",
     "PlateWell",
     "Row",
     "ScaleTransformation",
+    "Series",
     "SpaceAxis",
     "TimeAxis",
     "TranslationTransformation",

@@ -1,86 +1,15 @@
+from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
-from annotated_types import Len, MinLen
+from annotated_types import MinLen
 from pydantic import AfterValidator, Field, WrapValidator, model_validator
 from typing_extensions import Self
 
+from yaozarrs._axis import AxesList
 from yaozarrs._base import _BaseModel
+from yaozarrs._dim_spec import DimSpec
+from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
-from yaozarrs._units import SpaceUnits, TimeUnits
-
-# ------------------------------------------------------------------------------
-# Axis model
-# ------------------------------------------------------------------------------
-
-AxisType: TypeAlias = Literal["space", "time", "channel"]
-
-
-class _AxisBase(_BaseModel):
-    name: str = Field(description="The name of the axis.")
-
-
-class SpaceAxis(_AxisBase):
-    type: Literal["space"] = "space"
-    unit: SpaceUnits | None = None  # SHOULD
-
-
-class TimeAxis(_AxisBase):
-    type: Literal["time"] = "time"
-    unit: TimeUnits | None = None  # SHOULD
-
-
-class ChannelAxis(_AxisBase):
-    type: Literal["channel"] = "channel"
-    unit: str | None = None  # SHOULD
-
-
-class CustomAxis(_AxisBase):
-    type: str | None = None  # SHOULD
-    unit: str | None = None  # SHOULD
-
-
-# this union allows us to restrict units based on type.
-# Use CustomAxis for any type/unit.
-Axis: TypeAlias = SpaceAxis | TimeAxis | ChannelAxis | CustomAxis
-
-
-def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
-    """Validate a list of Axis for `Multiscale.axes`."""
-    # names MUST be unique within the list.
-    names = [ax.name for ax in axes]
-    if len(names) != len(set(names)):
-        raise ValueError(f"Axis names must be unique. Found duplicates in {names}")
-
-    # The "axes" MUST contain 2 or 3 entries of "type:space"
-    # and MAY contain one additional entry of "type:time"
-    # and MAY contain one additional entry of "type:channel" or a null / custom type.
-    n_space_axes = len([ax for ax in axes if ax.type == "space"])
-    if n_space_axes < 2 or n_space_axes > 3:
-        raise ValueError("There must be 2 or 3 axes of type 'space'.")
-    if len([ax for ax in axes if ax.type == "time"]) > 1:
-        raise ValueError("There can be at most 1 axis of type 'time'.")
-    if len([ax for ax in axes if ax.type == "channel"]) > 1:
-        raise ValueError("There can be at most 1 axis of type 'channel'.")
-
-    # The entries MUST be ordered by "type" where the "time" axis must come first (if
-    # present), followed by the "channel" or custom axis (if present) and the axes of
-    # type "space".
-    type_order = {"time": 0, "channel": 1, None: 1, "space": 2}
-    sorted_axes = sorted(axes, key=lambda ax: type_order.get(ax.type, 3))
-    if axes != sorted_axes:
-        raise ValueError(
-            "Axes are not in the required order by type. "
-            "Order must be [time,] [channel,] space."
-        )
-    return axes
-
-
-AxesList: TypeAlias = Annotated[
-    UniqueList[Axis],
-    Len(min_length=2, max_length=5),
-    # hack to get around ordering of multiple after validators
-    WrapValidator(lambda v, h: _validate_axes_list(h(v))),
-]
 
 # ------------------------------------------------------------------------------
 # Transformations model
@@ -179,13 +108,21 @@ class Dataset(_BaseModel):
         )
     )
 
+    @property
+    def scale_transform(self) -> ScaleTransformation:
+        """Return the scale transformation from the list.
+
+        (CoordinateTransformsList validator ensures there is exactly one.)
+        """
+        return next(
+            t
+            for t in self.coordinateTransformations
+            if isinstance(t, ScaleTransformation)
+        )
+
 
 def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
     """Validate a list of Dataset for `Multiscale.datasets`."""
-    # The "paths" of the datasets MUST be be ordered from the highest resolution to the
-    # lowest resolution (i.e. largest to smallest
-    ...  # (Cannot validate without I/O)
-
     # Each "datasets" dictionary MUST have the same number of dimensions...
     # NOTE: this wording from the spec is a bit ambiguous,
     # since the "number of dimensions" of a dataset is not explicitly defined.
@@ -260,7 +197,7 @@ class Multiscale(_BaseModel):
     )
 
     @model_validator(mode="after")
-    def _check_ndim(self) -> Self:
+    def _post_validate(self) -> Self:
         # The number and order of dimensions in each dataset MUST
         # correspond to number and order of "axes".
         # TODO ... this is ambiguous.  is it the same as the following check?
@@ -283,38 +220,68 @@ class Multiscale(_BaseModel):
                         f"  The length of the transformation ({transform.ndim}) "
                         f"does not match the number of axes ({self.ndim})."
                     )
+
+        # The "paths" of the datasets MUST be be ordered from the highest resolution to
+        # the lowest resolution (i.e. largest to smallest
+        spatial_indices: dict[int, str] = {
+            i: ax.name for i, ax in enumerate(self.axes) if ax.type == "space"
+        }
+        spatial_scales = [
+            tuple(ds.scale_transform.scale[idx] for idx in spatial_indices)
+            for ds in self.datasets
+        ]
+        if spatial_scales != sorted(spatial_scales):
+            raise ValueError(
+                "The datasets are not ordered from highest to lowest resolution. "
+                f"Found spatial scales: {spatial_scales}"
+            )
+
         return self
 
     @property
     def ndim(self) -> int:
         return len(self.axes)
 
+    @classmethod
+    def from_dims(
+        cls,
+        dims: Sequence[DimSpec],
+        name: str | None = None,
+        n_levels: int = 1,
+    ) -> Self:
+        """Convenience constructor: Create Multiscale from a sequence of DimSpec.
 
-# ------------------------------------------------------------------------------
-# Omero model
-# ------------------------------------------------------------------------------
+        Parameters
+        ----------
+        dims : Sequence[DimSpec]
+            A sequence of dimension specifications defining the image dimensions.
+            Must follow OME-Zarr axis ordering: `[time,] [channel,] space...`
+        name : str | None, optional
+            Name for the multiscale. Default is None.
+        n_levels : int, optional
+            Number of resolution levels in the pyramid. Default is 1.
 
+        Returns
+        -------
+        Multiscale
+            A fully configured Multiscale model.
 
-class OmeroWindow(_BaseModel):
-    start: float
-    min: float
-    end: float
-    max: float
+        Examples
+        --------
+        >>> from yaozarrs import DimSpec, v05
+        >>> dims = [
+        ...     DimSpec(name="t", size=512, unit="second"),
+        ...     DimSpec(
+        ...         name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0
+        ...     ),
+        ...     DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
+        ...     DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
+        ... ]
+        >>> v05.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)
+        """
+        from yaozarrs._dim_spec import _axes_datasets
 
-
-class OmeroChannel(_BaseModel):
-    window: OmeroWindow | None = None
-    label: str | None = None
-    family: str | None = None
-    color: str | None = None
-    active: bool | None = None
-    inverted: bool | None = None
-    coefficient: float | None = None
-
-
-class Omero(_BaseModel):
-    channels: list[OmeroChannel]
-    id: int | None = None
+        return cls(name=name, **_axes_datasets(dims, n_levels))  # type: ignore
 
 
 # ------------------------------------------------------------------------------

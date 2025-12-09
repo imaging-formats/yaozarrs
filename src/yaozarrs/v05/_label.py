@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from annotated_types import Interval, Len, MinLen
 from pydantic import Field
@@ -38,6 +38,9 @@ class LabelProperty(_BaseModel):
         description="The pixel value for this label",
         alias="label-value",
     )
+    # Additionally, an arbitrary number of key-value pairs MAY be present for each label
+    # value, denoting arbitrary metadata associated with that label.
+    # Label-value objects within the properties array do not need to have the same keys.
 
 
 # ------------------------------------------------------------------------------
@@ -68,6 +71,13 @@ class ImageLabel(_BaseModel):
         description="The source of this label image",
     )
 
+    # NOTE:
+    # the WORDING of the spec is
+    # image-label object SHOULD contain ... a version key, whose value MUST be a
+    # string specifying the version of the OME-Zarr image-label schema.
+    # but the EXAMPLE omits it, and the schema doesn't mention it at all.
+    version: Literal["0.5"] | None = None
+
 
 # ------------------------------------------------------------------------------
 # Labels group model (contains paths to individual label images)
@@ -78,6 +88,7 @@ class ImageLabel(_BaseModel):
 class LabelsGroup(_BaseModel):
     """Model for the labels group that contains paths to individual label images."""
 
+    version: Literal["0.5"] = "0.5"
     labels: Annotated[list[str], MinLen(1)] = Field(
         description="Array of paths to labeled multiscale images"
     )
