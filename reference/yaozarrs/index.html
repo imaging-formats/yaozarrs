@@ -333,6 +333,8 @@
       
         
       
+        
+      
     
     
     
@@ -508,6 +510,147 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="write/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>write
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_4" id="__nav_2_1_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>write
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="write/v05/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>v05
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_2_1_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>v05
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
               
             
           </ul>
@@ -821,6 +964,13 @@
           –
           <div class="doc-md-description">
             <p>v05 ome-zarr model.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+          <b><code><a class="autorefs autorefs-internal" title="            yaozarrs.write" href="write/#yaozarrs.write">write</a></code></b>
+          –
+          <div class="doc-md-description">
+            <p>Write utilities for yaozarrs.</p>
           </div>
         </li>
     </ul>
@@ -1444,7 +1594,7 @@ or a zarr-python Group.</p>
 </span><span id="__span-0-704">            <span class="s2">&quot;uri must be a string, os.PathLike, or have a &#39;store&#39; attribute&quot;</span>
 </span><span id="__span-0-705">        <span class="p">)</span>
 </span><span id="__span-0-706">
-</span><span id="__span-0-707">    <span class="n">mapper</span> <span class="o">=</span> <span class="n">get_mapper</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+</span><span id="__span-0-707">    <span class="n">mapper</span> <span class="o">=</span> <span class="n">get_mapper</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 </span><span id="__span-0-708">
 </span><span id="__span-0-709">    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mapper</span><span class="p">,</span> <span class="n">FSMap</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
 </span><span id="__span-0-710">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected FSMap from get_mapper, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mapper</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
