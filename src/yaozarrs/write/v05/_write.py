@@ -48,17 +48,15 @@ from typing_extensions import Self
 from yaozarrs.v05 import (
     Bf2Raw,
     Column,
-    FieldOfView,
     LabelImage,
     LabelsGroup,
     Plate,
     PlateDef,
     PlateWell,
     Row,
-    Series,
-    Well,
-    WellDef,
 )
+from yaozarrs.v05._bf2raw import Series
+from yaozarrs.v05._plate import FieldOfView, Well, WellDef
 
 __all__ = [
     "Bf2RawBuilder",

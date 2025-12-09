@@ -274,11 +274,10 @@ from pydantic import BaseModel, Discriminator, Tag
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs.v05._bf2raw import Bf2Raw
 
+from ._bf2raw import Series
 from ._image import Image
-from ._label import LabelImage, LabelsGroup
-from ._plate import Plate
-from ._series import Series
-from ._well import Well
+from ._labels import LabelImage, LabelsGroup
+from ._plate import Plate, Well
 
 
 def _discriminate_ome_v05_metadata(v: Any) -> str | None:

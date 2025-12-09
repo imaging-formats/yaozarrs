@@ -2,7 +2,7 @@ site_name: YAOZARRS ‼️
 repo_name: tlambert03/yaozarrs
 repo_url: https://github.com/tlambert03/yaozarrs
 site_url: https://tlambert03.github.io/yaozarrs/
-watch: [mkdocs.yml, README.md, docs, src/yaozarrs]
+watch: ['docs', 'src']
 
 theme:
   name: material
@@ -79,3 +79,4 @@ extra_css:
 
 extra_javascript:
   - js/yaozarrs-animation.js
+  - js/treeview.js

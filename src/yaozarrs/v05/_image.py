@@ -15,6 +15,14 @@ from yaozarrs._types import UniqueList
 # Transformations model
 # ------------------------------------------------------------------------------
 
+__all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
+    "Image",
+    "Multiscale",
+    "Dataset",
+    "ScaleTransformation",
+    "TranslationTransformation",
+]
+
 
 class ScaleTransformation(_BaseModel):
     """Maps array indices to physical coordinates via scaling.

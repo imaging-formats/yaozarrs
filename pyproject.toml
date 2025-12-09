@@ -53,6 +53,12 @@ test-full = [
     "yaozarrs[storage,write-tensorstore,write-zarrs]",
     "ome-zarr>=0.10.2",
 ]
+docs=[
+    "griffe-fieldz>=0.4.0",
+    "mkdocstrings-python>=2.0.1",
+    "ruff>=0.14.8",
+    "zensical>=0.0.11",
+]
 dev = [
     { include-group = "test-full" },
     { include-group = "docs" },
@@ -66,7 +72,8 @@ dev = [
     "ruff>=0.13.1",
     "ty>=0.0.1a21",
 ]
-docs = [
+
+old_docs = [
     "markdown-exec[ansi]>=1.11.0",
     "griffe-fieldz>=0.4.0",
     "mkdocs>=1.6.1",
@@ -74,6 +81,7 @@ docs = [
     "mkdocs-material>=9.6.20",
     "mkdocstrings-python>=1.18.2",
     "ruff>=0.13.2",
+    "click!=8.3",
 ]
 
 [project.urls]

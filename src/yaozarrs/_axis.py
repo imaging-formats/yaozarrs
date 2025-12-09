@@ -75,11 +75,15 @@ class _AxisBase(_BaseModel):
 
 
 class CustomAxis(_AxisBase):
+    """Axis with unrecognized or missing `type`, and any unit."""
+
     type: str | None = None  # SHOULD
     unit: str | None = None  # SHOULD
 
 
 class SpaceAxis(_AxisBase):
+    """Axis with `type="space"` (units restricted to SpaceUnits)."""
+
     if TYPE_CHECKING:
         type: Literal["space"] = "space"
     else:
@@ -95,6 +99,8 @@ class SpaceAxis(_AxisBase):
 
 
 class TimeAxis(_AxisBase):
+    """Axis with `type="time"` (units restricted to TimeUnits)."""
+
     if TYPE_CHECKING:
         type: Literal["time"] = "time"
     else:
@@ -110,6 +116,8 @@ class TimeAxis(_AxisBase):
 
 
 class ChannelAxis(_AxisBase):
+    """Axis with `type="channel"`."""
+
     if TYPE_CHECKING:
         type: Literal["channel"] = "channel"
     else:

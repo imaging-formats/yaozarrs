@@ -100,3 +100,34 @@ representations.
 ### Labels
 
    Segmentation masks or label images associated with the primary image data.
+
+<sl-select id="selection-mode" value="single" label="Selection">
+  <sl-option value="single">Single</sl-option>
+  <sl-option value="multiple">Multiple</sl-option>
+  <sl-option value="leaf">Leaf</sl-option>
+</sl-select>
+
+<br />
+
+<sl-tree class="tree-selectable">
+  <sl-tree-item>
+    Item 1
+    <sl-tree-item>
+      Item A
+      <sl-tree-item>Item Z</sl-tree-item>
+      <sl-tree-item>Item Y</sl-tree-item>
+      <sl-tree-item>Item X</sl-tree-item>
+    </sl-tree-item>
+    <sl-tree-item>Item B
+        <sl-tree-item>Item Z</sl-tree-item>
+        <sl-tree-item>Item Y</sl-tree-item>
+        <sl-tree-item>Item X</sl-tree-item>
+    </sl-tree-item>
+    <sl-tree-item>Item C</sl-tree-item>
+  </sl-tree-item>
+  <sl-tree-item>Item 2</sl-tree-item>
+  <sl-tree-item>Item 3</sl-tree-item>
+</sl-tree>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace.js"></script>

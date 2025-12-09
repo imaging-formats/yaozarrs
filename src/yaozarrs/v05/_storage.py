@@ -16,12 +16,10 @@ from typing import TypeAlias
 from yaozarrs._storage import StorageErrorType, ValidationResult
 from yaozarrs._validate import from_uri, validate_ome_object
 from yaozarrs._zarr import ZarrArray, ZarrGroup
-from yaozarrs.v05._bf2raw import Bf2Raw
+from yaozarrs.v05._bf2raw import Bf2Raw, Series
 from yaozarrs.v05._image import Image, Multiscale
-from yaozarrs.v05._label import LabelImage, LabelsGroup
-from yaozarrs.v05._plate import Plate
-from yaozarrs.v05._series import Series
-from yaozarrs.v05._well import Well
+from yaozarrs.v05._labels import LabelImage, LabelsGroup
+from yaozarrs.v05._plate import Plate, Well
 from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
 
 # ----------------------------------------------------------
