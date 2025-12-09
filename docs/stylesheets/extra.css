@@ -74,3 +74,50 @@ img.auto-screenshot {
 .pulse {
   animation: pulse 1000ms infinite;
 }
+
+/* SYNTAX HIGHLIGHTING */
+
+/* Custom syntax theme: Minimal Dark */
+[data-md-color-scheme="default"] div.language-pycon,
+[data-md-color-scheme="default"] div.language-python {
+	/* Background and foreground */
+	--md-code-fg-color: #bdc3c7;
+	--md-code-bg-color: #2b2d30;
+	--md-code-bg-color--light: rgba(43, 45, 48, 0.9);
+	--md-code-bg-color--lighter: rgba(43, 45, 48, 0.54);
+	--md-code-hl-color: rgba(255, 255, 255, 0.08);
+
+	/* Token colors - balanced palette */
+	--md-code-hl-number-color: #a8c578;
+	--md-code-hl-special-color: #c19ed8;
+	--md-code-hl-function-color: #e5c07b;
+	--md-code-hl-constant-color: #a8c578;
+	--md-code-hl-keyword-color: #c19ed8;
+	--md-code-hl-string-color: #d8a67c;
+	--md-code-hl-name-color: #82b1e3;
+	--md-code-hl-operator-color: #bdc3c7;
+	--md-code-hl-punctuation-color: #bdc3c7;
+	--md-code-hl-comment-color: #6a7075;
+	--md-code-hl-generic-color: #bdc3c7;
+	--md-code-hl-variable-color: #82b1e3;
+}
+
+/* Style the copy button to match slate theme appearance */
+[data-md-color-scheme="default"] div.language-pycon .md-code__button,
+[data-md-color-scheme="default"] div.language-python .md-code__button {
+	color: rgba(189, 195, 199, 0.12);
+}
+
+[data-md-color-scheme="default"] div.language-pycon:hover .md-code__button,
+[data-md-color-scheme="default"] div.language-python:hover .md-code__button {
+	color: rgba(189, 195, 199, 0.56);
+}
+
+[data-md-color-scheme="default"] div.language-pycon .md-code__button:hover,
+[data-md-color-scheme="default"] div.language-pycon .md-code__button.focus-visible,
+[data-md-color-scheme="default"] div.language-python .md-code__button:hover,
+[data-md-color-scheme="default"] div.language-python .md-code__button.focus-visible {
+	color: var(--md-accent-fg-color);
+}
+
+/* END SYNTAX HIGHLIGHTING */

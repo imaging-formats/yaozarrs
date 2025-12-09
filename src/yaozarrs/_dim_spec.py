@@ -29,15 +29,18 @@ class DimSpec(_BaseModel):
     --------
     5D timelapse with channels:
 
-    >>> from yaozarrs import DimSpec, v05
-    >>> dims = [
-    ...     DimSpec(name="t", size=100, scale=1.0, unit="second"),
-    ...     DimSpec(name="c", size=3),
-    ...     DimSpec(name="z", size=50, scale=2.0, unit="micrometer"),
-    ...     DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
-    ...     DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
-    ... ]
-    >>> multiscale = v05.Multiscale.from_dims(dims, name="my_image", n_levels=3)
+    ```python
+    from yaozarrs import DimSpec, v05
+
+    dims = [
+        DimSpec(name="t", size=100, scale=1.0, unit="second"),
+        DimSpec(name="c", size=3),
+        DimSpec(name="z", size=50, scale=2.0, unit="micrometer"),
+        DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
+        DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
+    ]
+    multiscale = v05.Multiscale.from_dims(dims, name="my_image", n_levels=3)
+    ```
     """
 
     name: str = Field(
