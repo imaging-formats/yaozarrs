@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 # Test configuration
 SHAPE = (10, 3, 25, 1024, 1024)  # TCZYX
 DTYPE = np.uint16
-ITERATIONS = 10
+ITERATIONS = 6
 WARMUP = 1  # Number of warmup iterations to discard
 
 # Available writers
