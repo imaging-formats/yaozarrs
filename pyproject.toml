@@ -68,6 +68,7 @@ dev = [
 ]
 docs = [
     "markdown-exec[ansi]>=1.11.0",
+    "griffe-fieldz>=0.4.0",
     "mkdocs>=1.6.1",
     "mkdocs-api-autonav>=0.4.0",
     "mkdocs-material>=9.6.20",

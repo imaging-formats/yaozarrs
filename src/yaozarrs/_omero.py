@@ -1,48 +1,127 @@
 from typing import ClassVar, Literal
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
 
 
 class OmeroWindow(_BaseModel):
-    start: float
-    min: float
-    end: float
-    max: float
+    """Display intensity window for a channel.
+
+    Defines how pixel intensities map to display brightness. The window
+    sets both the current display range (start/end) and the allowed range (min/max).
+    """
+
+    start: float = Field(description="Lower bound of the current display window")
+    min: float = Field(description="Minimum allowed intensity value for this channel")
+    end: float = Field(description="Upper bound of the current display window")
+    max: float = Field(description="Maximum allowed intensity value for this channel")
 
 
 class OmeroChannel(_BaseModel):
-    window: OmeroWindow | None = None
-    label: str | None = None
-    family: str | None = None
-    color: str | None = None
-    active: bool | None = None
-    inverted: bool | None = None
-    coefficient: float | None = None
+    """Rendering settings for a single channel.
+
+    Specifies how to display one channel of a multi-channel image, including
+    color mapping, intensity windowing, and visibility.
+    """
+
+    window: OmeroWindow | None = Field(
+        default=None,
+        description="Intensity window for this channel",
+    )
+    label: str | None = Field(
+        default=None,
+        description="Human-readable name for this channel (e.g., 'DAPI', 'GFP')",
+    )
+    family: str | None = Field(
+        default=None,
+        description="Colormap family (typically 'linear' for fluorescence)",
+    )
+    color: str | None = Field(
+        default=None,
+        description="Display color as hex string (e.g., 'FF0000' for red)",
+    )
+    active: bool | None = Field(
+        default=None,
+        description="Whether this channel is visible by default",
+    )
+    inverted: bool | None = Field(
+        default=None,
+        description="Whether to invert the intensity mapping",
+    )
+    coefficient: float | None = Field(
+        default=None,
+        description="Multiplicative coefficient for intensity scaling",
+    )
 
 
 class OmeroRenderingDefs(_BaseModel):
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+    """Default rendering parameters for multi-dimensional images.
 
-    model: Literal["color", "greyscale"] | str | None = None
-    defaultT: int | None = None
-    defaultZ: int | None = None
-    projection: str | None = None  # "normal", "intmax", "intmean"
-
-
-class Omero(_BaseModel):
-    """A very rough/incomplete model of ImgData.
-
-    https://omero.readthedocs.io/en/stable/developers/Web/WebGateway.html#imgdata
-
-    Extra fields are allowed to accommodate missing fields.
+    Specifies which slices to display by default in time-lapse or z-stack images,
+    and how to render them (color vs grayscale, projection method).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-    channels: list[OmeroChannel]
-    id: int | None = None
-    name: str | None = None
-    version: str | None = None
-    rdefs: OmeroRenderingDefs | None = None
+    model: Literal["color", "greyscale"] | str | None = Field(
+        default=None,
+        description=(
+            "Rendering mode: 'color' for multi-channel composite, "
+            "'greyscale' for single channel"
+        ),
+    )
+    defaultT: int | None = Field(
+        default=None,
+        description="Default time point index to display",
+    )
+    defaultZ: int | None = Field(
+        default=None,
+        description="Default z-section index to display",
+    )
+    projection: str | None = Field(
+        default=None,
+        description=(
+            "Projection method for z-stacks: 'normal', "
+            "'intmax' (max intensity), or 'intmean'"
+        ),
+    )
+
+
+class Omero(_BaseModel):
+    """Optional OMERO rendering metadata for visualization.
+
+    Provides display hints for viewers, including channel colors, intensity windows,
+    and default viewing parameters. This metadata is transitional and may be
+    replaced in future OME-NGFF versions.
+
+    !!! warning "Transitional Metadata"
+        The OMERO metadata is inherited from OME-NGFF 0.4 and maintained for
+        backwards compatibility. The spec acknowledges this needs improvement.
+
+    !!! note "Extra Fields Allowed"
+        This model permits additional fields beyond those explicitly defined,
+        as the full OMERO metadata structure is extensive and evolving.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+
+    channels: list[OmeroChannel] = Field(
+        description="Rendering settings for each channel in the image",
+    )
+    id: int | None = Field(
+        default=None,
+        description="OMERO image ID (if from an OMERO server)",
+    )
+    name: str | None = Field(
+        default=None,
+        description="Image name from OMERO",
+    )
+    version: str | None = Field(
+        default=None,
+        description="OMERO metadata version",
+    )
+    rdefs: OmeroRenderingDefs | None = Field(
+        default=None,
+        description="Default rendering parameters for multi-dimensional viewing",
+    )
