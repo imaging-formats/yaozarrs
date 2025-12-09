@@ -12,10 +12,10 @@ The general pattern is:
 3. Decide whether to use high level write functions (write_image, write_plate, etc...)
    or lower level prepare/Builder methods (`prepare_image`, `PlateBuilder`, etc...).
    (Note: for Plates and Bf2Raw collections, lower level builders are recommended)
-   - Use high level functions for simple one-shot writes, where you can provide the full
-     data arrays up front (either as numpy, dask, etc...)
-   - Use lower level prepare functions when you need to customize how data is written,
-     perhaps in a streaming, or slice-by-slice manner.
+   - Use high level write_* functions for simple one-shot writes, where you can provide
+     the full data arrays up front (either as numpy, dask, etc...)
+   - Use lower level prepare_*/Builder APIs when you need to customize how data is
+     written, perhaps in a streaming, or slice-by-slice manner.
 4. Call the appropriate function with your metadata model and data arrays.
 
 A key observation here is that only the Dataset entries in any of the models actually
@@ -37,7 +37,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Protocol,
-    TypedDict,
     TypeGuard,
     cast,
     overload,
@@ -87,20 +86,6 @@ if TYPE_CHECKING:
     CompressionName = Literal["blosc-zstd", "blosc-lz4", "zstd", "none"]
     AnyZarrArray: TypeAlias = zarr.Array | tensorstore.TensorStore
     ShapeLike: TypeAlias = tuple[int, ...]
-
-    class WriteKwargs(TypedDict, total=False):
-        chunk_shape: tuple[int, ...] | Literal["auto"] | None
-        """Read chunk shape. "auto" is passed to backend."""
-        shard_shape: tuple[int, ...] | None
-        """Shard shape (storage chunks). chunk_shape must evenly divide shard_shape."""
-        fill_value: Any
-        """Fill value for uninitialized regions."""
-        compression: CompressionName | None
-        """Compression codec."""
-        compression_level: int | None
-        """Compression level (0-9 for most, 0-22 for zstd)."""
-        overwrite: bool
-        """Whether to overwrite existing array at this location."""
 
     # Actual data arrays - for write functions
     ArrayLike: TypeAlias = Any  # e.g., numpy.ndarray, dask.array.Array, etc.
@@ -176,13 +161,13 @@ def write_image(
     image: Image,
     datasets: ArrayOrPyramid,
     *,
+    labels: Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None = None,
     writer: ZarrWriter = "auto",
+    overwrite: bool = False,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
-    overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
     progress: bool = False,
-    labels: Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None = None,
 ) -> Path:
     """Write an OME-Zarr v0.5 Image group with data.
 
@@ -204,27 +189,29 @@ def write_image(
         - For multiple datasets (e.g., multiscale pyramid), pass a sequence:
           `write_image(dest, image, [data0, data1, ...])`
         Must match the number and order of `image.multiscales[0].datasets`.
+    labels : Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None, optional
+        Optional label images to write alongside the image. Keys are label names
+        (e.g., "cells", "nuclei"), values are (LabelImage, datasets) tuples.
+        Labels will be written to `dest/labels/{name}/`. Default is None.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. "auto" prefers tensorstore if
         available, otherwise falls back to zarr-python. Pass a custom function
         matching the `CreateArrayFunc` protocol for custom backends.
+    overwrite : bool, optional
+        If True, overwrite existing Zarr group at `dest`. Default is False.
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape for storage. "auto" (default) calculates ~4MB chunks with
         non-spatial dims set to 1. None uses the full array shape (single chunk).
         Tuple values are clamped to the array shape.
     shards : tuple[int, ...] | None, optional
-        Shard shape for Zarr v3 sharding codec. None (default) disables sharding.
-    overwrite : bool, optional
-        If True, overwrite existing Zarr group at `dest`. Default is False.
+        Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. "blosc-zstd" (default) provides good compression with
         shuffle filter. "zstd" uses raw zstd without blosc container.
     progress : bool, optional
         Show progress bar when writing dask arrays. Default is False.
-    labels : Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None, optional
-        Optional label images to write alongside the image. Keys are label names
-        (e.g., "cells", "nuclei"), values are (LabelImage, datasets) tuples.
-        Labels will be written to `dest/labels/{name}/`. Default is None.
+
 
     Returns
     -------
@@ -345,9 +332,9 @@ def write_plate(
     *,
     plate: Plate | dict[str, Any] | None = None,
     writer: ZarrWriter = "auto",
+    overwrite: bool = False,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
-    overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
     progress: bool = False,
 ) -> Path:
@@ -389,12 +376,13 @@ def write_plate(
         Auto-generated: 'rows', 'columns', 'wells'.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. Default is "auto".
+    overwrite : bool, optional
+        If True, overwrite existing Zarr groups. Default is False.
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape for all arrays. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
-        Shard shape for Zarr v3 sharding. Default is None.
-    overwrite : bool, optional
-        If True, overwrite existing Zarr groups. Default is False.
+        Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
     progress : bool, optional
@@ -499,12 +487,12 @@ def write_bioformats2raw(
     images: Mapping[str, ImageWithDatasets],
     *,
     ome_xml: str | None = None,
+    writer: ZarrWriter = "auto",
+    overwrite: bool = False,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
-    writer: ZarrWriter = "auto",
-    progress: bool = False,
-    overwrite: bool = False,
     compression: CompressionName = "blosc-zstd",
+    progress: bool = False,
 ) -> Path:
     """Write a bioformats2raw-layout OME-Zarr with multiple series.
 
@@ -546,18 +534,19 @@ def write_bioformats2raw(
     ome_xml : str | None, optional
         OME-XML string to store as `OME/METADATA.ome.xml`.
         Useful for preserving full metadata from converted files.
+    writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
+        Backend to use for writing arrays.
+    overwrite : bool, optional
+        If True, overwrite existing Zarr groups. Default is False.
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape for all arrays. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
-        Shard shape for Zarr v3 sharding. None disables sharding.
-    writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
-        Backend to use for writing arrays.
-    progress : bool, optional
-        Show progress bar when writing dask arrays. Default is False.
-    overwrite : bool, optional
-        If True, overwrite existing Zarr groups. Default is False.
+        Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
+    progress : bool, optional
+        Show progress bar when writing dask arrays. Default is False.
 
     Returns
     -------
@@ -707,7 +696,8 @@ def prepare_image(
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
-        Shard shape for Zarr v3 sharding.
+        Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend for creating arrays. When you specify "zarr" or "tensorstore",
         the return type is narrowed to the specific array type.
@@ -763,9 +753,7 @@ def prepare_image(
     ...     ]
     ... )
     >>> # Prepare with just shape/dtype (no data yet) - no list wrapping!
-    >>> path, arrays = prepare_image(
-    ...     "prepared.zarr", image, ((64, 64), np.dtype("uint16"))
-    ... )
+    >>> path, arrays = prepare_image("prepared.zarr", image, ((64, 64), "uint16"))
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
 
@@ -859,8 +847,11 @@ class Bf2RawBuilder:
         Chunk shape for all arrays. Default is "auto".
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
         If True, overwrite existing groups. Default is False.
+        Note: existing directories that don't look like zarr groups will NOT be removed,
+        an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
 
@@ -922,7 +913,6 @@ class Bf2RawBuilder:
         shards: ShapeLike | None = None,
         overwrite: bool = False,
         compression: CompressionName = "blosc-zstd",
-        indent: int = 2,
     ) -> None:
         self._dest = Path(dest)
         self._ome_xml = ome_xml
@@ -931,7 +921,7 @@ class Bf2RawBuilder:
         self._shards = shards
         self._overwrite = overwrite
         self._compression: CompressionName = compression
-        self._indent = indent
+        self._indent = 2
 
         # For prepare-only workflow: {series_name: (image, dataset_specs)}
         self._series: dict[str, ImageWithShapeSpecs] = {}
@@ -969,7 +959,7 @@ class Bf2RawBuilder:
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
         progress : bool, optional
-            Show progress bar for dask arrays. Default is False.
+            Show progress bar when writing dask arrays. Default is False.
 
         Returns
         -------
@@ -1194,8 +1184,11 @@ class PlateBuilder:
         Chunk shape for all arrays. Default is "auto".
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
         If True, overwrite existing groups. Default is False.
+        Note: existing directories that don't look like zarr groups will NOT be removed,
+        an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
 
@@ -1367,7 +1360,7 @@ class PlateBuilder:
         well_metadata = self._generate_well_metadata(list(images))
         _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
 
-        # Write each field image
+        # Write each field of view
         for fov, (image_model, datasets_seq) in normalized_fields.items():
             field_path = well_group_path / fov
             write_image(
@@ -1522,7 +1515,7 @@ class PlateBuilder:
             raise ValueError(f"Well ({row}, {col}) already written via write_well().")
         well_path = f"{row}/{col}"
         if well_path in self._wells:
-            raise ValueError(f"Well '{well_path}' already added via add_well().")
+            raise ValueError(f"Well ({row}, {col}) already added via add_well().")
 
         # If user provided a plate, validate against it
         if self._user_plate is not None:
@@ -1650,8 +1643,11 @@ class LabelsBuilder:
         Chunk shape for all arrays. Default is "auto".
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
+        When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
         If True, overwrite existing groups. Default is False.
+        Note: existing directories that don't look like zarr groups will NOT be removed,
+        an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
 
