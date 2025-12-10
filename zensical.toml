@@ -6,7 +6,6 @@ site_description = "A new project generated from the default template project."
 
 
 extra_css = ["stylesheets/extra.css"]
-extra_javascript = ["javascripts/extra.js"]
 
 # https://zensical.org/docs/customization/
 [project.theme]
