@@ -642,14 +642,32 @@ class OmeExplorer extends LitElement {
       --primary-color-light: #5c6bc0;
       --accent-color: var(--md-accent-fg-color, #526cfe);
       --bg-color: var(--md-default-bg-color, #fff);
+      --input-bg: var(--md-default-bg-color, #fff);
       --code-bg: #1e1e2e;
       --code-bg-lighter: #262637;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+    }
+
+    /* Light mode specific colors */
+    :host([data-theme="default"]),
+    :host(:not([data-theme])) {
       --border-color: rgba(0, 0, 0, 0.08);
       --border-color-strong: rgba(0, 0, 0, 0.15);
       --text-muted: #64748b;
-      --success-color: #10b981;
-      --warning-color: #f59e0b;
-      
+      --input-shadow: rgba(64, 81, 181, 0.15);
+    }
+
+    /* Dark mode specific colors */
+    :host([data-theme="slate"]) {
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-color-strong: rgba(255, 255, 255, 0.15);
+      --text-muted: #94a3b8;
+      --input-bg: hsl(232, 15%, 18%);
+      --input-shadow: rgba(137, 180, 250, 0.2);
+    }
+
+    :host {
       /* Syntax highlighting - Catppuccin Mocha inspired */
       --syn-keyword: #cba6f7;
       --syn-string: #a6e3a1;
@@ -713,7 +731,7 @@ class OmeExplorer extends LitElement {
       padding: 0.3rem 0.5rem;
       border: 1px solid var(--border-color-strong);
       border-radius: 4px;
-      background: white;
+      background: var(--input-bg);
       cursor: pointer;
       font-size: 0.75rem;
       transition: all 0.15s ease;
@@ -927,7 +945,7 @@ class OmeExplorer extends LitElement {
       font-size: 0.75rem;
       border-radius: 3px;
       border: 1px solid var(--border-color);
-      background: white;
+      background: var(--input-bg);
       transition: all 0.15s ease;
     }
 
@@ -935,7 +953,7 @@ class OmeExplorer extends LitElement {
     .dimension-table select:focus {
       outline: none;
       border-color: var(--primary-color-light);
-      box-shadow: 0 0 0 1px rgba(64, 81, 181, 0.15);
+      box-shadow: 0 0 0 1px var(--input-shadow);
     }
 
     .dimension-table input[type="number"] {
@@ -1510,6 +1528,52 @@ class OmeExplorer extends LitElement {
       { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
     ];
     this.validateDimensions();
+    this._themeObserver = null;
+    this._initializeTooltips();
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._updateTheme();
+    this._observeTheme();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._themeObserver) {
+      this._themeObserver.disconnect();
+    }
+  }
+
+  _updateTheme() {
+    const scheme = document.body.getAttribute('data-md-color-scheme');
+    this.setAttribute('data-theme', scheme || 'default');
+
+    // Set CSS variables directly for Safari compatibility
+    if (scheme === 'slate') {
+      this.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.08)');
+      this.style.setProperty('--border-color-strong', 'rgba(255, 255, 255, 0.15)');
+      this.style.setProperty('--text-muted', '#94a3b8');
+      this.style.setProperty('--input-bg', 'hsl(232, 15%, 18%)');
+      this.style.setProperty('--input-shadow', 'rgba(137, 180, 250, 0.2)');
+    } else {
+      this.style.setProperty('--border-color', 'rgba(0, 0, 0, 0.08)');
+      this.style.setProperty('--border-color-strong', 'rgba(0, 0, 0, 0.15)');
+      this.style.setProperty('--text-muted', '#64748b');
+      this.style.setProperty('--input-bg', 'var(--md-default-bg-color, #fff)');
+      this.style.setProperty('--input-shadow', 'rgba(64, 81, 181, 0.15)');
+    }
+  }
+
+  _observeTheme() {
+    this._themeObserver = new MutationObserver(() => this._updateTheme());
+    this._themeObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-md-color-scheme']
+    });
+  }
+
+  _initializeTooltips() {
     this.tooltips = {
       name: {
         title: 'Name',
@@ -2186,7 +2250,7 @@ class OmeExplorer extends LitElement {
     // Array levels
     for (let i = 0; i < this.numLevels; i++) {
       const isFirst = i === 0;
-      const levelDesc = isFirst ? 'Full resolution' : `${Math.pow(2, i)}× downsampled`;
+      const levelDesc = isFirst ? 'Full resolution' : `downsampled level ${i}`;
 
       contents[`level-${i}`] = {
         title: `${i}/`,
@@ -2405,10 +2469,10 @@ class OmeExplorer extends LitElement {
     // Add level info dynamically
     for (let i = 0; i < this.numLevels; i++) {
       const isFirst = i === 0;
-      const levelDesc = isFirst ? 'Full resolution' : `${Math.pow(2, i)}× downsampled`;
+      const levelDesc = isFirst ? 'Full resolution pyramid level' : `downsampled pyramid level ${i}`;
       infos[`level-${i}`] = {
         title: `${i}/`,
-        desc: `${levelDesc} pyramid level. Contains the array data as chunked storage.`
+        desc: `${levelDesc}. Contains the array data as chunked storage.`
       };
       infos[`level-${i}-meta`] = {
         title: arrayMeta,
