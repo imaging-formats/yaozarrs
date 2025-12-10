@@ -129,11 +129,10 @@ export function generateJSON({ dimensions, version, numLevels }) {
     const scale = dimensions.map(d =>
       d.scale * Math.pow(d.scaleFactor || 1, level)
     );
-    const transforms = [{ type: 'scale', scale }];
+    const transforms = [{ scale }];
 
     if (dimensions.some(d => d.translation !== 0)) {
       transforms.push({
-        type: 'translation',
         translation: dimensions.map(d => d.translation || 0)
       });
     }
@@ -157,13 +156,12 @@ export function generateJSON({ dimensions, version, numLevels }) {
         datasets,
       };
 
-  if (version === 'v0.5') {
-    // v0.5 uses coordinateTransformations at multiscale level too
-    multiscale.coordinateTransformations = [{
-      type: 'scale',
-      scale: [1, 1, 1, 1, 1].slice(0, dimensions.length)
-    }];
-  }
+  // if (version === 'v0.5') {
+  //   // v0.5 MAY uses coordinateTransformations at multiscale level
+  //   multiscale.coordinateTransformations = [{
+  //     scale: [1, 1, 1, 1, 1].slice(0, dimensions.length)
+  //   }];
+  // }
 
   // v0.5: zarr.json with zarr_format, node_type, attributes
   // v0.4: .zattrs with just the multiscales array
@@ -277,13 +275,13 @@ export function generatePython({ dimensions, version, numLevels }) {
 
   return `from yaozarrs import ${ver}, DimSpec
 
+# ###############################################
+# Method 1: Using Axis & Dataset classes directly
+# ###############################################
+
 axes = [
 ${axesCode}
 ]
-
-# ##############################################
-# Method 1: Using axis classes directly
-# ##############################################
 
 datasets = [
 ${Array.from({ length: numLevels }, (_, level) => {
@@ -305,9 +303,9 @@ multiscale = ${ver}.Multiscale(
     datasets=datasets
 )
 
-# ##############################################
+# ###############################################
 # Method 2: Using DimSpec
-# ##############################################
+# ###############################################
 
 dims = [
 ${dimsCode}
@@ -318,6 +316,10 @@ multiscale = ${ver}.Multiscale.from_dims(
     name="example_image",
     n_levels=${numLevels}
 )
+
+# ###############################################
+# Shared code: Construct Image and print JSON
+# ###############################################
 
 # Convert to JSON
 image = ${ver}.Image(multiscales=[multiscale])

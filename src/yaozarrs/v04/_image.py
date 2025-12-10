@@ -2,7 +2,14 @@ from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import AfterValidator, Field, WrapValidator, model_validator
+from pydantic import (
+    AfterValidator,
+    Field,
+    SerializerFunctionWrapHandler,
+    WrapValidator,
+    model_serializer,
+    model_validator,
+)
 from typing_extensions import Self
 
 from yaozarrs._axis import AxesList
@@ -162,6 +169,15 @@ class Multiscale(_BaseModel):
         description="Unstructured key-value pair with additional "
         "information about the downscaling method.",
     )
+
+    @model_serializer(mode="wrap")
+    def serialize_model(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        """Include version in serialization if it is not the default value."""
+        serialized = handler(self)
+        serialized["version"] = self.version  # always include version in serialization
+        return serialized
 
     @model_validator(mode="after")
     def _check_ndim(self) -> Self:

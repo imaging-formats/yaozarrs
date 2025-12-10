@@ -166,6 +166,15 @@ def test_json_validates_against_pydantic(config: dict) -> None:
     assert isinstance(namespace["image"], (v04.Image, v05.Image))
     assert isinstance(namespace["multiscale"], (v04.Multiscale, v05.Multiscale))
 
+    # test the python code generates the same json as the js code
+    json_dict = json.loads(output["json"])
+    python_dict = namespace["image"].model_dump(exclude_unset=True, exclude_none=True)
+    from rich import print
+    if config["version"] == "v0.5":
+        json_dict = json_dict["attributes"]["ome"]
+        assert json_dict.pop("version") == "0.5"
+    assert json_dict == python_dict
+
 
 def test_invalid():
     output = run_generator(_config(versions, "ztcyx", 1))
