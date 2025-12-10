@@ -1,3 +1,4 @@
 ---
-icon: lucide/book-open
+title: API Reference
+icon: lucide/code
 ---

@@ -1,12 +1,23 @@
 # OME-NGFF Specification: Complete Guide Across Versions 0.2–0.5
 
-The **OME-NGFF (OME-Zarr)** specification defines cloud-native storage for bioimaging data using Zarr arrays. Version **0.5** represents a major architectural shift to Zarr v3, while versions 0.2–0.4 use Zarr v2. For new projects, **0.4 is the most widely supported** in current tooling, though 0.5 adoption is increasing. This report organizes all concepts by data type—image, plate, and collection—to support documentation that helps newcomers understand core patterns while enabling experts to quickly find version-specific details.
+The **OME-NGFF (OME-Zarr)** specification defines cloud-native storage for
+bioimaging data using Zarr arrays. Version **0.5** represents a major
+architectural shift to Zarr v3, while versions 0.2–0.4 use Zarr v2. For new
+projects, **0.4 is the most widely supported** in current tooling, though 0.5
+adoption is increasing. This report organizes all concepts by data type—image,
+plate, and collection—to support documentation that helps newcomers understand
+core patterns while enabling experts to quickly find version-specific details.
 
 ---
 
 ## Three core data types define OME-NGFF
 
-OME-NGFF organizes bioimaging data into three primary structures: **images** (including multiscale pyramids), **plates** (multi-well HCS data), and **collections** (grouped filesets via bioformats2raw). Each type has distinct metadata requirements that evolved across versions. Understanding these categories prevents confusion when choosing how to store different experimental scenarios.
+OME-NGFF organizes bioimaging data into three primary structures: **images**
+(including multiscale pyramids), **plates** (multi-well HCS data), and
+**collections** (grouped filesets via bioformats2raw). Each type has distinct
+metadata requirements that evolved across versions. Understanding these
+categories prevents confusion when choosing how to store different experimental
+scenarios.
 
 | Data Type | Purpose | Version Introduced |
 |-----------|---------|-------------------|
@@ -21,7 +32,9 @@ OME-NGFF organizes bioimaging data into three primary structures: **images** (in
 
 ### Directory structure fundamentals
 
-Every OME-NGFF image is a Zarr group containing one or more resolution levels as nested arrays. The structure changed significantly between **Zarr v2** (0.2–0.4) and **Zarr v3** (0.5):
+Every OME-NGFF image is a Zarr group containing one or more resolution levels as
+nested arrays. The structure changed significantly between **Zarr v2** (0.2–0.4)
+and **Zarr v3** (0.5):
 
 **Zarr v2 (versions 0.2–0.4):**
 
@@ -49,7 +62,8 @@ image.zarr/
 
 ### Multiscales metadata evolution
 
-The `multiscales` attribute defines the image pyramid structure. This is where the most significant cross-version differences appear:
+The `multiscales` attribute defines the image pyramid structure. This is where
+the most significant cross-version differences appear:
 
 **Version 0.2** — Implicit axes, no transforms:
 
@@ -78,7 +92,8 @@ Axes were **implicitly assumed TCZYX** with no explicit declaration.
 }
 ```
 
-The `axes` field became **MUST** requirement, supporting 2D–5D with explicit dimension names.
+The `axes` field became **MUST** requirement, supporting 2D–5D with explicit
+dimension names.
 
 **Version 0.4** — Axes as objects with units + coordinateTransformations:
 
@@ -102,7 +117,9 @@ The `axes` field became **MUST** requirement, supporting 2D–5D with explicit d
 }
 ```
 
-**Breaking change**: Axes became objects with `name`, `type`, `unit`. Each dataset **MUST** include `coordinateTransformations` with at least a `scale` transform.
+**Breaking change**: Axes became objects with `name`, `type`, `unit`. Each
+dataset **MUST** include `coordinateTransformations` with at least a `scale`
+transform.
 
 **Version 0.5** — Namespaced under "ome" key:
 
@@ -130,7 +147,8 @@ The `axes` field became **MUST** requirement, supporting 2D–5D with explicit d
 }
 ```
 
-All OME metadata moves under the `"ome"` namespace. Array metadata **MUST** include `dimension_names` matching axes.
+All OME metadata moves under the `"ome"` namespace. Array metadata **MUST**
+include `dimension_names` matching axes.
 
 ### Axis and coordinate transform requirements by version
 
@@ -206,7 +224,9 @@ Three groups **MUST** exist above images: **plate** → **row** → **well**.
 }
 ```
 
-**Breaking change in 0.4**: `rowIndex` and `columnIndex` became MUST requirements for well entries, enabling efficient sparse plate handling without path parsing.
+**Breaking change in 0.4**: `rowIndex` and `columnIndex` became MUST
+requirements for well entries, enabling efficient sparse plate handling without
+path parsing.
 
 ### Well metadata
 
@@ -235,7 +255,11 @@ Three groups **MUST** exist above images: **plate** → **row** → **well**.
 
 ### When to use collections
 
-The bioformats2raw layout handles **multi-image filesets** that don't fit the plate model—such as multiple stage positions on a single coverslip, time-lapse series stored as separate files, or z-stacks split across files. This is **transitional** metadata that will be replaced with explicit specifications in future versions.
+The bioformats2raw layout handles **multi-image filesets** that don't fit the
+plate model—such as multiple stage positions on a single coverslip, time-lapse
+series stored as separate files, or z-stacks split across files. This is
+**transitional** metadata that will be replaced with explicit specifications in
+future versions.
 
 ### Collection structure
 
@@ -250,7 +274,8 @@ series.ome.zarr/
 └── n/                         # Additional images
 ```
 
-**Version availability**: Formalized in **0.4** but pattern existed earlier. In 0.5, metadata moves to `zarr.json` but structure remains similar.
+**Version availability**: Formalized in **0.4** but pattern existed earlier. In
+0.5, metadata moves to `zarr.json` but structure remains similar.
 
 ### bioformats2raw metadata requirements
 
@@ -293,15 +318,19 @@ series.ome.zarr/
 | `zarr.json` (array) | Shape, chunks, codecs, `dimension_names` |
 | `OME/METADATA.ome.xml` | Full OME-XML (bioformats2raw only) |
 
-**Key 0.5 change**: All OME metadata moves under `attributes.ome` namespace, enabling cleaner separation from other Zarr attributes.
+**Key 0.5 change**: All OME metadata moves under `attributes.ome` namespace,
+enabling cleaner separation from other Zarr attributes.
 
 ### Storing experimental metadata (timestamps, instrument settings)
 
 OME-NGFF provides **two mechanisms** for experimental metadata:
 
-1. **OME-XML file** (`OME/METADATA.ome.xml`): Complete instrument, acquisition, and experimental metadata using the established OME data model. Available in bioformats2raw layouts.
+1. **OME-XML file** (`OME/METADATA.ome.xml`): Complete instrument, acquisition,
+   and experimental metadata using the established OME data model. Available in
+   bioformats2raw layouts.
 
-2. **"omero" transitional metadata**: Rendering hints including channel colors, contrast limits, and display names:
+2. **"omero" transitional metadata**: Rendering hints including channel colors,
+   contrast limits, and display names:
 
 ```json
 {
@@ -382,7 +411,8 @@ coverslip_experiment.zarr/
 
 - Preserves stage position coordinates in OME-XML
 - Maintains logical grouping without artificial plate structure
-- Each FOV gets independent multiscales with `coordinateTransformations` that can include `translation` for absolute positioning
+- Each FOV gets independent multiscales with `coordinateTransformations` that
+  can include `translation` for absolute positioning
 
 **Per-FOV coordinate transforms** (0.4+):
 
@@ -474,8 +504,10 @@ plate_experiment.zarr/
 
 - **0.4 is most compatible**: Widest tooling support currently
 - **0.5 requires Zarr v3-capable tools**: zarr-python 3.x, zarrita
-- **Metadata-only migration**: Zarr v2→v3 can preserve array data; only JSON files change
-- **Reading backward**: Implementations SHOULD read older versions; writing is optional
+- **Metadata-only migration**: Zarr v2→v3 can preserve array data; only JSON
+  files change
+- **Reading backward**: Implementations SHOULD read older versions; writing is
+  optional
 
 ---
 
@@ -513,4 +545,6 @@ Based on this analysis, your documentation should:
 - Required vs optional fields
 - Metadata file locations
 
-This structure lets newcomers understand the core patterns (multiscales, plates, collections) while experts can jump directly to version-specific syntax differences via tabs.
+This structure lets newcomers understand the core patterns (multiscales, plates,
+collections) while experts can jump directly to version-specific syntax
+differences via tabs.
