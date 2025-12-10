@@ -154,7 +154,7 @@ class ZarrTreeViewer extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      max-height: 120px;
+      max-height: 160px;
       overflow-y: auto;
       min-height: 0;
     }
@@ -186,7 +186,7 @@ class ZarrTreeViewer extends LitElement {
     }
 
     .code-block {
-      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      font-family: var(--md-code-font-family, 'Fira Code', -apple-system, BlinkMacSystemFont, sans-serif);
       font-size: 0.6875rem;
       line-height: 1.6;
       color: #cdd6f4;
@@ -252,7 +252,7 @@ class ZarrTreeViewer extends LitElement {
     .json-line {
       display: flex;
       align-items: flex-start;
-      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      font-family: var(--md-code-font-family, 'Fira Code', -apple-system, BlinkMacSystemFont, sans-serif);
     }
 
     .json-fold {
@@ -621,6 +621,7 @@ class OmeExplorer extends LitElement {
     selectedNode: { type: String },
     validationErrors: { type: Array },
     collapsedJsonPaths: { type: Object },
+    tooltips: { type: Object },
   };
 
   static styles = css`
@@ -751,6 +752,7 @@ class OmeExplorer extends LitElement {
       border-bottom: 1px solid var(--border-color);
       padding: 0.625rem 0.75rem;
       background: var(--bg-color);
+      overflow: visible;
     }
 
     .output-panel {
@@ -770,6 +772,10 @@ class OmeExplorer extends LitElement {
       font-size: 0.75rem;
     }
 
+    .dimension-table thead {
+      position: relative;
+    }
+
     .dimension-table th {
       text-align: left;
       padding: 0.375rem 0.5rem;
@@ -781,6 +787,8 @@ class OmeExplorer extends LitElement {
       color: var(--text-muted);
       border-bottom: 1px solid var(--border-color-strong);
       white-space: nowrap;
+      position: relative;
+      overflow: visible;
     }
 
     .dimension-table th:first-child {
@@ -1047,6 +1055,8 @@ class OmeExplorer extends LitElement {
       display: flex;
       flex-direction: column;
       min-height: 280px;
+      max-height: 600px;
+      overflow: hidden;
     }
 
     .code-block {
@@ -1058,10 +1068,11 @@ class OmeExplorer extends LitElement {
       flex: 1;
       width: 100%;
       box-sizing: border-box;
-      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      font-family: var(--md-code-font-family, 'Fira Code', -apple-system, BlinkMacSystemFont, sans-serif);
       font-size: 0.6875rem;
       line-height: 1.5;
       min-height: 0;
+      max-height: 600px;
     }
 
     .code-block pre {
@@ -1072,7 +1083,7 @@ class OmeExplorer extends LitElement {
     .copy-button {
       position: absolute;
       top: 0.5rem;
-      right: 0.5rem;
+      right: 1rem;
       padding: 0.25rem 0.5rem;
       font-size: 0.625rem;
       z-index: 10;
@@ -1115,6 +1126,7 @@ class OmeExplorer extends LitElement {
       border: none;
       padding: 0;
       margin: 0;
+      overflow: visible;
     }
 
     /* Tree View Styles */
@@ -1122,6 +1134,7 @@ class OmeExplorer extends LitElement {
       display: flex;
       flex-direction: row;
       min-height: 400px;
+      max-height: 600px;
     }
 
     .python-output {
@@ -1140,15 +1153,16 @@ class OmeExplorer extends LitElement {
       border-right: 1px solid rgba(255, 255, 255, 0.1);
       flex: 0 0 280px;
       min-width: 200px;
+      max-height: 600px;
     }
 
     .tree-view {
       flex: 1;
       background: var(--code-bg);
       padding: 0.5rem;
-      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      font-family: var(--md-code-font-family, 'Fira Code', -apple-system, BlinkMacSystemFont, sans-serif);
       font-size: 0.6875rem;
-      overflow: auto;
+      overflow-y: auto;
       min-height: 0;
     }
 
@@ -1232,8 +1246,12 @@ class OmeExplorer extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      min-height: 44px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      height: 130px;
+      min-height: 130px;
+      max-height: 130px;
+      overflow-y: auto;
+      flex-shrink: 0;
     }
 
     .code-output {
@@ -1242,6 +1260,8 @@ class OmeExplorer extends LitElement {
       flex-direction: column;
       min-width: 0;
       width: 100%;
+      max-height: 600px;
+      overflow: hidden;
     }
 
     .tree-info-title {
@@ -1316,11 +1336,100 @@ class OmeExplorer extends LitElement {
       color: #78716c;
     }
 
+    /* Tooltip Styles */
+    .header-with-tooltip {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.25rem;
+      width: 14px;
+      height: 14px;
+      color: #89b4fa;
+      cursor: help;
+      position: relative;
+      transition: all 0.2s ease;
+      z-index: 100000;
+    }
+
+    .info-icon svg {
+      width: 100%;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .info-icon:hover {
+      color: #b4c4fa;
+      transform: scale(1.15);
+      z-index: 100001;
+    }
+
+    .tooltip {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 30, 46, 0.98);
+      color: #cdd6f4;
+      padding: 0.5rem 0.625rem;
+      border-radius: 4px;
+      font-size: 0.6875rem;
+      line-height: 1.5;
+      white-space: normal;
+      width: 220px;
+      max-width: 90vw;
+      z-index: 99999;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(137, 180, 250, 0.2);
+      font-weight: 400;
+      font-size: 0.6rem;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /* Ensure tooltip doesn't get cut off on left side */
+    th:first-child .tooltip,
+    th:nth-child(2) .tooltip {
+      left: 0;
+      transform: translateX(0);
+    }
+
+    th:first-child .tooltip::after,
+    th:nth-child(2) .tooltip::after {
+      left: 1rem;
+    }
+
+    .info-icon:hover .tooltip {
+      opacity: 1;
+    }
+
+    .tooltip::after {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-bottom-color: rgba(30, 30, 46, 0.98);
+    }
+
+    .tooltip-desc {
+      color: #bac2de;
+    }
+
     /* Collapsible JSON */
     .json-line {
       display: flex;
       align-items: flex-start;
-      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      font-family: 'Fira Code', 'SF Mono', Consolas, monospace;
     }
 
     .json-fold {
@@ -1391,6 +1500,32 @@ class OmeExplorer extends LitElement {
       { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
     ];
     this.validateDimensions();
+    this.tooltips = {
+      name: {
+        title: 'Name',
+        desc: 'Axis identifier (e.g., x, y, z, t, c). Common conventions: x/y/z for spatial, t for time, c for channel'
+      },
+      type: {
+        title: 'Type',
+        desc: 'Axis semantic type from the OME-NGFF spec. Options: <code>space</code>, time, channel'
+      },
+      unit: {
+        title: 'Unit',
+        desc: 'Physical unit for the axis (optional). Examples: micrometer, second, nanometer'
+      },
+      scale: {
+        title: 'Scale',
+        desc: 'Physical spacing per pixel at level 0. Example: 0.5 = 0.5 micrometers per pixel'
+      },
+      translation: {
+        title: 'Translation',
+        desc: 'Origin offset in physical coordinates. Used for positioning images with stage coordinates'
+      },
+      scaleFactor: {
+        title: 'Downscale Factor',
+        desc: 'Downsampling factor per pyramid level. Typically 2 for spatial axes, 1 for others'
+      }
+    };
   }
 
   // Valid units - delegates to ome_generator module
@@ -1402,6 +1537,29 @@ class OmeExplorer extends LitElement {
   validateDimensions() {
     const result = validateDimensions(this.dimensions);
     this.validationErrors = result.all;
+  }
+
+  // Render a table header with an info icon tooltip
+  renderHeaderWithTooltip(label, tooltipKey) {
+    const tooltip = this.tooltips[tooltipKey];
+    if (!tooltip) {
+      return html`${label}`;
+    }
+    return html`
+      <span class="header-with-tooltip">
+        <span>${label}</span>
+        <span class="info-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <span class="tooltip">
+            <div class="tooltip-desc">${tooltip.desc}</div>
+          </span>
+        </span>
+      </span>
+    `;
   }
 
   // Toggle JSON path collapsed state
@@ -2303,6 +2461,13 @@ class OmeExplorer extends LitElement {
     }
 
     return html`
+      <div class="tree-view">
+        ${this.renderTreeNode('root', 'image.zarr/', 'folder', true, html`
+          ${this.renderTreeNode('root-meta', metaFile, 'file', false)}
+          ${!isV05 ? this.renderTreeNode('root-zgroup', '.zgroup', 'file', false) : ''}
+          ${levelNodes}
+        `)}
+      </div>
       <div class="tree-info-panel">
         ${this.selectedNode ? html`
           <div class="tree-info-title">${this.getNodeInfo(this.selectedNode).title}</div>
@@ -2310,13 +2475,6 @@ class OmeExplorer extends LitElement {
         ` : html`
           <div class="tree-info-hint">Click a file or folder to see its purpose</div>
         `}
-      </div>
-      <div class="tree-view">
-        ${this.renderTreeNode('root', 'image.zarr/', 'folder', true, html`
-          ${this.renderTreeNode('root-meta', metaFile, 'file', false)}
-          ${!isV05 ? this.renderTreeNode('root-zgroup', '.zgroup', 'file', false) : ''}
-          ${levelNodes}
-        `)}
       </div>
     `;
   }
@@ -2353,12 +2511,12 @@ class OmeExplorer extends LitElement {
                 <thead>
                   <tr>
                     <th></th>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Unit</th>
-                    <th>Scale</th>
-                    <th>Translate</th>
-                    <th>Downscale Factor</th>
+                    <th>${this.renderHeaderWithTooltip('Name', 'name')}</th>
+                    <th>${this.renderHeaderWithTooltip('Type', 'type')}</th>
+                    <th>${this.renderHeaderWithTooltip('Unit', 'unit')}</th>
+                    <th>${this.renderHeaderWithTooltip('Scale', 'scale')}</th>
+                    <th>${this.renderHeaderWithTooltip('Translate', 'translation')}</th>
+                    <th>${this.renderHeaderWithTooltip('Downscale Factor', 'scaleFactor')}</th>
                     <th></th>
                   </tr>
                 </thead>
