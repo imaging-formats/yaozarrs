@@ -18,6 +18,14 @@ from yaozarrs._dim_spec import DimSpec
 from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
 
+__all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
+    "Image",
+    "Multiscale",
+    "Dataset",
+    "ScaleTransformation",
+    "TranslationTransformation",
+]
+
 # ------------------------------------------------------------------------------
 # Transformations model
 # ------------------------------------------------------------------------------

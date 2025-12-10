@@ -8,6 +8,17 @@ from yaozarrs._types import UniqueList
 
 from ._image import Image
 
+__all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
+    # LabelImage and its dependencies
+    "LabelImage",
+    "ImageLabel",
+    "LabelColor",
+    "LabelProperty",
+    "LabelSource",
+    # LabelsGroup (container for label images)
+    "LabelsGroup",
+]
+
 # ------------------------------------------------------------------------------
 # Color model
 # ------------------------------------------------------------------------------

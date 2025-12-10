@@ -1,12 +1,21 @@
----
-title: yaozarrs.v04
----
+# <code class="doc-symbol-module"></code> `yaozarrs.v04`
 
-::: yaozarrs.v04
+## Images
+
+::: yaozarrs.v04._image
       options:
-        heading_level: 1
-        show_root_heading: true
-        summary: true
         filters:
           - "!^_"
-          - "!^OMEZarrGroupJSON$"
+          - "!^serialize_model"
+
+## Labels
+
+::: yaozarrs.v04._labels
+
+## Plates
+
+::: yaozarrs.v04._plate
+
+## Collections
+
+::: yaozarrs.v04._bf2raw
