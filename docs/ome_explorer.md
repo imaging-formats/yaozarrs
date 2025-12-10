@@ -72,49 +72,6 @@ hide:
 
 </div>
 
-## Common Scenarios
-
-### 3D Confocal Z-Stack
-
-A simple 3D image with isotropic XY resolution and coarser Z resolution:
-
-- **Preset**: 3D (ZYX)
-- **Z axis**: scale = 2.0 µm (optical section thickness)
-- **XY axes**: scale = 0.5 µm (camera pixel size)
-
-### 5D Timelapse with Channels
-
-Full-featured microscopy data with time, channels, and 3D:
-
-- **Preset**: 5D (TCZYX)
-- **T axis**: scale = 1.0 second (frame interval)
-- **C axis**: scale = 1.0 (no physical meaning)
-- **ZYX axes**: as above
-
-### Multi-FOV with Stage Positions
-
-Multiple fields of view stitched via translations:
-
-- Add **translation** values to XY axes
-- Translations represent stage positions in micrometers
-- Each pyramid level maintains the same translation
-
-## Version Differences
-
-=== "v0.4 (Zarr v2)"
-
-    - Uses top-level `multiscales` array
-    - Stored in `.zattrs` file
-    - Mature and stable
-    - Coordinate transforms at dataset level
-
-=== "v0.5 (Zarr v3)"
-
-    - Uses `ome.multiscales` namespace
-    - Stored in `zarr.json`
-    - Cloud-optimized
-    - Additional transforms at multiscale level
-
 ## Tips
 
 !!! tip "Scale Factor Magic"

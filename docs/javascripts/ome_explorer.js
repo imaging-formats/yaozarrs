@@ -811,12 +811,20 @@ class OmeExplorer extends LitElement {
 
     .dimension-table td {
       padding: 0.25rem 0.375rem;
-      border-bottom: 1px solid var(--border-color);
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
       vertical-align: middle;
     }
 
+    .dimension-table tbody td {
+      border-bottom-width: 1px;
+      border-bottom-color: var(--border-color);
+      border-bottom-style: solid;
+      padding-bottom: calc(0.25rem + 2px);
+    }
+
     .dimension-table tbody tr:last-child td {
-      border-bottom: none;
+      border-bottom: 3px solid transparent;
     }
 
     .dimension-table tbody tr {
@@ -834,34 +842,42 @@ class OmeExplorer extends LitElement {
     }
 
     .dimension-table tbody tr.drag-placeholder-top {
-      box-shadow: inset 0 3px 0 0 var(--primary-color);
       background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.04);
-      animation: pulse-shadow-top 0.8s ease-in-out infinite;
+    }
+
+    .dimension-table tbody tr.drag-placeholder-top td {
+      border-top-color: var(--primary-color);
     }
 
     .dimension-table tbody tr.drag-placeholder-bottom {
-      box-shadow: inset 0 -3px 0 0 var(--primary-color);
       background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.04);
-      animation: pulse-shadow-bottom 0.8s ease-in-out infinite;
     }
 
-    @keyframes pulse-shadow-top {
+    .dimension-table tbody tr.drag-placeholder-bottom td {
+      border-bottom-width: 3px;
+      border-bottom-color: var(--primary-color);
+      padding-bottom: 0.25rem;
+    }
+
+    @keyframes pulse-border-top {
       0%, 100% {
-        box-shadow: inset 0 3px 0 0 var(--primary-color);
+        border-top-width: 3px;
+        box-shadow: none;
       }
       50% {
-        box-shadow: inset 0 4px 0 0 var(--primary-color),
-                    0 -2px 12px rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.4);
+        border-top-width: 4px;
+        box-shadow: 0 -2px 12px rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.4);
       }
     }
 
-    @keyframes pulse-shadow-bottom {
+    @keyframes pulse-border-bottom {
       0%, 100% {
-        box-shadow: inset 0 -3px 0 0 var(--primary-color);
+        border-bottom-width: 3px;
+        box-shadow: none;
       }
       50% {
-        box-shadow: inset 0 -4px 0 0 var(--primary-color),
-                    0 2px 12px rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.4);
+        border-bottom-width: 4px;
+        box-shadow: 0 2px 12px rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.4);
       }
     }
 
@@ -1844,6 +1860,7 @@ class OmeExplorer extends LitElement {
     const rowHeight = rect.height;
     const isTopHalf = mouseY < rowHeight / 2;
 
+
     // Remove previous drag-over indicators
     this.shadowRoot.querySelectorAll('.drag-placeholder-top, .drag-placeholder-bottom').forEach(el => {
       el.classList.remove('drag-placeholder-top', 'drag-placeholder-bottom');
@@ -1853,9 +1870,11 @@ class OmeExplorer extends LitElement {
     if (isTopHalf) {
       e.currentTarget.classList.add('drag-placeholder-top');
       this.dropPosition = 'before';
+      const computedStyle = window.getComputedStyle(e.currentTarget);
     } else {
       e.currentTarget.classList.add('drag-placeholder-bottom');
       this.dropPosition = 'after';
+      const computedStyle = window.getComputedStyle(e.currentTarget);
     }
   }
 
