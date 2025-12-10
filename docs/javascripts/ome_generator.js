@@ -271,30 +271,27 @@ export function generatePython({ dimensions, version, numLevels }) {
 
   return `from yaozarrs import ${ver}, DimSpec
 
-# ##############################################
-# Method 1: Using axis classes directly
-# ##############################################
-
 axes = [
 ${axesCode}
 ]
 
-# Create coordinate transformations manually
-datasets = []
-for level in range(${numLevels}):
-    scale = [${dimensions.map(d => d.scale).join(', ')}]
-    # Apply scale factors per level
-    scale = [s * (sf ** level) for s, sf in zip(
-        scale,
-        [${dimensions.map(d => d.scaleFactor || 1).join(', ')}]
-    )]
-    transforms = [${ver}.ScaleTransformation(scale=scale)]
-    datasets.append(
-        ${ver}.Dataset(
-            path=str(level),
-            coordinateTransformations=transforms
-        )
-    )
+# ##############################################
+# Method 1: Using axis classes directly
+# ##############################################
+
+datasets = [
+${Array.from({ length: numLevels }, (_, level) => {
+    const scales = dimensions.map(d =>
+      d.scale * (d.scaleFactor || 1) ** level
+    ).join(', ');
+    return `    ${ver}.Dataset(
+        path="${level}",
+        coordinateTransformations=[
+            ${ver}.ScaleTransformation(scale=[${scales}])
+        ]
+    )`;
+  }).join(',\n')}
+]
 
 multiscale = ${ver}.Multiscale(
     name="example_image",
