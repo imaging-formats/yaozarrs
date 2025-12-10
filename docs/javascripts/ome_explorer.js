@@ -6,6 +6,547 @@
 import { LitElement, html, css } from 'https://cdn.jsdelivr.net/npm/lit@3.1.0/+esm';
 import { unsafeHTML } from 'https://cdn.jsdelivr.net/npm/lit@3.1.0/directives/unsafe-html.js/+esm';
 
+/**
+ * ZarrTreeViewer - Reusable component for displaying Zarr file structure
+ * with collapsible JSON viewer
+ */
+class ZarrTreeViewer extends LitElement {
+  static properties = {
+    treeData: { type: Object },
+    fileContents: { type: Object },
+    activeTab: { type: String },
+    copyButtonText: { type: String },
+    expandedNodes: { type: Object },
+    selectedNode: { type: String },
+    collapsedJsonPaths: { type: Object },
+  };
+
+  static styles = css`
+    :host {
+      display: flex;
+      flex-direction: column;
+      font-family: var(--md-text-font-family, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+      --primary-color: var(--md-primary-fg-color, #4051b5);
+      --code-bg: #1e1e2e;
+      --code-bg-lighter: #262637;
+
+      /* Syntax highlighting - Catppuccin Mocha inspired */
+      --syn-keyword: #cba6f7;
+      --syn-string: #a6e3a1;
+      --syn-number: #fab387;
+      --syn-comment: #6c7086;
+      --syn-function: #89b4fa;
+      --syn-property: #89dceb;
+      --syn-punctuation: #9399b2;
+      --syn-operator: #94e2d5;
+      --syn-builtin: #f38ba8;
+      --syn-constant: #fab387;
+    }
+
+    .viewer-container {
+      display: flex;
+      flex-direction: row;
+      min-height: 400px;
+      background: var(--code-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .tree-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--code-bg);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      width: 220px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .tree-node {
+      user-select: none;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      padding: 0.125rem 0.25rem;
+      border-radius: 3px;
+      color: #cdd6f4;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .tree-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tree-item.selected {
+      background: rgba(137, 180, 250, 0.2);
+      color: #89b4fa;
+    }
+
+    .tree-toggle {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.125rem;
+      color: #9399b2;
+      flex-shrink: 0;
+    }
+
+    .tree-toggle.expandable {
+      cursor: pointer;
+    }
+
+    .tree-toggle.expandable:hover {
+      color: #cdd6f4;
+    }
+
+    .tree-icon {
+      width: 14px;
+      height: 14px;
+      margin-right: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.625rem;
+    }
+
+    .tree-icon.folder { color: #fab387; }
+    .tree-icon.file { color: #89b4fa; }
+    .tree-icon.chunk { color: #6c7086; }
+
+    .tree-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tree-children {
+      padding-left: 1rem;
+    }
+
+    .tree-children.collapsed {
+      display: none;
+    }
+
+    .tree-info-panel {
+      padding: 0.5rem 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      color: #a6adc8;
+      font-size: 0.6875rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: auto;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      max-height: 120px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .tree-info-title {
+      color: #cdd6f4;
+      font-weight: 600;
+      font-size: 0.6875rem;
+      margin-bottom: 0.125rem;
+    }
+
+    .tree-info-desc {
+      color: #a6adc8;
+    }
+
+    .tree-info-hint {
+      color: #6c7086;
+      font-style: italic;
+      margin-top: auto;
+      padding-top: 0.25rem;
+    }
+
+    .code-output {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .code-block {
+      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      font-size: 0.6875rem;
+      line-height: 1.6;
+      color: #cdd6f4;
+      background: var(--code-bg-lighter);
+      padding: 1rem;
+      margin: 0;
+      overflow: auto;
+      flex: 1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .copy-button {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      color: #cdd6f4;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.6875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: all 0.15s;
+      z-index: 10;
+    }
+
+    .copy-button:hover {
+      background: rgba(0, 0, 0, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .copy-button.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+      color: #10b981;
+    }
+
+    .tab-content {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Syntax highlighting */
+    .syn-keyword { color: var(--syn-keyword); }
+    .syn-string { color: var(--syn-string); }
+    .syn-number { color: var(--syn-number); }
+    .syn-comment { color: var(--syn-comment); }
+    .syn-function { color: var(--syn-function); }
+    .syn-property { color: var(--syn-property); }
+    .syn-punctuation { color: var(--syn-punctuation); }
+    .syn-operator { color: var(--syn-operator); }
+    .syn-builtin { color: var(--syn-builtin); }
+    .syn-constant { color: var(--syn-constant); }
+
+    /* Collapsible JSON */
+    .json-line {
+      display: flex;
+      align-items: flex-start;
+      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+    }
+
+    .json-fold {
+      cursor: pointer;
+      user-select: none;
+      color: #9399b2;
+      margin-right: 0.25rem;
+      width: 14px;
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 0.625rem;
+      line-height: 1.5;
+      transition: color 0.15s;
+    }
+
+    .json-fold:hover {
+      color: var(--primary-color);
+    }
+
+    .json-fold.collapsed::before {
+      content: '▶';
+    }
+
+    .json-fold.expanded::before {
+      content: '▼';
+    }
+
+    .json-fold.empty {
+      cursor: default;
+      opacity: 0;
+    }
+
+    .json-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .json-children {
+      margin-left: 1rem;
+    }
+
+    .json-children.collapsed {
+      display: none;
+    }
+
+    .json-ellipsis {
+      color: #6c7086;
+      font-style: italic;
+    }
+  `;
+
+  constructor() {
+    super();
+    this.treeData = null;
+    this.fileContents = {};
+    this.activeTab = 'json';
+    this.copyButtonText = 'Copy';
+    this.expandedNodes = {};
+    this.selectedNode = null;
+    this.collapsedJsonPaths = {};
+  }
+
+  toggleNode(nodeId) {
+    this.expandedNodes = {
+      ...this.expandedNodes,
+      [nodeId]: !this.expandedNodes[nodeId]
+    };
+  }
+
+  selectNode(nodeId) {
+    this.selectedNode = nodeId;
+    this.dispatchEvent(new CustomEvent('node-selected', {
+      detail: { nodeId },
+      bubbles: true,
+      composed: true
+    }));
+  }
+
+  toggleJsonPath(path) {
+    this.collapsedJsonPaths = {
+      ...this.collapsedJsonPaths,
+      [path]: !this.collapsedJsonPaths[path]
+    };
+  }
+
+  renderCollapsibleJSON(obj, path = '', indent = 0, trailingComma = '') {
+    if (obj === null) return html`<span class="syn-constant">null${trailingComma}</span>`;
+    if (typeof obj === 'boolean') return html`<span class="syn-constant">${obj}${trailingComma}</span>`;
+    if (typeof obj === 'number') return html`<span class="syn-number">${obj}${trailingComma}</span>`;
+    if (typeof obj === 'string') return html`<span class="syn-string">"${obj}"${trailingComma}</span>`;
+
+    const isCollapsed = this.collapsedJsonPaths[path];
+
+    if (Array.isArray(obj)) {
+      const isEmpty = obj.length === 0;
+      if (isEmpty) {
+        return html`[]${trailingComma}`;
+      }
+
+      // Check if it's a simple array (primitives only)
+      const isSimple = obj.every(item =>
+        typeof item === 'number' ||
+        typeof item === 'string' ||
+        typeof item === 'boolean' ||
+        item === null
+      );
+
+      if (isSimple) {
+        const content = obj.map((item, i) => {
+          const comma = i < obj.length - 1 ? ', ' : '';
+          if (typeof item === 'string') return `"${item}"${comma}`;
+          if (typeof item === 'number') return html`<span class="syn-number">${item}${comma}</span>`;
+          if (typeof item === 'boolean' || item === null) return html`<span class="syn-constant">${item}${comma}</span>`;
+          return item;
+        });
+        return html`[${content}]${trailingComma}`;
+      }
+
+      return html`
+        <div>
+          <div class="json-line">
+            <span
+              class="json-fold ${isCollapsed ? 'collapsed' : 'expanded'}"
+              @click=${() => this.toggleJsonPath(path)}
+            ></span>
+            <span class="json-content">
+              [${isCollapsed ? html`<span class="json-ellipsis"> /* ${obj.length} items */ </span>]${trailingComma}` : ''}
+            </span>
+          </div>
+          ${!isCollapsed ? html`
+            <div class="json-children">
+              ${obj.map((item, i) => {
+                const comma = i < obj.length - 1 ? ',' : '';
+                const itemContent = this.renderCollapsibleJSON(item, `${path}[${i}]`, indent + 1, comma);
+                // Check if item is a primitive (single-line)
+                const isPrimitive = typeof item !== 'object' || item === null ||
+                  (Array.isArray(item) && item.every(x => typeof x !== 'object' || x === null)) ||
+                  (typeof item === 'object' && Object.keys(item).length === 0);
+
+                if (isPrimitive) {
+                  return html`
+                    <div class="json-line">
+                      <span class="json-fold empty"></span>
+                      <span class="json-content">${itemContent}</span>
+                    </div>
+                  `;
+                } else {
+                  // For complex items, just render them directly and append comma to closing bracket
+                  return html`${itemContent}`;
+                }
+              })}
+            </div>
+            <div class="json-line">
+              <span class="json-fold empty"></span>
+              <span class="json-content">]${trailingComma}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    if (typeof obj === 'object') {
+      const keys = Object.keys(obj);
+      const isEmpty = keys.length === 0;
+
+      if (isEmpty) {
+        return html`{}${trailingComma}`;
+      }
+
+      return html`
+        <div>
+          <div class="json-line">
+            <span
+              class="json-fold ${isCollapsed ? 'collapsed' : 'expanded'}"
+              @click=${() => this.toggleJsonPath(path)}
+            ></span>
+            <span class="json-content">
+              {${isCollapsed ? html`<span class="json-ellipsis"> /* ${keys.length} ${keys.length === 1 ? 'property' : 'properties'} */ </span>}${trailingComma}` : ''}
+            </span>
+          </div>
+          ${!isCollapsed ? html`
+            <div class="json-children">
+              ${keys.map((key, i) => {
+                const value = obj[key];
+                const valuePath = path ? `${path}.${key}` : key;
+                const comma = i < keys.length - 1 ? ',' : '';
+                const valueContent = this.renderCollapsibleJSON(value, valuePath, indent + 1, comma);
+
+                // Check if value is a primitive (single-line)
+                const isPrimitive = typeof value !== 'object' || value === null ||
+                  (Array.isArray(value) && value.every(x => typeof x !== 'object' || x === null)) ||
+                  (typeof value === 'object' && Object.keys(value).length === 0);
+
+                return html`
+                  <div class="json-line">
+                    <span class="json-fold empty"></span>
+                    <span class="json-content">
+                      <span class="syn-property">"${key}"</span>: ${isPrimitive ? valueContent : html`<div style="display: inline-block; vertical-align: top; width: 100%;">${valueContent}</div>`}
+                    </span>
+                  </div>
+                `;
+              })}
+            </div>
+            <div class="json-line">
+              <span class="json-fold empty"></span>
+              <span class="json-content">}${trailingComma}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    return html`${String(obj)}${trailingComma}`;
+  }
+
+  renderTreeNode(node) {
+    if (!node) return '';
+
+    const isExpanded = this.expandedNodes[node.id];
+    const isSelected = this.selectedNode === node.id;
+    const hasChildren = node.children && node.children.length > 0;
+
+    return html`
+      <div class="tree-node">
+        <div
+          class="tree-item ${isSelected ? 'selected' : ''}"
+          @click=${() => this.selectNode(node.id)}
+        >
+          <span
+            class="tree-toggle ${hasChildren ? 'expandable' : ''}"
+            @click=${(e) => { if (hasChildren) { e.stopPropagation(); this.toggleNode(node.id); }}}
+          >
+            ${hasChildren ? (isExpanded ? '▼' : '▶') : ''}
+          </span>
+          <span class="tree-icon ${node.icon}">${node.icon === 'folder' ? '📁' : node.icon === 'file' ? '📄' : '📦'}</span>
+          <span class="tree-label">${node.label}</span>
+        </div>
+        ${hasChildren && node.children ? html`
+          <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
+            ${node.children.map(child => this.renderTreeNode(child))}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  copyToClipboard() {
+    const selectedFile = this.fileContents[this.selectedNode];
+    if (!selectedFile) return;
+
+    const text = this.activeTab === 'json'
+      ? JSON.stringify(selectedFile.content, null, 2)
+      : selectedFile.content;
+
+    navigator.clipboard.writeText(text).then(() => {
+      this.copyButtonText = 'Copied!';
+      setTimeout(() => {
+        this.copyButtonText = 'Copy';
+      }, 2000);
+    });
+  }
+
+  render() {
+    const selectedFile = this.fileContents[this.selectedNode] || {};
+    const content = selectedFile.content;
+
+    return html`
+      <div class="viewer-container">
+        <div class="tree-panel">
+          ${this.treeData ? this.renderTreeNode(this.treeData) : ''}
+          ${selectedFile.title ? html`
+            <div class="tree-info-panel">
+              <div class="tree-info-title">${selectedFile.title}</div>
+              <div class="tree-info-desc">${selectedFile.description || 'No description available.'}</div>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="code-output">
+          <div class="tab-content">
+            <button
+              class="copy-button ${this.copyButtonText.includes('Copied') ? 'copied' : ''}"
+              @click=${this.copyToClipboard}
+            >
+              ${this.copyButtonText.includes('Copied') ? '✓' : '📋'} ${this.copyButtonText}
+            </button>
+            <div class="code-block">
+              ${content ? (
+                typeof content === 'object'
+                  ? this.renderCollapsibleJSON(content)
+                  : html`<pre>${content}</pre>`
+              ) : 'Select a file to view its contents'}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+customElements.define('zarr-tree-viewer', ZarrTreeViewer);
+
 class OmeExplorer extends LitElement {
   static properties = {
     dimensions: { type: Array },
@@ -437,6 +978,8 @@ class OmeExplorer extends LitElement {
       margin: 0;
       overflow: auto;
       flex: 1;
+      width: 100%;
+      box-sizing: border-box;
       font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
       font-size: 0.6875rem;
       line-height: 1.5;
@@ -500,6 +1043,16 @@ class OmeExplorer extends LitElement {
     .code-area {
       display: flex;
       flex-direction: row;
+      min-height: 400px;
+    }
+
+    .python-output {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--code-bg);
+      min-width: 0;
+      overflow: hidden;
     }
 
     .tree-panel {
@@ -610,6 +1163,7 @@ class OmeExplorer extends LitElement {
       display: flex;
       flex-direction: column;
       min-width: 0;
+      width: 100%;
     }
 
     .tree-info-title {
@@ -1444,6 +1998,173 @@ class OmeExplorer extends LitElement {
     return String(obj);
   }
 
+  // Generate tree data structure for ZarrTreeViewer
+  generateTreeData() {
+    const isV05 = this.version === 'v0.5';
+    const metaFile = isV05 ? 'zarr.json' : '.zattrs';
+    const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
+    const chunkPath = this.dimensions.map(d => d.name).join('/');
+
+    const levelNodes = [];
+    for (let i = 0; i < this.numLevels; i++) {
+      levelNodes.push({
+        id: `level-${i}`,
+        label: `${i}/`,
+        icon: 'folder',
+        children: [
+          {
+            id: `level-${i}-meta`,
+            label: arrayMeta,
+            icon: 'file',
+          },
+          {
+            id: `level-${i}-chunks`,
+            label: chunkPath + '/...',
+            icon: 'chunk',
+          },
+        ],
+      });
+    }
+
+    const rootChildren = [
+      {
+        id: 'root-meta',
+        label: metaFile,
+        icon: 'file',
+      },
+    ];
+
+    if (!isV05) {
+      rootChildren.push({
+        id: 'root-zgroup',
+        label: '.zgroup',
+        icon: 'file',
+      });
+    }
+
+    rootChildren.push(...levelNodes);
+
+    return {
+      id: 'root',
+      label: 'image.zarr/',
+      icon: 'folder',
+      children: rootChildren,
+    };
+  }
+
+  // Generate file contents for ZarrTreeViewer
+  generateFileContents() {
+    const isV05 = this.version === 'v0.5';
+    const metaFile = isV05 ? 'zarr.json' : '.zattrs';
+    const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
+
+    const contents = {};
+
+    // Root group metadata
+    contents['root'] = {
+      title: 'image.zarr/',
+      description: `Root group of the OME-Zarr image. Contains ${isV05 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`,
+      content: null,
+    };
+
+    contents['root-meta'] = {
+      title: metaFile,
+      description: isV05
+        ? 'Zarr v3 group metadata file. Contains zarr_format, node_type, and OME metadata under attributes.ome.multiscales.'
+        : 'Zarr v2 attributes file containing the multiscales array with axes and coordinate transformations.',
+      content: JSON.parse(this.generateJSON()),
+    };
+
+    if (!isV05) {
+      contents['root-zgroup'] = {
+        title: '.zgroup',
+        description: 'Zarr v2 group marker file. Contains {"zarr_format": 2} to identify this as a Zarr group.',
+        content: { zarr_format: 2 },
+      };
+    }
+
+    // Array levels
+    for (let i = 0; i < this.numLevels; i++) {
+      const isFirst = i === 0;
+      const levelDesc = isFirst ? 'Full resolution' : `${Math.pow(2, i)}× downsampled`;
+
+      contents[`level-${i}`] = {
+        title: `${i}/`,
+        description: `${levelDesc} pyramid level. Contains the array data as chunked storage.`,
+        content: null,
+      };
+
+      contents[`level-${i}-meta`] = {
+        title: arrayMeta,
+        description: isV05
+          ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
+          : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`,
+        content: JSON.parse(this.generateArrayMetadataJSON(i)),
+      };
+
+      contents[`level-${i}-chunks`] = {
+        title: this.dimensions.map(d => d.name).join('/') + '/...',
+        description: `Chunk files organized by dimension. Each chunk contains a portion of the array data compressed according to the codec settings.`,
+        content: null,
+      };
+    }
+
+    return contents;
+  }
+
+  // Generate array metadata JSON for a specific level
+  generateArrayMetadataJSON(level) {
+    const isV05 = this.version === 'v0.5';
+    const base = 512;
+    const shape = this.dimensions.map(d => {
+      if (d.type === 'space') {
+        return Math.max(1, Math.floor(base / Math.pow(d.scaleFactor || 2, level)));
+      }
+      return base;
+    });
+
+    const chunks = this.dimensions.map(d => {
+      if (d.type === 'space') return 64;
+      if (d.type === 'channel') return 1;
+      if (d.type === 'time') return 1;
+      return 64;
+    });
+
+    if (isV05) {
+      // Zarr v3 array metadata
+      return this.compactJSON({
+        zarr_format: 3,
+        node_type: 'array',
+        shape: shape,
+        data_type: 'uint16',
+        chunk_grid: {
+          name: 'regular',
+          configuration: { chunk_shape: chunks }
+        },
+        chunk_key_encoding: {
+          name: 'default',
+          configuration: { separator: '/' }
+        },
+        fill_value: 0,
+        codecs: '...',
+        dimension_names: this.dimensions.map(d => d.name)
+      });
+    } else {
+      // Zarr v2 .zarray
+      return this.compactJSON({
+        zarr_format: 2,
+        shape: shape,
+        chunks: chunks,
+        dtype: '<u2',
+        compressor: '...',
+        fill_value: 0,
+        order: 'C',
+        filters: null,
+        dimension_separator: '/'
+      });
+    }
+  }
+
   generatePython() {
     const ver = this.version === 'v0.4' ? 'v04' : 'v05';
 
@@ -1514,16 +2235,24 @@ metadata = ${ver}.Metadata(multiscales=[multiscale])
 print(metadata.model_dump_json(indent=2))`;
   }
 
+  async copyJSONToClipboard() {
+    const jsonString = this.generateJSONForSelectedNode();
+    if (!jsonString) return;
+
+    await navigator.clipboard.writeText(jsonString);
+
+    // Visual feedback
+    this.copyButtonText = 'Copied!';
+    this.requestUpdate();
+    setTimeout(() => {
+      this.copyButtonText = 'Copy';
+      this.requestUpdate();
+    }, 2000);
+  }
+
   async copyToClipboard() {
-    let text;
-    if (this.activeTab === 'json') {
-      text = this.generateJSONForSelectedNode();
-      if (text === null) {
-        return; // Nothing to copy
-      }
-    } else {
-      text = this.generatePython();
-    }
+    // For Python tab
+    const text = this.generatePython();
     await navigator.clipboard.writeText(text);
 
     // Visual feedback
@@ -1934,20 +2663,36 @@ print(metadata.model_dump_json(indent=2))`;
             </div>
 
             <div class="code-area">
+              <!-- Tree panel - always visible -->
               <div class="tree-panel">
                 ${this.renderTree()}
               </div>
 
+              <!-- Content area - switches between JSON and Python -->
               <div class="code-output">
-                <div class="tab-content">
-                  <button 
-                    class="copy-button ${this.copyButtonText.includes('Copied') ? 'copied' : ''}" 
-                    @click=${this.copyToClipboard}
-                  >
-                    ${this.copyButtonText.includes('Copied') ? '✓' : '📋'} ${this.copyButtonText}
-                  </button>
-                  <div class="code-block">${this.getHighlightedCode()}</div>
-                </div>
+                ${this.activeTab === 'json' ? html`
+                  <div class="tab-content">
+                    <button
+                      class="copy-button ${this.copyButtonText.includes('Copied') ? 'copied' : ''}"
+                      @click=${() => this.copyJSONToClipboard()}
+                    >
+                      ${this.copyButtonText.includes('Copied') ? '✓' : '📋'} ${this.copyButtonText}
+                    </button>
+                    <div class="code-block">
+                      ${this.getHighlightedCode()}
+                    </div>
+                  </div>
+                ` : html`
+                  <div class="tab-content">
+                    <button
+                      class="copy-button ${this.copyButtonText.includes('Copied') ? 'copied' : ''}"
+                      @click=${this.copyToClipboard}
+                    >
+                      ${this.copyButtonText.includes('Copied') ? '✓' : '📋'} ${this.copyButtonText}
+                    </button>
+                    <div class="code-block"><pre>${unsafeHTML(this.highlightPython(this.generatePython()))}</pre></div>
+                  </div>
+                `}
               </div>
             </div>
           </div>
