@@ -21,17 +21,3 @@ hide:
 5. **Copy to clipboard** to use in your projects
 
 <ome-explorer></ome-explorer>
-
-## Tips
-
-!!! tip "Scale Factor Magic"
-    By default, spatial dimensions (x/y/z) downsample by 2× at each pyramid level.
-    Non-spatial dimensions (t/c) don't downsample. Change **Scale Factor** to override!
-
-!!! warning "Translation Usage"
-    Only add translations if you have actual stage positions or need to position images
-    in physical space. Most single images don't need this.
-
-!!! info "DimSpec Convenience"
-    The yaozarrs `DimSpec` class shown in the Python output is a convenience wrapper.
-    It automatically generates axes and coordinate transformations from simpler inputs!

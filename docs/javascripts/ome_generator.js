@@ -144,12 +144,18 @@ export function generateJSON({ dimensions, version, numLevels }) {
     });
   }
 
-  const multiscale = {
-    version: version === 'v0.4' ? '0.4' : '0.5',
-    name: 'example_image',
-    axes,
-    datasets,
-  };
+  const multiscale = version === 'v0.4'
+    ? {
+        version: '0.4',
+        name: 'example_image',
+        axes,
+        datasets,
+      }
+    : {
+        name: 'example_image',
+        axes,
+        datasets,
+      };
 
   if (version === 'v0.5') {
     // v0.5 uses coordinateTransformations at multiscale level too
@@ -166,7 +172,7 @@ export function generateJSON({ dimensions, version, numLevels }) {
         zarr_format: 3,
         node_type: 'group',
         attributes: {
-          ome: { multiscales: [multiscale] }
+          ome: { version: "0.5", multiscales: [multiscale] }
         }
       }
     : { multiscales: [multiscale] };
