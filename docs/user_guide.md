@@ -1,6 +1,6 @@
 ---
 icon: lucide/book-open
-title: OME-NGFF User Guide
+title: Yaozzars Guide to OME-NGFF
 ---
 
 !!! tip "What you'll learn"

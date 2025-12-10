@@ -75,6 +75,7 @@ hide:
 ## Common Scenarios
 
 ### 3D Confocal Z-Stack
+
 A simple 3D image with isotropic XY resolution and coarser Z resolution:
 
 - **Preset**: 3D (ZYX)
@@ -82,6 +83,7 @@ A simple 3D image with isotropic XY resolution and coarser Z resolution:
 - **XY axes**: scale = 0.5 µm (camera pixel size)
 
 ### 5D Timelapse with Channels
+
 Full-featured microscopy data with time, channels, and 3D:
 
 - **Preset**: 5D (TCZYX)
@@ -90,6 +92,7 @@ Full-featured microscopy data with time, channels, and 3D:
 - **ZYX axes**: as above
 
 ### Multi-FOV with Stage Positions
+
 Multiple fields of view stitched via translations:
 
 - Add **translation** values to XY axes
@@ -128,20 +131,5 @@ Multiple fields of view stitched via translations:
 
 ## Next Steps
 
-- Copy the generated code and try it in your own projects
 - Check out the [User Guide](user_guide.md) for comprehensive documentation
 - Explore the [API Reference](api/yaozarrs.md) for all available models
-
----
-
-<div class="admonition preview" markdown>
-<p class="admonition-title">Future Features</p>
-
-Coming soon:
-- **Plate mode**: Quick setup for 12/24/96-well plates
-- **Collection mode**: Multiple images with bioformats2raw layout
-- **OMERO rendering**: Color palettes and channel settings
-- **Label images**: Segmentation mask configuration
-- **Validation**: Real-time feedback on invalid configurations
-
-</div>

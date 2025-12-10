@@ -17,6 +17,7 @@ class OmeExplorer extends LitElement {
     expandedNodes: { type: Object },
     selectedNode: { type: String },
     validationErrors: { type: Array },
+    collapsedJsonPaths: { type: Object },
   };
 
   static styles = css`
@@ -439,8 +440,12 @@ class OmeExplorer extends LitElement {
       font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
       font-size: 0.6875rem;
       line-height: 1.5;
-      white-space: pre;
       min-height: 0;
+    }
+
+    .code-block pre {
+      white-space: pre;
+      margin: 0;
     }
 
     .copy-button {
@@ -678,6 +683,61 @@ class OmeExplorer extends LitElement {
       font-style: italic;
       color: #78716c;
     }
+
+    /* Collapsible JSON */
+    .json-line {
+      display: flex;
+      align-items: flex-start;
+      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+    }
+
+    .json-fold {
+      cursor: pointer;
+      user-select: none;
+      color: #9399b2;
+      margin-right: 0.25rem;
+      width: 14px;
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 0.625rem;
+      line-height: 1.5;
+      transition: color 0.15s;
+    }
+
+    .json-fold:hover {
+      color: var(--primary-color);
+    }
+
+    .json-fold.collapsed::before {
+      content: '▶';
+    }
+
+    .json-fold.expanded::before {
+      content: '▼';
+    }
+
+    .json-fold.empty {
+      cursor: default;
+      opacity: 0;
+    }
+
+    .json-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .json-children {
+      margin-left: 1rem;
+    }
+
+    .json-children.collapsed {
+      display: none;
+    }
+
+    .json-ellipsis {
+      color: #6c7086;
+      font-style: italic;
+    }
   `;
 
   constructor() {
@@ -691,6 +751,7 @@ class OmeExplorer extends LitElement {
     this.selectedNode = 'root-meta';
     this.validationErrors = [];
     this.draggedIndex = null;
+    this.collapsedJsonPaths = {};
     this.dimensions = [
       { name: 'c', type: 'channel', unit: '', scale: 1, translation: 0, scaleFactor: 1 },
       { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
@@ -824,6 +885,145 @@ class OmeExplorer extends LitElement {
     });
 
     this.validationErrors = [...errors, ...warnings];
+  }
+
+  // Toggle JSON path collapsed state
+  toggleJsonPath(path) {
+    this.collapsedJsonPaths = {
+      ...this.collapsedJsonPaths,
+      [path]: !this.collapsedJsonPaths[path]
+    };
+  }
+
+  // Render collapsible JSON
+  renderCollapsibleJSON(obj, path = '', indent = 0, trailingComma = '') {
+    if (obj === null) return html`<span class="syn-constant">null${trailingComma}</span>`;
+    if (typeof obj === 'boolean') return html`<span class="syn-constant">${obj}${trailingComma}</span>`;
+    if (typeof obj === 'number') return html`<span class="syn-number">${obj}${trailingComma}</span>`;
+    if (typeof obj === 'string') return html`<span class="syn-string">"${obj}"${trailingComma}</span>`;
+
+    const isCollapsed = this.collapsedJsonPaths[path];
+
+    if (Array.isArray(obj)) {
+      const isEmpty = obj.length === 0;
+      if (isEmpty) {
+        return html`[]${trailingComma}`;
+      }
+
+      // Check if it's a simple array (primitives only)
+      const isSimple = obj.every(item =>
+        typeof item === 'number' ||
+        typeof item === 'string' ||
+        typeof item === 'boolean' ||
+        item === null
+      );
+
+      if (isSimple) {
+        const content = obj.map((item, i) => {
+          const comma = i < obj.length - 1 ? ', ' : '';
+          if (typeof item === 'string') return `"${item}"${comma}`;
+          if (typeof item === 'number') return html`<span class="syn-number">${item}${comma}</span>`;
+          if (typeof item === 'boolean' || item === null) return html`<span class="syn-constant">${item}${comma}</span>`;
+          return item;
+        });
+        return html`[${content}]${trailingComma}`;
+      }
+
+      return html`
+        <div>
+          <div class="json-line">
+            <span
+              class="json-fold ${isCollapsed ? 'collapsed' : 'expanded'}"
+              @click=${() => this.toggleJsonPath(path)}
+            ></span>
+            <span class="json-content">
+              [${isCollapsed ? html`<span class="json-ellipsis"> /* ${obj.length} items */ </span>]${trailingComma}` : ''}
+            </span>
+          </div>
+          ${!isCollapsed ? html`
+            <div class="json-children">
+              ${obj.map((item, i) => {
+                const comma = i < obj.length - 1 ? ',' : '';
+                const itemContent = this.renderCollapsibleJSON(item, `${path}[${i}]`, indent + 1, comma);
+                // Check if item is a primitive (single-line)
+                const isPrimitive = typeof item !== 'object' || item === null ||
+                  (Array.isArray(item) && item.every(x => typeof x !== 'object' || x === null)) ||
+                  (typeof item === 'object' && Object.keys(item).length === 0);
+
+                if (isPrimitive) {
+                  return html`
+                    <div class="json-line">
+                      <span class="json-fold empty"></span>
+                      <span class="json-content">${itemContent}</span>
+                    </div>
+                  `;
+                } else {
+                  // For complex items, just render them directly and append comma to closing bracket
+                  return html`${itemContent}`;
+                }
+              })}
+            </div>
+            <div class="json-line">
+              <span class="json-fold empty"></span>
+              <span class="json-content">]${trailingComma}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    if (typeof obj === 'object') {
+      const keys = Object.keys(obj);
+      const isEmpty = keys.length === 0;
+
+      if (isEmpty) {
+        return html`{}${trailingComma}`;
+      }
+
+      return html`
+        <div>
+          <div class="json-line">
+            <span
+              class="json-fold ${isCollapsed ? 'collapsed' : 'expanded'}"
+              @click=${() => this.toggleJsonPath(path)}
+            ></span>
+            <span class="json-content">
+              {${isCollapsed ? html`<span class="json-ellipsis"> /* ${keys.length} ${keys.length === 1 ? 'property' : 'properties'} */ </span>}${trailingComma}` : ''}
+            </span>
+          </div>
+          ${!isCollapsed ? html`
+            <div class="json-children">
+              ${keys.map((key, i) => {
+                const value = obj[key];
+                const valuePath = path ? `${path}.${key}` : key;
+                const comma = i < keys.length - 1 ? ',' : '';
+                const valueContent = this.renderCollapsibleJSON(value, valuePath, indent + 1, comma);
+
+                // Check if value is a primitive (single-line)
+                const isPrimitive = typeof value !== 'object' || value === null ||
+                  (Array.isArray(value) && value.every(x => typeof x !== 'object' || x === null)) ||
+                  (typeof value === 'object' && Object.keys(value).length === 0);
+
+                return html`
+                  <div class="json-line">
+                    <span class="json-fold empty"></span>
+                    <span class="json-content">
+                      <span class="syn-property">"${key}"</span>: ${isPrimitive ? valueContent : html`<div style="display: inline-block; vertical-align: top; width: 100%;">${valueContent}</div>`}
+                    </span>
+                  </div>
+                `;
+              })}
+            </div>
+            <div class="json-line">
+              <span class="json-fold empty"></span>
+              <span class="json-content">}${trailingComma}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    return html`${String(obj)}${trailingComma}`;
   }
 
   // Syntax highlighting for JSON
@@ -1337,13 +1537,19 @@ print(metadata.model_dump_json(indent=2))`;
 
   getHighlightedCode() {
     if (this.activeTab === 'json') {
-      const json = this.generateJSONForSelectedNode();
-      if (json === null) {
-        return '<span class="syn-comment">// Select a metadata file (.zattrs, .zarray, .zgroup, or zarr.json)\n// to see its contents</span>';
+      const jsonString = this.generateJSONForSelectedNode();
+      if (jsonString === null) {
+        return html`<span class="syn-comment">// Select a metadata file (.zattrs, .zarray, .zgroup, or zarr.json)<br/>// to see its contents</span>`;
       }
-      return this.highlightJSON(json);
+      // Parse and render collapsible JSON
+      try {
+        const jsonObj = JSON.parse(jsonString);
+        return this.renderCollapsibleJSON(jsonObj);
+      } catch (e) {
+        return html`<span class="syn-comment">// Error parsing JSON: ${e.message}</span>`;
+      }
     } else {
-      return this.highlightPython(this.generatePython());
+      return unsafeHTML(this.highlightPython(this.generatePython()));
     }
   }
 
@@ -1740,7 +1946,7 @@ print(metadata.model_dump_json(indent=2))`;
                   >
                     ${this.copyButtonText.includes('Copied') ? '✓' : '📋'} ${this.copyButtonText}
                   </button>
-                  <pre class="code-block">${unsafeHTML(this.getHighlightedCode())}</pre>
+                  <div class="code-block">${this.getHighlightedCode()}</div>
                 </div>
               </div>
             </div>
