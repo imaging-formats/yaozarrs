@@ -624,6 +624,16 @@ class OmeExplorer extends LitElement {
     tooltips: { type: Object },
   };
 
+  updated(changedProperties) {
+    if (changedProperties.has('version')) {
+      // When version changes, validate that selected node still exists
+      if (this.selectedNode === 'root-zgroup' && this.version === 'v0.5') {
+        // .zgroup doesn't exist in v0.5, switch to root-meta
+        this.selectedNode = 'root-meta';
+      }
+    }
+  }
+
   static styles = css`
     :host {
       display: block;
@@ -1503,11 +1513,11 @@ class OmeExplorer extends LitElement {
     this.tooltips = {
       name: {
         title: 'Name',
-        desc: 'Axis identifier (e.g., x, y, z, t, c). Common conventions: x/y/z for spatial, t for time, c for channel'
+        desc: 'User-defined axis identifier. Can be anything, but common conventions: x/y/z for spatial, t for time, c for channel'
       },
       type: {
         title: 'Type',
-        desc: 'Axis semantic type from the OME-NGFF spec. Options: <code>space</code>, time, channel'
+        desc: 'Axis semantic type from the OME-NGFF spec. Options: space, time, channel'
       },
       unit: {
         title: 'Unit',

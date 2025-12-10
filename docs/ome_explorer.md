@@ -6,8 +6,6 @@ hide:
     - toc
 ---
 
-# :lucide-sparkles: Interactive OME-Zarr Explorer
-
 <script type="module" src="/javascripts/ome_explorer.js"></script>
 
 !!! tip "What is this?"
@@ -24,54 +22,6 @@ hide:
 
 <ome-explorer></ome-explorer>
 
-## Understanding the Parameters
-
-<div class="grid cards" markdown>
-
-- :lucide-tag:{ .lg .middle } **Name**
-
-    ---
-    Axis identifier (e.g., `x`, `y`, `z`, `t`, `c`)
-
-    Common conventions: x/y/z for spatial, t for time, c for channel
-
-- :lucide-layers:{ .lg .middle } **Type**
-
-    ---
-    Axis semantic type from the OME-NGFF spec
-
-    Options: `space`, `time`, `channel`
-
-- :lucide-ruler:{ .lg .middle } **Unit**
-
-    ---
-    Physical unit for the axis (optional)
-
-    Examples: `micrometer`, `second`, `nanometer`
-
-- :lucide-scaling:{ .lg .middle } **Scale**
-
-    ---
-    Physical spacing per pixel at level 0
-
-    Example: 0.5 = 0.5 micrometers per pixel
-
-- :lucide-move:{ .lg .middle } **Translation**
-
-    ---
-    Origin offset in physical coordinates
-
-    Used for positioning images with stage coordinates
-
-- :lucide-pyramid:{ .lg .middle } **Scale Factor**
-
-    ---
-    Downsampling factor per pyramid level
-
-    Typically 2 for spatial axes, 1 for others
-
-</div>
-
 ## Tips
 
 !!! tip "Scale Factor Magic"
@@ -85,8 +35,3 @@ hide:
 !!! info "DimSpec Convenience"
     The yaozarrs `DimSpec` class shown in the Python output is a convenience wrapper.
     It automatically generates axes and coordinate transformations from simpler inputs!
-
-## Next Steps
-
-- Check out the [User Guide](user_guide.md) for comprehensive documentation
-- Explore the [API Reference](api/yaozarrs.md) for all available models
