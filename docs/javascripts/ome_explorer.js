@@ -5,6 +5,14 @@
 
 import { LitElement, html, css } from 'https://cdn.jsdelivr.net/npm/lit@3.1.0/+esm';
 import { unsafeHTML } from 'https://cdn.jsdelivr.net/npm/lit@3.1.0/directives/unsafe-html.js/+esm';
+import {
+  generateJSON,
+  generatePython,
+  generateArrayMetadataJSON,
+  compactJSON,
+  getValidUnits,
+  validateDimensions,
+} from './ome_generator.js';
 
 /**
  * ZarrTreeViewer - Reusable component for displaying Zarr file structure
@@ -379,12 +387,27 @@ class ZarrTreeViewer extends LitElement {
               ${obj.map((item, i) => {
                 const comma = i < obj.length - 1 ? ',' : '';
                 const itemContent = this.renderCollapsibleJSON(item, `${path}[${i}]`, indent + 1, comma);
+
                 // Check if item is a primitive (single-line)
                 const isPrimitive = typeof item !== 'object' || item === null ||
                   (Array.isArray(item) && item.every(x => typeof x !== 'object' || x === null)) ||
                   (typeof item === 'object' && Object.keys(item).length === 0);
 
-                if (isPrimitive) {
+                // Check if item is a simple object (all values are primitives)
+                const isSimpleObject = typeof item === 'object' && item !== null && !Array.isArray(item) &&
+                  Object.keys(item).length > 0 &&
+                  Object.keys(item).every(key => {
+                    const value = item[key];
+                    return (
+                      typeof value === 'number' ||
+                      typeof value === 'string' ||
+                      typeof value === 'boolean' ||
+                      value === null
+                    );
+                  });
+
+                // Render primitives and simple objects on their own line
+                if (isPrimitive || isSimpleObject) {
                   return html`
                     <div class="json-line">
                       <span class="json-fold empty"></span>
@@ -412,6 +435,45 @@ class ZarrTreeViewer extends LitElement {
 
       if (isEmpty) {
         return html`{}${trailingComma}`;
+      }
+
+      // Check if all values are simple types
+      const isSimple = keys.every(key => {
+        const value = obj[key];
+        return (
+          typeof value === 'number' ||
+          typeof value === 'string' ||
+          typeof value === 'boolean' ||
+          value === null
+        );
+      });
+
+      if (isSimple) {
+        // Calculate approximate length for one-line rendering
+        const plainText = keys.map(key => {
+          const value = obj[key];
+          const jsonValue = typeof value === 'string' ? `"${value}"` : String(value);
+          return `"${key}": ${jsonValue}`;
+        }).join(', ');
+        const oneLine = `{ ${plainText} }`;
+
+        // Check if it fits within maxLength (including indentation)
+        const maxLineLength = 100;
+        if (indent * 2 + oneLine.length <= maxLineLength) {
+          // Render on one line with syntax highlighting
+          return html`{ ${keys.map((key, i) => {
+            const value = obj[key];
+            const comma = i < keys.length - 1 ? ', ' : '';
+            if (typeof value === 'string') {
+              return html`<span class="syn-property">"${key}"</span>: <span class="syn-string">"${value}"</span>${comma}`;
+            } else if (typeof value === 'number') {
+              return html`<span class="syn-property">"${key}"</span>: <span class="syn-number">${value}</span>${comma}`;
+            } else if (typeof value === 'boolean' || value === null) {
+              return html`<span class="syn-property">"${key}"</span>: <span class="syn-constant">${value}</span>${comma}`;
+            }
+            return html`<span class="syn-property">"${key}"</span>: ${value}${comma}`;
+          })} }${trailingComma}`;
+        }
       }
 
       return html`
@@ -1315,130 +1377,15 @@ class OmeExplorer extends LitElement {
     this.validateDimensions();
   }
 
-  // Valid units from yaozarrs._axis
+  // Valid units - delegates to ome_generator module
   getValidUnits(type) {
-    const spaceUnits = [
-      'angstrom', 'attometer', 'centimeter', 'decimeter', 'exameter',
-      'femtometer', 'foot', 'gigameter', 'hectometer', 'inch',
-      'kilometer', 'megameter', 'meter', 'micrometer', 'mile',
-      'millimeter', 'nanometer', 'parsec', 'petameter', 'picometer',
-      'terameter', 'yard', 'yoctometer', 'yottameter', 'zeptometer', 'zettameter'
-    ];
-
-    const timeUnits = [
-      'attosecond', 'centisecond', 'day', 'decisecond', 'exasecond',
-      'femtosecond', 'gigasecond', 'hectosecond', 'hour', 'kilosecond',
-      'megasecond', 'microsecond', 'millisecond', 'minute', 'nanosecond',
-      'petasecond', 'picosecond', 'second', 'terasecond', 'yoctosecond',
-      'yottasecond', 'zeptosecond', 'zettasecond'
-    ];
-
-    if (type === 'space') return spaceUnits;
-    if (type === 'time') return timeUnits;
-    return []; // channel can have any unit
+    return getValidUnits(type);
   }
 
-  // Validate dimensions according to OME-NGFF spec
+  // Validate dimensions - delegates to ome_generator module
   validateDimensions() {
-    const errors = [];
-    const warnings = [];
-
-    // Count axes by type
-    const typeCounts = {
-      space: this.dimensions.filter(d => d.type === 'space').length,
-      time: this.dimensions.filter(d => d.type === 'time').length,
-      channel: this.dimensions.filter(d => d.type === 'channel').length,
-    };
-
-    // Rule 1: Must have 2-5 dimensions total
-    if (this.dimensions.length < 2) {
-      errors.push({
-        type: 'error',
-        message: `Too few dimensions (${this.dimensions.length}). OME-NGFF requires at least 2 dimensions.`,
-        hint: 'Add more spatial dimensions (x, y, or z).'
-      });
-    }
-    if (this.dimensions.length > 5) {
-      errors.push({
-        type: 'error',
-        message: `Too many dimensions (${this.dimensions.length}). OME-NGFF allows maximum 5 dimensions.`,
-        hint: 'Remove some dimensions to comply with the spec.'
-      });
-    }
-
-    // Rule 2: Must have 2 or 3 space axes
-    if (typeCounts.space < 2) {
-      errors.push({
-        type: 'error',
-        message: `Too few spatial dimensions (${typeCounts.space}). Must have 2-3 space axes.`,
-        hint: 'Add spatial dimensions (x, y) or (x, y, z).'
-      });
-    }
-    if (typeCounts.space > 3) {
-      errors.push({
-        type: 'error',
-        message: `Too many spatial dimensions (${typeCounts.space}). Maximum is 3 space axes.`,
-        hint: 'Biological images are at most 3D (x, y, z).'
-      });
-    }
-
-    // Rule 3: At most one time axis
-    if (typeCounts.time > 1) {
-      errors.push({
-        type: 'error',
-        message: `Too many time dimensions (${typeCounts.time}). At most 1 time axis allowed.`,
-        hint: 'Remove duplicate time dimensions.'
-      });
-    }
-
-    // Rule 4: At most one channel axis
-    if (typeCounts.channel > 1) {
-      errors.push({
-        type: 'error',
-        message: `Too many channel dimensions (${typeCounts.channel}). At most 1 channel axis allowed.`,
-        hint: 'Merge channels into a single channel dimension.'
-      });
-    }
-
-    // Rule 5: Check ordering - must be [time,] [channel,] space...
-    const typeOrder = { time: 0, channel: 1, space: 2 };
-    const actualOrder = this.dimensions.map(d => typeOrder[d.type] ?? 3);
-    const sortedOrder = [...actualOrder].sort((a, b) => a - b);
-
-    if (JSON.stringify(actualOrder) !== JSON.stringify(sortedOrder)) {
-      errors.push({
-        type: 'error',
-        message: 'Dimensions are not in the required order.',
-        hint: 'Order must be: [time,] [channel,] then space axes. Try: t, c, z, y, x'
-      });
-    }
-
-    // Rule 6: Check for duplicate names
-    const names = this.dimensions.map(d => d.name);
-    const duplicates = names.filter((name, i) => names.indexOf(name) !== i);
-    if (duplicates.length > 0) {
-      errors.push({
-        type: 'error',
-        message: `Duplicate axis names: ${[...new Set(duplicates)].join(', ')}`,
-        hint: 'Each dimension must have a unique name.'
-      });
-    }
-
-    // Rule 7: Validate units (warnings, not errors)
-    this.dimensions.forEach((dim, i) => {
-      if (dim.unit) {
-        const validUnits = this.getValidUnits(dim.type);
-        if (validUnits.length > 0 && !validUnits.includes(dim.unit)) {
-          warnings.push({
-            type: 'warning',
-            message: `Dimension "${dim.name}": unit "${dim.unit}" is not a recognized ${dim.type} unit.`,
-            hint: `Valid ${dim.type} units include: ${validUnits.slice(0, 5).join(', ')}, ...`
-          });
-        }
-      }
-    });
-
-    this.validationErrors = [...errors, ...warnings];
+    const result = validateDimensions(this.dimensions);
+    this.validationErrors = result.all;
   }
 
   // Toggle JSON path collapsed state
@@ -1499,12 +1446,27 @@ class OmeExplorer extends LitElement {
               ${obj.map((item, i) => {
                 const comma = i < obj.length - 1 ? ',' : '';
                 const itemContent = this.renderCollapsibleJSON(item, `${path}[${i}]`, indent + 1, comma);
+
                 // Check if item is a primitive (single-line)
                 const isPrimitive = typeof item !== 'object' || item === null ||
                   (Array.isArray(item) && item.every(x => typeof x !== 'object' || x === null)) ||
                   (typeof item === 'object' && Object.keys(item).length === 0);
 
-                if (isPrimitive) {
+                // Check if item is a simple object (all values are primitives)
+                const isSimpleObject = typeof item === 'object' && item !== null && !Array.isArray(item) &&
+                  Object.keys(item).length > 0 &&
+                  Object.keys(item).every(key => {
+                    const value = item[key];
+                    return (
+                      typeof value === 'number' ||
+                      typeof value === 'string' ||
+                      typeof value === 'boolean' ||
+                      value === null
+                    );
+                  });
+
+                // Render primitives and simple objects on their own line
+                if (isPrimitive || isSimpleObject) {
                   return html`
                     <div class="json-line">
                       <span class="json-fold empty"></span>
@@ -1532,6 +1494,45 @@ class OmeExplorer extends LitElement {
 
       if (isEmpty) {
         return html`{}${trailingComma}`;
+      }
+
+      // Check if all values are simple types
+      const isSimple = keys.every(key => {
+        const value = obj[key];
+        return (
+          typeof value === 'number' ||
+          typeof value === 'string' ||
+          typeof value === 'boolean' ||
+          value === null
+        );
+      });
+
+      if (isSimple) {
+        // Calculate approximate length for one-line rendering
+        const plainText = keys.map(key => {
+          const value = obj[key];
+          const jsonValue = typeof value === 'string' ? `"${value}"` : String(value);
+          return `"${key}": ${jsonValue}`;
+        }).join(', ');
+        const oneLine = `{ ${plainText} }`;
+
+        // Check if it fits within maxLength (including indentation)
+        const maxLineLength = 100;
+        if (indent * 2 + oneLine.length <= maxLineLength) {
+          // Render on one line with syntax highlighting
+          return html`{ ${keys.map((key, i) => {
+            const value = obj[key];
+            const comma = i < keys.length - 1 ? ', ' : '';
+            if (typeof value === 'string') {
+              return html`<span class="syn-property">"${key}"</span>: <span class="syn-string">"${value}"</span>${comma}`;
+            } else if (typeof value === 'number') {
+              return html`<span class="syn-property">"${key}"</span>: <span class="syn-number">${value}</span>${comma}`;
+            } else if (typeof value === 'boolean' || value === null) {
+              return html`<span class="syn-property">"${key}"</span>: <span class="syn-constant">${value}</span>${comma}`;
+            }
+            return html`<span class="syn-property">"${key}"</span>: ${value}${comma}`;
+          })} }${trailingComma}`;
+        }
       }
 
       return html`
@@ -1896,106 +1897,18 @@ class OmeExplorer extends LitElement {
     this.validateDimensions();
   }
 
+  // Generate JSON - delegates to ome_generator module
   generateJSON() {
-    const axes = this.dimensions.map(d => {
-      const axis = { name: d.name, type: d.type || undefined };
-      if (d.unit) axis.unit = d.unit;
-      return axis;
+    return generateJSON({
+      dimensions: this.dimensions,
+      version: this.version,
+      numLevels: this.numLevels
     });
-
-    const datasets = [];
-    for (let level = 0; level < this.numLevels; level++) {
-      const scale = this.dimensions.map(d =>
-        d.scale * Math.pow(d.scaleFactor || 1, level)
-      );
-      const transforms = [{ scale }];
-
-      if (this.dimensions.some(d => d.translation !== 0)) {
-        transforms.push({
-          translation: this.dimensions.map(d => d.translation || 0)
-        });
-      }
-
-      datasets.push({
-        path: String(level),
-        coordinateTransformations: transforms
-      });
-    }
-
-    const multiscale = {
-      version: this.version === 'v0.4' ? '0.4' : '0.5',
-      name: 'example_image',
-      axes,
-      datasets,
-    };
-
-    if (this.version === 'v0.5') {
-      // v0.5 uses coordinateTransformations at multiscale level too
-      multiscale.coordinateTransformations = [{
-        type: 'scale',
-        scale: [1, 1, 1, 1, 1].slice(0, this.dimensions.length)
-      }];
-    }
-
-    // v0.5: zarr.json with zarr_format, node_type, attributes
-    // v0.4: .zattrs with just the multiscales array
-    const output = this.version === 'v0.5'
-      ? { 
-          zarr_format: 3,
-          node_type: 'group',
-          attributes: {
-            ome: { multiscales: [multiscale] }
-          }
-        }
-      : { multiscales: [multiscale] };
-
-    return this.compactJSON(output);
   }
 
-  // Custom JSON formatter that keeps arrays on single lines
+  // Compact JSON formatter - delegates to ome_generator module
   compactJSON(obj, indent = 0) {
-    const spaces = '  '.repeat(indent);
-    const nextSpaces = '  '.repeat(indent + 1);
-    
-    if (obj === null) return 'null';
-    if (typeof obj === 'boolean') return obj ? 'true' : 'false';
-    if (typeof obj === 'number') return String(obj);
-    if (typeof obj === 'string') return JSON.stringify(obj);
-    
-    if (Array.isArray(obj)) {
-      // Check if this is a simple array (numbers, strings, or simple objects)
-      const isSimple = obj.every(item => 
-        typeof item === 'number' || 
-        typeof item === 'string' ||
-        typeof item === 'boolean' ||
-        item === null
-      );
-      
-      if (isSimple) {
-        // Keep simple arrays on one line
-        return '[' + obj.map(item => 
-          typeof item === 'string' ? JSON.stringify(item) : String(item)
-        ).join(', ') + ']';
-      }
-      
-      // Complex arrays get one item per line
-      if (obj.length === 0) return '[]';
-      const items = obj.map(item => nextSpaces + this.compactJSON(item, indent + 1));
-      return '[\n' + items.join(',\n') + '\n' + spaces + ']';
-    }
-    
-    if (typeof obj === 'object') {
-      const keys = Object.keys(obj);
-      if (keys.length === 0) return '{}';
-      
-      const items = keys.map(key => {
-        const value = this.compactJSON(obj[key], indent + 1);
-        return nextSpaces + JSON.stringify(key) + ': ' + value;
-      });
-      return '{\n' + items.join(',\n') + '\n' + spaces + '}';
-    }
-    
-    return String(obj);
+    return compactJSON(obj, indent);
   }
 
   // Generate tree data structure for ZarrTreeViewer
@@ -2112,127 +2025,21 @@ class OmeExplorer extends LitElement {
     return contents;
   }
 
-  // Generate array metadata JSON for a specific level
+  // Generate array metadata JSON - delegates to ome_generator module
   generateArrayMetadataJSON(level) {
-    const isV05 = this.version === 'v0.5';
-    const base = 512;
-    const shape = this.dimensions.map(d => {
-      if (d.type === 'space') {
-        return Math.max(1, Math.floor(base / Math.pow(d.scaleFactor || 2, level)));
-      }
-      return base;
-    });
-
-    const chunks = this.dimensions.map(d => {
-      if (d.type === 'space') return 64;
-      if (d.type === 'channel') return 1;
-      if (d.type === 'time') return 1;
-      return 64;
-    });
-
-    if (isV05) {
-      // Zarr v3 array metadata
-      return this.compactJSON({
-        zarr_format: 3,
-        node_type: 'array',
-        shape: shape,
-        data_type: 'uint16',
-        chunk_grid: {
-          name: 'regular',
-          configuration: { chunk_shape: chunks }
-        },
-        chunk_key_encoding: {
-          name: 'default',
-          configuration: { separator: '/' }
-        },
-        fill_value: 0,
-        codecs: '...',
-        dimension_names: this.dimensions.map(d => d.name)
-      });
-    } else {
-      // Zarr v2 .zarray
-      return this.compactJSON({
-        zarr_format: 2,
-        shape: shape,
-        chunks: chunks,
-        dtype: '<u2',
-        compressor: '...',
-        fill_value: 0,
-        order: 'C',
-        filters: null,
-        dimension_separator: '/'
-      });
-    }
+    return generateArrayMetadataJSON({
+      dimensions: this.dimensions,
+      version: this.version
+    }, level);
   }
 
+  // Generate Python code - delegates to ome_generator module
   generatePython() {
-    const ver = this.version === 'v0.4' ? 'v04' : 'v05';
-
-    const axesCode = this.dimensions.map(d => {
-      const typeMap = {
-        'space': 'SpaceAxis',
-        'time': 'TimeAxis',
-        'channel': 'ChannelAxis',
-      };
-      const axisClass = typeMap[d.type] || 'SpaceAxis';
-      const unit = d.unit ? `, unit="${d.unit}"` : '';
-      return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
-    }).join(',\n');
-
-    const dimsCode = this.dimensions.map(d => {
-      const parts = [`name="${d.name}"`];
-      if (d.type) parts.push(`type="${d.type}"`);
-      if (d.unit) parts.push(`unit="${d.unit}"`);
-      if (d.scale !== 1) parts.push(`scale=${d.scale}`);
-      if (d.translation !== 0) parts.push(`translation=${d.translation}`);
-      if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
-      return `    DimSpec(${parts.join(', ')})`;
-    }).join(',\n');
-
-    return `from yaozarrs import ${ver}, DimSpec
-
-# Method 1: Using axis classes directly
-axes = [
-${axesCode}
-]
-
-# Create coordinate transformations manually
-datasets = []
-for level in range(${this.numLevels}):
-    scale = [${this.dimensions.map(d => d.scale).join(', ')}]
-    # Apply scale factors per level
-    scale = [s * (sf ** level) for s, sf in zip(
-        scale,
-        [${this.dimensions.map(d => d.scaleFactor || 1).join(', ')}]
-    )]
-    transforms = [${ver}.Scale(scale=scale)]
-    datasets.append(
-        ${ver}.Dataset(
-            path=str(level),
-            coordinateTransformations=transforms
-        )
-    )
-
-multiscale = ${ver}.Multiscale(
-    name="example_image",
-    axes=axes,
-    datasets=datasets
-)
-
-# Method 2: Using DimSpec (simpler!)
-dims = [
-${dimsCode}
-]
-
-multiscale = ${ver}.Multiscale.from_dims(
-    dims,
-    name="example_image",
-    n_levels=${this.numLevels}
-)
-
-# Convert to JSON
-metadata = ${ver}.Metadata(multiscales=[multiscale])
-print(metadata.model_dump_json(indent=2))`;
+    return generatePython({
+      dimensions: this.dimensions,
+      version: this.version,
+      numLevels: this.numLevels
+    });
   }
 
   async copyJSONToClipboard() {

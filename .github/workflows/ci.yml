@@ -83,6 +83,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: 🧪 Run Tests
         run: uv run --no-dev --group ${{ matrix.group }} coverage run -p -m pytest -v
 
