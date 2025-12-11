@@ -31,12 +31,26 @@ export function getValidUnits(type) {
 }
 
 /**
+ * Shared logic: Check if an array should be compacted to one line.
+ * @param {Array} arr - Array to check
+ * @returns {boolean} True if array should be on one line
+ */
+export function shouldCompactArray(arr) {
+  return arr.every(item =>
+    typeof item === 'number' ||
+    typeof item === 'string' ||
+    typeof item === 'boolean' ||
+    item === null
+  );
+}
+
+/**
  * Custom JSON formatter that keeps simple arrays on single lines.
  * @param {any} obj - Object to format
  * @param {number} indent - Current indentation level
  * @returns {string} Formatted JSON string
  */
-export function compactJSON(obj, indent = 0, maxLength = 88) {
+export function compactJSON(obj, indent = 0, maxLength = 79) {
   const spaces = '  '.repeat(indent);
   const nextSpaces = '  '.repeat(indent + 1);
 
@@ -46,15 +60,9 @@ export function compactJSON(obj, indent = 0, maxLength = 88) {
   if (typeof obj === 'string') return JSON.stringify(obj);
 
   if (Array.isArray(obj)) {
-    // Check if this is a simple array (numbers, strings, or simple objects)
-    const isSimple = obj.every(item =>
-      typeof item === 'number' ||
-      typeof item === 'string' ||
-      typeof item === 'boolean' ||
-      item === null
-    );
+    if (obj.length === 0) return '[]';
 
-    if (isSimple) {
+    if (shouldCompactArray(obj)) {
       // Keep simple arrays on one line
       return '[' + obj.map(item =>
         typeof item === 'string' ? JSON.stringify(item) : String(item)
@@ -62,8 +70,7 @@ export function compactJSON(obj, indent = 0, maxLength = 88) {
     }
 
     // Complex arrays get one item per line
-    if (obj.length === 0) return '[]';
-    const items = obj.map(item => nextSpaces + compactJSON(item, indent + 1));
+    const items = obj.map(item => nextSpaces + compactJSON(item, indent + 1, maxLength));
     return '[\n' + items.join(',\n') + '\n' + spaces + ']';
   }
 
@@ -71,35 +78,9 @@ export function compactJSON(obj, indent = 0, maxLength = 88) {
     const keys = Object.keys(obj);
     if (keys.length === 0) return '{}';
 
-    // Check if all values are simple types
-    const isSimple = keys.every(key => {
-      const value = obj[key];
-      return (
-        typeof value === 'number' ||
-        typeof value === 'string' ||
-        typeof value === 'boolean' ||
-        value === null
-      );
-    });
-
-    if (isSimple) {
-      // Try to format on one line
-      const pairs = keys.map(key => {
-        const value = obj[key];
-        const jsonValue = typeof value === 'string' ? JSON.stringify(value) : String(value);
-        return JSON.stringify(key) + ': ' + jsonValue;
-      });
-      const oneLine = '{ ' + pairs.join(', ') + ' }';
-
-      // Check if it fits within 80 characters (including indentation)
-      if (spaces.length + oneLine.length <= maxLength) {
-        return oneLine;
-      }
-    }
-
-    // Multi-line format for complex or long objects
+    // Always multi-line format for objects
     const items = keys.map(key => {
-      const value = compactJSON(obj[key], indent + 1);
+      const value = compactJSON(obj[key], indent + 1, maxLength);
       return nextSpaces + JSON.stringify(key) + ': ' + value;
     });
     return '{\n' + items.join(',\n') + '\n' + spaces + '}';
@@ -288,16 +269,23 @@ ${Array.from({ length: numLevels }, (_, level) => {
     const scales = dimensions.map(d =>
       d.scale * (d.scaleFactor || 1) ** level
     ).join(', ');
+    const transforms = [`${ver}.ScaleTransformation(scale=[${scales}])`];
+
+    if (dimensions.some(d => d.translation !== 0)) {
+      const translations = dimensions.map(d => d.translation || 0).join(', ');
+      transforms.push(`${ver}.TranslationTransformation(translation=[${translations}])`);
+    }
+
     return `    ${ver}.Dataset(
         path="${level}",
         coordinateTransformations=[
-            ${ver}.ScaleTransformation(scale=[${scales}])
+            ${transforms.join(',\n            ')}
         ]
     )`;
   }).join(',\n')}
 ]
 
-multiscale = ${ver}.Multiscale(
+multiscale1 = ${ver}.Multiscale(
     name="example_image",
     axes=axes,
     datasets=datasets
@@ -311,7 +299,7 @@ dims = [
 ${dimsCode}
 ]
 
-multiscale = ${ver}.Multiscale.from_dims(
+multiscale2 = ${ver}.Multiscale.from_dims(
     dims,
     name="example_image",
     n_levels=${numLevels}
@@ -322,7 +310,7 @@ multiscale = ${ver}.Multiscale.from_dims(
 # ###############################################
 
 # Convert to JSON
-image = ${ver}.Image(multiscales=[multiscale])
+image = ${ver}.Image(multiscales=[multiscale2])
 print(image.model_dump_json(indent=2))`;
 }
 

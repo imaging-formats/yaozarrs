@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 # Path to the Node.js test runner
-RUNNER_PATH = Path(__file__).parent / "ome_explorer_runner.js"
+RUNNER_PATH = Path(__file__).parent / "ome_explorer_runner.mjs"
 
 
 def _dim(
@@ -164,12 +164,13 @@ def test_json_validates_against_pydantic(config: dict) -> None:
 
     # Verify expected objects were created
     assert isinstance(namespace["image"], (v04.Image, v05.Image))
-    assert isinstance(namespace["multiscale"], (v04.Multiscale, v05.Multiscale))
+    assert isinstance(namespace["multiscale1"], (v04.Multiscale, v05.Multiscale))
+    assert isinstance(namespace["multiscale2"], (v04.Multiscale, v05.Multiscale))
+    assert namespace["multiscale1"] == namespace["multiscale2"]
 
     # test the python code generates the same json as the js code
     json_dict = json.loads(output["json"])
     python_dict = namespace["image"].model_dump(exclude_unset=True, exclude_none=True)
-    from rich import print
     if config["version"] == "v0.5":
         json_dict = json_dict["attributes"]["ome"]
         assert json_dict.pop("version") == "0.5"

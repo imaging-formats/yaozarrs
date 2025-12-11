@@ -7,10 +7,6 @@ from typing_extensions import Self
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
 
-# ------------------------------------------------------------------------------
-# Acquisition model
-# ------------------------------------------------------------------------------
-
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Plate",
     "PlateDef",
@@ -24,6 +20,10 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "WellDef",
     "FieldOfView",
 ]
+
+# ------------------------------------------------------------------------------
+# Acquisition model
+# ------------------------------------------------------------------------------
 
 
 class Acquisition(_BaseModel):

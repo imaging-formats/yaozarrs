@@ -10,6 +10,7 @@ title: Yaozzars Guide to OME-NGFF
 
 ## Choose Your Path
 
+<script type="module" src="/javascripts/ome_explorer.js"></script>
 <div class="grid cards" markdown>
 
 - :lucide-box:{ .lg .middle } **I have images**
@@ -108,6 +109,9 @@ dimensions**, and may store multiple resolution levels.
     of RGB image components and conventional "channels" (like optical
     configurations).  You will need to either create a custom group layout
     or flatten them all into a single channel dimension.
+
+??? info "explorer"
+    <ome-explorer></ome-explorer>
 
 ### Directory Structure
 
@@ -358,8 +362,6 @@ Let's put it all together with complete examples:
 
 === "v0.4"
 
-   
-
 #### Complete v0.4 Image Example
 
 **Scenario:** 3D confocal image (CZYX) with 3 pyramid levels
@@ -479,7 +481,6 @@ json_str = image.model_dump_json(exclude_unset=True, indent=2)
 !!! warning ":sparkles:{ .pulse } Magic Alert"
     *Dimensions named x/y/z automatically downsample by 2x at each pyramid level; c/t don't downsample. Set `scale_factor=1.0` explicitly to override (like for z above).*
 
-
 === "
 
 #### Complete v0.5 Image Example
@@ -564,8 +565,6 @@ json_str = zarr_json.model_dump_json(exclude_unset=True, indent=2)
     ```
 
     yaozarrs handles this automatically when using `from_dims()`.
-
-
 
 ---
 
@@ -747,8 +746,6 @@ plate.zarr/
 
 === "v0.4"
 
-   
-
 #### Plate in v0.4
 
 **Spec JSON (`.zattrs` at plate root):**
@@ -816,7 +813,6 @@ plate = v04.Plate(plate=plate_def)
 !!! warning "Breaking change from v0.3"
     In v0.4, `rowIndex` and `columnIndex` became **required** for all wells. This enables efficient sparse plate handling without path parsing.
 
-
 === "
 
 #### Plate in v0.5
@@ -857,8 +853,6 @@ plate = v05.Plate(plate=plate_def)
 # Create full zarr.json
 zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": plate})
 ```
-
-
 
 ---
 
@@ -934,8 +928,6 @@ collection.zarr/
 
 === "v0.4"
 
-   
-
 #### Collection in v0.4
 
 **Spec JSON (`.zattrs` at root):**
@@ -963,7 +955,6 @@ series = v04.Series(series=["0", "1", "2", "3"])
     2. If `series` attribute exists in `OME/.zattrs` → paths must match OME-XML Image element order
     3. Otherwise → consecutively numbered groups: `0/`, `1/`, `2/`...
 
-
 === "
 
 #### Collection in v0.5
@@ -983,8 +974,6 @@ series = v05.Series(series=["0", "1", "2", "3"])
 root_zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": bf2raw})
 ome_zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": series})
 ```
-
-
 
 ---
 
@@ -1175,8 +1164,6 @@ ts_array = array.to_tensorstore()    # requires tensorstore
         print(zarr_json.model_dump_json(exclude_unset=True, indent=2))
         ```
 
-  
-
 ### Example 2: Multi-FOV Coverslip
 
 ??? example "Scenario: 12 fields of view across single coverslip with stage positions"
@@ -1279,8 +1266,6 @@ ts_array = array.to_tensorstore()    # requires tensorstore
 
 === "v0.2 → v0.3"
 
-   
-
 ### Migrating from v0.2 to v0.3
 
 **Impact:** :warning: **Moderate** - Add explicit `axes` field
@@ -1317,7 +1302,6 @@ Axes were **implicitly assumed** to be TCZYX.
 1. Determine actual axis order from array shapes
 2. Add explicit `axes` array to all multiscales
 3. Update `version` field to "0.3"
-
 
 === "
 
@@ -1367,7 +1351,6 @@ Axes were **implicitly assumed** to be TCZYX.
 4. Add `coordinateTransformations` to all datasets
 5. For plates: add `rowIndex` and `columnIndex` to all wells
 6. Update `version` field to "0.4"
-
 
 === "
 
@@ -1423,8 +1406,6 @@ Axes were **implicitly assumed** to be TCZYX.
     - Rewriting data to new format
     - Maintaining both formats during transition
 
-
-
 ---
 
 ## Reference
@@ -1471,8 +1452,6 @@ obj.model_dump_json(exclude_unset=True, indent=2)
 
 === "v0.4 Models"
 
-   
-
 **Core Models:**
 
 - `v04.Image` - Top-level image metadata
@@ -1505,7 +1484,6 @@ obj.model_dump_json(exclude_unset=True, indent=2)
 **Labels:**
 
 - `v04.ImageLabel`, `v04.LabelColor`, `v04.LabelProperty`, `v04.LabelSource`
-
 
 === "
 

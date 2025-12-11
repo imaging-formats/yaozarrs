@@ -259,8 +259,8 @@ class ZarrTreeViewer extends LitElement {
       cursor: pointer;
       user-select: none;
       color: #9399b2;
-      margin-right: 0.25rem;
-      width: 14px;
+      margin-right: 0.125rem;
+      width: 12px;
       flex-shrink: 0;
       text-align: center;
       font-size: 0.625rem;
@@ -291,7 +291,7 @@ class ZarrTreeViewer extends LitElement {
     }
 
     .json-children {
-      margin-left: 1rem;
+      margin-left: 0.625rem;
     }
 
     .json-children.collapsed {
@@ -437,45 +437,6 @@ class ZarrTreeViewer extends LitElement {
         return html`{}${trailingComma}`;
       }
 
-      // Check if all values are simple types
-      const isSimple = keys.every(key => {
-        const value = obj[key];
-        return (
-          typeof value === 'number' ||
-          typeof value === 'string' ||
-          typeof value === 'boolean' ||
-          value === null
-        );
-      });
-
-      if (isSimple) {
-        // Calculate approximate length for one-line rendering
-        const plainText = keys.map(key => {
-          const value = obj[key];
-          const jsonValue = typeof value === 'string' ? `"${value}"` : String(value);
-          return `"${key}": ${jsonValue}`;
-        }).join(', ');
-        const oneLine = `{ ${plainText} }`;
-
-        // Check if it fits within maxLength (including indentation)
-        const maxLineLength = 100;
-        if (indent * 2 + oneLine.length <= maxLineLength) {
-          // Render on one line with syntax highlighting
-          return html`{ ${keys.map((key, i) => {
-            const value = obj[key];
-            const comma = i < keys.length - 1 ? ', ' : '';
-            if (typeof value === 'string') {
-              return html`<span class="syn-property">"${key}"</span>: <span class="syn-string">"${value}"</span>${comma}`;
-            } else if (typeof value === 'number') {
-              return html`<span class="syn-property">"${key}"</span>: <span class="syn-number">${value}</span>${comma}`;
-            } else if (typeof value === 'boolean' || value === null) {
-              return html`<span class="syn-property">"${key}"</span>: <span class="syn-constant">${value}</span>${comma}`;
-            }
-            return html`<span class="syn-property">"${key}"</span>: ${value}${comma}`;
-          })} }${trailingComma}`;
-        }
-      }
-
       return html`
         <div>
           <div class="json-line">
@@ -558,7 +519,7 @@ class ZarrTreeViewer extends LitElement {
     if (!selectedFile) return;
 
     const text = this.activeTab === 'json'
-      ? JSON.stringify(selectedFile.content, null, 2)
+      ? compactJSON(selectedFile.content)
       : selectedFile.content;
 
     navigator.clipboard.writeText(text).then(() => {
@@ -686,6 +647,7 @@ class OmeExplorer extends LitElement {
     }
 
     .explorer-container {
+      container-type: inline-size;
       border: 1px solid var(--border-color-strong);
       border-radius: 8px;
       overflow: hidden;
@@ -695,9 +657,9 @@ class OmeExplorer extends LitElement {
 
     .toolbar {
       display: flex;
-      gap: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      background: linear-gradient(135deg, 
+      gap: 0.625rem;
+      padding: 0.4rem 0.625rem;
+      background: linear-gradient(135deg,
         rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.03) 0%,
         rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.06) 100%);
       border-bottom: 1px solid var(--border-color);
@@ -708,12 +670,12 @@ class OmeExplorer extends LitElement {
 
     .toolbar-group {
       display: flex;
-      gap: 0.375rem;
+      gap: 0.3rem;
       align-items: center;
     }
 
     .toolbar-group label {
-      font-size: 0.625rem;
+      font-size: 0.5625rem;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
@@ -728,12 +690,12 @@ class OmeExplorer extends LitElement {
     }
 
     button, select, input[type="number"], input[type="text"] {
-      padding: 0.3rem 0.5rem;
+      padding: 0.25rem 0.4rem;
       border: 1px solid var(--border-color-strong);
       border-radius: 4px;
       background: var(--input-bg);
       cursor: pointer;
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       transition: all 0.15s ease;
       font-family: inherit;
       color: inherit;
@@ -765,10 +727,10 @@ class OmeExplorer extends LitElement {
     }
 
     .levels-input {
-      width: 48px !important;
+      width: 44px !important;
       text-align: center;
       font-weight: 500;
-      padding: 0.3rem 0.25rem !important;
+      padding: 0.25rem 0.2rem !important;
     }
 
     .main-content {
@@ -778,11 +740,9 @@ class OmeExplorer extends LitElement {
 
     .input-panel {
       border-bottom: 1px solid var(--border-color);
-      padding: 0.625rem 0.75rem;
+      padding: 0.5rem 0.625rem;
       background: var(--bg-color);
-      overflow: visible;
     }
-
     .output-panel {
       display: flex;
       flex-direction: column;
@@ -797,7 +757,7 @@ class OmeExplorer extends LitElement {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
     }
 
     .dimension-table thead {
@@ -806,10 +766,10 @@ class OmeExplorer extends LitElement {
 
     .dimension-table th {
       text-align: left;
-      padding: 0.375rem 0.5rem;
+      padding: 0.3rem 0.4rem;
       background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.04);
       font-weight: 600;
-      font-size: 0.625rem;
+      font-size: 0.5625rem;
       text-transform: uppercase;
       letter-spacing: 0.03em;
       color: var(--text-muted);
@@ -827,26 +787,8 @@ class OmeExplorer extends LitElement {
       border-radius: 0 4px 0 0;
     }
 
-    /* Column widths - compact distribution */
-    .dimension-table th:nth-child(1),
-    .dimension-table td:nth-child(1) { width: 24px; }  /* Drag handle */
-    .dimension-table th:nth-child(2),
-    .dimension-table td:nth-child(2) { width: 50px; }  /* Name */
-    .dimension-table th:nth-child(3),
-    .dimension-table td:nth-child(3) { width: 80px; }  /* Type */
-    .dimension-table th:nth-child(4),
-    .dimension-table td:nth-child(4) { width: 90px; }  /* Unit */
-    .dimension-table th:nth-child(5),
-    .dimension-table td:nth-child(5) { width: 60px; }  /* Scale */
-    .dimension-table th:nth-child(6),
-    .dimension-table td:nth-child(6) { width: 60px; }  /* Trans */
-    .dimension-table th:nth-child(7),
-    .dimension-table td:nth-child(7) { width: 60px; }  /* Factor */
-    .dimension-table th:nth-child(8),
-    .dimension-table td:nth-child(8) { width: 32px; }  /* Delete */
-
     .dimension-table td {
-      padding: 0.25rem 0.375rem;
+      padding: 0.2rem 0.3rem;
       border-top: 3px solid transparent;
       border-bottom: 3px solid transparent;
       vertical-align: middle;
@@ -941,12 +883,28 @@ class OmeExplorer extends LitElement {
     .dimension-table input,
     .dimension-table select {
       width: 100%;
-      padding: 0.25rem 0.375rem;
-      font-size: 0.75rem;
+      padding: 0.2rem 0.3rem;
+      font-size: 0.6875rem;
       border-radius: 3px;
       border: 1px solid var(--border-color);
       background: var(--input-bg);
       transition: all 0.15s ease;
+      box-sizing: border-box;
+    }
+
+    /* Name input - compact */
+    .dimension-table td:nth-child(2) input {
+      min-width: 50px;
+    }
+
+    /* Type select - fit "channel" */
+    .dimension-table td:nth-child(3) select {
+      min-width: 90px;
+    }
+
+    /* Unit input - fit "micrometer" */
+    .dimension-table td:nth-child(4) input {
+      min-width: 105px;
     }
 
     .dimension-table input:focus,
@@ -957,7 +915,6 @@ class OmeExplorer extends LitElement {
     }
 
     .dimension-table input[type="number"] {
-      text-align: right;
       padding-right: 0.125rem;
       -moz-appearance: textfield;
     }
@@ -987,12 +944,12 @@ class OmeExplorer extends LitElement {
     .add-dimension {
       margin-top: 0.5rem;
       width: 100%;
-      padding: 0.375rem 0.5rem;
+      padding: 0.3rem 0.4rem;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.25rem;
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       border-radius: 4px;
     }
 
@@ -1154,7 +1111,6 @@ class OmeExplorer extends LitElement {
       border: none;
       padding: 0;
       margin: 0;
-      overflow: visible;
     }
 
     /* Tree View Styles */
@@ -1464,8 +1420,8 @@ class OmeExplorer extends LitElement {
       cursor: pointer;
       user-select: none;
       color: #9399b2;
-      margin-right: 0.25rem;
-      width: 14px;
+      margin-right: 0.125rem;
+      width: 12px;
       flex-shrink: 0;
       text-align: center;
       font-size: 0.625rem;
@@ -1496,7 +1452,7 @@ class OmeExplorer extends LitElement {
     }
 
     .json-children {
-      margin-left: 1rem;
+      margin-left: 0.625rem;
     }
 
     .json-children.collapsed {
@@ -1506,6 +1462,214 @@ class OmeExplorer extends LitElement {
     .json-ellipsis {
       color: #6c7086;
       font-style: italic;
+    }
+
+    /* Responsive styles using container queries */
+    @container (max-width: 1200px) {
+      .tree-panel {
+        flex: 0 0 200px;
+        min-width: 160px;
+      }
+    }
+
+    @container (max-width: 900px) {
+      .tree-panel {
+        flex: 0 0 160px;
+        min-width: 140px;
+      }
+
+      .tree-info-panel {
+        height: 100px;
+        min-height: 100px;
+        max-height: 100px;
+        font-size: 0.5625rem;
+      }
+
+      .tree-view {
+        font-size: 0.625rem;
+      }
+
+      .code-block {
+        font-size: 0.625rem;
+      }
+
+      /* Reduce table font size */
+      .dimension-table {
+        font-size: 0.6875rem;
+      }
+
+      .dimension-table input,
+      .dimension-table select {
+        font-size: 0.6875rem;
+        padding: 0.2rem 0.25rem;
+      }
+
+      .dimension-table th {
+        font-size: 0.5625rem;
+        padding: 0.25rem 0.375rem;
+      }
+
+      /* Hide "Factor" suffix in column headers to save space */
+      .hide-on-mobile {
+        display: none;
+      }
+
+      /* Column widths determined by content at all breakpoints */
+    }
+
+    @container (max-width: 768px) {
+      .tree-panel {
+        flex: 0 0 160px;
+        min-width: 160px;
+      }
+
+      .tree-info-panel {
+        height: 140px;
+        min-height: 80px;
+        max-height: 160px;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.5rem;
+      }
+
+      .tree-info-title {
+        font-size: 0.5625rem;
+      }
+
+      .tree-view {
+        font-size: 0.5625rem;
+        padding: 0.375rem;
+      }
+
+      .tree-item {
+        padding: 0.0625rem 0.125rem;
+      }
+
+      .code-area {
+        min-height: 300px;
+        max-height: 440px;
+      }
+
+      .tab-content {
+        min-height: 220px;
+      }
+
+      /* Further reduce table font size */
+      .dimension-table {
+        font-size: 0.625rem;
+      }
+
+      .dimension-table input,
+      .dimension-table select {
+        font-size: 0.625rem;
+        padding: 0.15rem 0.2rem;
+      }
+
+      .dimension-table th {
+        font-size: 0.5rem;
+        padding: 0.2rem 0.25rem;
+        letter-spacing: 0;
+      }
+
+      .dimension-table td {
+        padding: 0.15rem 0.25rem;
+      }
+
+      /* Column sizing by content continues */
+
+      .toolbar {
+        padding: 0.375rem 0.5rem;
+        gap: 0.5rem;
+      }
+
+      .toolbar-group label {
+        font-size: 0.5625rem;
+      }
+
+      .input-panel {
+        padding: 0.5rem;
+      }
+
+      .add-dimension {
+        font-size: 0.6875rem;
+        padding: 0.3rem 0.4rem;
+      }
+
+      /* Info icon adjustments */
+      .info-icon {
+        width: 12px;
+        height: 12px;
+      }
+
+      .tooltip {
+        width: 180px;
+        font-size: 0.5rem;
+        padding: 0.375rem 0.5rem;
+      }
+
+      .tab {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.625rem;
+      }
+
+      .version-toggle button {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.5625rem;
+      }
+
+      button, select, input[type="number"], input[type="text"] {
+        font-size: 0.6875rem;
+        padding: 0.25rem 0.4rem;
+      }
+
+      .levels-input {
+        width: 40px !important;
+      }
+
+      .preset-btn {
+        padding: 0.25rem 0.4rem;
+      }
+    }
+
+    @container (max-width: 600px) {
+      .tree-panel {
+        flex: 0 0 120px;
+        min-width: 100px;
+      }
+
+      .tree-info-panel {
+        display: none;
+      }
+
+      .code-block {
+        font-size: 0.5rem;
+        padding: 0.375rem;
+      }
+
+      .tree-view {
+        font-size: 0.5rem;
+      }
+
+      /* Even smaller table */
+      .dimension-table {
+        font-size: 0.5625rem;
+      }
+
+      .dimension-table input,
+      .dimension-table select {
+        font-size: 0.5625rem;
+        padding: 0.125rem 0.15rem;
+      }
+
+      .dimension-table th {
+        font-size: 0.4375rem;
+        padding: 0.15rem 0.2rem;
+      }
+
+      .dimension-table td {
+        padding: 0.125rem 0.2rem;
+      }
+
+      /* Column sizing by content continues */
     }
   `;
 
@@ -1614,14 +1778,24 @@ class OmeExplorer extends LitElement {
   }
 
   // Render a table header with an info icon tooltip
+  // label can be a string or an object like {base: 'Text', hideOnMobile: ' Suffix'}
   renderHeaderWithTooltip(label, tooltipKey) {
     const tooltip = this.tooltips[tooltipKey];
     if (!tooltip) {
       return html`${label}`;
     }
+
+    // Handle responsive labels
+    let labelContent;
+    if (typeof label === 'object' && label.base && label.hideOnMobile) {
+      labelContent = html`${label.base}<span class="hide-on-mobile">${label.hideOnMobile}</span>`;
+    } else {
+      labelContent = label;
+    }
+
     return html`
       <span class="header-with-tooltip">
-        <span>${label}</span>
+        <span>${labelContent}</span>
         <span class="info-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -1742,45 +1916,6 @@ class OmeExplorer extends LitElement {
 
       if (isEmpty) {
         return html`{}${trailingComma}`;
-      }
-
-      // Check if all values are simple types
-      const isSimple = keys.every(key => {
-        const value = obj[key];
-        return (
-          typeof value === 'number' ||
-          typeof value === 'string' ||
-          typeof value === 'boolean' ||
-          value === null
-        );
-      });
-
-      if (isSimple) {
-        // Calculate approximate length for one-line rendering
-        const plainText = keys.map(key => {
-          const value = obj[key];
-          const jsonValue = typeof value === 'string' ? `"${value}"` : String(value);
-          return `"${key}": ${jsonValue}`;
-        }).join(', ');
-        const oneLine = `{ ${plainText} }`;
-
-        // Check if it fits within maxLength (including indentation)
-        const maxLineLength = 100;
-        if (indent * 2 + oneLine.length <= maxLineLength) {
-          // Render on one line with syntax highlighting
-          return html`{ ${keys.map((key, i) => {
-            const value = obj[key];
-            const comma = i < keys.length - 1 ? ', ' : '';
-            if (typeof value === 'string') {
-              return html`<span class="syn-property">"${key}"</span>: <span class="syn-string">"${value}"</span>${comma}`;
-            } else if (typeof value === 'number') {
-              return html`<span class="syn-property">"${key}"</span>: <span class="syn-number">${value}</span>${comma}`;
-            } else if (typeof value === 'boolean' || value === null) {
-              return html`<span class="syn-property">"${key}"</span>: <span class="syn-constant">${value}</span>${comma}`;
-            }
-            return html`<span class="syn-property">"${key}"</span>: ${value}${comma}`;
-          })} }${trailingComma}`;
-        }
       }
 
       return html`
@@ -2589,8 +2724,8 @@ class OmeExplorer extends LitElement {
                     <th>${this.renderHeaderWithTooltip('Type', 'type')}</th>
                     <th>${this.renderHeaderWithTooltip('Unit', 'unit')}</th>
                     <th>${this.renderHeaderWithTooltip('Scale', 'scale')}</th>
-                    <th>${this.renderHeaderWithTooltip('Translate', 'translation')}</th>
-                    <th>${this.renderHeaderWithTooltip('Downscale Factor', 'scaleFactor')}</th>
+                    <th>${this.renderHeaderWithTooltip({base: 'Trans', hideOnMobile: 'late'}, 'translation')}</th>
+                    <th>${this.renderHeaderWithTooltip({base: 'Downscale', hideOnMobile: ' Factor'}, 'scaleFactor')}</th>
                     <th></th>
                   </tr>
                 </thead>
