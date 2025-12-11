@@ -1,5 +1,5 @@
 ---
-icon: lucide/book-open
+icon: material/book-open-variant
 title: Guide to OME-NGFF
 ---
 
@@ -14,24 +14,24 @@ title: Guide to OME-NGFF
 The official OME-NGFF specification can be found at
 [ngff.openmicroscopy.org](https://ngff.openmicroscopy.org/).
 
-### :lucide-rocket: Quicklinks
+### :material-rocket-launch: Quicklinks
 
 <div class="grid cards" markdown>
-- :lucide-box:{ .lg .middle } **I have images**
+- :material-cube-outline:{ .lg .middle } **I have images**
 
     ---
     Single images, z-stacks, timelapses, or multi-channel confocal data
 
     [:octicons-arrow-right-24: Go to Images](#working-with-images)
 
-- :lucide-grid-3x2:{ .lg .middle } **I have plate data**
+- :material-grid:{ .lg .middle } **I have plate data**
 
     ---
     Multi-well plates from high-content screening (HCS) experiments
 
     [:octicons-arrow-right-24: Go to Plates](#working-with-plates)
 
-- :lucide-tags:{ .lg .middle } **I have image annotations**
+- :material-tag-multiple:{ .lg .middle } **I have image annotations**
 
     ---
 
@@ -39,7 +39,7 @@ The official OME-NGFF specification can be found at
 
     [:octicons-arrow-right-24: Go to Labels](#labels-segmentation-masks)
 
-- :lucide-folders:{ .lg .middle } **I have multiple images**
+- :material-folder-multiple:{ .lg .middle } **I have multiple images**
 
     ---
 

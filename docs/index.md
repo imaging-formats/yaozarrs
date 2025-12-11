@@ -1,5 +1,5 @@
 ---
-icon: lucide/rocket
+icon: material/rocket-launch
 title: Get Started
 ---
 
