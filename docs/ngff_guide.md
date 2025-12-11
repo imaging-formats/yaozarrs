@@ -50,44 +50,6 @@ title: Guide to OME-NGFF
 
 ---
 
-## Quick Start: Version Selection
-
-!!! question "Which version should I use?"
-
-    === "New Projects (Recommended: v0.4)"
-
-        **Use v0.4 if:**
-
-        - You're starting a new project
-        - You need maximum compatibility with existing tools
-        - You're working with Zarr v2
-
-        ```python
-        from yaozarrs import v04
-        ```
-
-    === "Cloud-Scale Projects (v0.5)"
-
-        **Use v0.5 if:**
-
-        - You need sharding for massive datasets
-        - You're adopting Zarr v3
-        - You want future-proof architecture
-
-        ```python
-        from yaozarrs import v05
-        ```
-
-### Breaking Changes Quick Reference
-
-| Migration | Key Breaking Change | Impact |
-|-----------|---------------------|--------|
-| **v0.2 → v0.3** | Axes must be explicit strings | :warning: Moderate - add `axes` field |
-| **v0.3 → v0.4** | Axes become objects + coordinate transforms required | :warning::warning: Major - restructure metadata |
-| **v0.4 → v0.5** | Zarr v3 file structure + OME namespace | :warning::warning::warning: Critical - completely different storage |
-
----
-
 ## Working with Images
 
 An **Image** is the fundamental building block of OME-NGFF.
@@ -711,6 +673,16 @@ collection.zarr/
 | OME namespace | N/A | N/A | N/A | `attributes.ome` |
 | `dimension_names` | N/A | N/A | N/A | **MUST** |
 | Plate indices | Optional | Optional | **MUST** | **MUST** |
+
+### Breaking Changes Quick Reference
+
+| Migration | Key Breaking Change | Impact |
+|-----------|---------------------|--------|
+| **v0.2 → v0.3** | Axes must be explicit strings | :warning: Moderate - add `axes` field |
+| **v0.3 → v0.4** | Axes become objects + coordinate transforms required | :warning::warning: Major - restructure metadata |
+| **v0.4 → v0.5** | Zarr v3 file structure + OME namespace | :warning::warning::warning: Critical - completely different storage |
+
+---
 
 ## Additional Resources
 

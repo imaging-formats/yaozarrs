@@ -1,8 +1,10 @@
 # https://zensical.org/docs/setup/basics/
 [project]
-site_name = "Documentation"
-site_description = "A new project generated from the default template project."
-#site_url = "https://www.example.com/"
+site_name = "YAOZARRS ‼️"
+site_description = "Yet another ome-zarr model."
+site_url = "https://tlambert03.github.io/yaozarrs/"
+repo_url = "https://github.com/tlambert03/yaozarrs"
+repo_name = "tlambert03/yaozarrs"
 
 
 extra_css = ["stylesheets/extra.css"]
@@ -52,11 +54,11 @@ emoji_generator = "zensical.extensions.emoji.to_svg"
 
 [project.theme.font]
 text = "Inter"
-code = "Fira Code"
+# code = "Fira Code"
 
-[project.theme.icon]
-logo = "lucide/smile"
-repo = "lucide/smile"
+# [project.theme.icon]
+# logo = "lucide/smile"
+# repo = "fontawesome/brands/github"
 
 #[[project.extra.social]]
 #icon = "fontawesome/brands/github"

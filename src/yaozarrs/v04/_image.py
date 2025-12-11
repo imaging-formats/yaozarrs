@@ -149,7 +149,7 @@ DatasetsList: TypeAlias = Annotated[
 
 
 class Multiscale(_BaseModel):
-    """A multiscale representation of an image."""
+    """A multiscale (pyramidal) representation of an image."""
 
     name: str | None = None
     axes: AxesList = Field(description="The axes of the image.")

@@ -159,6 +159,21 @@ class Dataset(_BaseModel):
             if isinstance(t, ScaleTransformation)
         )
 
+    @property
+    def translation_transform(self) -> TranslationTransformation | None:
+        """Return the translation transformation from the list, if present.
+
+        (CoordinateTransformsList validator ensures there is at most one.)
+        """
+        return next(
+            (
+                t
+                for t in self.coordinateTransformations
+                if isinstance(t, TranslationTransformation)
+            ),
+            None,
+        )
+
 
 def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
     """Validate a list of Dataset for `Multiscale.datasets`."""
