@@ -2,8 +2,8 @@
 icon: lucide/sparkles
 title: Interactive OME-Zarr Explorer
 hide:
+    - toc
     # - navigation
-    # - toc
 ---
 
 <script type="module" src="/javascripts/ome_explorer.js"></script>

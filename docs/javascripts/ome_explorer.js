@@ -15,6 +15,34 @@ import {
 } from './ome_generator.js';
 
 /**
+ * Dimension presets for different image types
+ */
+const PRESETS = {
+  '2d': [
+    { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+    { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+  ],
+  '3d': [
+    { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
+    { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+    { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+  ],
+  '4d': [
+    { name: 'c', type: 'channel', unit: '', scale: 1, translation: 0, scaleFactor: 1 },
+    { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
+    { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+    { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+  ],
+  '5d': [
+    { name: 't', type: 'time', unit: 'second', scale: 1, translation: 0, scaleFactor: 1 },
+    { name: 'c', type: 'channel', unit: '', scale: 1, translation: 0, scaleFactor: 1 },
+    { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
+    { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+    { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
+  ],
+};
+
+/**
  * ZarrTreeViewer - Reusable component for displaying Zarr file structure
  * with collapsible JSON viewer
  */
@@ -583,6 +611,8 @@ class OmeExplorer extends LitElement {
     validationErrors: { type: Array },
     collapsedJsonPaths: { type: Object },
     tooltips: { type: Object },
+    preset: { type: String },
+    levels: { type: Number },
   };
 
   updated(changedProperties) {
@@ -592,6 +622,16 @@ class OmeExplorer extends LitElement {
         // .zgroup doesn't exist in v0.5, switch to root-meta
         this.selectedNode = 'root-meta';
       }
+    }
+
+    if (changedProperties.has('preset')) {
+      // When preset changes, update dimensions
+      this.loadPreset(this.preset);
+    }
+
+    if (changedProperties.has('levels')) {
+      // When levels changes, update numLevels
+      this.numLevels = this.levels;
     }
   }
 
@@ -1524,9 +1564,9 @@ class OmeExplorer extends LitElement {
       }
 
       .tree-info-panel {
-        height: 140px;
+        height: 150px;
         min-height: 80px;
-        max-height: 160px;
+        max-height: 170px;
         padding: 0.375rem 0.5rem;
         font-size: 0.5rem;
       }
@@ -1678,19 +1718,16 @@ class OmeExplorer extends LitElement {
     this.version = 'v0.5';
     this.mode = 'image';
     this.activeTab = 'json';
-    this.numLevels = 3;
+    this.preset = '4d';
+    this.levels = 2;
+    this.numLevels = this.levels;
     this.copyButtonText = 'Copy';
     this.expandedNodes = { root: true, '0': false, '1': false, '2': false };
     this.selectedNode = 'root-meta';
     this.validationErrors = [];
     this.draggedIndex = null;
     this.collapsedJsonPaths = {};
-    this.dimensions = [
-      { name: 'c', type: 'channel', unit: '', scale: 1, translation: 0, scaleFactor: 1 },
-      { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
-      { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-      { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-    ];
+    this.dimensions = [...(PRESETS[this.preset] || PRESETS['4d'])];
     this.validateDimensions();
     this._themeObserver = null;
     this._initializeTooltips();
@@ -2148,31 +2185,7 @@ class OmeExplorer extends LitElement {
   }
 
   loadPreset(preset) {
-    const presets = {
-      '2d': [
-        { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-        { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-      ],
-      '3d': [
-        { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
-        { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-        { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-      ],
-      '4d': [
-        { name: 'c', type: 'channel', unit: '', scale: 1, translation: 0, scaleFactor: 1 },
-        { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
-        { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-        { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-      ],
-      '5d': [
-        { name: 't', type: 'time', unit: 'second', scale: 1, translation: 0, scaleFactor: 1 },
-        { name: 'c', type: 'channel', unit: '', scale: 1, translation: 0, scaleFactor: 1 },
-        { name: 'z', type: 'space', unit: 'micrometer', scale: 2, translation: 0, scaleFactor: 2 },
-        { name: 'y', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-        { name: 'x', type: 'space', unit: 'micrometer', scale: 0.5, translation: 0, scaleFactor: 2 },
-      ],
-    };
-    this.dimensions = [...presets[preset]];
+    this.dimensions = [...PRESETS[preset]];
     this.validateDimensions();
   }
 
