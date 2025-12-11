@@ -593,27 +593,63 @@ represented in OME-NGFF:
 
 ## Working with Collections
 
-A **Collection** (bioformats2raw layout) groups multiple related images that don't fit the plate model. Use cases:
+OME-NGFF **does not** currently have an official specification for collections of images.
+
+By **Collections** of images, we mean groups of related images, usually sharing a coordinate space,
+that do not fit into the plate model.  Examples include:
 
 - Multiple stage positions on single coverslip
-- Split file series (z-stacks across files)
-- Multi-timepoint acquisitions stored separately
-- Any multi-image dataset without regular grid structure
+- Multiple angles in light sheet microscopy
+- Tomographic tilt series
+- Jagged or otherwise irregular sets of related images that don't fit the multiscales model
+
+!!! information "Status"
+
+    There is a [long-standing github issue](https://github.com/ome/ngff/issues/31)
+    that discusses potential future standards for collections, and a (currently
+    pending) [pull request for RFC-8](https://github.com/ome/ngff/pull/343), which covers this topic.
+    But as of v0.5 and January 2026, there is no official spec.
+
+    The [`"bioformats2raw"`
+    layout](https://ngff.openmicroscopy.org/0.5/index.html#bf2raw) is a
+    _transitional_ solution, internally employed by the
+    [bioformats2raw](https://github.com/glencoesoftware/bioformats2raw) tool when
+    dumping multiple series (commonly found in image formats supported by
+    [bioformats](https://github.com/ome/bioformats)) into a single zarr hierarchy.
+
+This bioformats2raw layout described in the NGFF spec, is described below:
 
 ### Directory Structure
 
-```
-collection.zarr/
-├── .zattrs                  # {"bioformats2raw.layout": 3}
-├── OME/
-│   ├── .zattrs              # {"series": ["0", "1", "2"]}
-│   └── METADATA.ome.xml     # Complete OME-XML metadata
-├── 0/                       # First image
-│   ├── .zattrs              # multiscales
-│   └── 0/, 1/               # Pyramid levels
-├── 1/                       # Second image
-└── 2/
-```
+=== "v0.4"
+
+    ```
+    series.ome.zarr               # One converted fileset from bioformats2raw
+        ├── .zgroup
+        ├── .zattrs               # Contains "bioformats2raw.layout" metadata
+        ├── OME                   # Special group for containing OME metadata
+        │   ├── .zgroup
+        │   ├── .zattrs           # Contains "series" metadata
+        │   └── METADATA.ome.xml  # OME-XML file stored within the Zarr fileset
+        ├── 0                     # First image in the collection
+        ├── 1                     # Second image in the collection
+        └── ...
+    ```
+
+=== "v0.5"
+
+    ```
+    series.ome.zarr               # One converted fileset from bioformats2raw
+        ├── zarr.json             # Contains "bioformats2raw.layout" metadata
+        ├── OME                   # Special group for containing OME metadata
+        │   ├── zarr.json         # Contains "series" metadata
+        │   └── METADATA.ome.xml  # OME-XML file stored within the Zarr fileset
+        ├── 0                     # First image in the collection
+        ├── 1                     # Second image in the collection
+        └── ...
+    ```
+
+### Metadata
 
 === "v0.4"
 
@@ -630,17 +666,12 @@ collection.zarr/
     ```python
     from yaozarrs import v04
 
-    # Marker at root
+    # Root .zattrs
     bf2raw = v04.Bf2Raw()  # layout defaults to 3
 
-    # Optionally specify series order in OME/.zattrs
+    # OME/.zattrs
     series = v04.Series(series=["0", "1", "2", "3"])
     ```
-
-    !!! info "Image Location Rules"
-        1. If `plate` metadata exists → use plate structure
-        2. If `series` attribute exists in `OME/.zattrs` → paths must match OME-XML Image element order
-        3. Otherwise → consecutively numbered groups: `0/`, `1/`, `2/`...
 
 === "v0.5"
 
@@ -650,15 +681,20 @@ collection.zarr/
     from yaozarrs import v05
 
     # Root zarr.json
-    bf2raw = v05.Bf2Raw()
+    root_zarr_json = v05.OMEZarrGroupJSON(
+      attributes={"ome": v05.Bf2Raw()}
+    )
 
     # OME/zarr.json
-    series = v05.Series(series=["0", "1", "2", "3"])
-
-    # Create documents
-    root_zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": bf2raw})
-    ome_zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": series})
+    ome_zarr_json = v05.OMEZarrGroupJSON(
+        attributes={"ome": v05.Series(series=["0", "1", "2", "3"])}
+    )
     ```
+
+!!! info "Image Location Rules"
+    1. If `plate` metadata exists → use plate structure
+    2. If `series` attribute exists in `OME/.zattrs` → paths must match OME-XML Image element order
+    3. Otherwise → consecutively numbered groups: `0/`, `1/`, `2/`...
 
 ---
 
