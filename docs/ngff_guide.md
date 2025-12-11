@@ -11,7 +11,8 @@ title: Guide to OME-NGFF
     This guide attempts to demystify the **OME-NGFF (OME-Zarr)** specification and shows
     you how to work with it using yaozarrs.
 
----
+The official OME-NGFF specification can be found at
+[ngff.openmicroscopy.org](https://ngff.openmicroscopy.org/).
 
 ### :lucide-rocket: Quicklinks
 
@@ -111,23 +112,35 @@ dimensions**, and may store multiple resolution levels.
     from [Zarr v2](https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html)
     to [Zarr v3](https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html).
 
-    - **<=v0.4**: Metadata in root of `.zattrs` files
-    - **>=v0.5**: Metadata in `zarr.json` under `attributes.ome` namespace
+    - **<=v0.4**: "multiscales" metadata directly in root of `.zattrs` files
+    - **>=v0.5**: "multiscales" metadata in `zarr.json` under `attributes.ome` namespace
 
 ---
 
 ### Axes
 
-Axes define the dimensions of your image data. The specification evolved significantly across versions:
+Axes define the dimensions of your image data. As of v0.4, axes are **objects**
+with `name`, and optional `type` and/or `unit`:
+
+!!! important "Axis Constraints"
+    Constraints for image axes in OME-NGFF are the same in v0.4 and v0.5:
+
+    - **MUST** have 2-5 dimensions total
+    - **MUST** have 2-3 spatial axes
+    - **MAY** have 0-1 time axis
+    - **MAY** have 0-1 channel axis
+    - **Ordering enforced**: time → channel/custom → space
+
+    In practice, this limits valid axis combinations to: `[T][C][Z] Y X`  
+    *(though no explicit restriction is placed on naming conventions)*
 
 === "v0.4"
-
-    Axes are **objects** with `name`, `type`, and optional `unit`:
 
     **Spec JSON:**
 
     ```json
     {
+      // found in a "multiscales" object
       "axes": [
         {"name": "c", "type": "channel"},
         {"name": "z", "type": "space", "unit": "micrometer"},
@@ -153,32 +166,19 @@ Axes define the dimensions of your image data. The specification evolved signifi
     !!! warning "Breaking change from v0.3"
         In v0.3, axes were simple strings: `["c", "z", "y", "x"]`. In v0.4+, they must be objects with explicit types.
 
-    **Axis Constraints:**
-
-    - **MUST** have 2-5 dimensions total
-    - **MUST** have 2-3 space axes (X, Y, optionally Z)
-    - **MAY** have 0-1 time axis
-    - **MAY** have 0-1 channel axis
-    - **Ordering enforced**: time → channel → space
-
 === "v0.5"
-
-    Same structure as v0.4, but stored under `attributes.ome` namespace:
 
     **Spec JSON:**
 
     ```json
     {
-      "attributes": {
-        "ome": {
-          "axes": [
-            {"name": "c", "type": "channel"},
-            {"name": "z", "type": "space", "unit": "micrometer"},
-            {"name": "y", "type": "space", "unit": "micrometer"},
-            {"name": "x", "type": "space", "unit": "micrometer"}
-          ]
-        }
-      }
+      // found in a "multiscales" object
+      "axes": [
+        {"name": "c", "type": "channel"},
+        {"name": "z", "type": "space", "unit": "micrometer"},
+        {"name": "y", "type": "space", "unit": "micrometer"},
+        {"name": "x", "type": "space", "unit": "micrometer"}
+      ]
     }
     ```
 
@@ -194,13 +194,6 @@ Axes define the dimensions of your image data. The specification evolved signifi
         v05.SpaceAxis(name="x", unit="micrometer"),
     ]
     ```
-
-    !!! info "Available Axis Types"
-
-        - `SpaceAxis` - X, Y, Z spatial dimensions
-        - `TimeAxis` - T temporal dimension
-        - `ChannelAxis` - C channel dimension
-        - `CustomAxis` - Any other dimension type
 
 ---
 
@@ -363,7 +356,6 @@ Labels are specialized images with integer dtype representing segmentation masks
     label_image = v04.LabelImage(
         multiscales=[...],  # Same structure as regular image
         image_label=v04.ImageLabel(
-            version="0.4",
             colors=[
                 v04.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
                 v04.LabelColor(label_value=2, rgba=[0, 255, 0, 255])
@@ -439,7 +431,6 @@ plate.zarr/
           {"id": 0, "name": "Initial", "maximumfieldcount": 4},
           {"id": 1, "name": "24h", "maximumfieldcount": 4}
         ],
-        "field_count": 4
       }
     }
     ```
@@ -450,7 +441,6 @@ plate.zarr/
     from yaozarrs import v04
 
     plate_def = v04.PlateDef(
-        version="0.4",
         name="HCS Experiment",
         columns=[
             v04.Column(name="1"),
@@ -469,8 +459,7 @@ plate.zarr/
         acquisitions=[
             v04.Acquisition(id=0, name="Initial", maximumfieldcount=4),
             v04.Acquisition(id=1, name="24h", maximumfieldcount=4),
-        ],
-        field_count=4
+        ]
     )
 
     plate = v04.Plate(plate=plate_def)
@@ -483,39 +472,71 @@ plate.zarr/
 
     Same structure as v0.4, stored under `attributes.ome` in `zarr.json`:
 
+    **Spec JSON (`zarr.json` at plate root):**
+
+    ```json
+    {
+      "attributes": {
+        "ome": {
+          "plate": {
+            "columns": [
+              { "name": "1" },
+              { "name": "2" },
+              { "name": "3" }
+            ],
+            "rows": [
+              { "name": "A" },
+              { "name": "B" }
+            ],
+            "wells": [
+              { "path": "A/1", "rowIndex": 0, "columnIndex": 0 },
+              { "path": "A/2", "rowIndex": 0, "columnIndex": 1 },
+              { "path": "B/1", "rowIndex": 1, "columnIndex": 0 }
+            ],
+            "acquisitions": [
+              { "id": 0, "maximumfieldcount": 4, "name": "Initial" },
+              { "id": 1, "maximumfieldcount": 4, "name": "24h" }
+            ],
+            "field_count": 4,
+            "name": "HCS Experiment"
+          }
+        }
+      }
+    }
+    ```
     **yaozarrs Code:**
 
     ```python
     from yaozarrs import v05
 
     plate_def = v05.PlateDef(
-        version="0.4",  # Note: still uses "0.4" internally
         name="HCS Experiment",
-        columns=[
+        columns=[  # must have at least 1 column
             v05.Column(name="1"),
             v05.Column(name="2"),
             v05.Column(name="3")
         ],
-        rows=[
+        rows=[  # must have at least 1 row
             v05.Row(name="A"),
             v05.Row(name="B")
         ],
-        wells=[
+        wells=[  # must have at least 1 well, paths match tree structure
             v05.PlateWell(path="A/1", rowIndex=0, columnIndex=0),
             v05.PlateWell(path="A/2", rowIndex=0, columnIndex=1),
             v05.PlateWell(path="B/1", rowIndex=1, columnIndex=0),
         ],
-        acquisitions=[
+        acquisitions=[  # optional 
             v05.Acquisition(id=0, name="Initial", maximumfieldcount=4),
             v05.Acquisition(id=1, name="24h", maximumfieldcount=4),
         ],
-        field_count=4
+        field_count=4  # max FOV per well
     )
 
     plate = v05.Plate(plate=plate_def)
 
     # Create full zarr.json
     zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": plate})
+    json_str = zarr_json.model_dump_json(indent=2, exclude_unset=True)
     ```
 
 ---
@@ -545,7 +566,6 @@ Wells list the fields of view (images) they contain:
 from yaozarrs import v04
 
 well_def = v04.WellDef(
-    version="0.4",
     images=[
         v04.FieldOfView(path="0", acquisition=0),
         v04.FieldOfView(path="1", acquisition=0),
@@ -560,7 +580,7 @@ well = v04.Well(well=well_def)
 |-------|-------------|-------------|
 | `images` | **MUST** | List of field of view objects |
 | `images[].path` | **MUST** | Path to image group |
-| `images[].acquisition` | **SHOULD** | Links to plate acquisition ID |
+| `images[].acquisition` | **MUST (if multiple acquisitions exist)** | Links to plate acquisition ID |
 
 ### Interactive Example
 
