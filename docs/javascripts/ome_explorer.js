@@ -9,6 +9,9 @@ import {
   generateJSON,
   generatePython,
   generateArrayMetadataJSON,
+  generatePlateJSON,
+  generateWellJSON,
+  generatePlatePython,
   compactJSON,
   getValidUnits,
   validateDimensions,
@@ -613,6 +616,33 @@ class OmeExplorer extends LitElement {
     tooltips: { type: Object },
     preset: { type: String },
     levels: { type: Number },
+    // Plate properties
+    plateControl: {
+      type: Boolean,
+      attribute: 'plate-control',
+      converter: {
+        fromAttribute: (value) => {
+          if (value === null) return undefined; // Use default
+          if (value === 'false') return false;
+          return true;
+        }
+      }
+    },
+    plateExpanded: {
+      type: Boolean,
+      attribute: 'plate-expanded',
+      converter: {
+        fromAttribute: (value) => {
+          if (value === null) return undefined; // Use default
+          if (value === 'false') return false;
+          return true;
+        }
+      }
+    },
+    plateEnabled: { type: Boolean },
+    plateType: { type: String },
+    selectedWells: { type: Array },
+    numFOVs: { type: Number },
   };
 
   updated(changedProperties) {
@@ -632,6 +662,27 @@ class OmeExplorer extends LitElement {
     if (changedProperties.has('levels')) {
       // When levels changes, update numLevels
       this.numLevels = this.levels;
+    }
+
+    // When plate configuration changes, refresh the selected node if needed
+    if (changedProperties.has('plateType') || changedProperties.has('numFOVs')) {
+      // If we're in plate mode with wells selected, ensure plate metadata is visible
+      if (this.plateEnabled && this.selectedWells.length > 0) {
+        // If the current selection is now invalid (e.g., a well that no longer exists),
+        // fall back to root plate metadata
+        if (this.selectedNode && this.selectedNode.startsWith('well-')) {
+          // Validate that the well still exists
+          const parts = this.selectedNode.split('-');
+          if (parts.length >= 3) {
+            const row = parseInt(parts[1]);
+            const col = parseInt(parts[2]);
+            const wellExists = this.selectedWells.some(w => w.row === row && w.col === col);
+            if (!wellExists) {
+              this.selectedNode = 'root-plate-meta';
+            }
+          }
+        }
+      }
     }
   }
 
@@ -1507,8 +1558,8 @@ class OmeExplorer extends LitElement {
     /* Responsive styles using container queries */
     @container (max-width: 1200px) {
       .tree-panel {
-        flex: 0 0 200px;
-        min-width: 160px;
+        flex: 0 0 230px;
+        min-width: 230px;
       }
     }
 
@@ -1711,6 +1762,250 @@ class OmeExplorer extends LitElement {
 
       /* Column sizing by content continues */
     }
+
+    /* Plate Configuration Styles */
+    .plate-section {
+      margin-top: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .plate-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.625rem;
+      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.04);
+      border-bottom: 1px solid var(--border-color);
+      user-select: none;
+    }
+
+    .plate-header:hover {
+      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.06);
+    }
+
+    .plate-toggle {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--primary-color);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: var(--input-bg);
+      transition: all 0.15s;
+    }
+
+    .plate-toggle.checked {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .plate-toggle.checked::after {
+      content: '✓';
+      font-size: 0.625rem;
+      font-weight: bold;
+    }
+
+    .plate-title {
+      flex: 1;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .plate-collapse-icon {
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      width: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .plate-collapse-icon.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .plate-content {
+      padding: 0.625rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .plate-content.collapsed {
+      display: none;
+    }
+
+    .plate-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+
+    .plate-control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .plate-control-group label {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .plate-type-select {
+      width: 100%;
+      padding: 0.25rem 0.4rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--input-bg);
+      font-size: 0.6875rem;
+      cursor: pointer;
+    }
+
+    .fov-input {
+      width: 100%;
+      padding: 0.25rem 0.4rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--input-bg);
+      font-size: 0.6875rem;
+    }
+
+    /* Well Selector Styles */
+    .well-selector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.02);
+      border-radius: 4px;
+      max-width: 100%;
+    }
+
+    .well-selector-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .well-grid-wrapper {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .well-row-label {
+      width: 20px;
+      min-width: 20px;
+      text-align: right;
+      font-size: 0.5625rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .well-grid {
+      display: grid;
+      gap: 2px;
+      background: var(--border-color);
+      padding: 2px;
+      border-radius: 3px;
+      user-select: none;
+      width: 300px;
+      max-width: 100%;
+    }
+
+    .well-cell {
+      aspect-ratio: 1 / 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      color: transparent;
+    }
+
+    .well-cell:hover {
+      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.1);
+    }
+
+    .well-cell.selected {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .well-cell.drag-range {
+      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.3);
+      border-color: var(--primary-color);
+    }
+
+    .well-cell.selected::after {
+      content: '✓';
+      color: white;
+    }
+
+    .well-labels {
+      display: grid;
+      gap: 2px;
+      font-size: 0.5625rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      padding-left: calc(20px + 0.25rem + 2px);
+      padding-right: 2px;
+      width: calc(300px + 20px + 0.25rem);
+      max-width: 100%;
+      margin-bottom: 0.25rem;
+    }
+
+    .well-label {
+      text-align: center;
+      min-width: 0;
+    }
+
+    .well-row-labels-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 2px 0;
+    }
+
+    .well-actions {
+      display: flex;
+      gap: 0.375rem;
+    }
+
+    .well-action-btn {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.625rem;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .well-action-btn:hover {
+      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.08);
+      border-color: var(--primary-color);
+    }
   `;
 
   constructor() {
@@ -1731,6 +2026,22 @@ class OmeExplorer extends LitElement {
     this.validateDimensions();
     this._themeObserver = null;
     this._initializeTooltips();
+    // Initialize plate properties
+    this.plateControl = true;
+    this.plateExpanded = false;
+    this.plateEnabled = false;
+    this.plateType = '24-well';
+    this.selectedWells = [
+      { row: 0, col: 0 }, // A1
+      { row: 0, col: 1 }, // A2
+      { row: 1, col: 0 }, // B1
+      { row: 1, col: 1 }  // B2
+    ];
+    this.numFOVs = 1;
+    // Drag selection state
+    this.isDragging = false;
+    this.dragStart = null;
+    this.dragEnd = null;
   }
 
   connectedCallback() {
@@ -1814,6 +2125,133 @@ class OmeExplorer extends LitElement {
     this.validationErrors = result.all;
   }
 
+  // Plate methods
+  togglePlate() {
+    this.plateEnabled = !this.plateEnabled;
+
+    // When toggling plate mode, automatically select the appropriate root metadata file
+    // and expand the root node
+    this.expandedNodes = { ...this.expandedNodes, root: true };
+
+    if (this.plateEnabled && this.selectedWells.length > 0) {
+      // Entering plate mode - select plate metadata
+      this.selectedNode = 'root-plate-meta';
+    } else {
+      // Exiting plate mode - select image metadata
+      this.selectedNode = 'root-meta';
+    }
+  }
+
+  toggleWell(row, col) {
+    const index = this.selectedWells.findIndex(
+      w => w.row === row && w.col === col
+    );
+
+    if (index >= 0) {
+      // Remove well
+      this.selectedWells = this.selectedWells.filter((_, i) => i !== index);
+    } else {
+      // Add well
+      this.selectedWells = [...this.selectedWells, { row, col }];
+    }
+  }
+
+  selectAllWells() {
+    const layout = this.getPlateLayout();
+    const wells = [];
+    for (let row = 0; row < layout.rows; row++) {
+      for (let col = 0; col < layout.cols; col++) {
+        wells.push({ row, col });
+      }
+    }
+    this.selectedWells = wells;
+
+    // If plate mode is enabled, select plate metadata
+    if (this.plateEnabled) {
+      this.expandedNodes = { ...this.expandedNodes, root: true };
+      this.selectedNode = 'root-plate-meta';
+    }
+  }
+
+  clearAllWells() {
+    this.selectedWells = [];
+
+    // If plate mode is enabled but no wells selected, fall back to image view
+    if (this.plateEnabled) {
+      this.selectedNode = 'root-meta';
+    }
+  }
+
+  getPlateLayout() {
+    const layouts = {
+      '12-well': { rows: 3, cols: 4, rowNames: ['A', 'B', 'C'], colNames: ['1', '2', '3', '4'] },
+      '24-well': { rows: 4, cols: 6, rowNames: ['A', 'B', 'C', 'D'], colNames: ['1', '2', '3', '4', '5', '6'] },
+      '96-well': { rows: 8, cols: 12, rowNames: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], colNames: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
+    };
+    return layouts[this.plateType] || layouts['96-well'];
+  }
+
+  isWellSelected(row, col) {
+    return this.selectedWells.some(w => w.row === row && w.col === col);
+  }
+
+  // Drag selection methods
+  startDragSelection(row, col) {
+    this.isDragging = true;
+    this.dragStart = { row, col };
+    this.dragEnd = { row, col };
+  }
+
+  updateDragSelection(row, col) {
+    if (!this.isDragging) return;
+    this.dragEnd = { row, col };
+    this.requestUpdate();
+  }
+
+  endDragSelection() {
+    if (!this.isDragging) return;
+
+    if (this.dragStart && this.dragEnd) {
+      // Check if this was just a click (no drag)
+      const isSingleClick = this.dragStart.row === this.dragEnd.row &&
+                            this.dragStart.col === this.dragEnd.col;
+
+      if (isSingleClick) {
+        // Single click - just toggle the well
+        this.toggleWell(this.dragStart.row, this.dragStart.col);
+      } else {
+        // Drag selection - select all wells in the dragged rectangle
+        const minRow = Math.min(this.dragStart.row, this.dragEnd.row);
+        const maxRow = Math.max(this.dragStart.row, this.dragEnd.row);
+        const minCol = Math.min(this.dragStart.col, this.dragEnd.col);
+        const maxCol = Math.max(this.dragStart.col, this.dragEnd.col);
+
+        for (let r = minRow; r <= maxRow; r++) {
+          for (let c = minCol; c <= maxCol; c++) {
+            if (!this.isWellSelected(r, c)) {
+              this.selectedWells = [...this.selectedWells, { row: r, col: c }];
+            }
+          }
+        }
+      }
+    }
+
+    this.isDragging = false;
+    this.dragStart = null;
+    this.dragEnd = null;
+  }
+
+  isWellInDragRange(row, col) {
+    if (!this.isDragging || !this.dragStart || !this.dragEnd) return false;
+
+    const minRow = Math.min(this.dragStart.row, this.dragEnd.row);
+    const maxRow = Math.max(this.dragStart.row, this.dragEnd.row);
+    const minCol = Math.min(this.dragStart.col, this.dragEnd.col);
+    const maxCol = Math.max(this.dragStart.col, this.dragEnd.col);
+
+    return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
+  }
+
   // Render a table header with an info icon tooltip
   // label can be a string or an object like {base: 'Text', hideOnMobile: ' Suffix'}
   renderHeaderWithTooltip(label, tooltipKey) {
@@ -1844,6 +2282,63 @@ class OmeExplorer extends LitElement {
           </span>
         </span>
       </span>
+    `;
+  }
+
+  // Render well selector UI
+  renderWellSelector() {
+    const layout = this.getPlateLayout();
+
+    return html`
+      <div class="well-selector">
+        <!-- Column labels -->
+        <div class="well-labels" style="grid-template-columns: repeat(${layout.cols}, 1fr);">
+          ${layout.colNames.map(name => html`<div class="well-label">${name}</div>`)}
+        </div>
+
+        <!-- Grid with row labels -->
+        <div style="display: flex; gap: 0.25rem;">
+          <!-- Row labels column -->
+          <div class="well-row-labels-container">
+            ${Array.from({ length: layout.rows }, (_, row) => html`
+              <div class="well-row-label" style="flex: 1; display: flex; align-items: center; justify-content: flex-end;">
+                ${layout.rowNames[row]}
+              </div>
+            `)}
+          </div>
+
+          <!-- Well grid -->
+          <div
+            class="well-grid"
+            style="grid-template-columns: repeat(${layout.cols}, 1fr);"
+            @mouseleave=${() => this.endDragSelection()}
+            @mouseup=${() => this.endDragSelection()}
+          >
+            ${Array.from({ length: layout.rows }, (_, r) =>
+              Array.from({ length: layout.cols }, (_, c) => {
+                const selected = this.isWellSelected(r, c);
+                const inDragRange = this.isWellInDragRange(r, c);
+                return html`
+                  <div
+                    class="well-cell ${selected ? 'selected' : ''} ${inDragRange ? 'drag-range' : ''}"
+                    @mousedown=${() => this.startDragSelection(r, c)}
+                    @mouseenter=${() => this.updateDragSelection(r, c)}
+                  ></div>
+                `;
+              })
+            )}
+          </div>
+        </div>
+
+        <!-- Well selector actions -->
+        <div class="well-actions">
+          <button class="well-action-btn" @click=${this.selectAllWells}>Select All</button>
+          <button class="well-action-btn" @click=${this.clearAllWells}>Clear All</button>
+          <span style="font-size: 0.6875rem; color: var(--text-muted);">
+            ${this.selectedWells.length} well${this.selectedWells.length !== 1 ? 's' : ''} selected
+          </span>
+        </div>
+      </div>
     `;
   }
 
@@ -2317,26 +2812,112 @@ class OmeExplorer extends LitElement {
     const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
     const chunkPath = this.dimensions.map(d => d.name).join('/');
 
-    const levelNodes = [];
-    for (let i = 0; i < this.numLevels; i++) {
-      levelNodes.push({
-        id: `level-${i}`,
-        label: `${i}/`,
-        icon: 'folder',
-        children: [
-          {
-            id: `level-${i}-meta`,
-            label: arrayMeta,
-            icon: 'file',
-          },
-          {
-            id: `level-${i}-chunks`,
-            label: chunkPath + '/...',
-            icon: 'chunk',
-          },
-        ],
+    // Helper: generate pyramid levels for an image
+    const generateLevelNodes = (prefix = '') => {
+      const levelNodes = [];
+      for (let i = 0; i < this.numLevels; i++) {
+        levelNodes.push({
+          id: `${prefix}level-${i}`,
+          label: `${i}/`,
+          icon: 'folder',
+          children: [
+            {
+              id: `${prefix}level-${i}-meta`,
+              label: arrayMeta,
+              icon: 'file',
+            },
+            {
+              id: `${prefix}level-${i}-chunks`,
+              label: chunkPath + '/...',
+              icon: 'chunk',
+            },
+          ],
+        });
+      }
+      return levelNodes;
+    };
+
+    // If plate mode is enabled, generate plate structure
+    if (this.plateEnabled && this.selectedWells.length > 0) {
+      const layout = this.getPlateLayout();
+      const rootChildren = [
+        {
+          id: 'root-plate-meta',
+          label: metaFile,
+          icon: 'file',
+        },
+      ];
+
+      // Create well folder structure
+      const wellsByRow = {};
+      this.selectedWells.forEach(({ row, col }) => {
+        const rowName = layout.rowNames[row];
+        if (!wellsByRow[rowName]) {
+          wellsByRow[rowName] = [];
+        }
+        wellsByRow[rowName].push({ row, col, colName: layout.colNames[col] });
       });
+
+      // Build row folders
+      Object.keys(wellsByRow).sort().forEach(rowName => {
+        const wells = wellsByRow[rowName];
+        const rowChildren = [];
+
+        wells.forEach(({ row, col, colName }) => {
+          // FOV children
+          const fovChildren = [];
+          for (let f = 0; f < this.numFOVs; f++) {
+            const fovPrefix = `well-${row}-${col}-fov-${f}-`;
+            fovChildren.push({
+              id: `well-${row}-${col}-fov-${f}`,
+              label: `${f}/`,
+              icon: 'folder',
+              children: [
+                {
+                  id: `${fovPrefix}meta`,
+                  label: metaFile,
+                  icon: 'file',
+                },
+                ...generateLevelNodes(fovPrefix),
+              ],
+            });
+          }
+
+          // Well node
+          rowChildren.push({
+            id: `well-${row}-${col}`,
+            label: `${colName}/`,
+            icon: 'folder',
+            children: [
+              {
+                id: `well-${row}-${col}-meta`,
+                label: metaFile,
+                icon: 'file',
+              },
+              ...fovChildren,
+            ],
+          });
+        });
+
+        // Row folder
+        rootChildren.push({
+          id: `row-${rowName}`,
+          label: `${rowName}/`,
+          icon: 'folder',
+          children: rowChildren,
+        });
+      });
+
+      return {
+        id: 'root',
+        label: 'plate.zarr/',
+        icon: 'folder',
+        children: rootChildren,
+      };
     }
+
+    // Otherwise, generate standard image structure
+    const levelNodes = generateLevelNodes();
 
     const rootChildren = [
       {
@@ -2369,10 +2950,109 @@ class OmeExplorer extends LitElement {
     const isV05 = this.version === 'v0.5';
     const metaFile = isV05 ? 'zarr.json' : '.zattrs';
     const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
-
     const contents = {};
 
-    // Root group metadata
+    // Helper: generate array level contents
+    const generateArrayLevels = (prefix = '') => {
+      for (let i = 0; i < this.numLevels; i++) {
+        const isFirst = i === 0;
+        const levelDesc = isFirst ? 'Full resolution' : `downsampled level ${i}`;
+
+        contents[`${prefix}level-${i}`] = {
+          title: `${i}/`,
+          description: `${levelDesc} pyramid level. Contains the array data as chunked storage.`,
+          content: null,
+        };
+
+        contents[`${prefix}level-${i}-meta`] = {
+          title: arrayMeta,
+          description: isV05
+            ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
+            : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`,
+          content: JSON.parse(this.generateArrayMetadataJSON(i)),
+        };
+
+        contents[`${prefix}level-${i}-chunks`] = {
+          title: this.dimensions.map(d => d.name).join('/') + '/...',
+          description: `Chunk files organized by dimension. Each chunk contains a portion of the array data compressed according to the codec settings.`,
+          content: null,
+        };
+      }
+    };
+
+    // If plate mode is enabled
+    if (this.plateEnabled && this.selectedWells.length > 0) {
+      const layout = this.getPlateLayout();
+
+      contents['root'] = {
+        title: 'plate.zarr/',
+        description: `Root group of the OME-Zarr plate. Contains ${isV05 ? 'zarr.json with OME plate metadata' : 'plate metadata in .zattrs'}.`,
+        content: null,
+      };
+
+      contents['root-plate-meta'] = {
+        title: metaFile,
+        description: isV05
+          ? 'Zarr v3 group metadata with plate layout. Defines rows, columns, and wells with their positions.'
+          : 'Plate metadata file defining the well plate structure.',
+        content: JSON.parse(generatePlateJSON({
+          version: this.version,
+          plateType: this.plateType,
+          selectedWells: this.selectedWells,
+          numFOVs: this.numFOVs
+        })),
+      };
+
+      // Generate well metadata
+      this.selectedWells.forEach(({ row, col }) => {
+        const rowName = layout.rowNames[row];
+        const colName = layout.colNames[col];
+
+        contents[`row-${rowName}`] = {
+          title: `${rowName}/`,
+          description: `Row ${rowName} of the plate.`,
+          content: null,
+        };
+
+        contents[`well-${row}-${col}`] = {
+          title: `${colName}/`,
+          description: `Well ${rowName}${colName}. Contains ${this.numFOVs} field(s) of view.`,
+          content: null,
+        };
+
+        contents[`well-${row}-${col}-meta`] = {
+          title: metaFile,
+          description: `Well metadata listing all fields of view (FOVs) for this well.`,
+          content: JSON.parse(generateWellJSON({
+            version: this.version,
+            numFOVs: this.numFOVs
+          })),
+        };
+
+        // FOV metadata
+        for (let f = 0; f < this.numFOVs; f++) {
+          const fovPrefix = `well-${row}-${col}-fov-${f}-`;
+
+          contents[`well-${row}-${col}-fov-${f}`] = {
+            title: `${f}/`,
+            description: `Field of view ${f}. Contains multiscale image pyramid.`,
+            content: null,
+          };
+
+          contents[`${fovPrefix}meta`] = {
+            title: metaFile,
+            description: `Image metadata for FOV ${f}. Contains multiscales with axes and transformations.`,
+            content: JSON.parse(this.generateJSON()),
+          };
+
+          generateArrayLevels(fovPrefix);
+        }
+      });
+
+      return contents;
+    }
+
+    // Otherwise, generate standard image structure
     contents['root'] = {
       title: 'image.zarr/',
       description: `Root group of the OME-Zarr image. Contains ${isV05 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`,
@@ -2395,31 +3075,7 @@ class OmeExplorer extends LitElement {
       };
     }
 
-    // Array levels
-    for (let i = 0; i < this.numLevels; i++) {
-      const isFirst = i === 0;
-      const levelDesc = isFirst ? 'Full resolution' : `downsampled level ${i}`;
-
-      contents[`level-${i}`] = {
-        title: `${i}/`,
-        description: `${levelDesc} pyramid level. Contains the array data as chunked storage.`,
-        content: null,
-      };
-
-      contents[`level-${i}-meta`] = {
-        title: arrayMeta,
-        description: isV05
-          ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
-          : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`,
-        content: JSON.parse(this.generateArrayMetadataJSON(i)),
-      };
-
-      contents[`level-${i}-chunks`] = {
-        title: this.dimensions.map(d => d.name).join('/') + '/...',
-        description: `Chunk files organized by dimension. Each chunk contains a portion of the array data compressed according to the codec settings.`,
-        content: null,
-      };
-    }
+    generateArrayLevels();
 
     return contents;
   }
@@ -2434,6 +3090,17 @@ class OmeExplorer extends LitElement {
 
   // Generate Python code - delegates to ome_generator module
   generatePython() {
+    if (this.plateEnabled && this.selectedWells.length > 0) {
+      return generatePlatePython({
+        dimensions: this.dimensions,
+        version: this.version,
+        numLevels: this.numLevels,
+        plateType: this.plateType,
+        selectedWells: this.selectedWells,
+        numFOVs: this.numFOVs
+      });
+    }
+
     return generatePython({
       dimensions: this.dimensions,
       version: this.version,
@@ -2493,10 +3160,16 @@ class OmeExplorer extends LitElement {
     if (!nodeId) return false;
     // root-meta is .zattrs (v2) or zarr.json (v3) for the root group
     // root-zgroup is .zgroup (v2 only)
+    // root-plate-meta is zarr.json for plate
+    // well-X-Y-meta is zarr.json for well
+    // well-X-Y-fov-Z-meta is zarr.json for FOV image
     // level-N-meta is .zarray (v2) or zarr.json (v3) for arrays
-    return nodeId === 'root-meta' || 
-           nodeId === 'root-zgroup' || 
-           nodeId.endsWith('-meta');
+    // *-zgroup is .zgroup (v2 only) for any group
+    return nodeId === 'root-meta' ||
+           nodeId === 'root-zgroup' ||
+           nodeId === 'root-plate-meta' ||
+           nodeId.endsWith('-meta') ||
+           nodeId.endsWith('-zgroup');
   }
 
   generateJSONForSelectedNode() {
@@ -2505,17 +3178,49 @@ class OmeExplorer extends LitElement {
       return null;
     }
 
+    // Plate metadata (root-plate-meta)
+    if (nodeId === 'root-plate-meta') {
+      return generatePlateJSON({
+        version: this.version,
+        plateType: this.plateType,
+        selectedWells: this.selectedWells,
+        numFOVs: this.numFOVs
+      });
+    }
+
+    // Well metadata (well-X-Y-meta)
+    if (nodeId.startsWith('well-') && nodeId.endsWith('-meta')) {
+      const parts = nodeId.split('-');
+      // Check if it's a well metadata (not FOV metadata)
+      // well-X-Y-meta has 4 parts, well-X-Y-fov-Z-meta has 6 parts
+      if (parts.length === 4) {
+        return generateWellJSON({
+          version: this.version,
+          numFOVs: this.numFOVs
+        });
+      }
+      // FOV metadata (well-X-Y-fov-Z-meta) - 6 parts
+      if (parts.length === 6 && parts[3] === 'fov') {
+        return this.generateJSON();
+      }
+      // FOV level metadata (well-X-Y-fov-Z-level-N-meta)
+      if (parts.length === 8 && parts[3] === 'fov' && parts[5] === 'level') {
+        const level = parseInt(parts[6]);
+        return this.generateArrayJSON(level);
+      }
+    }
+
     if (nodeId === 'root-meta') {
       // Root group metadata (.zattrs or zarr.json)
       return this.generateJSON();
     }
 
-    if (nodeId === 'root-zgroup') {
-      // .zgroup file (v2 only)
+    if (nodeId === 'root-zgroup' || nodeId.endsWith('-zgroup')) {
+      // .zgroup file (v2 only) - all groups have the same content
       return this.compactJSON({ zarr_format: 2 });
     }
 
-    // Array metadata (level-N-meta)
+    // Array metadata (level-N-meta) for non-plate image mode
     const match = nodeId.match(/^level-(\d+)-meta$/);
     if (match) {
       const level = parseInt(match[1]);
@@ -2596,25 +3301,127 @@ class OmeExplorer extends LitElement {
     const isV05 = this.version === 'v0.5';
     const metaFile = isV05 ? 'zarr.json' : '.zattrs';
     const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
-    
+
+    // Check if we're in plate mode
+    const isPlateMode = this.plateEnabled && this.selectedWells.length > 0;
+
     const infos = {
       'root': {
-        title: 'image.zarr/',
-        desc: `Root group of the OME-Zarr image. Contains ${isV05 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`
+        title: isPlateMode ? 'plate.zarr/' : 'image.zarr/',
+        desc: isPlateMode
+          ? `Root group of the OME-Zarr plate. Contains ${isV05 ? 'zarr.json with OME plate metadata' : 'plate metadata in .zattrs'}.`
+          : `Root group of the OME-Zarr image. Contains ${isV05 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`
       },
       'root-meta': {
         title: metaFile,
-        desc: isV05 
-          ? 'Zarr v3 group metadata file. Contains zarr_format, node_type, and OME metadata under attributes.ome.multiscales.'
-          : 'Zarr v2 attributes file containing the multiscales array with axes and coordinate transformations.'
+        desc: isPlateMode
+          ? (isV05
+              ? 'Zarr v3 group metadata with plate layout. Defines rows, columns, and wells with their positions.'
+              : 'Plate metadata file defining the well plate structure.')
+          : (isV05
+              ? 'Zarr v3 group metadata file. Contains zarr_format, node_type, and OME metadata under attributes.ome.multiscales.'
+              : 'Zarr v2 attributes file containing the multiscales array with axes and coordinate transformations.')
+      },
+      'root-plate-meta': {
+        title: metaFile,
+        desc: isV05
+          ? 'Zarr v3 group metadata with plate layout. Defines rows, columns, and wells with their positions.'
+          : 'Plate metadata file defining the well plate structure.'
       },
       'root-zgroup': {
         title: '.zgroup',
         desc: 'Zarr v2 group marker file. Contains {"zarr_format": 2} to identify this as a Zarr group.'
       },
+      'root-plate-zgroup': {
+        title: '.zgroup',
+        desc: 'Zarr v2 group marker file. Contains {"zarr_format": 2} to identify this as a Zarr group.'
+      },
     };
 
-    // Add level info dynamically
+    // Handle .zgroup files for any group (plate, row, well, FOV, or image)
+    if (nodeId.endsWith('-zgroup')) {
+      return {
+        title: '.zgroup',
+        desc: 'Zarr v2 group marker file. Contains {"zarr_format": 2} to identify this as a Zarr group.'
+      };
+    }
+
+    // Handle plate-specific nodes (row folders, wells, FOVs)
+    if (isPlateMode && nodeId.startsWith('row-')) {
+      const rowName = nodeId.substring(4);
+      return {
+        title: `${rowName}/`,
+        desc: `Row ${rowName} of the plate.`
+      };
+    }
+
+    if (nodeId.startsWith('well-')) {
+      const parts = nodeId.split('-');
+      if (parts.length >= 3) {
+        const row = parseInt(parts[1]);
+        const col = parseInt(parts[2]);
+        const layout = this.getPlateLayout();
+        const rowName = layout.rowNames[row];
+        const colName = layout.colNames[col];
+
+        if (nodeId.endsWith('-meta')) {
+          return {
+            title: metaFile,
+            desc: `Well metadata listing all fields of view (FOVs) for well ${rowName}${colName}.`
+          };
+        } else if (parts.length >= 5 && parts[3] === 'fov') {
+          const fovNum = parts[4];
+          const prefix = `well-${row}-${col}-fov-${fovNum}-`;
+
+          if (nodeId === `well-${row}-${col}-fov-${fovNum}`) {
+            return {
+              title: `${fovNum}/`,
+              desc: `Field of view ${fovNum} in well ${rowName}${colName}. Contains multiscale image pyramid.`
+            };
+          } else if (nodeId === `${prefix}meta`) {
+            return {
+              title: metaFile,
+              desc: `Image metadata for FOV ${fovNum}. Contains multiscales with axes and transformations.`
+            };
+          } else if (nodeId.includes('-level-')) {
+            // Handle level nodes
+            const levelMatch = nodeId.match(/level-(\d+)(-meta|-chunks)?$/);
+            if (levelMatch) {
+              const levelNum = levelMatch[1];
+              const suffix = levelMatch[2];
+              const isFirst = levelNum === '0';
+              const levelDesc = isFirst ? 'Full resolution pyramid level' : `downsampled pyramid level ${levelNum}`;
+
+              if (!suffix) {
+                return {
+                  title: `${levelNum}/`,
+                  desc: `${levelDesc}. Contains the array data as chunked storage.`
+                };
+              } else if (suffix === '-meta') {
+                return {
+                  title: arrayMeta,
+                  desc: isV05
+                    ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
+                    : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`
+                };
+              } else if (suffix === '-chunks') {
+                return {
+                  title: this.dimensions.map(d => d.name).join('/') + '/...',
+                  desc: `Chunk files organized by dimension. Each chunk contains a portion of the array data compressed according to the codec settings.`
+                };
+              }
+            }
+          }
+        } else {
+          return {
+            title: `${colName}/`,
+            desc: `Well ${rowName}${colName}. Contains ${this.numFOVs} field(s) of view.`
+          };
+        }
+      }
+    }
+
+    // Add level info dynamically for image mode
     for (let i = 0; i < this.numLevels; i++) {
       const isFirst = i === 0;
       const levelDesc = isFirst ? 'Full resolution pyramid level' : `downsampled pyramid level ${i}`;
@@ -2671,16 +3478,92 @@ class OmeExplorer extends LitElement {
     const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
     const chunkPath = this.dimensions.map(d => d.name).join('/');
 
-    const levelNodes = [];
-    for (let i = 0; i < this.numLevels; i++) {
-      const isLast = i === this.numLevels - 1;
-      levelNodes.push(
-        this.renderTreeNode(`level-${i}`, `${i}/`, 'folder', true, html`
-          ${this.renderTreeNode(`level-${i}-meta`, arrayMeta, 'file', false)}
-          ${this.renderTreeNode(`level-${i}-chunks`, chunkPath + '/...', 'chunk', false)}
-        `)
-      );
+    // Helper: generate level nodes for a given prefix
+    const generateLevelNodes = (prefix = '') => {
+      const levelNodes = [];
+      for (let i = 0; i < this.numLevels; i++) {
+        levelNodes.push(
+          this.renderTreeNode(`${prefix}level-${i}`, `${i}/`, 'folder', true, html`
+            ${this.renderTreeNode(`${prefix}level-${i}-meta`, arrayMeta, 'file', false)}
+            ${this.renderTreeNode(`${prefix}level-${i}-chunks`, chunkPath + '/...', 'chunk', false)}
+          `)
+        );
+      }
+      return levelNodes;
+    };
+
+    // If plate mode is enabled, render plate structure
+    if (this.plateEnabled && this.selectedWells.length > 0) {
+      const layout = this.getPlateLayout();
+
+      // Group wells by row
+      const wellsByRow = {};
+      this.selectedWells.forEach(({ row, col }) => {
+        const rowName = layout.rowNames[row];
+        if (!wellsByRow[rowName]) {
+          wellsByRow[rowName] = [];
+        }
+        wellsByRow[rowName].push({ row, col, colName: layout.colNames[col] });
+      });
+
+      // Sort wells within each row by column
+      Object.keys(wellsByRow).forEach(rowName => {
+        wellsByRow[rowName].sort((a, b) => a.col - b.col);
+      });
+
+      // Generate row folders
+      const rowFolders = Object.keys(wellsByRow).sort().map(rowName => {
+        const wells = wellsByRow[rowName];
+
+        // Generate well folders for this row
+        const wellFolders = wells.map(({ row, col, colName }) => {
+          // Generate FOV folders for this well
+          const fovFolders = [];
+          for (let f = 0; f < this.numFOVs; f++) {
+            const fovPrefix = `well-${row}-${col}-fov-${f}-`;
+            fovFolders.push(
+              this.renderTreeNode(`well-${row}-${col}-fov-${f}`, `${f}/`, 'folder', true, html`
+                ${this.renderTreeNode(`${fovPrefix}meta`, metaFile, 'file', false)}
+                ${!isV05 ? this.renderTreeNode(`${fovPrefix}zgroup`, '.zgroup', 'file', false) : ''}
+                ${generateLevelNodes(fovPrefix)}
+              `)
+            );
+          }
+
+          return this.renderTreeNode(`well-${row}-${col}`, `${colName}/`, 'folder', true, html`
+            ${this.renderTreeNode(`well-${row}-${col}-meta`, metaFile, 'file', false)}
+            ${!isV05 ? this.renderTreeNode(`well-${row}-${col}-zgroup`, '.zgroup', 'file', false) : ''}
+            ${fovFolders}
+          `);
+        });
+
+        return this.renderTreeNode(`row-${rowName}`, `${rowName}/`, 'folder', true, html`
+          ${!isV05 ? this.renderTreeNode(`row-${rowName}-zgroup`, '.zgroup', 'file', false) : ''}
+          ${wellFolders}
+        `);
+      });
+
+      return html`
+        <div class="tree-view">
+          ${this.renderTreeNode('root', 'plate.zarr/', 'folder', true, html`
+            ${this.renderTreeNode('root-plate-meta', metaFile, 'file', false)}
+            ${!isV05 ? this.renderTreeNode('root-plate-zgroup', '.zgroup', 'file', false) : ''}
+            ${rowFolders}
+          `)}
+        </div>
+        <div class="tree-info-panel">
+          ${this.selectedNode ? html`
+            <div class="tree-info-title">${this.getNodeInfo(this.selectedNode).title}</div>
+            <div class="tree-info-desc">${this.getNodeInfo(this.selectedNode).desc}</div>
+          ` : html`
+            <div class="tree-info-hint">Click a file or folder to see its purpose</div>
+          `}
+        </div>
+      `;
     }
+
+    // Otherwise, render standard image structure
+    const levelNodes = generateLevelNodes();
 
     return html`
       <div class="tree-view">
@@ -2834,6 +3717,53 @@ class OmeExplorer extends LitElement {
                   `)}
                 </ul>
               </div>
+            ` : ''}
+
+            <!-- Plate Configuration Section -->
+            ${this.plateControl ? html`
+            <div class="plate-section">
+              <div class="plate-header">
+                <div class="plate-collapse-icon ${!this.plateExpanded ? 'collapsed' : ''}" @click=${() => this.plateExpanded = !this.plateExpanded}>▼</div>
+                <div
+                  class="plate-toggle ${this.plateEnabled ? 'checked' : ''}"
+                  @click=${() => this.togglePlate()}
+                ></div>
+                <div class="plate-title" @click=${() => this.togglePlate()}>Plate Configuration</div>
+              </div>
+
+              <div class="plate-content ${!this.plateExpanded ? 'collapsed' : ''}">
+                <!-- Plate Controls -->
+                <div class="plate-controls">
+                  <div class="plate-control-group">
+                    <label>Plate Type:</label>
+                    <select
+                      class="plate-type-select"
+                      .value=${this.plateType}
+                      @change=${(e) => this.plateType = e.target.value}
+                    >
+                      <option value="12-well">12-well (3×4)</option>
+                      <option value="24-well">24-well (4×6)</option>
+                      <option value="96-well">96-well (8×12)</option>
+                    </select>
+                  </div>
+
+                  <div class="plate-control-group">
+                    <label>FOVs per well:</label>
+                    <input
+                      type="number"
+                      class="fov-input"
+                      min="1"
+                      max="5"
+                      .value=${this.numFOVs}
+                      @input=${(e) => this.numFOVs = parseInt(e.target.value) || 1}
+                    />
+                  </div>
+                </div>
+
+                <!-- Well Selector -->
+                ${this.renderWellSelector()}
+              </div>
+            </div>
             ` : ''}
           </div>
 

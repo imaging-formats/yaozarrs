@@ -34,7 +34,13 @@ const __dirname = dirname(__filename);
 
 // Import the generator module (units are loaded automatically via ome_units.js)
 const generatorPath = join(__dirname, '..', 'docs', 'javascripts', 'ome_generator.js');
-const { generateJSON, generatePython } = await import(generatorPath);
+const {
+  generateJSON,
+  generatePython,
+  generatePlateJSON,
+  generateWellJSON,
+  generatePlatePython
+} = await import(generatorPath);
 
 // Parse config from command line
 const configArg = process.argv[2];
@@ -51,11 +57,22 @@ try {
   process.exit(1);
 }
 
-// Generate outputs
-const output = {
-  json: generateJSON(config),
-  python: generatePython(config),
-};
+// Generate outputs based on config type
+let output;
+if (config.isPlate) {
+  // For plate configs, generate plate, well, and Python code
+  output = {
+    plateJson: generatePlateJSON(config),
+    wellJson: generateWellJSON(config),
+    python: generatePlatePython(config),
+  };
+} else {
+  // Standard image config
+  output = {
+    json: generateJSON(config),
+    python: generatePython(config),
+  };
+}
 
 // Output as JSON
 console.log(JSON.stringify(output));

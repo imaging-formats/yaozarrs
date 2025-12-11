@@ -57,12 +57,15 @@ Here are ALL the possible zarr.json documents you might encounter with OME metad
 
   Array Discovery: Wells listed explicitly in wells array
   my_plate/
-  ├── zarr.json          # ← Contains THIS metadata
-  ├── A/
-  │   ├── 1/
-  │   │   ├── zarr.json  # Well Group metadata (see below)
-  │   │   ├── 0/         # Field 0
-  │   │   └── 1/         # Field 1
+  ├── zarr.json               # ← Contains plate metadata
+  ├── A/                      # Row A
+  │   ├── 1/                  # Column 1
+  │   │   ├── zarr.json       # Well Group metadata (see below)
+  │   │   ├── 0/              # Field 0
+  │   │   │   ├── 0/          # Resolution level 0 Array
+  │   │   │   ├── ...
+  │   │   │   └── zarr.json   # multiscales metadata for field 0 image
+  │   │   └── 1/              # Field 1
   │   └── 2/
   └── B/
       └── 1/

@@ -421,3 +421,220 @@ export function validateDimensions(dimensions) {
 
   return { errors, warnings, all: [...errors, ...warnings] };
 }
+
+/**
+ * Plate layout definitions (rows x columns).
+ * @type {Object.<string, {rows: number, cols: number}>}
+ */
+const PLATE_LAYOUTS = {
+  '12-well': { rows: 3, cols: 4, rowNames: ['A', 'B', 'C'], colNames: ['1', '2', '3', '4'] },
+  '24-well': { rows: 4, cols: 6, rowNames: ['A', 'B', 'C', 'D'], colNames: ['1', '2', '3', '4', '5', '6'] },
+  '96-well': { rows: 8, cols: 12, rowNames: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], colNames: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
+};
+
+/**
+ * Generate plate metadata JSON.
+ *
+ * @param {Object} config - Configuration object
+ * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.plateType - '12-well', '24-well', or '96-well'
+ * @param {Array<{row: number, col: number}>} config.selectedWells - Array of selected well positions
+ * @param {number} config.numFOVs - Number of fields of view per well
+ * @returns {string} Formatted JSON string
+ */
+export function generatePlateJSON({ version, plateType, selectedWells, numFOVs }) {
+  const layout = PLATE_LAYOUTS[plateType];
+  if (!layout) {
+    throw new Error(`Unknown plate type: ${plateType}`);
+  }
+
+  const rows = layout.rowNames.map(name => ({ name }));
+  const columns = layout.colNames.map(name => ({ name }));
+
+  const wells = selectedWells.map(({ row, col }) => ({
+    path: `${layout.rowNames[row]}/${layout.colNames[col]}`,
+    rowIndex: row,
+    columnIndex: col
+  }));
+
+  const plateDef = {
+    columns,
+    rows,
+    wells,
+    field_count: numFOVs,
+    name: 'example_plate',
+  };
+
+  if (version === 'v0.4') {
+    plateDef.version = '0.4';
+  }
+
+  const output = version === 'v0.5'
+    ? {
+        zarr_format: 3,
+        node_type: 'group',
+        attributes: {
+          ome: {
+            version: '0.5',
+            plate: plateDef
+          }
+        }
+      }
+    : { plate: plateDef };
+
+  return compactJSON(output);
+}
+
+/**
+ * Generate well metadata JSON.
+ *
+ * @param {Object} config - Configuration object
+ * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {number} config.numFOVs - Number of fields of view
+ * @returns {string} Formatted JSON string
+ */
+export function generateWellJSON({ version, numFOVs }) {
+  const images = Array.from({ length: numFOVs }, (_, i) => ({
+    path: String(i)
+  }));
+
+  const wellDef = { images };
+
+  if (version === 'v0.4') {
+    wellDef.version = '0.4';
+  }
+
+  const output = version === 'v0.5'
+    ? {
+        zarr_format: 3,
+        node_type: 'group',
+        attributes: {
+          ome: {
+            version: '0.5',
+            well: wellDef
+          }
+        }
+      }
+    : { well: wellDef };
+
+  return compactJSON(output);
+}
+
+/**
+ * Generate Python code for creating a plate using yaozarrs library.
+ *
+ * @param {Object} config - Configuration object
+ * @param {Dimension[]} config.dimensions - Array of dimension objects
+ * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {number} config.numLevels - Number of pyramid levels
+ * @param {string} config.plateType - '12-well', '24-well', or '96-well'
+ * @param {Array<{row: number, col: number}>} config.selectedWells - Array of selected well positions
+ * @param {number} config.numFOVs - Number of fields of view per well
+ * @returns {string} Python code string
+ */
+export function generatePlatePython({ dimensions, version, numLevels, plateType, selectedWells, numFOVs }) {
+  const ver = version.replace('.', '');
+  const layout = PLATE_LAYOUTS[plateType];
+
+  // Generate the multiscale code (reuse from generatePython)
+  const axesCode = dimensions.map(d => {
+    const typeMap = {
+      'space': 'SpaceAxis',
+      'time': 'TimeAxis',
+      'channel': 'ChannelAxis',
+    };
+    const axisClass = typeMap[d.type] || 'CustomAxis';
+    const unit = d.unit ? `, unit="${d.unit}"` : '';
+    return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
+  }).join(',\n');
+
+  const dimsCode = dimensions.map(d => {
+    const parts = [`name="${d.name}"`];
+    if (d.type) parts.push(`type="${d.type}"`);
+    if (d.unit) parts.push(`unit="${d.unit}"`);
+    if (d.scale !== 1) parts.push(`scale=${d.scale}`);
+    if (d.translation !== 0) parts.push(`translation=${d.translation}`);
+    if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
+    return `    DimSpec(${parts.join(', ')})`;
+  }).join(',\n');
+
+  // Generate rows and columns
+  const rowsCode = layout.rowNames.map(name => `${ver}.Row(name="${name}")`).join(', ');
+  const colsCode = layout.colNames.map(name => `${ver}.Column(name="${name}")`).join(', ');
+
+  // Generate wells
+  const wellsCode = selectedWells.map(({ row, col }) => {
+    const rowName = layout.rowNames[row];
+    const colName = layout.colNames[col];
+    return `    ${ver}.PlateWell(path="${rowName}/${colName}", rowIndex=${row}, columnIndex=${col})`;
+  }).join(',\n');
+
+  // Generate fields of view
+  const fovsCode = Array.from({ length: numFOVs }, (_, i) =>
+    `    ${ver}.FieldOfView(path="${i}")`
+  ).join(',\n');
+
+  return `from yaozarrs import ${ver}, DimSpec
+
+# ###############################################
+# Define image dimensions (same for all FOVs)
+# ###############################################
+
+dims = [
+${dimsCode}
+]
+
+multiscale = ${ver}.Multiscale.from_dims(
+    dims,
+    name="example_image",
+    n_levels=${numLevels}
+)
+
+# ###############################################
+# Define plate structure
+# ###############################################
+
+rows = [${rowsCode}]
+columns = [${colsCode}]
+
+wells_list = [
+${wellsCode}
+]
+
+plate_def = ${ver}.PlateDef(
+    rows=rows,
+    columns=columns,
+    wells=wells_list,
+    field_count=${numFOVs},
+    name="example_plate"${version === 'v0.4' ? ',\n    version="0.4"' : ''}
+)
+
+# ###############################################
+# Define well with fields of view
+# ###############################################
+
+well_images = [
+${fovsCode}
+]
+
+well_def = ${ver}.WellDef(
+    images=well_images${version === 'v0.4' ? ',\n    version="0.4"' : ''}
+)
+
+# ###############################################
+# Print JSON metadata
+# ###############################################
+
+# Plate metadata (root level)
+${version === 'v0.5' ? `plate = ${ver}.Plate(version="0.5", plate=plate_def)
+print(plate.model_dump_json(indent=2))` : `print(plate_def.model_dump_json(indent=2))`}
+
+# Well metadata (A/1/zarr.json)
+${version === 'v0.5' ? `well = ${ver}.Well(version="0.5", well=well_def)
+print(well.model_dump_json(indent=2))` : `print(well_def.model_dump_json(indent=2))`}
+
+# Image metadata (A/1/0/zarr.json) - same as single image
+image = ${ver}.Image(multiscales=[multiscale])
+print(image.model_dump_json(indent=2))`
+;
+}
