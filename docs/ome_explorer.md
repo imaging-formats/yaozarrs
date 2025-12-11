@@ -1,15 +1,18 @@
 ---
 icon: lucide/sparkles
-title: Interactive OME-Zarr Explorer
+title: OME-Zarr Explorer
 hide:
     - toc
-    # - navigation
 ---
 
 <script type="module" src="/javascripts/ome_explorer.js"></script>
 
-!!! tip "What is this?"
-    An **interactive educational tool** to understand how OME-NGFF metadata is constructed.
-    Define your image dimensions and watch the spec JSON and yaozarrs code generate in real-time!
+!!! question "What is this?"
+    This educational app demonstrates how OME-NGFF zarr hierarchies are structured with associated
+    metadata.
+
+    Define your image dimensions and view the generated tree, zarr JSON, and yaozarrs code.
+
+    **This is meant for educational purposes only and is not intended for production use.**
 
 <ome-explorer></ome-explorer>
