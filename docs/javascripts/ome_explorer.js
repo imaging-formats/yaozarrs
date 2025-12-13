@@ -65,7 +65,7 @@ class ZarrTreeViewer extends LitElement {
       display: flex;
       flex-direction: column;
       font-family: var(--md-text-font-family, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
-      --primary-color: var(--md-primary-fg-color, #4051b5);
+      --primary-color: #4051b5;
       --code-bg: #1e1e2e;
       --code-bg-lighter: #262637;
 
@@ -690,7 +690,7 @@ class OmeExplorer extends LitElement {
     :host {
       display: block;
       font-family: var(--md-text-font-family, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
-      --primary-color: var(--md-primary-fg-color, #4051b5);
+      --primary-color: #4051b5;
       --primary-color-light: #5c6bc0;
       --accent-color: var(--md-accent-fg-color, #526cfe);
       --bg-color: var(--md-default-bg-color, #fff);
@@ -802,7 +802,7 @@ class OmeExplorer extends LitElement {
     }
 
     button.primary {
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-light) 100%);
+      background: var(--primary-color);
       color: white;
       border-color: transparent;
       font-weight: 500;
@@ -810,7 +810,7 @@ class OmeExplorer extends LitElement {
     }
 
     button.primary:hover {
-      background: linear-gradient(135deg, var(--primary-color-light) 0%, var(--accent-color) 100%);
+      background: var(--primary-color-light);
     }
 
     .preset-btn {
@@ -1776,13 +1776,13 @@ class OmeExplorer extends LitElement {
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 0.625rem;
-      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.04);
+      background: rgba(64, 81, 181, 0.08);
       border-bottom: 1px solid var(--border-color);
       user-select: none;
     }
 
     .plate-header:hover {
-      background: rgba(var(--md-primary-fg-color--rgb, 64, 81, 181), 0.06);
+      background: rgba(64, 81, 181, 0.12);
     }
 
     .plate-toggle {
@@ -1811,9 +1811,9 @@ class OmeExplorer extends LitElement {
 
     .plate-title {
       flex: 1;
-      font-size: 0.6875rem;
+      font-size: 0.5625rem;
       font-weight: 600;
-      color: var(--primary-color);
+      color: var(--text-muted);
       cursor: pointer;
       user-select: none;
     }

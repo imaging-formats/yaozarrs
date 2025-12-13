@@ -23,7 +23,12 @@ def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
         The OMENode instance to validate.
     cls : type[T]
         The class to validate against. Must be a subclass of `BaseModel`.
-        If not provided, defaults to `OMENode`, meaning any valid OME node object
+        If not provided, defaults to `OMENode`, meaning "any valid OME node object".
+
+    Returns
+    -------
+    object: T
+        The validated (pydantic) model instance.
 
     Raises
     ------
@@ -57,6 +62,11 @@ def validate_ome_json(
         The class to validate against. Must be a subclass of `BaseModel`.
         If not provided, defaults to `OMENode`, meaning any valid OME node object
 
+    Returns
+    -------
+    object: T
+        The validated (pydantic) model instance.
+
     Raises
     ------
     pydantic.ValidationError
@@ -67,10 +77,12 @@ def validate_ome_json(
 
 
 @overload
-def from_uri(uri: str | os.PathLike, cls: type[T]) -> T: ...
+def validate_ome_uri(uri: str | os.PathLike, cls: type[T]) -> T: ...
 @overload
-def from_uri(uri: str | os.PathLike) -> AnyOMEGroup: ...
-def from_uri(uri: str | os.PathLike, cls: type[T] | Any = None) -> T | AnyOMEGroup:
+def validate_ome_uri(uri: str | os.PathLike) -> AnyOMEGroup: ...
+def validate_ome_uri(
+    uri: str | os.PathLike, cls: type[T] | Any = None
+) -> T | AnyOMEGroup:
     """Load and validate any OME-Zarr group from a URI or local path.
 
     This function will attempt to load the OME-Zarr group metadata from the given
@@ -92,7 +104,7 @@ def from_uri(uri: str | os.PathLike, cls: type[T] | Any = None) -> T | AnyOMEGro
 
     Returns
     -------
-    AnyOME
+    AnyOME: T
         An instance of `v05.OMEZarrGroupJSON`, `v04.OMEZarrGroupJSON`, or another
         valid OME-Zarr node type, depending on the object detected.
 

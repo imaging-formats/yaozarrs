@@ -121,4 +121,4 @@ def test_plate_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
                 assert isinstance(field_group, zarr.Group)
                 assert isinstance(field_group["0"], zarr.Array)
 
-    yaozarrs.from_uri(plate_path / ZATTRS[version])
+    yaozarrs.validate_ome_uri(plate_path / ZATTRS[version])

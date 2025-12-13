@@ -91,6 +91,8 @@ if TYPE_CHECKING:
 
     # Shape/dtype specification only (no data) - for prepare/add functions
     ShapeAndDType: TypeAlias = tuple[ShapeLike, DTypeLike]
+    """A tuple of (shape, dtype) describing an array."""
+
     ShapeAndDTypeOrPyramid: TypeAlias = ShapeAndDType | Sequence[ShapeAndDType]
 
     # Compound types for images with data or specs

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from yaozarrs import from_uri, v04, v05
+from yaozarrs import v04, v05, validate_ome_uri
 from yaozarrs._base import ZarrGroupModel
 
 try:
@@ -30,7 +30,7 @@ SOURCES = {
 @pytest.mark.parametrize("uri,expected_type", SOURCES.items())
 def test_from_uri(uri: str, expected_type: type) -> None:
     try:
-        obj = from_uri(uri)
+        obj = validate_ome_uri(uri)
     except connection_exceptions as e:
         pytest.xfail(reason=f"Internet down?: {e}")
         return

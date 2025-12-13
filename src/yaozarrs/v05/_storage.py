@@ -14,7 +14,7 @@ from itertools import chain, product
 from typing import TypeAlias
 
 from yaozarrs._storage import StorageErrorType, ValidationResult
-from yaozarrs._validate import from_uri, validate_ome_object
+from yaozarrs._validate import validate_ome_object, validate_ome_uri
 from yaozarrs._zarr import ZarrArray, ZarrGroup
 from yaozarrs.v05._bf2raw import Bf2Raw, Series
 from yaozarrs.v05._image import Image, Multiscale
@@ -811,7 +811,7 @@ class StorageValidatorV05:
             return result
 
         try:
-            img = from_uri(image_source, OMEZarrGroupJSON)
+            img = validate_ome_uri(image_source, OMEZarrGroupJSON)
             if not isinstance(img.attributes.ome, Image):
                 result.add_error(
                     StorageErrorType.label_image_source_invalid,

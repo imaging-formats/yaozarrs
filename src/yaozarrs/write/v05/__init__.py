@@ -10,12 +10,12 @@ from ._write import (
     write_plate,
 )
 
-__all__ = [
-    "Bf2RawBuilder",
-    "LabelsBuilder",
-    "PlateBuilder",
-    "prepare_image",
-    "write_bioformats2raw",
+__all__ = [  # noqa: RUF022
     "write_image",
     "write_plate",
+    "write_bioformats2raw",
+    "prepare_image",
+    "LabelsBuilder",
+    "PlateBuilder",
+    "Bf2RawBuilder",
 ]

@@ -103,6 +103,16 @@ img.auto-screenshot {
 	--md-code-hl-variable-color: #82b1e3;
 }
 
+/* Override for code inside asides - reset to defaults */
+[data-md-color-scheme="default"] div.language-pycon aside code,
+[data-md-color-scheme="default"] div.language-python aside code {
+  /* reset or use different colors */
+	--md-code-fg-color: initial;
+	--md-code-bg-color: initial;
+	--md-code-bg-color--light: initial;
+	--md-code-bg-color--lighter: initial;
+}
+
 /* Style the copy button to match slate theme appearance */
 [data-md-color-scheme="default"] div.language-pycon .md-code__button,
 [data-md-color-scheme="default"] div.language-python .md-code__button {

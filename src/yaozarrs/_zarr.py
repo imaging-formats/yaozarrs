@@ -483,9 +483,14 @@ class ZarrNode:
 
 
 class ZarrGroup(ZarrNode):
-    """Wrapper around a zarr v2/v3 group.
+    """Minimal wrapper around a zarr v2/v3 group.
 
-    Matches zarr-python behavior: expects all children to be the same
+    This class exists to provide minimal zarr group functionality, needed for hierarchy
+    traversal and structural validation, without requiring a dependency on a full blown
+    zarr array-writing library (which come with heavier dependencies, and python version
+    limitations).
+
+    Matches `zarr-python` behavior: expects all children to be the same
     zarr_format version as the parent. Does not support mixed hierarchies.
     """
 

@@ -10,16 +10,17 @@ except PackageNotFoundError:  # pragma: no cover
 from . import v04, v05
 from ._dim_spec import DimSpec
 from ._storage import validate_zarr_store
-from ._validate import from_uri, validate_ome_json, validate_ome_object
-from ._zarr import open_group
+from ._validate import validate_ome_json, validate_ome_object, validate_ome_uri
+from ._zarr import ZarrGroup, open_group
 
 __all__ = [
     "DimSpec",
-    "from_uri",
+    "ZarrGroup",
     "open_group",
     "v04",
     "v05",
     "validate_ome_json",
     "validate_ome_object",
+    "validate_ome_uri",
     "validate_zarr_store",
 ]

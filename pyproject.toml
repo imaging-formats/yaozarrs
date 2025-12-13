@@ -59,6 +59,7 @@ docs=[
     "mkdocstrings-python>=2.0.1",
     "ruff>=0.14.8",
     "zensical>=0.0.11",
+    "click<8.3",
 ]
 dev = [
     { include-group = "test-full" },
@@ -82,7 +83,6 @@ old_docs = [
     "mkdocs-material>=9.6.20",
     "mkdocstrings-python>=1.18.2",
     "ruff>=0.13.2",
-    "click!=8.3",
 ]
 
 [project.urls]

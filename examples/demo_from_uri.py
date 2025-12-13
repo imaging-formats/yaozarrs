@@ -4,7 +4,7 @@
 import builtins
 import sys
 
-from yaozarrs import from_uri
+from yaozarrs import validate_ome_uri
 
 try:
     from rich import print  # ty: ignore
@@ -19,7 +19,7 @@ def demo_zarr_uri(uri: str) -> None:
 
     try:
         # Load the zarr group
-        zarr_group = from_uri(uri)
+        zarr_group = validate_ome_uri(uri)
 
         print(zarr_group.model_dump(exclude_unset=True, exclude_none=True))
         print("✅ Successfully loaded!")

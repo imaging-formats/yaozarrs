@@ -8,21 +8,23 @@ repo_name: "tlambert03/yaozarrs"
 theme:
   name: material
   features:
-    # - "announce.dismiss"
-    - "content.code.annotate"
-    - "content.code.copy"
-    - "content.code.select"
-    - "content.footnote.tooltips"
-    - "content.tabs.link"
-    - "content.tooltips"
-    - "navigation.footer"
-    - "navigation.indexes"
-    - "navigation.instant"
-    - "navigation.instant.prefetch"
+    - search.highlight
+    - search.suggest
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.footnote.tooltips
+    - content.tabs.link
+    - content.tooltips
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - toc.follow
 
   palette:
     - scheme: "default"
-      primary: black
+      primary: white
       toggle:
         icon: material/brightness-7
         name: "Switch to dark mode"
@@ -59,7 +61,8 @@ plugins:
       handlers:
         python:
           inventories:
-            - "https://docs.python.org/3/objects.inv"
+            # - "https://docs.python.org/3/objects.inv"
+            - "https://docs.pydantic.dev/latest/objects.inv"
           paths:
             - "src"
           options:
@@ -83,4 +86,8 @@ plugins:
                   strip_annotated: true
 
 extra_css:
+  - stylesheets/zensical.css
   - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/yaozarrs-animation.js
