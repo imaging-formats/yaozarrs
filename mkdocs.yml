@@ -39,21 +39,23 @@ theme:
     # code: "Fira Code"
 
 markdown_extensions:
-  toc:
-    permalink: "#"
-    permalink_title: "Link to this section"
-  pymdownx.tabbed:
-    alternate_style: true
-  admonition: {}
-  attr_list: {}
-  md_in_html: {}
-  pymdownx.details: {}
-  pymdownx.superfences: {}
-  pymdownx.highlight:
-    pygments_lang_class: true
-  pymdownx.emoji:
-    emoji_index: !!python/name:material.extensions.emoji.twemoji
-    emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: "#"
+      permalink_title: "Link to this section"
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      pygments_lang_class: true
+      line_spans: __span
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search
@@ -67,16 +69,9 @@ plugins:
             - "src"
           options:
             docstring_style: "numpy"
-            # inherited_members: true
-            # parameter_headings: true
-            # separate_signature: true
-            # show_signature_annotations: true
             show_bases: false
             show_symbol_type_toc: true
             show_symbol_type_heading: true
-            # good for modules
-            # show_root_heading: true
-            # good for hidden submodules
             heading_level: 3
             show_root_heading: false
             show_root_toc_entry: false

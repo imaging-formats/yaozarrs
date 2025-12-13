@@ -106,8 +106,11 @@ if TYPE_CHECKING:
 class CreateArrayFunc(Protocol):
     """Protocol for custom array creation functions.
 
-    Custom functions should create and return an array object that supports
-    numpy-style indexing (e.g., zarr.Array or tensorstore.TensorStore).
+    This is the type signature for functions that can be passed as the `writer`
+    parameter to many functions in this module.  Use this if you'd like to completely
+    customize how arrays are created, e.g., using a different backend, or custom
+    storage options.  See `_create_array_zarr` and `_create_array_tensorstore` for
+    reference implementations.
     """
 
     def __call__(
@@ -145,8 +148,9 @@ class CreateArrayFunc(Protocol):
 
         Returns
         -------
-        Zarr Array object that supports numpy-style indexing for writing
-        (e.g., zarr.Array or tensorstore.TensorStore).
+        Any
+            Array object that supports numpy-style indexing for writing
+            (e.g., `zarr.Array` or `tensorstore.TensorStore`).
         """
         ...
 

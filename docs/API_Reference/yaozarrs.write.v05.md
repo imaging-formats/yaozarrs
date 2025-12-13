@@ -4,18 +4,6 @@ title: yaozarrs.write.v05
 
 This module provides convenience functions to write OME-Zarr v0.5 stores.
 
-!!! important
-    All functions in this module eventually write zarr arrays.  You can control
-    what backend is used to write arrays using the `writer` argument to each
-    function.  If you want to use builtin writers backends, you must install
-    with the appropriate extras:
-
-    - [zarr-python](https://github.com/zarr-developers/zarr-python): `pip install yaozarrs[write-zarr]`
-    - [tensorstore](https://github.com/google/tensorstore): `pip install yaozarrs[write-tensorstore]`
-
-    You may also implement and pass in your own `writer` function.  See the
-    [Custom Writers](../Guides/Custom_Writers.md) guide for details.
-
 ## Overview
 
 The general pattern is:
@@ -73,6 +61,20 @@ The general pattern is:
     accept arrays and/or `(shape, dtype)` pairs are expecting one per Dataset in
     the model.
 
+## Choosing an Array Writer Backend
+
+All functions in this module eventually write zarr arrays.  You can control what
+backend is used to write arrays using the `writer` argument to each function,
+which takes a string literal (name of the backend), or a custom
+`CreateArrayFunc` function.  If you want to use builtin writers backends, you
+must install with the appropriate extras:
+
+- [zarr-python](https://github.com/zarr-developers/zarr-python): `pip install yaozarrs[write-zarr]`
+- [tensorstore](https://github.com/google/tensorstore): `pip install yaozarrs[write-tensorstore]`
+
+You may also implement and pass in your own `writer` function.  See the
+[Custom Writers](#custom-writers) guide for details.
+
 -------------
 
 ::: yaozarrs.write.v05
@@ -81,3 +83,16 @@ The general pattern is:
         show_root_heading: true
         summary: false
         show_overloads: false
+
+## Custom Writers
+
+!!! warning "Advanced"
+    This is an advanced feature, not needed for most users.  You can skip this
+    section if you are happy using the built-in zarr or tensorstore implementations.
+
+::: yaozarrs.write.v05._write.CreateArrayFunc
+      options:
+        heading_level: 3
+        heading: "CreateArrayFunc"
+        show_root_heading: true
+        show_source: false

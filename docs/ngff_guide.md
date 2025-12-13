@@ -1,18 +1,16 @@
 ---
 icon: material/book-open-variant
-title: Guide to OME-NGFF
+title: Guide to OME-Zarr
 ---
 
-# Yaozzars Guide to OME-NGFF
+# Yaozzars Guide to OME-Zarr
 
 <script type="module" src="/javascripts/ome_explorer.js"></script>
 
 !!! tip "What you'll learn"
-    This guide attempts to demystify the **OME-NGFF (OME-Zarr)** specification and shows
-    you how to work with it using yaozarrs.
-
-The official OME-NGFF specification can be found at
-[ngff.openmicroscopy.org](https://ngff.openmicroscopy.org/).
+    This guide attempts to demystify the **OME-Zarr (OME-Zarr)** specification and shows
+    you how to work with it using yaozarrs.  It is designed to answer common questions
+    and confusions encountered in the community.
 
 ### :material-rocket-launch: Quicklinks
 
@@ -49,11 +47,46 @@ The official OME-NGFF specification can be found at
 
 </div>
 
+## What is OME-Zarr?
+
+!!! tip ""
+    The official OME-Zarr specification can be found at
+    [ngff.openmicroscopy.org](https://ngff.openmicroscopy.org/).  In case of
+    any discrepancies between this guide and the official spec, the official
+    spec takes precedence!
+
+OME-Zarr is a file format specification used by the bioimaging community for
+storing multi-dimensional data. It is a "meta-specication", based on the
+pre-existing Zarr format, which is designed for the storage of chunked,
+compressed, N-dimensional arrays. OME-Zarr **extends** Zarr by adding metadata
+conventions specific to bioimaging, making it easier to store and share complex
+imaging datasets.
+
+!!! question "But what *is* it?"
+
+    _To resolve a somewhat common confusion..._
+
+    OME-Zarr is "just" [Zarr](https://zarr.dev) (A file format used in many
+    domains). The "OME" part is a specification *on top of* the zarr
+    format that additionally defines:
+
+    1. **How domain specific metadata should be stored.**      
+      The details are version-specific, but this generally defines the exact
+      form of the data inside of the `.zattrs` or `zarr.json` files that
+      accompany the zarr groups.
+
+    1. **How datasets are organized.**  
+      Beyond metadata, the OME-Zarr specification also defines how datasets
+      should be organized. For example: it defines how the images collected
+      across a multi-well plate experiment should be organized in a single
+      Zarr directory, or how the different resolutions of a multi-scale
+      (pyramidal) image should be stored.
+
 ---
 
 ## Working with Images
 
-An **Image** is the fundamental building block of OME-NGFF.
+An **Image** is the fundamental building block of OME-Zarr.
 
 As of v0.5, a single image may have **no less than 2 and no more than 5
 dimensions**, and may store multiple resolution levels.
@@ -66,7 +99,7 @@ dimensions**, and may store multiple resolution levels.
     While it is common to have datasets with more than 5 dimensions (e.g.,
     different stage positions in a shared coordinate space, angles in light
     sheet microscopy, etc.), there is currently no formal specification for more
-    than 5 dimensions in OME-NGFF.  You may use the transitional
+    than 5 dimensions in OME-Zarr.  You may use the transitional
     `bioformats2raw.layout` to store multiple images in a single zarr group.
     See [Working with Collections](#working-with-collections)
 
@@ -123,7 +156,7 @@ Axes define the dimensions of your image data. As of v0.4, axes are **objects**
 with `name`, and optional `type` and/or `unit`:
 
 !!! important "Axis Constraints"
-    Constraints for image axes in OME-NGFF are the same in v0.4 and v0.5:
+    Constraints for image axes in OME-Zarr are the same in v0.4 and v0.5:
 
     - **MUST** have 2-5 dimensions total
     - **MUST** have 2-3 spatial axes
@@ -301,7 +334,7 @@ as well as stage positions and spatial offsets for registration.
 ### Interactive Example
 
 Modify the parameters below to see how different image configurations are
-represented in OME-NGFF:
+represented in OME-Zarr:
 
 <ome-explorer preset=5d plate-control="false"></ome-explorer>
 
@@ -585,7 +618,7 @@ well = v04.Well(well=well_def)
 ### Interactive Example
 
 Modify the parameters below to see how different image configurations are
-represented in OME-NGFF:
+represented in OME-Zarr:
 
 <ome-explorer preset=3d plate-expanded></ome-explorer>
 
@@ -593,7 +626,7 @@ represented in OME-NGFF:
 
 ## Working with Collections
 
-OME-NGFF **does not** currently have an official specification for collections of images.
+OME-Zarr **does not** currently have an official specification for collections of images.
 
 By **Collections** of images, we mean groups of related images, usually sharing a coordinate space,
 that do not fit into the plate model.  Examples include:
@@ -742,8 +775,8 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 
 ## Additional Resources
 
-- [OME-NGFF Specification](https://ngff.openmicroscopy.org/) - Official specification
-- [yaozarrs API Documentation](api/index.md) - Complete API reference
+- [OME-Zarr Specification](https://ngff.openmicroscopy.org/) - Official specification
+- [yaozarrs API Documentation](API_Reference/yaozarrs.md) - Complete API reference
 - [Zarr Format Specification](https://zarr-specs.readthedocs.io/) - Zarr v2 and v3 specs
 - [OME Data Model](https://docs.openmicroscopy.org/ome-model/) - Full OME-XML specification
 - [GitHub Repository](https://github.com/tlambert03/yaozarrs) - Source code and issues
@@ -751,4 +784,4 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 ---
 
 !!! success "You're ready!"
-    You now understand the OME-NGFF specification and how to work with it using yaozarrs. Happy imaging!
+    You now understand the OME-Zarr specification and how to work with it using yaozarrs. Happy imaging!
