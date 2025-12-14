@@ -19,7 +19,15 @@ import os
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from types import MappingProxyType, NoneType
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, overload
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    ClassVar,
+    Literal,
+    TypeAlias,
+    overload,
+)
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
@@ -32,6 +40,7 @@ if TYPE_CHECKING:
     import tensorstore  # type: ignore
     import zarr  # type: ignore
     from fsspec import FSMap
+    from typing_extensions import Self
 
     _T = TypeVar("_T")
 
@@ -421,7 +430,7 @@ class ZarrNode:
         return MappingProxyType(self._store)
 
     def to_zarr_python(self) -> zarr.Array | zarr.Group:
-        """Convert to a zarr-python Array or Group object."""
+        """Convert to a zarr-python Array or Group object (requires `zarr-python`)."""
         try:
             import zarr  # type: ignore
         except ImportError as e:
@@ -485,6 +494,9 @@ class ZarrNode:
 class ZarrGroup(ZarrNode):
     """Minimal wrapper around a zarr v2/v3 group.
 
+    !!!important
+        Requires `yaozarrs[io]` or `fsspec` to be installed.
+
     This class exists to provide minimal zarr group functionality, needed for hierarchy
     traversal and structural validation, without requiring a dependency on a full blown
     zarr array-writing library (which come with heavier dependencies, and python version
@@ -507,6 +519,22 @@ class ZarrGroup(ZarrNode):
             if "version" in attrs["ome"]:
                 return attrs["ome"]["version"]
         return None  # pragma: no cover
+
+    def validate(self) -> Self:
+        """Validate the zarr group structure.
+
+        This is a convenience method that calls [`yaozarrs.validate_zarr_store`][]
+        on this group.
+
+        Raises
+        ------
+        StorageValidationError
+            If the storage structure is invalid.
+        """
+        from yaozarrs._storage import validate_zarr_store
+
+        validate_zarr_store(self)
+        return self
 
     def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
@@ -610,7 +638,7 @@ class ZarrGroup(ZarrNode):
     if TYPE_CHECKING:
 
         def to_zarr_python(self) -> zarr.Group:  # type: ignore
-            """Convert to a zarr-python Group object."""
+            """Convert to a zarr-python Group object (requires `zarr-python`)."""
 
 
 class ZarrArray(ZarrNode):
@@ -641,7 +669,7 @@ class ZarrArray(ZarrNode):
     if TYPE_CHECKING:
 
         def to_zarr_python(self) -> zarr.Array:  # type: ignore
-            """Convert to a zarr-python Array object."""
+            """Convert to a zarr-python Array object (requires `zarr-python`)."""
 
     def to_tensorstore(self) -> tensorstore.TensorStore:
         """Convert to a tensorstore TensorStore object."""
@@ -662,6 +690,12 @@ class ZarrArray(ZarrNode):
 
 def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     """Open a zarr v2/v3 group from a URI.
+
+    !!!important
+        Requires `yaozarrs[io]` or `fsspec` to be installed.
+
+    Returns a small wrapper around the zarr group URI that allows
+    reading metadata and traversing the hierarchy.
 
     Parameters
     ----------
@@ -690,10 +724,11 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
             "`pip install fsspec`."
         ) from e
 
+    if isinstance(uri, ZarrGroup):
+        return uri
+
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
-    elif isinstance(uri, ZarrGroup):
-        return uri
     elif hasattr(uri, "store"):
         # Handle both zarr v2 and v3 Group objects
         # v3: str(group.store) returns a URI like "file:///path"

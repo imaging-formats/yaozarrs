@@ -1,4 +1,4 @@
-"""OME-NGFF 0.5 metadata models.
+"""OME-NGFF v0.5 metadata models.
 
 Specification: <https://ngff.openmicroscopy.org/0.5/>
 

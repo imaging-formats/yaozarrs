@@ -185,11 +185,6 @@ class Multiscale(_BaseModel):
     Defines an image at one or more resolution levels, along with the
     coordinate system that relates array indices to physical space. This is
     the core metadata for any OME-NGFF image.
-
-    !!! note "v0.4 Axis Ordering"
-        Unlike v0.5, the v0.4 spec does not strictly enforce axis ordering.
-        However, it is RECOMMENDED to follow the order:
-        time (if present) -> channel (if present) -> spatial axes (z, y, x).
     """
 
     name: str | None = Field(

@@ -14,8 +14,17 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> None:
-    """Validate an OME-Zarr v0.5 storage structure.
+def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
+    """Validate both structure and metadata of an OME-Zarr hierarchy.
+
+    !!!important
+        Requires `yaozarrs[io]` or `fsspec` to be installed.
+
+    This is a high-level function to validate both the metadata and the structure
+    of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
+    CLI command.
+
+    Currently only supports OME-Zarr version 0.5.
 
     Parameters
     ----------
@@ -23,6 +32,11 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> None:
         The zarr store to validate. Can be a URI string, a Path, a parsed
         OMEZarrGroupJSON object, a ZarrGroup instance, or a zarr.Group object
         (for backwards compatibility).
+
+    Returns
+    -------
+    ZarrGroup
+        The opened ZarrGroup if validation is successful.
 
     Raises
     ------
@@ -45,6 +59,8 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> None:
     # Raise error if any validation issues found
     if not result.is_valid:
         raise StorageValidationError(result.errors)
+
+    return zarr_group
 
 
 class ErrorDetails(TypedDict):

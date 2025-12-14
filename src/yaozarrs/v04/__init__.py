@@ -1,4 +1,4 @@
-"""v04 ome-zarr model.
+"""OME-NGFF v0.4 metadata models.
 
 Specification: <https://ngff.openmicroscopy.org/0.4>
 

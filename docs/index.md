@@ -7,16 +7,20 @@ title: Get Started
 
 # Get Started with `yaozarrs`
 
-Yaozarrs is a **bottom-up**, **single-dependency** library for working with
-OME-Zarr metadata and stores in Python, with optional features added via extras.  
+Yaozarrs is a **bottom-up** library for working with OME-Zarr metadata and
+stores in Python. It is **lightweight**, with only a **single required
+dependency** (on Pydantic), but feature-rich, with structural validation and
+writing functions added via optional extras.
 
 ## Philosophy
 
 !!! important ""
-    **The core philosophy is that NGFF metadata and Zarr array I/O are separate concerns.**
+    **The core philosophy is that NGFF metadata and Zarr array I/O are separate
+    concerns.**
 
-    **Yaozarrs focuses on OME-Zarr metadata creation, manipulation, and validation, and all
-    other functionality is optional, and backend agnostic.**
+    **Yaozarrs focuses on OME-Zarr metadata creation, manipulation, and
+    validation, and all other functionality (writing and structural validation)
+    is optional, with flexible backend.**
 
 Zarr itself is a _specification_ with multiple implementations:  There are many
 ways to read and write Zarr stores (e.g. `zarr-python`, `tensorstore`,
@@ -25,9 +29,10 @@ implementation you may want to use**.  Similarly, OME NGFF is a _metadata
 sepcification_, defining what JSON documents and hierarchy structure must look
 like.
 
-1. At its core, **yaozarrs provides pydantic models for OME-Zarr metadata specifications**.
-  You should be able to create/manipulate/validate OME-Zarr metadata without any specific
-  zarr array library, or anything beyond `yaozarrs`, `pydantic`, and the standard library.
+1. At its core, **yaozarrs provides pydantic models for OME-Zarr metadata
+  specifications**. You should be able to create/manipulate/validate OME-Zarr
+  metadata without any specific zarr array library, or anything beyond
+  `yaozarrs`, `pydantic`, and the standard library.
 
     ??? question "Why pydantic?"
         It's true that one can define dataclasses that mirror the OME-Zarr
@@ -42,13 +47,15 @@ like.
 2. Because reading/writing zarr groups is far simpler than arrays, **you
   shouldn't need to depend on a specific complete zarr library just to validate
   that a given _hierarchy_ is structurally correct**.  
-  <small>For example: a library implementing a new low-level zarr array backend should
-  be able to use yaozarrs to validate that its group structure and metadata are
-  correct, without needing to depend on zarr-python or tensorstore.</small>
+  <small>For example: a library implementing a new low-level zarr array backend
+  should be able to use yaozarrs to validate that its group structure and
+  metadata are correct, without needing to depend on zarr-python or
+  tensorstore.</small>
 
     ??? note "`pip install 'yaozarrs[io]'`"
-        If you want to perform structural validation of possibly _remote_ zarr stores, then
-        you will need to install the `io` extra, which adds dependencies on `fsspec`.
+        If you want to perform structural validation of possibly _remote_ zarr
+        stores, then you will need to install the `io` extra, which adds
+        dependencies on `fsspec`.
 
 3. Even in the case of writing complete OME-Zarr stores, the "array" part is
    relatively stereotyped, and the metadata is the more user-customized part.  
@@ -64,62 +71,102 @@ like.
 
 ## API Quick Reference
 
+### Metadata Creation
+
+(e.g. for Zarr group creation)
+
 ```python
 import yaozarrs
 from yaozarrs import v04, v05, DimSpec
-
-# Metadata Creation (e.g. for Zarr group creation) -------------
 
 image = v05.Image(
     multiscales=[
         v05.Multiscale.from_dims(
             dims=[
-                DimSpec(name="t", size=10),  # (1)!
-                DimSpec(name="c", size=3),
-                DimSpec(name="z", size=50, scale=0.3, unit="micrometer"),
-                DimSpec(name="y", size=512, scale=0.1, unit="micrometer"),
-                DimSpec(name="x", size=512, scale=0.1, unit="micrometer"),
+                DimSpec(name="t", unit="second"),  # (1)!
+                DimSpec(name="c"),
+                DimSpec(name="z", scale=0.3, unit="micrometer"),
+                DimSpec(name="y", scale=0.1, unit="micrometer"),
+                DimSpec(name="x", scale=0.1, unit="micrometer"),
             ]
         )
     ]
 )
 
 # Export
-obj.model_dump_json(exclude_unset=True, indent=2)  # (6)!
-
-# Validation of existing data ----------------------------------
-
-# validate a JSON string/bytes literal
-yaozarrs.validate_ome_json(json_str)  # (2)!
-# validate any python object (e.g. dict)
-yaozarrs.validate_ome_object(dict_obj) # (3)!
-# load/validate a Zarr store at any URI
-yaozarrs.validate_zarr_store(uri) # (4)!
-
-# Loading ------------------------------------------------------
-
-# Open a Zarr group at any URI
-yaozarrs.open_group(uri) # (5)!
-
-# Loading ------------------------------------------------------
-from yaozarrs import write
-
-write.v05.write_image()
+obj.model_dump_json(exclude_unset=True, indent=2)  # (2)!
 ```
 
 1. :eyes: [`yaozarrs.DimSpec`][] is a convenience class for use with
     [`Multiscale.from_dims`][yaozarrs.v05._image.Multiscale.from_dims].  It's
     not part of the OME-Zarr spec.
-2. [`yaozarrs.validate_ome_json`][]
-3. [`yaozarrs.validate_ome_object`][]
-4. [`yaozarrs.validate_zarr_store`][]. Requires the `yaozarrs[io]`
-   extra to support remote URIs.
-5. [`yaozarrs.open_group`][].  Returns a small wrapper around a zarr group with
-   minimal functionality: [`yaozarrs.ZarrGroup`][].  Requires the `yaozarrs[io]`
-   extra to support remote URIs.
-6. [`model_dump_json`][pydantic.BaseModel.model_dump_json] is part of the
+2. [`model_dump_json`][pydantic.BaseModel.model_dump_json] is part of the
    standard pydantic API for exporting models to JSON.  Just an example of
    exporting metadata back to JSON format.
+
+### Validation of existing objects
+
+If you have an existing JSON file, string, or python object, you can
+validate it and cast it to the appropriate typed `yaozarrs` model:
+
+```python
+import yaozarrs
+
+# validate a JSON string/bytes literal
+yaozarrs.validate_ome_json(json_str)  # (1)!
+
+# validate any python object (e.g. dict)
+yaozarrs.validate_ome_object(dict_obj) # (2)!
+
+# validate entire Zarr hierarchy (both metadata and structure) at any URI
+yaozarrs.validate_zarr_store(uri) # (3)!
+```
+
+1. [`yaozarrs.validate_ome_json`][]
+2. [`yaozarrs.validate_ome_object`][]
+3. [`yaozarrs.validate_zarr_store`][]. Requires the `yaozarrs[io]`
+   extra to support remote URIs.
+
+### Loading and Navigating with validation
+
+[`yaozarrs.open_group`][] teturns a small wrapper around a zarr group with
+minimal functionality: [`yaozarrs.ZarrGroup`][].  Requires the [`yaozarrs[io]`
+extra](./installation.md#structural-validation) to support remote URIs.
+
+```python
+import yaozarrs
+
+# Open a Zarr group at any URI
+yaozarrs.open_group(uri) # (1)!
+```
+
+### Writing OME-Zarr Stores
+
+See [`yaozarrs.write.v05`][] for all the writing convenience functions.
+
+```python
+import numpy as np
+
+from yaozarrs import write # (7)!
+
+# write a 5D image with single pyramid level
+
+data = np.zeros((10, 3, 9, 64, 64), dtype=np.uint16)
+root_path = write.v05.write_image("example.ome.zarr", image, data)
+
+# other high level write functions
+
+write.v05.write_plate(...)
+write.v05.write_bioformats2raw(...)
+
+# low-level prepare/builder functions
+
+write.v05.prepare_image(...)
+write.v05.LabelsBuilder(...)
+write.v05.PlateBuilder(...)
+write.v05.Bf2RawBuilder(...)
+
+```
 
 ## Validation
 

@@ -15,15 +15,15 @@ def validate_ome_object(node: Any, cls: type[T]) -> T: ...
 @overload
 def validate_ome_object(node: Any) -> AnyOME: ...
 def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
-    """Validate any ome-zarr document or node as a python object.
+    """Validate any python object representing an OME-Zarr document or node.
 
     Parameters
     ----------
-    node : OMENode
-        The OMENode instance to validate.
+    node : Any
+        The OME Node instance to validate.
     cls : type[T]
         The class to validate against. Must be a subclass of `BaseModel`.
-        If not provided, defaults to `OMENode`, meaning "any valid OME node object".
+        If not provided, defaults to `AnyOME`, meaning "any valid OME node object".
 
     Returns
     -------
@@ -46,7 +46,7 @@ def validate_ome_json(data: str | bytes | bytearray) -> AnyOME: ...
 def validate_ome_json(
     data: str | bytes | bytearray, cls: type[T] | Any = None
 ) -> T | AnyOME:
-    """Validate any valid ome-zarr JSON data.
+    """Validate any ome-zarr JSON string or bytes literal.
 
     By default, this will validate `data` against all known OME JSON documents.
     This includes ome-zarr group documents for v04 (found at .zattrs in the zarr group)
@@ -83,16 +83,20 @@ def validate_ome_uri(uri: str | os.PathLike) -> AnyOMEGroup: ...
 def validate_ome_uri(
     uri: str | os.PathLike, cls: type[T] | Any = None
 ) -> T | AnyOMEGroup:
-    """Load and validate any OME-Zarr group from a URI or local path.
+    """Load and validate root metadata in a OME-Zarr group from a URI or local path.
 
-    This function will attempt to load the OME-Zarr group metadata from the given
-    URI or local path. It supports both v0.4 and v0.5 of the OME-Zarr specification.
-    The URI should be a path to a zarr group (directory or URL) with valid ome-zarr
-    metadata, or a path directly to the metadata JSON file itself (e.g. zarr.json or
-    .zattrs).
+    !!!important
+        This requires that you have installed yaozarrs with the `io` extra, e.g.
+        `pip install yaozarrs[io]`.
 
-    This requires that you have installed yaozarrs with the `io` extra, e.g.
-    `pip install yaozarrs[io]`.
+    This function will attempt to load the OME-Zarr group metadata from the given URI or
+    local path. The URI should be a path to a zarr group (directory or URL) with valid
+    ome-zarr metadata, or a path directly to the metadata JSON file itself (e.g.
+    zarr.json or .zattrs).
+
+    **This _only_ loads and validates the root OME-Zarr group metadata.**  It does not
+    traverse the hierarchy, perform structural validation, or validate any child groups
+    or arrays.
 
     Parameters
     ----------

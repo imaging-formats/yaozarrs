@@ -2,6 +2,8 @@
 title: yaozarrs.write.v05
 ---
 
+# <code class="doc-symbol-module"></code> `yaozarrs.write.v05`
+
 This module provides convenience functions to write OME-Zarr v0.5 stores.
 
 ## Overview

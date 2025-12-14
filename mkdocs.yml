@@ -7,6 +7,7 @@ repo_name: "tlambert03/yaozarrs"
 # https://zensical.org/docs/customization/
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - search.highlight
     - search.suggest
@@ -18,8 +19,6 @@ theme:
     - content.tooltips
     - navigation.footer
     - navigation.indexes
-    - navigation.instant
-    - navigation.instant.prefetch
     - toc.follow
 
   palette:
