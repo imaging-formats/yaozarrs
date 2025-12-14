@@ -1,7 +1,17 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "yaozarrs[write-zarr,write-tensorstore]",
+# ]
+#
+# [tool.uv.sources]
+# yaozarrs = { path = "../", editable = true }
+# ///
 """Benchmark different zarr writers for OME-Zarr v0.5."""
 
 from __future__ import annotations
 
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -26,7 +36,7 @@ if TYPE_CHECKING:
 # Test configuration
 SHAPE = (10, 3, 25, 1024, 1024)  # TCZYX
 DTYPE = np.uint16
-ITERATIONS = 6
+ITERATIONS = 6 if len(sys.argv) < 2 else int(sys.argv[1])
 WARMUP = 1  # Number of warmup iterations to discard
 
 # Available writers

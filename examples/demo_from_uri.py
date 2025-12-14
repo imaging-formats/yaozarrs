@@ -1,4 +1,12 @@
-#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "yaozarrs[io]",
+# ]
+#
+# [tool.uv.sources]
+# yaozarrs = { path = "../", editable = true }
+# ///
 """Demonstration script for the ZarrGroupModel.from_uri functionality."""
 
 import builtins
@@ -30,13 +38,13 @@ def demo_zarr_uri(uri: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python demo_from_uri.py <uri>")
+        print("Usage: uv run examples/demo_from_uri.py <uri>")
         print()
         print("Examples:")
-        print("  python demo_from_uri.py /path/to/data.zarr")
-        print("  python demo_from_uri.py https://example.com/data.zarr")
-        print("  python demo_from_uri.py https://example.com/data.zarr/zarr.json")
+        print("  uv run examples/demo_from_uri.py /path/to/data.zarr")
+        print(
+            "  uv run examples/demo_from_uri.py https://uk1s3.embassy.ebi.ac.uk/idr/share/ome2024-ngff-challenge/idr0010/76-45.zarr"
+        )
         sys.exit(1)
 
-    uri = sys.argv[1]
-    demo_zarr_uri(uri)
+    demo_zarr_uri(sys.argv[1])
