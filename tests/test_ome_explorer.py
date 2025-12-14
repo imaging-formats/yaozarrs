@@ -26,6 +26,9 @@ from yaozarrs import v04, v05, validate_ome_json
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+if sys.platform == "win32":
+    pytest.skip("Node.js path handling differs on Windows", allow_module_level=True)
+
 # Path to the Node.js test runner
 RUNNER_PATH = Path(__file__).parent / "ome_explorer_runner.mjs"
 
@@ -211,10 +214,6 @@ def config(request: pytest.FixtureRequest) -> dict:
     return request.param
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="Node.js path handling differs on Windows",
-)
 def test_json_validates_against_pydantic(config: dict) -> None:
     """Validate generated JSON against yaozarrs pydantic models."""
     output = run_generator(config)
@@ -263,10 +262,6 @@ def test_invalid():
         validate_ome_json(output["json"])
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="Node.js path handling differs on Windows",
-)
 @pytest.mark.parametrize(
     "plate_config",
     PLATE_TEST_CONFIGS,
