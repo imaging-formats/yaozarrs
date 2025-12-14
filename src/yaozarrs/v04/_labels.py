@@ -27,15 +27,19 @@ Int8bit = Annotated[int, Interval(ge=0, le=255)]
 
 
 class LabelColor(_BaseModel):
+    """Display color mapping for a label value.
+
+    Associates a specific label value with an RGBA color for
+    visualization purposes.
+    """
+
     label_value: float = Field(
-        description="The value of the label",
+        description="Label value from the segmentation image",
         alias="label-value",
     )
     rgba: Annotated[list[Int8bit], Len(min_length=4, max_length=4)] | None = Field(
         default=None,
-        description=(
-            "The RGBA color stored as an array of four integers between 0 and 255"
-        ),
+        description="RGBA color as [red, green, blue, alpha], each 0-255",
     )
 
 
@@ -45,8 +49,20 @@ class LabelColor(_BaseModel):
 
 
 class LabelProperty(_BaseModel):
+    """Custom metadata for a label value.
+
+    Associates arbitrary key-value properties with a specific label integer.
+    Different labels can have different sets of properties.
+
+    !!! example
+        ```python
+        LabelProperty(label_value=1, cell_type="neuron", area=1250.5)
+        LabelProperty(label_value=2, cell_type="glia", perimeter=180.3)
+        ```
+    """
+
     label_value: int = Field(
-        description="The pixel value for this label",
+        description="Integer label value from the segmentation image",
         alias="label-value",
     )
 
@@ -57,7 +73,19 @@ class LabelProperty(_BaseModel):
 
 
 class LabelSource(_BaseModel):
-    image: str | None = None
+    """Reference to the source image that was segmented.
+
+    Points back to the original intensity image from which this label
+    image was derived.
+    """
+
+    image: str | None = Field(
+        default=None,
+        description=(
+            "Relative path to the source image group (default: '../../', "
+            "pointing to the parent of the labels/ directory)"
+        ),
+    )
 
 
 # ------------------------------------------------------------------------------
@@ -66,17 +94,24 @@ class LabelSource(_BaseModel):
 
 
 class ImageLabel(_BaseModel):
+    """Metadata for a segmentation/annotation label image.
+
+    Enhances a multiscale label image with display colors, semantic properties,
+    and links back to the source intensity image. Label images are integer-valued
+    arrays where each unique value represents a distinct object or region.
+    """
+
     colors: Annotated[UniqueList[LabelColor], MinLen(1)] | None = Field(
         default=None,
-        description="The colors for this label image",
+        description="Color mappings for label values, used for visualization",
     )
     properties: Annotated[UniqueList[LabelProperty], MinLen(1)] | None = Field(
         default=None,
-        description="The properties for this label image",
+        description="Arbitrary metadata properties for individual label values",
     )
     source: LabelSource | None = Field(
         default=None,
-        description="The source of this label image",
+        description="Reference to the source intensity image that was segmented",
     )
     version: Literal["0.4"] = "0.4"
 
@@ -88,10 +123,26 @@ class ImageLabel(_BaseModel):
 
 # NOTE: this is described in the spec, but doesn't appear in the schema.
 class LabelsGroup(_BaseModel):
-    """Model for the labels group that contains paths to individual label images."""
+    """Top-level labels collection metadata.
+
+    This model corresponds to the `.zattrs` file (or zarr.json attributes)
+    in a `labels/` directory, which acts as a container for multiple
+    segmentation/annotation images.
+
+    !!! example "Typical Structure"
+        ```
+        my_image/
+        ├── .zattrs            # Image metadata
+        ├── 0/                 # Image arrays
+        └── labels/
+            ├── .zattrs        # Contains this metadata {"labels": [...]}
+            ├── cells/         # One label image
+            └── nuclei/        # Another label image
+        ```
+    """
 
     labels: Annotated[list[str], MinLen(1)] = Field(
-        description="Array of paths to labeled multiscale images"
+        description="Paths to individual label image groups within this collection"
     )
 
 
@@ -101,6 +152,19 @@ class LabelsGroup(_BaseModel):
 
 
 class LabelImage(Image):
-    """Model for individual label images with multiscales + image-label metadata."""
+    """A complete label image with multiscale pyramids and label metadata.
 
-    image_label: ImageLabel = Field(alias="image-label")
+    Combines the standard image structure (multiscale pyramids, axes, etc.)
+    with label-specific metadata (colors, properties, source reference).
+    Label images must use integer data types.
+
+    !!! note "Relationship to Image"
+        This is an [`Image`][yaozarrs.v04.Image] with additional `image-label`
+        metadata. The multiscale pyramids follow the same structure as regular
+        images but contain integer segmentation masks instead of intensity data.
+    """
+
+    image_label: ImageLabel = Field(
+        alias="image-label",
+        description="Label-specific metadata (colors, properties, source link)",
+    )

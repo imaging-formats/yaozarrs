@@ -185,9 +185,8 @@ class ZarrTreeViewer extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      max-height: 160px;
+      max-height: 180px;
       overflow-y: auto;
-      min-height: 0;
     }
 
     .tree-info-title {
@@ -1322,9 +1321,8 @@ class OmeExplorer extends LitElement {
       flex-direction: column;
       gap: 0.25rem;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
-      height: 130px;
-      min-height: 130px;
-      max-height: 130px;
+      height: 180px;
+      max-height: 180px;
       overflow-y: auto;
       flex-shrink: 0;
     }

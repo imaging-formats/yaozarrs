@@ -18,14 +18,14 @@ title: Guide to OME-Zarr
 - :material-cube-outline:{ .lg .middle } **I have images**
 
     ---
-    Single images, z-stacks, timelapses, or multi-channel confocal data
+    Any data with 5 or less dimensions, typically `[T][C][Z]YX`.
 
     [:octicons-arrow-right-24: Go to Images](#working-with-images)
 
 - :material-grid:{ .lg .middle } **I have plate data**
 
     ---
-    Multi-well plates from high-content screening (HCS) experiments
+    Multi-well plates and high-content screening (HCS) experiments
 
     [:octicons-arrow-right-24: Go to Plates](#working-with-plates)
 
@@ -51,7 +51,7 @@ title: Guide to OME-Zarr
 
 !!! tip ""
     The official OME-Zarr specification can be found at
-    [ngff.openmicroscopy.org](https://ngff.openmicroscopy.org/).  In case of
+    <https://ngff.openmicroscopy.org/>.  In case of
     any discrepancies between this guide and the official spec, the official
     spec takes precedence!
 
@@ -102,6 +102,9 @@ dimensions**, and may store multiple resolution levels.
     than 5 dimensions in OME-Zarr.  You may use the transitional
     `bioformats2raw.layout` to store multiple images in a single zarr group.
     See [Working with Collections](#working-with-collections)
+
+    See also: an RFC ("request for comments") proposing a relaxation of this
+    restriction: [RFC-3](https://ngff.openmicroscopy.org/rfc/3/index.html)
 
 ??? question "What if I have both RGB and optical channels?"
     As of v0.5, there is no formal specification for mixing the concepts
