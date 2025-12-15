@@ -1,12 +1,21 @@
+import warnings
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Len
-from pydantic import Discriminator, Field, Tag, WrapValidator, model_validator
+from pydantic import (
+    AfterValidator,
+    Discriminator,
+    Field,
+    Tag,
+    WrapValidator,
+    model_validator,
+)
+from typing_extensions import get_args
 
 from ._base import _BaseModel
 from ._types import UniqueList
 
-SpaceUnits: TypeAlias = Literal[
+ValidSpaceUnit: TypeAlias = Literal[
     "angstrom",
     "attometer",
     "centimeter",
@@ -35,7 +44,7 @@ SpaceUnits: TypeAlias = Literal[
     "zettameter",
 ]
 
-TimeUnits: TypeAlias = Literal[
+ValidTimeUnit: TypeAlias = Literal[
     "attosecond",
     "centisecond",
     "day",
@@ -73,6 +82,39 @@ class _AxisBase(_BaseModel):
 # 3. instantiate SpaceAxis, TimeAxis, ChannelAxis without specifying "type" at runtime
 #    (even though it's required in the schema)
 
+_VALID_SPACE_UNITS = get_args(ValidSpaceUnit)
+_VALID_TIME_UNITS = get_args(ValidTimeUnit)
+
+
+def _warn_if_not_space_unit(v: str) -> str:
+    if v not in _VALID_SPACE_UNITS:
+        warnings.warn(
+            f"Warning: Space axis unit {v!r}, SHOULD be one of {_VALID_SPACE_UNITS}",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+    return v
+
+
+def _warn_if_not_time_unit(v: str) -> str:
+    if v not in _VALID_TIME_UNITS:
+        warnings.warn(
+            f"Warning: Time axis unit {v!r}, SHOULD be one of {_VALID_TIME_UNITS}",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+    return v
+
+
+# these Annotated types give type hinting and IDE autocompletion,
+# but still fallback to string (with a warning) for unrecognized units
+SpaceUnits: TypeAlias = Annotated[
+    ValidSpaceUnit | str, AfterValidator(_warn_if_not_space_unit)
+]
+TimeUnits: TypeAlias = Annotated[
+    ValidTimeUnit | str, AfterValidator(_warn_if_not_time_unit)
+]
+
 
 class CustomAxis(_AxisBase):
     """Axis with unrecognized or missing `type`, and any unit."""
@@ -88,7 +130,7 @@ class SpaceAxis(_AxisBase):
         type: Literal["space"] = "space"
     else:
         type: Literal["space"]
-    unit: SpaceUnits | None = None  # SHOULD
+    unit: SpaceUnits | None = None
 
     @model_validator(mode="before")
     @classmethod
