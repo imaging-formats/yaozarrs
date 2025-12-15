@@ -1,6 +1,6 @@
-"""Storage validation for OME-ZARR v0.5 hierarchies.
+"""Storage validation for OME-ZARR v0.4 hierarchies.
 
-This module provides functions to validate that OME-ZARR v0.5 storage structures
+This module provides functions to validate that OME-ZARR v0.4 storage structures
 conform to the specification requirements for directory layout, file existence,
 and metadata consistency.
 """
@@ -13,20 +13,24 @@ from dataclasses import dataclass
 from itertools import chain, product
 from typing import TypeAlias
 
+from pydantic import TypeAdapter
+
 from yaozarrs._storage import StorageErrorType, ValidationResult
-from yaozarrs._validate import validate_ome_object, validate_ome_uri
-from yaozarrs._zarr import ZarrArray, ZarrGroup
-from yaozarrs.v05._bf2raw import Bf2Raw, Series
-from yaozarrs.v05._image import Image, Multiscale
-from yaozarrs.v05._labels import LabelImage, LabelsGroup
-from yaozarrs.v05._plate import Plate, Well
-from yaozarrs.v05._zarr_json import OMEAttributes, OMEZarrGroupJSON
+from yaozarrs._zarr import ZarrArray, ZarrGroup, open_group
+from yaozarrs.v04._bf2raw import Bf2Raw, Series
+from yaozarrs.v04._image import Image, Multiscale
+from yaozarrs.v04._labels import LabelImage, LabelsGroup
+from yaozarrs.v04._plate import Plate, Well
+from yaozarrs.v04._zarr_json import OMEZarrGroupJSON
 
 # ----------------------------------------------------------
 # VALIDATORS
 # ----------------------------------------------------------
 
 Loc: TypeAlias = tuple[int | str, ...]
+
+# Reusable TypeAdapter for validating v04 OME-ZARR metadata
+_OME_VALIDATOR = TypeAdapter(OMEZarrGroupJSON)
 
 
 def _build_fs_path(zarr_group: ZarrGroup, relative_path: str = "") -> str:
@@ -83,14 +87,14 @@ class LabelsCheckResult:
     labels_info: tuple[ZarrGroup, LabelsGroup] | None = None
 
 
-class StorageValidatorV05:
-    """Concrete implementation of storage validator. for OME-ZARR v0.5 spec."""
+class StorageValidatorV04:
+    """Concrete implementation of storage validator. for OME-ZARR v0.4 spec."""
 
     __slots__ = ()
 
     @classmethod
     def validate_group(
-        cls, zarr_group: ZarrGroup, attrs_model: OMEAttributes | None = None
+        cls, zarr_group: ZarrGroup, metadata: OMEZarrGroupJSON | None = None
     ) -> ValidationResult:
         """Entry point that dispatches to appropriate visitor method.
 
@@ -98,40 +102,42 @@ class StorageValidatorV05:
         ----------
         zarr_group : ZarrGroup
             The zarr group to validate.
-        attrs_model : OMEAttributes
-            The validated OME attributes model.
+        metadata : OMEZarrGroupJSON
+            The validated OME metadata model.
 
         Returns
         -------
         ValidationResult
             The validation result containing any errors found.
         """
-        if attrs_model is None:
+        if metadata is None:
             # extract the model from the zarr attributes
-            attrs_model = validate_ome_object(zarr_group.attrs, OMEAttributes)
+            # In v04, metadata is at the top level (no "ome" wrapper)
+            # Convert mappingproxy to dict for discriminator
+            metadata = _OME_VALIDATOR.validate_python(dict(zarr_group.attrs))
 
         validator = cls()
-        ome_metadata = attrs_model.ome
-        loc_prefix = ("ome",)
+        # In v04, metadata is directly the OME type (no .ome accessor)
+        loc_prefix = ()
 
         # Dispatch to appropriate visitor method based on metadata type
-        if isinstance(ome_metadata, LabelImage):
-            return validator.visit_label_image(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Image):
-            return validator.visit_image(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, LabelsGroup):
-            return validator.visit_labels_group(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Plate):
-            return validator.visit_plate(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Well):
-            return validator.visit_well(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Bf2Raw):
-            return validator.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, Series):  # pragma: no cover
-            return validator.visit_series(zarr_group, ome_metadata, loc_prefix)
+        if isinstance(metadata, LabelImage):
+            return validator.visit_label_image(zarr_group, metadata, loc_prefix)
+        elif isinstance(metadata, Image):
+            return validator.visit_image(zarr_group, metadata, loc_prefix)
+        elif isinstance(metadata, LabelsGroup):
+            return validator.visit_labels_group(zarr_group, metadata, loc_prefix)
+        elif isinstance(metadata, Plate):
+            return validator.visit_plate(zarr_group, metadata, loc_prefix)
+        elif isinstance(metadata, Well):
+            return validator.visit_well(zarr_group, metadata, loc_prefix)
+        elif isinstance(metadata, Bf2Raw):
+            return validator.visit_bioformats2raw(zarr_group, metadata, loc_prefix)
+        elif isinstance(metadata, Series):  # pragma: no cover
+            return validator.visit_series(zarr_group, metadata, loc_prefix)
         else:
             raise NotImplementedError(
-                f"Unknown OME metadata type: {type(ome_metadata).__name__}"
+                f"Unknown OME metadata type: {type(metadata).__name__}"
             )
 
     def visit_label_image(
@@ -526,14 +532,15 @@ class StorageValidatorV05:
         ome_group = zarr_group.get("OME")
         if ome_group is not None and isinstance(ome_group, ZarrGroup):
             try:
-                ome_attrs_model = validate_ome_object(ome_group.attrs, OMEAttributes)
+                # In v04, metadata is at the top level (no "ome" wrapper)
+                ome_metadata = _OME_VALIDATOR.validate_python(dict(ome_group.attrs))
 
                 # If OME group has series metadata, use that to find images
-                if isinstance(ome_attrs_model.ome, Series):
+                if isinstance(ome_metadata, Series):
                     # Validate using the series paths
                     result = result.merge(
                         self.visit_series(
-                            zarr_group, ome_attrs_model.ome, (*loc_prefix, "OME")
+                            zarr_group, ome_metadata, (*loc_prefix, "OME")
                         )
                     )
                     return result
@@ -727,9 +734,10 @@ class StorageValidatorV05:
             return []
 
         try:
-            first_well_meta = validate_ome_object(first_well.attrs, OMEAttributes)
-            if isinstance(first_well_meta.ome, Well):
-                return [img.path for img in first_well_meta.ome.well.images]
+            # In v04, metadata is at the top level (no "ome" wrapper)
+            first_well_meta = _OME_VALIDATOR.validate_python(dict(first_well.attrs))
+            if isinstance(first_well_meta, Well):
+                return [img.path for img in first_well_meta.well.images]
         except Exception:
             pass
         return []
@@ -743,17 +751,15 @@ class StorageValidatorV05:
             return []  # pragma: no cover
 
         try:
-            first_field_meta = validate_ome_object(first_field.attrs, OMEAttributes)
+            # In v04, metadata is at the top level (no "ome" wrapper)
+            first_field_meta = _OME_VALIDATOR.validate_python(dict(first_field.attrs))
         except Exception:
             return []  # pragma: no cover
 
-        if (
-            not isinstance(first_field_meta.ome, Image)
-            or not first_field_meta.ome.multiscales
-        ):
+        if not isinstance(first_field_meta, Image) or not first_field_meta.multiscales:
             return []  # pragma: no cover
 
-        return [ds.path for ds in first_field_meta.ome.multiscales[0].datasets]
+        return [ds.path for ds in first_field_meta.multiscales[0].datasets]
 
     def _check_for_labels_group(
         self, zarr_group: ZarrGroup, loc_prefix: Loc
@@ -777,11 +783,12 @@ class StorageValidatorV05:
             return LabelsCheckResult(result=result, labels_info=None)
 
         try:
-            labels_attrs = validate_ome_object(labels_group.attrs, OMEAttributes)
-            if isinstance(labels_attrs.ome, LabelsGroup):
+            # In v04, metadata is at the top level (no "ome" wrapper)
+            labels_attrs = _OME_VALIDATOR.validate_python(dict(labels_group.attrs))
+            if isinstance(labels_attrs, LabelsGroup):
                 # Return the labels info directly
                 return LabelsCheckResult(
-                    result=result, labels_info=(labels_group, labels_attrs.ome)
+                    result=result, labels_info=(labels_group, labels_attrs)
                 )
         except Exception as e:
             result.add_error(
@@ -810,8 +817,11 @@ class StorageValidatorV05:
             return result
 
         try:
-            img = validate_ome_uri(image_source, OMEZarrGroupJSON)
-            if not isinstance(img.attributes.ome, Image):
+            # In v04, we open the zarr group and validate the attrs directly
+            source_group = open_group(image_source)
+            img_metadata = _OME_VALIDATOR.validate_python(dict(source_group.attrs))
+
+            if not isinstance(img_metadata, Image):
                 result.add_error(
                     StorageErrorType.label_image_source_invalid,
                     (*loc_prefix, "image_label", "source", "image"),
