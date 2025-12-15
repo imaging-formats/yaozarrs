@@ -25,7 +25,7 @@ function createYaozarrsAnimation() {
                 opacity: 0;
                 color: ${color};
                 transform: scale(0) translateY(20px) rotate(-10deg);
-                transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
                 transition-delay: ${index * 0.06}s;
             `;
 
@@ -39,19 +39,12 @@ function createYaozarrsAnimation() {
 
         // Function to update original positions
         const updateOriginalPositions = () => {
-            letters.forEach(letter => {
-                // Reset transform to get true position
-                const currentTransform = letter.style.transform;
-                letter.style.transform = 'scale(1) translateY(0px) translateX(0px) rotate(0deg)';
-
-                const rect = letter.getBoundingClientRect();
-                letter.originalPosition = {
+            const rects = letters.map(letter => letter.getBoundingClientRect());
+            rects.forEach((rect, i) => {
+                letters[i].originalPosition = {
                     x: rect.left + rect.width / 2,
                     y: rect.top + rect.height / 2
                 };
-
-                // Restore transform
-                letter.style.transform = currentTransform;
             });
         };
 
