@@ -11,7 +11,7 @@ This module provides convenience functions to write OME-Zarr v0.5 stores.
 The general pattern is:
 
 1. Decide what kind of OME **model** best matches your data (see [Guide to
-   OME-Zarr](../ngff_guide.md) if you're new to OME Zarr), and construct your
+   OME-Zarr](../ome_zarr_guide.md) if you're new to OME Zarr), and construct your
    OME-Zarr metadata model using
    [yaozarrs.v05](../API_Reference/yaozarrs.v05.md) models:
     - Single Image (<=5D): use [`Image`][yaozarrs.v05.Image].
