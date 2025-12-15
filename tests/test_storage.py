@@ -28,7 +28,12 @@ except ImportError:
     connection_exceptions = ()
 
 from yaozarrs import validate_zarr_store
-from yaozarrs._storage import ErrorDetails, StorageErrorType, StorageValidationError
+from yaozarrs._storage import (
+    ErrorDetails,
+    StorageErrorType,
+    StorageValidationError,
+    StorageValidationWarning,
+)
 
 
 @contextmanager
@@ -318,11 +323,6 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
         StorageTestCase(
             StorageErrorType.label_image_invalid,
             {"type": "labels"},
-            update_meta("annotations", ("attributes", "ome"), IMAGE_META),
-        ),
-        StorageTestCase(
-            StorageErrorType.label_image_invalid,
-            {"type": "labels"},
             update_meta("annotations", ("attributes", "ome"), {}),
         ),
         StorageTestCase(
@@ -424,6 +424,27 @@ def test_validate_invalid_storage(
     case.mutator(path)
     with xfail_internet_error():
         with pytest.raises(StorageValidationError, match=str(case.err_type)):
+            validate_zarr_store(path)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        StorageTestCase(
+            StorageErrorType.label_image_invalid,
+            {"type": "labels"},
+            update_meta("annotations", ("attributes", "ome"), IMAGE_META),
+        ),
+    ],
+    ids=lambda x: x.err_type,
+)
+def test_validate_invalid_storage_warns(
+    case: StorageTestCase, write_demo_ome: Callable
+) -> None:
+    path = write_demo_ome(**case.kwargs)
+    case.mutator(path)
+    with xfail_internet_error():
+        with pytest.warns(StorageValidationWarning, match=str(case.err_type)):
             validate_zarr_store(path)
 
 

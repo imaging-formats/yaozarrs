@@ -200,8 +200,11 @@ class ZarrMetadata(BaseModel):
         if ms := attrs.get("multiscales"):
             return ms[0]["version"]
         for possible_key in ["plate", "well", "labels", "series"]:
-            if possible_key in attrs and "version" in attrs[possible_key]:
-                return attrs[possible_key]["version"]
+            if possible_key in attrs:
+                if "version" in attrs[possible_key]:
+                    return attrs[possible_key]["version"]
+                if "version" in attrs:
+                    return attrs["version"]
 
         # if "bioformats2raw.layout" in attrs:
         #     if "0" in self and isinstance(group := self["0"], ZarrGroup):
@@ -320,10 +323,8 @@ class _CachedMapper(Mapping[str, bytes]):
             self._cache[key] = val = self._fsmap.get(key, default)
         else:
             val = self._cache[key]
-        # Return None for cached exceptions (e.g., KeyError from getitems)
-        # This matches the behavior of FSMap.get() which returns None for missing keys
         if isinstance(val, Exception):
-            return default
+            raise val
         return val  # type: ignore[return-value]
 
     def __contains__(self, key: object) -> bool:
@@ -589,14 +590,6 @@ class ZarrGroup(ZarrNode):
         if not hasattr(self, "_ome_metadata"):
             meta = self._metadata
             self._ome_metadata = meta.ome_metadata()
-            if self._ome_metadata is None:
-                ver = meta._guess_ome_version()
-                if ver not in ("0.4", "0.5"):
-                    warnings.warn(
-                        f"Unsupported or missing OME metadata version detected: {ver}",
-                        UserWarning,
-                        stacklevel=3,
-                    )
         return self._ome_metadata
 
     @classmethod
