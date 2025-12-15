@@ -1,4 +1,7 @@
-"""Test stores found in the real world."""
+"""Test stores found in the real world.
+
+This file must be explicitly listed in the pytest command to be run.
+"""
 
 import pytest
 

@@ -53,7 +53,7 @@ test-full = [
     "yaozarrs[storage,write-tensorstore,write-zarrs]",
     "ome-zarr>=0.10.2",
 ]
-docs=[
+docs = [
     "griffe-fieldz>=0.4.0",
     "mkdocs-material>=9.7.0",
     "mkdocstrings-python>=2.0.1",
@@ -137,7 +137,7 @@ skip-magic-trailing-comma = false # default is false
 # https://docs.pytest.org/
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = ["--color=yes"]
+addopts = ["--color=yes", "--ignore=tests/test_realworld.py"]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 
