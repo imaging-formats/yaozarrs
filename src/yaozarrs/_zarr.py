@@ -281,8 +281,10 @@ class _CachedMapper(Mapping[str, bytes]):
             self._cache[key] = val = self._fsmap.get(key, default)
         else:
             val = self._cache[key]
+        # Return None for cached exceptions (e.g., KeyError from getitems)
+        # This matches the behavior of FSMap.get() which returns None for missing keys
         if isinstance(val, Exception):
-            raise val
+            return default
         return val  # type: ignore[return-value]
 
     def __contains__(self, key: object) -> bool:
@@ -518,7 +520,15 @@ class ZarrGroup(ZarrNode):
         if "ome" in attrs:
             if "version" in attrs["ome"]:
                 return attrs["ome"]["version"]
-        return None  # pragma: no cover
+        # TODO: this is probably flaky
+        if ms := attrs.get("multiscales"):
+            return ms[0]["version"]
+        if plate := attrs.get("plate"):
+            return plate["version"]
+        if "bioformats2raw.layout" in attrs:
+            if "0" in self and isinstance(group := self["0"], ZarrGroup):
+                return group.ome_version()
+        return None
 
     def validate(self) -> Self:
         """Validate the zarr group structure.
@@ -604,7 +614,6 @@ class ZarrGroup(ZarrNode):
     def __getitem__(self, key: str) -> ZarrGroup | ZarrArray:
         """Get a child node (group or array)."""
         child_path = f"{self._path}/{key}" if self._path else key
-
         if self._metadata.zarr_format >= 3:
             return self._getitem_v3(child_path, key)
         else:

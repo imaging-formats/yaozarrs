@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import textwrap
+import warnings
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
@@ -45,16 +46,40 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     """
     zarr_group = open_group(obj)
     ome_version = zarr_group.ome_version()
+    if not ome_version:
+        raise ValueError(f"Unable to determine OME-Zarr version for {zarr_group}")
+
     if ome_version == "0.5":
         from yaozarrs.v05._storage import StorageValidatorV05
 
-        # Validate the storage structure using the visitor pattern
         result = StorageValidatorV05.validate_group(zarr_group)
+    elif ome_version == "0.4":
+        from yaozarrs.v04._storage import StorageValidatorV04
+
+        result = StorageValidatorV04.validate_group(zarr_group)
+
     else:
         raise NotImplementedError(
             f"Structural validation for OME-Zarr version {ome_version} is "
             "not implemented."
         )
+
+    # Emit warnings for SHOULD directives
+    if result.warnings:
+        # Use a custom formatter to match exception style
+        warning_instance = StorageValidationWarning(result.warnings)
+
+        _original_formatwarning = warnings.formatwarning
+
+        def _custom_formatwarning(message, category, *_, **__) -> str:
+            # Format like an exception: module.Class: message
+            return f"{category.__module__}.{category.__name__}: {message}\n"
+
+        warnings.formatwarning = _custom_formatwarning  # type: ignore
+        try:
+            warnings.warn(warning_instance, stacklevel=2)
+        finally:
+            warnings.formatwarning = _original_formatwarning
 
     # Raise error if any validation issues found
     if not result.is_valid:
@@ -92,38 +117,34 @@ class ErrorDetails(TypedDict):
     """A URL giving information about the error."""
 
 
-class StorageValidationError(ValueError):
-    """`StorageValidationError` is raised when validation of zarr storage fails.
+class _ValidationMessageMixin:
+    """Mixin for formatting validation errors and warnings."""
 
-    It contains a list of errors which detail why validation failed.
-    """
+    _details: list[ErrorDetails]
 
-    def __init__(self, errors: list[ErrorDetails]) -> None:
-        self._errors = errors
-        super().__init__(self._error_message())
-
-    def _error_message(self) -> str:
-        """Generate a readable error message from all validation errors.
+    def _format_message(self) -> str:
+        """Generate a readable message from all validation details.
 
         Format matches Pydantic's ValidationError style with storage-specific context:
-        - First line: error count and title
-        - Each error: location (dot-notation) on one line, message with context on next
+        - First line: count and title
+        - Each item: location (dot-notation) on one line, message with context on next
         """
-        if not self._errors:  # pragma: no cover
-            return "No validation errors"
+        if not self._details:  # pragma: no cover
+            return f"No validation {self._details_noun}"
 
-        lines = [f"{len(self._errors)} validation error(s) for {self.title}"]
+        count = len(self._details)
+        lines = [f"{count} validation {self._details_noun} for {self.title}"]
 
-        for error in self._errors:
+        for detail in self._details:
             # Format location as dot-separated path (e.g., "ome.plate.wells.0.path")
-            loc_str = ".".join(str(x) for x in error["loc"])
+            loc_str = ".".join(str(x) for x in detail["loc"])
             lines.append(loc_str)
 
             # Build the context bracket content
-            ctx_parts = [f"type={error['type']}"]
+            ctx_parts = [f"type={detail['type']}"]
 
             # Add context fields if present
-            if ctx := error.get("ctx", {}):
+            if ctx := detail.get("ctx", {}):
                 # Add fs_path first if present (most important for debugging)
                 if "fs_path" in ctx:
                     ctx_parts.append(f"fs_path={ctx['fs_path']!r}")
@@ -150,7 +171,7 @@ class StorageValidationError(ValueError):
 
             # Message line with 2-space indent
             # Use textwrap.indent to handle multi-line messages
-            msg = error["msg"]
+            msg = detail["msg"]
             msg_with_context = f"{msg} [{ctx_str}]"
             indented_msg = textwrap.indent(msg_with_context, "  ")
             if "error" in ctx:
@@ -167,8 +188,57 @@ class StorageValidationError(ValueError):
 
     @property
     def title(self) -> str:
-        """The title of the error, as used in the heading of `str(validation_error)`."""
-        return "StorageValidationError"
+        """The title used in the heading of the formatted message."""
+        return type(self).__qualname__
+
+    @property
+    def _details_noun(self) -> str:
+        """The noun to use for the details (e.g., 'error(s)' or 'warning(s)')."""
+        raise NotImplementedError
+
+    def get_details(
+        self,
+        *,
+        include_context: bool = True,
+    ) -> list[ErrorDetails]:
+        """
+        Details about each validation issue.
+
+        Parameters
+        ----------
+        include_context: bool
+            Whether to include the context of each item.
+
+        Returns
+        -------
+            A list of `ErrorDetails` for each validation issue.
+        """
+        filtered_details: list[ErrorDetails] = []
+        for detail in self._details:
+            filtered_detail: ErrorDetails = {
+                "type": detail["type"],
+                "loc": detail["loc"],
+                "msg": detail["msg"],
+            }
+            if include_context and "ctx" in detail:
+                filtered_detail["ctx"] = detail["ctx"]
+            filtered_details.append(filtered_detail)
+        return filtered_details
+
+
+class StorageValidationError(_ValidationMessageMixin, ValueError):
+    """`StorageValidationError` is raised when validation of zarr storage fails.
+
+    It contains a list of errors which detail why validation failed.
+    """
+
+    def __init__(self, errors: list[ErrorDetails]) -> None:
+        self._details = errors
+        super().__init__(self._format_message())
+
+    @property
+    def _details_noun(self) -> str:
+        return "error(s)"
 
     def errors(
         self,
@@ -187,17 +257,41 @@ class StorageValidationError(ValueError):
         -------
             A list of `ErrorDetails` for each error in the validation error.
         """
-        filtered_errors: list[ErrorDetails] = []
-        for error in self._errors:
-            filtered_error: ErrorDetails = {
-                "type": error["type"],
-                "loc": error["loc"],
-                "msg": error["msg"],
-            }
-            if include_context and "ctx" in error:
-                filtered_error["ctx"] = error["ctx"]
-            filtered_errors.append(filtered_error)
-        return filtered_errors
+        return self.get_details(include_context=include_context)
+
+
+class StorageValidationWarning(_ValidationMessageMixin, UserWarning):
+    """`StorageValidationWarning` is raised when validation finds SHOULD violations.
+
+    It contains a list of warnings which detail recommendations that were not followed.
+    """
+
+    def __init__(self, warnings_list: list[ErrorDetails]) -> None:
+        self._details = warnings_list
+        super().__init__(self._format_message())
+
+    @property
+    def _details_noun(self) -> str:
+        return "warning(s)"
+
+    def warnings(
+        self,
+        *,
+        include_context: bool = True,
+    ) -> list[ErrorDetails]:
+        """
+        Details about each warning in the validation warning.
+
+        Parameters
+        ----------
+        include_context: bool
+            Whether to include the context of each warning.
+
+        Returns
+        -------
+            A list of `ErrorDetails` for each warning in the validation warning.
+        """
+        return self.get_details(include_context=include_context)
 
 
 class StorageErrorType(Enum):
@@ -234,13 +328,17 @@ class StorageErrorType(Enum):
 
 @dataclass(slots=True)
 class ValidationResult:
-    """Result of a validation operation containing any errors found."""
+    """Result of a validation operation containing any errors and warnings found."""
 
     errors: list[ErrorDetails] = field(default_factory=list)
+    warnings: list[ErrorDetails] = field(default_factory=list)
 
     def merge(self, other: ValidationResult) -> ValidationResult:
-        """Merge this result with another, combining errors."""
-        return ValidationResult(errors=self.errors + other.errors)
+        """Merge this result with another, combining errors and warnings."""
+        return ValidationResult(
+            errors=self.errors + other.errors,
+            warnings=self.warnings + other.warnings,
+        )
 
     def add_error(
         self,
@@ -273,7 +371,40 @@ class ValidationResult:
         self.errors.append(error)
         return self
 
+    def add_warning(
+        self,
+        error_type: StorageErrorType,
+        loc: tuple[int | str, ...],
+        msg: str,
+        *,
+        ctx: dict[str, Any] | None = None,
+    ) -> ValidationResult:
+        """Add a warning to this result and return self for chaining.
+
+        Warnings are for SHOULD directives - recommendations that don't invalidate
+        the store but indicate best practices that should be followed.
+
+        Parameters
+        ----------
+        error_type : StorageErrorType
+            The type of warning that occurred.
+        loc : tuple[int | str, ...]
+            Location tuple identifying where in the metadata the warning occurred.
+        msg : str
+            Human-readable warning message.
+        ctx : dict[str, Any] | None
+            Additional context about the warning. Common fields:
+            - fs_path: Filesystem path where the warning occurred
+            - expected: What was expected
+            - found/actual: What was actually found
+        """
+        warning: ErrorDetails = {"type": str(error_type), "loc": loc, "msg": msg}
+        if ctx is not None:
+            warning["ctx"] = ctx
+        self.warnings.append(warning)
+        return self
+
     @property
     def is_valid(self) -> bool:
-        """Return True if no errors were found."""
+        """Return True if no errors were found (warnings don't affect validity)."""
         return len(self.errors) == 0
