@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from types import MappingProxyType, NoneType
@@ -29,9 +30,17 @@ from typing import (
     overload,
 )
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    model_validator,
+)
 
 from yaozarrs import v04, v05
+from yaozarrs._base import _BaseModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -50,6 +59,13 @@ __all__ = ["ZarrArray", "ZarrGroup", "ZarrMetadata", "open_group"]
 # JSON DOCUMENTS
 # --------------------------------
 """All of the structures of json docs we might find in a zarr store."""
+
+
+class GenericBf2Raw(_BaseModel):
+    bioformats2raw_layout: Literal[3] = Field(
+        alias="bioformats2raw.layout",
+        description="The top-level identifier metadata added by bioformats2raw",
+    )
 
 
 class ZGroupV2(BaseModel):
@@ -163,10 +179,33 @@ class ZarrMetadata(BaseModel):
     def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata if present in attributes, else None."""
         attrs = self.attributes
-        if "ome" in attrs:
+        version = self._guess_ome_version()
+        if version == "0.5":
             return TypeAdapter(v05.OMEMetadata).validate_python(attrs["ome"])
-        else:
+        elif version == "0.4":
             return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(attrs)
+        if "bioformats2raw.layout" in attrs:
+            try:
+                return GenericBf2Raw.model_validate(attrs)
+            except ValidationError:
+                pass
+        return None
+
+    def _guess_ome_version(self) -> str | None:
+        attrs = self.attributes
+        if "ome" in attrs:
+            if "version" in attrs["ome"]:
+                return attrs["ome"]["version"]
+        # TODO: this is probably flaky
+        if ms := attrs.get("multiscales"):
+            return ms[0]["version"]
+        for possible_key in ["plate", "well", "labels", "series"]:
+            if possible_key in attrs and "version" in attrs[possible_key]:
+                return attrs[possible_key]["version"]
+
+        # if "bioformats2raw.layout" in attrs:
+        #     if "0" in self and isinstance(group := self["0"], ZarrGroup):
+        #         return group.ome_version()
         return None
 
 
@@ -548,7 +587,16 @@ class ZarrGroup(ZarrNode):
 
     def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
-            self._ome_metadata = self._metadata.ome_metadata()
+            meta = self._metadata
+            self._ome_metadata = meta.ome_metadata()
+            if self._ome_metadata is None:
+                ver = meta._guess_ome_version()
+                if ver not in ("0.4", "0.5"):
+                    warnings.warn(
+                        f"Unsupported or missing OME metadata version detected: {ver}",
+                        UserWarning,
+                        stacklevel=3,
+                    )
         return self._ome_metadata
 
     @classmethod

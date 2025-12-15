@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-io = ["fsspec[http]>=2025.0"]
+io = ["fsspec[http,s3]>=2025.0"]
 storage = ["yaozarrs[io,write-zarr]"]
 write-zarr = ["zarr>=2.18", "zarr>=3.1.0; python_version>='3.11'"]
 write-tensorstore = [

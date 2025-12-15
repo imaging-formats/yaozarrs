@@ -85,7 +85,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: 🧪 Run Tests
         run: uv run --no-dev --group ${{ matrix.group }} coverage run -p -m pytest -v
@@ -110,6 +110,19 @@ jobs:
           name: covreport-${{ matrix.platform }}-py${{ matrix.python-version }}-${{ matrix.resolution }}-${{ matrix.group }}
           path: ./.coverage*
           include-hidden-files: true
+
+  test-realworld:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: 🧪 Run Tests
+        run: uv run --no-dev --group test --extra io pytest tests/test_realworld.py
 
   upload_coverage:
     if: always()

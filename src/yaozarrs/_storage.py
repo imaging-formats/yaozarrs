@@ -47,7 +47,10 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     zarr_group = open_group(obj)
     ome_version = zarr_group.ome_version()
     if not ome_version:
-        raise ValueError(f"Unable to determine OME-Zarr version for {zarr_group}")
+        raise ValueError(
+            f"Unable to determine OME-Zarr version for {zarr_group}. "
+            "Is this an OME-Zarr group?"
+        )
 
     if ome_version == "0.5":
         from yaozarrs.v05._storage import StorageValidatorV05

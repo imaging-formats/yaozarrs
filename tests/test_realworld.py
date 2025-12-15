@@ -2,6 +2,8 @@
 
 import pytest
 
+import yaozarrs
+
 URLS = {
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0010/76-45.ome.zarr",
@@ -31,14 +33,14 @@ URLS = {
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0128E/9701.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0013A/3451.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0001A/2551.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/9836842.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0040A/3491626.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0051A/4007817.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0052A/5514375.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0094A/7751.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0095B/11511419.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0109A/12922361.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/9836842.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0040A/3491626.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0051A/4007817.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0052A/5514375.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0094A/7751.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0095B/11511419.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0109A/12922361.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/yx.ome.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/zyx.ome.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/cyx.ome.zarr",
@@ -50,17 +52,17 @@ URLS = {
     "https://s3.embl.de/i2k-2020/platy-raw.ome.zarr",
     "https://s3.embl.de/eosc-future/EUOS/testdata.zarr",
     "https://s3.embl.de/ome-zarr-course/data/commons/xyz_8bit_calibrated__fib_sem_crop.ome.zarr",
-    "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_mus-liver-zon-1/jrc_mus-liver-zon-1.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_mus-heart-1/jrc_mus-heart-1.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_mus-hippocampus-1/jrc_mus-hippocampus-1.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_cos7-1a/jrc_cos7-1a.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_cos7-1b/jrc_cos7-1b.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_ut21-1413-003/jrc_ut21-1413-003.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_jurkat-1/jrc_jurkat-1.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_mus-sc-zp105a/jrc_mus-sc-zp105a.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_sum159-1/jrc_sum159-1.zarr/recon-1/em/",
-    "s3://janelia-cosem-datasets/jrc_mus-skin-1/jrc_mus-skin-1.zarr/recon-1/em/",
+    "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_mus-liver-zon-1/jrc_mus-liver-zon-1.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_mus-heart-1/jrc_mus-heart-1.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_mus-hippocampus-1/jrc_mus-hippocampus-1.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_cos7-1a/jrc_cos7-1a.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_cos7-1b/jrc_cos7-1b.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_ut21-1413-003/jrc_ut21-1413-003.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_jurkat-1/jrc_jurkat-1.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_mus-sc-zp105a/jrc_mus-sc-zp105a.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_sum159-1/jrc_sum159-1.zarr/recon-1/em/fibsem-uint8/",
+    "s3://janelia-cosem-datasets/jrc_mus-skin-1/jrc_mus-skin-1.zarr/recon-1/em/fibsem-uint8/",
     "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BSST410/IM2/IM2.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD463/00cddbf9-1282-4a49-94d9-481b7a43cc0c/00cddbf9-1282-4a49-94d9-481b7a43cc0c.zarr/",
     "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD1021/06bc50fb-03ae-4dc5-8a12-89d4f2fcbade/91e29e80-0467-428f-8d96-16cbee80b2fe.ome.zarr/0",
@@ -85,13 +87,31 @@ URLS = {
 @pytest.mark.parametrize("url", URLS)
 def test_realworld_store(url):
     """Test opening real-world stores."""
-    import zarr
+    from aiohttp.client_exceptions import ClientConnectorDNSError
+    from botocore.exceptions import EndpointConnectionError
 
-    # Configure storage options for S3 anonymous access
-    storage_options = {}
-    if url.startswith("s3://"):
-        storage_options = {"anon": True}
+    try:
+        group = yaozarrs.open_group(url)
+    except (ClientConnectorDNSError, EndpointConnectionError):
+        pytest.xfail(reason="Internet Down?")
+    assert group.ome_metadata() is not None
+    assert group.ome_version() is not None
 
-    group = zarr.open_group(url, storage_options=storage_options)
-    print()
-    print(group.metadata.zarr_format)
+
+def test_non_ome_zarr():
+    """Test opening a non-OME-Zarr store with bioformats2raw layout."""
+    url = "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/"
+    group = yaozarrs.open_group(url)
+    with pytest.raises(ValueError, match=r"Is this an OME-Zarr group?"):
+        assert group.validate()
+
+
+def test_unsupported_version():
+    """Test opening a non-OME-Zarr store with bioformats2raw layout."""
+    url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr"
+    group = yaozarrs.open_group(url)
+    with pytest.raises(
+        NotImplementedError,
+        match=r"Structural validation for OME-Zarr version 0.3 is not implemented",
+    ):
+        assert group.validate()
