@@ -688,7 +688,9 @@ class ZarrArray(ZarrNode):
         return future.result()
 
 
-def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
+def open_group(
+    uri: str | os.PathLike | Any, storage_options: dict | None = None
+) -> ZarrGroup:
     """Open a zarr v2/v3 group from a URI.
 
     !!!important
@@ -702,6 +704,8 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
     uri : str | os.PathLike
         The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file"),
         or a zarr-python Group.
+    storage_options : dict | None
+        Additional storage options to pass to fsspec when opening the mapper.
 
     Returns
     -------
@@ -744,7 +748,10 @@ def open_group(uri: str | os.PathLike | Any) -> ZarrGroup:
             "uri must be a string, os.PathLike, or have a 'store' attribute"
         )
 
-    mapper = get_mapper(uri)  # type: ignore
+    storage_options = storage_options or {}
+    if str(uri).startswith("s3://"):
+        storage_options.setdefault("anon", True)
+    mapper = get_mapper(uri, **storage_options)  # type: ignore
 
     if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
