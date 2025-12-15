@@ -3,11 +3,12 @@
 This file must be explicitly listed in the pytest command to be run.
 """
 
+from contextlib import suppress
 import pytest
 
 import yaozarrs
 
-URLS = {
+VALID_URLS = (
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0010/76-45.ome.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0090/190129.zarr",
@@ -29,9 +30,8 @@ URLS = {
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0047A/4496763.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0076A/10501752.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0054A/5025551.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0072B/9512.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0072B/9512.zarr",  # too slow
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0056B/7361.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0128E/9701.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0013A/3451.zarr",
@@ -52,8 +52,7 @@ URLS = {
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/czyx.ome.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/tczyx.ome.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/multi-image.ome.zarr",
-    "https://s3.embl.de/i2k-2020/platy-raw.ome.zarr",
-    "https://s3.embl.de/eosc-future/EUOS/testdata.zarr",
+    "https://s3.embl.de/eosc-future/EUOS/testdata.zarr",  # actually invalid?
     "https://s3.embl.de/ome-zarr-course/data/commons/xyz_8bit_calibrated__fib_sem_crop.ome.zarr",
     "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/fibsem-uint8/",
     "s3://janelia-cosem-datasets/jrc_mus-liver-zon-1/jrc_mus-liver-zon-1.zarr/recon-1/em/fibsem-uint8/",
@@ -84,21 +83,43 @@ URLS = {
     "https://ome-zarr-scivis.s3.us-east-1.amazonaws.com/v0.5/96x2/pig_heart.ome.zarr",
     "https://ome-zarr-scivis.s3.us-east-1.amazonaws.com/v0.5/96x2/skull.ome.zarr",
     "https://ome-zarr-scivis.s3.us-east-1.amazonaws.com/v0.5/96x2/stag_beetle.ome.zarr",
-}
+)
 
 
-@pytest.mark.parametrize("url", URLS)
-def test_realworld_store(url):
-    """Test opening real-world stores."""
+WARN_URLS = (
+    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr",  # non-standard axes
+    "https://s3.embl.de/i2k-2020/platy-raw.ome.zarr",
+)
+
+
+skip_errors = []
+with suppress(ImportError):
     from aiohttp.client_exceptions import ClientConnectorDNSError
+
+    skip_errors.append(ClientConnectorDNSError)
+with suppress(ImportError):
     from botocore.exceptions import EndpointConnectionError
 
+    skip_errors.append(EndpointConnectionError)
+
+
+@pytest.mark.parametrize("url", VALID_URLS + WARN_URLS)
+def test_realworld_store(url):
+    """Test opening real-world stores."""
+    print(f"Testing URL: {url}")
     try:
         group = yaozarrs.open_group(url)
-    except (ClientConnectorDNSError, EndpointConnectionError):
+        assert group.ome_metadata() is not None
+        assert group.ome_version() is not None
+        if url in WARN_URLS:
+            with pytest.warns(
+                UserWarning, match=r"may not conform to the OME-Zarr specification"
+            ):
+                group.validate()
+        else:
+            group.validate()
+    except tuple(skip_errors):
         pytest.xfail(reason="Internet Down?")
-    assert group.ome_metadata() is not None
-    assert group.ome_version() is not None
 
 
 def test_non_ome_zarr():

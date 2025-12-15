@@ -241,7 +241,7 @@ class StorageValidatorV05:
 
             # Validate as LabelImage
             try:
-                label_image_model = label_group.ome_metadata()
+                label_image_model = label_group.ome_metadata(version="0.5")
             except ValueError as e:
                 label_image_model = e
             if not isinstance(label_image_model, Image):
@@ -422,7 +422,7 @@ class StorageValidatorV05:
 
             # Validate well metadata
             try:
-                well_model = well_group.ome_metadata()
+                well_model = well_group.ome_metadata(version="0.5")
             except ValueError as e:
                 well_model = e
             if isinstance(well_model, Well):
@@ -484,7 +484,7 @@ class StorageValidatorV05:
 
             # Validate field as image group
             try:
-                field_group_model = field_group.ome_metadata()
+                field_group_model = field_group.ome_metadata(version="0.5")
             except ValueError as e:
                 field_group_model = e
             if isinstance(field_group_model, Image):
@@ -578,7 +578,7 @@ class StorageValidatorV05:
 
             # Validate as image group
             try:
-                image_group_meta = image_group.ome_metadata()
+                image_group_meta = image_group.ome_metadata(version="0.5")
             except ValueError as e:
                 image_group_meta = e
             if isinstance(image_group_meta, Image):
@@ -651,7 +651,7 @@ class StorageValidatorV05:
 
             # Validate series as image group
             try:
-                series_group_meta = series_group.ome_metadata()
+                series_group_meta = series_group.ome_metadata(version="0.5")
             except ValueError as e:
                 series_group_meta = e
             if isinstance(series_group_meta, Image):

@@ -176,19 +176,16 @@ class ZarrMetadata(BaseModel):
                 val["data_type"] = val.pop("dtype")
         return val
 
-    def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
+    def ome_metadata(
+        self, *, version: str | None = None
+    ) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata if present in attributes, else None."""
         attrs = self.attributes
-        version = self._guess_ome_version()
+        version = version or self._guess_ome_version()
         if version == "0.5":
             return TypeAdapter(v05.OMEMetadata).validate_python(attrs["ome"])
         elif version == "0.4":
             return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(attrs)
-        if "bioformats2raw.layout" in attrs:
-            try:
-                return GenericBf2Raw.model_validate(attrs)
-            except ValidationError:
-                pass
         return None
 
     def _guess_ome_version(self) -> str | None:
@@ -324,7 +321,7 @@ class _CachedMapper(Mapping[str, bytes]):
         else:
             val = self._cache[key]
         if isinstance(val, Exception):
-            raise val
+            return default
         return val  # type: ignore[return-value]
 
     def __contains__(self, key: object) -> bool:
@@ -586,10 +583,12 @@ class ZarrGroup(ZarrNode):
         validate_zarr_store(self)
         return self
 
-    def ome_metadata(self) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
+    def ome_metadata(
+        self, *, version: str | None = None
+    ) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         if not hasattr(self, "_ome_metadata"):
             meta = self._metadata
-            self._ome_metadata = meta.ome_metadata()
+            self._ome_metadata = meta.ome_metadata(version=version)
         return self._ome_metadata
 
     @classmethod
