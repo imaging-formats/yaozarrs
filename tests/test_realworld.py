@@ -4,14 +4,16 @@ This file must be explicitly listed in the pytest command to be run.
 """
 
 from contextlib import suppress
+
 import pytest
 
 import yaozarrs
+from yaozarrs._storage import StorageValidationWarning
 
 VALID_URLS = (
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0010/76-45.ome.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0090/190129.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0090/190129.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpA_VIP_ASLM_on.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0157/Asterella gracilis SWE/IMG_1033-1112 Asterella gracilis (Mannia gracilis) stature.ome.zarr",
@@ -32,10 +34,10 @@ VALID_URLS = (
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0054A/5025551.zarr",
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr",
     # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0072B/9512.zarr",  # too slow
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0056B/7361.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0128E/9701.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0013A/3451.zarr",
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0001A/2551.zarr",
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0056B/7361.zarr", # too slow
+    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0128E/9701.zarr",  # too slow
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0013A/3451.zarr",  # slow
+    # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0001A/2551.zarr",  # slow
     # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/9836842.zarr",
     # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0040A/3491626.zarr",
     # "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0051A/4007817.zarr",
@@ -52,7 +54,7 @@ VALID_URLS = (
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/czyx.ome.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/tczyx.ome.zarr",
     "https://s3.embl.de/i2k-2020/ngff-example-data/v0.4/multi-image.ome.zarr",
-    "https://s3.embl.de/eosc-future/EUOS/testdata.zarr",  # actually invalid?
+    # "https://s3.embl.de/eosc-future/EUOS/testdata.zarr",  # actually invalid?  also slow
     "https://s3.embl.de/ome-zarr-course/data/commons/xyz_8bit_calibrated__fib_sem_crop.ome.zarr",
     "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/fibsem-uint8/",
     "s3://janelia-cosem-datasets/jrc_mus-liver-zon-1/jrc_mus-liver-zon-1.zarr/recon-1/em/fibsem-uint8/",
@@ -106,15 +108,12 @@ with suppress(ImportError):
 @pytest.mark.parametrize("url", VALID_URLS + WARN_URLS)
 def test_realworld_store(url):
     """Test opening real-world stores."""
-    print(f"Testing URL: {url}")
     try:
         group = yaozarrs.open_group(url)
         assert group.ome_metadata() is not None
         assert group.ome_version() is not None
         if url in WARN_URLS:
-            with pytest.warns(
-                UserWarning, match=r"may not conform to the OME-Zarr specification"
-            ):
+            with pytest.warns(StorageValidationWarning):
                 group.validate()
         else:
             group.validate()

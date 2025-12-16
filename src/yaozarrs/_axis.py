@@ -12,6 +12,8 @@ from pydantic import (
 )
 from typing_extensions import get_args
 
+from yaozarrs._validation_warning import ValidationWarning
+
 from ._base import _BaseModel
 from ._types import UniqueList
 
@@ -90,7 +92,7 @@ def _warn_if_not_space_unit(v: str) -> str:
     if v not in _VALID_SPACE_UNITS:
         warnings.warn(
             f"Warning: Space axis unit {v!r}, SHOULD be one of {_VALID_SPACE_UNITS}",
-            RuntimeWarning,
+            ValidationWarning,
             stacklevel=3,
         )
     return v
@@ -100,7 +102,7 @@ def _warn_if_not_time_unit(v: str) -> str:
     if v not in _VALID_TIME_UNITS:
         warnings.warn(
             f"Warning: Time axis unit {v!r}, SHOULD be one of {_VALID_TIME_UNITS}",
-            RuntimeWarning,
+            ValidationWarning,
             stacklevel=3,
         )
     return v

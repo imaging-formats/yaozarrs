@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import json
 import os
-import warnings
 from collections.abc import Iterator, Mapping
+from contextlib import suppress
 from pathlib import Path
 from types import MappingProxyType, NoneType
 from typing import (
@@ -186,6 +186,15 @@ class ZarrMetadata(BaseModel):
             return TypeAdapter(v05.OMEMetadata).validate_python(attrs["ome"])
         elif version == "0.4":
             return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(attrs)
+        elif version:
+            raise ValueError(f"Unsupported OME-Zarr version: {version}")
+        elif "bioformats2raw.layout" in attrs:
+            # this is the most annoying case... something like
+            # {'bioformats2raw.layout': 3} in ome zarr v0.4 ... there's no way
+            # to determine version for sure without traversing the tree.
+            # so we just try to fallback to v4 if no version has been specified/parsed.
+            with suppress(ValidationError):
+                return TypeAdapter(v04.Bf2Raw).validate_python(attrs)
         return None
 
     def _guess_ome_version(self) -> str | None:

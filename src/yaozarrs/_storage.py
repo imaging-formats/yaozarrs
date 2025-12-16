@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import ValidationError
 from typing_extensions import NotRequired, TypedDict
 
+from yaozarrs._validation_warning import ValidationWarning
 from yaozarrs._zarr import ZarrGroup, open_group
 
 if TYPE_CHECKING:
@@ -55,11 +56,11 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     if ome_version == "0.5":
         from yaozarrs.v05._storage import StorageValidatorV05
 
-        result = StorageValidatorV05.validate_group(zarr_group)
+        Validator = StorageValidatorV05
     elif ome_version == "0.4":
         from yaozarrs.v04._storage import StorageValidatorV04
 
-        result = StorageValidatorV04.validate_group(zarr_group)
+        Validator = StorageValidatorV04
 
     else:
         raise NotImplementedError(
@@ -67,7 +68,22 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
             "not implemented."
         )
 
-    # Emit warnings for SHOULD directives
+    # Capture RuntimeWarnings from pydantic validators during validation
+    # and convert them to StorageValidationWarning
+    with warnings.catch_warnings(record=True) as captured_warnings:
+        warnings.filterwarnings("always", category=ValidationWarning)
+        result = Validator.validate_group(zarr_group)
+
+    # prepend captured warnings to the result
+    for w in captured_warnings:
+        details: ErrorDetails = {
+            "type": "model_warning",
+            "loc": (),
+            "msg": str(w.message),
+        }
+        result.warnings.insert(0, details)
+
+    # Emit warnings for SHOULD directives from structural validation
     if result.warnings:
         # Use a custom formatter to match exception style
         warning_instance = StorageValidationWarning(result.warnings)
@@ -269,9 +285,14 @@ class StorageValidationWarning(_ValidationMessageMixin, UserWarning):
     It contains a list of warnings which detail recommendations that were not followed.
     """
 
-    def __init__(self, warnings_list: list[ErrorDetails]) -> None:
-        self._details = warnings_list
-        super().__init__(self._format_message())
+    def __init__(self, warnings_list: list[ErrorDetails] | str) -> None:
+        if isinstance(warnings_list, str):
+            # Simple string message (e.g., from pydantic validator warnings)
+            self._details = []
+            super().__init__(warnings_list)
+        else:
+            self._details = warnings_list
+            super().__init__(self._format_message())
 
     @property
     def _details_noun(self) -> str:
