@@ -1494,65 +1494,6 @@ at the top level. See <a class="autorefs autorefs-internal" title="&lt;code clas
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Image</span><span class="p">(</span><span class="n">ZarrGroupModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level OME-NGFF v0.4 image metadata.</span>
-
-<span class="sd">    This model corresponds to the `.zattrs` file in an image group</span>
-<span class="sd">    (or `zarr.json` attributes in Zarr v3). It contains one or more multiscale</span>
-<span class="sd">    pyramids plus optional OMERO rendering hints.</span>
-
-<span class="sd">    !!! example &quot;Typical Structure&quot;</span>
-<span class="sd">        ```</span>
-<span class="sd">        my_image/</span>
-<span class="sd">        ├── .zattrs            # contains {&quot;multiscales&quot;: [...]}</span>
-<span class="sd">        ├── 0/                 # Highest resolution array</span>
-<span class="sd">        ├── 1/                 # Next resolution level</span>
-<span class="sd">        └── labels/            # Optional segmentation masks</span>
-<span class="sd">        ```</span>
-
-<span class="sd">    !!! note &quot;v0.4 vs v0.5&quot;</span>
-<span class="sd">        In v0.4, the version field is inside the multiscale objects rather than</span>
-<span class="sd">        at the top level. See [`Multiscale`][yaozarrs.v04.Multiscale].</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">multiscales</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">Multiscale</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;One or more multiscale image pyramids in this group&quot;</span>
-    <span class="p">)</span>
-    <span class="n">omero</span><span class="p">:</span> <span class="n">Omero</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optional OMERO rendering metadata for visualization&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -1729,235 +1670,6 @@ the core metadata for any OME-NGFF image.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span>
-<span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span>
-<span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Multiscale</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-resolution image pyramid (&lt;=5D) with coordinate metadata.</span>
-
-<span class="sd">    Defines an image at one or more resolution levels, along with the</span>
-<span class="sd">    coordinate system that relates array indices to physical space. This is</span>
-<span class="sd">    the core metadata for any OME-NGFF image.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optional identifier for this multiscale image&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">axes</span><span class="p">:</span> <span class="n">AxesList</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Ordered list of dimension axes defining the coordinate system&quot;</span>
-    <span class="p">)</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">DatasetsList</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Resolution pyramid levels, from highest to lowest resolution&quot;</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">coordinateTransformations</span><span class="p">:</span> <span class="n">CoordinateTransformsList</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Coordinate transformations that are applied to all resolution levels &quot;</span>
-            <span class="s2">&quot;in the same manner.&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">version</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;0.4&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.4&quot;</span>
-
-    <span class="c1"># NOTE: &quot;type&quot;, and &quot;metadata&quot; mentioned in the spec, but NOT in image.schema</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>  <span class="c1"># spec says SHOULD be present, missing in schema</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Type of downscaling method used to generate the multiscale image pyramid.&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>  <span class="c1"># spec says SHOULD be present, missing in schema</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Unstructured key-value pair with additional &quot;</span>
-        <span class="s2">&quot;information about the downscaling method.&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="nd">@model_serializer</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wrap&quot;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">serialize_model</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Include version in serialization if it is not the default value.&quot;&quot;&quot;</span>
-        <span class="n">serialized</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">serialized</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span>  <span class="c1"># always include version in serialization</span>
-        <span class="k">return</span> <span class="n">serialized</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_check_ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">_id</span><span class="p">,</span> <span class="n">ds</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">_it</span><span class="p">,</span> <span class="n">transform</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coordinateTransformations</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">transform</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;at datasets.[</span><span class="si">{</span><span class="n">_id</span><span class="si">}</span><span class="s2">].coordinateTransformations[</span><span class="si">{</span><span class="n">_it</span><span class="si">}</span><span class="s2">]:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;  The length of the transformation (</span><span class="si">{</span><span class="n">transform</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">) does &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;not match the number of axes (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">).&quot;</span>
-                    <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinateTransformations</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">_it</span><span class="p">,</span> <span class="n">transform</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinateTransformations</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">transform</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;at coordinateTransformations[</span><span class="si">{</span><span class="n">_it</span><span class="si">}</span><span class="s2">]:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;  The length of the transformation (</span><span class="si">{</span><span class="n">transform</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">) &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;does not match the number of axes (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">).&quot;</span>
-                    <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_dims</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DimSpec</span><span class="p">],</span>
-        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">n_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience constructor: Create Multiscale from a sequence of DimSpec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        dims : Sequence[DimSpec]</span>
-<span class="sd">            A sequence of dimension specifications defining the image dimensions.</span>
-<span class="sd">            Must follow OME-Zarr axis ordering: `[time,] [channel,] space...`</span>
-<span class="sd">        name : str | None, optional</span>
-<span class="sd">            Name for the multiscale. Default is None.</span>
-<span class="sd">        n_levels : int, optional</span>
-<span class="sd">            Number of resolution levels in the pyramid. Default is 1.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Multiscale</span>
-<span class="sd">            A fully configured Multiscale model.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from yaozarrs import DimSpec, v04</span>
-<span class="sd">        &gt;&gt;&gt; dims = [</span>
-<span class="sd">        ...     DimSpec(name=&quot;t&quot;, size=512, unit=&quot;second&quot;),</span>
-<span class="sd">        ...     DimSpec(</span>
-<span class="sd">        ...         name=&quot;z&quot;, size=50, scale=2.0, unit=&quot;micrometer&quot;, scale_factor=1.0</span>
-<span class="sd">        ...     ),</span>
-<span class="sd">        ...     DimSpec(name=&quot;y&quot;, size=512, scale=0.5, unit=&quot;micrometer&quot;),</span>
-<span class="sd">        ...     DimSpec(name=&quot;x&quot;, size=512, scale=0.5, unit=&quot;micrometer&quot;),</span>
-<span class="sd">        ... ]</span>
-<span class="sd">        &gt;&gt;&gt; v04.Multiscale.from_dims(dims, name=&quot;my_multiscale&quot;, n_levels=3)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs._dim_spec</span><span class="w"> </span><span class="kn">import</span> <span class="n">_axes_datasets</span>
-
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">_axes_datasets</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">n_levels</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -2260,51 +1972,6 @@ where each level represents the same physical region at different sampling rates
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Dataset</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single resolution level in a multiscale image pyramid.</span>
-
-<span class="sd">    Each dataset points to a Zarr array and defines how its indices map to</span>
-<span class="sd">    physical coordinates. Together, multiple datasets form a resolution pyramid</span>
-<span class="sd">    where each level represents the same physical region at different sampling rates.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Path to the Zarr array for this resolution level, &quot;</span>
-            <span class="s2">&quot;relative to the parent multiscale group&quot;</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">coordinateTransformations</span><span class="p">:</span> <span class="n">CoordinateTransformsList</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Transformations mapping array indices to physical coordinates. &quot;</span>
-            <span class="s2">&quot;Must include exactly one scale transformation, &quot;</span>
-            <span class="s2">&quot;and optionally one translation.&quot;</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -2405,49 +2072,6 @@ Every dataset must have exactly one scale transformation.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ScaleTransformation</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Maps array indices to physical coordinates via scaling.</span>
-
-<span class="sd">    Defines the pixel/voxel size in physical units for each dimension.</span>
-<span class="sd">    Every dataset must have exactly one scale transformation.</span>
-
-<span class="sd">    !!! note</span>
-<span class="sd">        Scale values represent physical size per pixel. For example, a scale of</span>
-<span class="sd">        `[0.5, 0.5]` means each pixel is 0.5 units wide in physical space.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;scale&quot;</span>
-    <span class="n">scale</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Scaling factor for each dimension in physical units per pixel&quot;</span>
-    <span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of dimensions in this transformation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -2566,43 +2190,6 @@ after the scale transformation.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">TranslationTransformation</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Translates the coordinate system origin in physical space.</span>
-
-<span class="sd">    Specifies the physical coordinates of the origin (index [0, 0, ...]).</span>
-<span class="sd">    At most one translation may be present per dataset, and it must appear</span>
-<span class="sd">    after the scale transformation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;translation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;translation&quot;</span>
-    <span class="n">translation</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Translation offset for each dimension in physical units&quot;</span>
-    <span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of dimensions in this transformation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -2747,43 +2334,6 @@ images but contain integer segmentation masks instead of intensity data.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_labels.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LabelImage</span><span class="p">(</span><span class="n">Image</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A complete label image with multiscale pyramids and label metadata.</span>
-
-<span class="sd">    Combines the standard image structure (multiscale pyramids, axes, etc.)</span>
-<span class="sd">    with label-specific metadata (colors, properties, source reference).</span>
-<span class="sd">    Label images must use integer data types.</span>
-
-<span class="sd">    !!! note &quot;Relationship to Image&quot;</span>
-<span class="sd">        This is an [`Image`][yaozarrs.v04.Image] with additional `image-label`</span>
-<span class="sd">        metadata. The multiscale pyramids follow the same structure as regular</span>
-<span class="sd">        images but contain integer segmentation masks instead of intensity data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">image_label</span><span class="p">:</span> <span class="n">ImageLabel</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;image-label&quot;</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Label-specific metadata (colors, properties, source link)&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -2912,51 +2462,6 @@ arrays where each unique value represents a distinct object or region.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_labels.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ImageLabel</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata for a segmentation/annotation label image.</span>
-
-<span class="sd">    Enhances a multiscale label image with display colors, semantic properties,</span>
-<span class="sd">    and links back to the source intensity image. Label images are integer-valued</span>
-<span class="sd">    arrays where each unique value represents a distinct object or region.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">colors</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">LabelColor</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Color mappings for label values, used for visualization&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">properties</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">LabelProperty</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Arbitrary metadata properties for individual label values&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">source</span><span class="p">:</span> <span class="n">LabelSource</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Reference to the source intensity image that was segmented&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">version</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;0.4&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.4&quot;</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -3052,39 +2557,6 @@ visualization purposes.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_labels.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LabelColor</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display color mapping for a label value.</span>
-
-<span class="sd">    Associates a specific label value with an RGBA color for</span>
-<span class="sd">    visualization purposes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">label_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Label value from the segmentation image&quot;</span><span class="p">,</span>
-        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;label-value&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">rgba</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Int8bit</span><span class="p">],</span> <span class="n">Len</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">4</span><span class="p">)]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;RGBA color as [red, green, blue, alpha], each 0-255&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -3170,43 +2642,6 @@ Different labels can have different sets of properties.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_labels.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LabelProperty</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom metadata for a label value.</span>
-
-<span class="sd">    Associates arbitrary key-value properties with a specific label integer.</span>
-<span class="sd">    Different labels can have different sets of properties.</span>
-
-<span class="sd">    !!! example</span>
-<span class="sd">        ```python</span>
-<span class="sd">        LabelProperty(label_value=1, cell_type=&quot;neuron&quot;, area=1250.5)</span>
-<span class="sd">        LabelProperty(label_value=2, cell_type=&quot;glia&quot;, perimeter=180.3)</span>
-<span class="sd">        ```</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">label_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Integer label value from the segmentation image&quot;</span><span class="p">,</span>
-        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;label-value&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -3286,37 +2721,6 @@ image was derived.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_labels.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LabelSource</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference to the source image that was segmented.</span>
-
-<span class="sd">    Points back to the original intensity image from which this label</span>
-<span class="sd">    image was derived.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Relative path to the source image group (default: &#39;../../&#39;, &quot;</span>
-            <span class="s2">&quot;pointing to the parent of the labels/ directory)&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -3408,53 +2812,6 @@ segmentation/annotation images.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_labels.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LabelsGroup</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level labels collection metadata.</span>
-
-<span class="sd">    This model corresponds to the `.zattrs` file (or zarr.json attributes)</span>
-<span class="sd">    in a `labels/` directory, which acts as a container for multiple</span>
-<span class="sd">    segmentation/annotation images.</span>
-
-<span class="sd">    !!! example &quot;Typical Structure&quot;</span>
-<span class="sd">        ```</span>
-<span class="sd">        my_image/</span>
-<span class="sd">        ├── .zattrs            # Image metadata</span>
-<span class="sd">        ├── 0/                 # Image arrays</span>
-<span class="sd">        └── labels/</span>
-<span class="sd">            ├── .zattrs        # Contains this metadata {&quot;labels&quot;: [...]}</span>
-<span class="sd">            ├── cells/         # One label image</span>
-<span class="sd">            └── nuclei/        # Another label image</span>
-<span class="sd">        ```</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">labels</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Paths to individual label image groups within this collection&quot;</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -3595,75 +2952,6 @@ multiscale images.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Plate</span><span class="p">(</span><span class="n">ZarrGroupModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level plate metadata for high-content screening.</span>
-
-<span class="sd">    This model corresponds to the `.zattrs` file (or zarr.json attributes)</span>
-<span class="sd">    in a plate group, organizing a microplate&#39;s wells in a grid layout.</span>
-<span class="sd">    Each well contains one or more fields-of-view, which in turn contain</span>
-<span class="sd">    multiscale images.</span>
-
-<span class="sd">    !!! example &quot;Typical Structure&quot;</span>
-<span class="sd">        ```</span>
-<span class="sd">        my_plate.ome.zarr/</span>
-<span class="sd">        ├── A/                      # Row A</span>
-<span class="sd">        │   ├── 1/                  # Well A1</span>
-<span class="sd">        │   │   ├── 0/              # FOV 0 in A1</span>
-<span class="sd">        │   │   │   ├── 0/          # Multiscale level 0</span>
-<span class="sd">        │   │   │   └── .zattrs     # contains {&quot;multiscales&quot;: [...]}</span>
-<span class="sd">        │   │   ├── 1/              # FOV 1 in A1</span>
-<span class="sd">        │   │   └── .zattrs         # contains {&quot;well&quot;: {...}}</span>
-<span class="sd">        │   └── 2/                  # Well A2</span>
-<span class="sd">        ├── B/                      # Row B</span>
-<span class="sd">        └── .zattrs                 # contains {&quot;plate&quot;: {...}}</span>
-<span class="sd">        ```</span>
-
-<span class="sd">    !!! note</span>
-<span class="sd">        See also:</span>
-
-<span class="sd">        - [`Well`][yaozarrs.v04.Well]</span>
-<span class="sd">        - [`FieldOfView`][yaozarrs.v04.FieldOfView]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">plate</span><span class="p">:</span> <span class="n">PlateDef</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Plate layout and well organization&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -3839,99 +3127,6 @@ This is the core content of the <code>plate</code> metadata field.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PlateDef</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plate layout and well organization.</span>
-
-<span class="sd">    Defines the grid structure of a microplate and maps wells to their data.</span>
-<span class="sd">    This is the core content of the `plate` metadata field.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">columns</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">Column</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Column definitions for the plate grid&quot;</span>
-    <span class="p">)</span>
-    <span class="n">rows</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">Row</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Row definitions for the plate grid&quot;</span>
-    <span class="p">)</span>
-    <span class="n">wells</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">PlateWell</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;List of all wells present in this plate with their grid positions&quot;</span>
-    <span class="p">)</span>
-
-    <span class="n">acquisitions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Acquisition</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Imaging acquisition runs performed on this plate&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">field_count</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Maximum number of fields-of-view per well across the entire plate&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Human-readable name for this plate&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">version</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;0.4&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.4&quot;</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_well_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">well</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">well</span><span class="o">.</span><span class="n">rowIndex</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Well </span><span class="si">{</span><span class="n">well</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> has rowIndex </span><span class="si">{</span><span class="n">well</span><span class="o">.</span><span class="n">rowIndex</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;but only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows exist&quot;</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">well</span><span class="o">.</span><span class="n">columnIndex</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Well </span><span class="si">{</span><span class="n">well</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> has columnIndex </span><span class="si">{</span><span class="n">well</span><span class="o">.</span><span class="n">columnIndex</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;but only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns exist&quot;</span>
-                <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4011,31 +3206,6 @@ alphanumeric identifier.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Column</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A column in the plate grid.</span>
-
-<span class="sd">    Columns are typically numbered (1, 2, 3, ...) but can use any</span>
-<span class="sd">    alphanumeric identifier.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Column identifier (typically numeric, e.g., &#39;1&#39;, &#39;2&#39;, &#39;3&#39;)&quot;</span><span class="p">,</span>
-        <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^[A-Za-z0-9]+$&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4114,29 +3284,6 @@ alphanumeric identifier.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Row</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A row in the plate grid.</span>
-
-<span class="sd">    Rows are typically lettered (A, B, C, ...) but can use any alphanumeric identifier.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Row identifier (typically alphabetic, e.g., &#39;A&#39;, &#39;B&#39;, &#39;C&#39;)&quot;</span><span class="p">,</span>
-        <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^[A-Za-z0-9]+$&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4249,49 +3396,6 @@ lightweight reference used in plate metadata, not the full well group
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PlateWell</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A well location reference within a plate.</span>
-
-<span class="sd">    Maps a well&#39;s row/column position to its data location. This is a</span>
-<span class="sd">    lightweight reference used in plate metadata, not the full well group</span>
-<span class="sd">    (see [`Well`][yaozarrs.v04.Well] for the complete well metadata).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Relative path to the well&#39;s group (format: &#39;row/column&#39;, e.g., &#39;A/1&#39;)&quot;</span>
-        <span class="p">),</span>
-        <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^[A-Za-z0-9]+/[A-Za-z0-9]+$&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">rowIndex</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Zero-based index into the plate&#39;s rows list&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">columnIndex</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Zero-based index into the plate&#39;s columns list&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4452,83 +3556,6 @@ This class groups related images from a single acquisition session.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Acquisition</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;An imaging acquisition run within a plate.</span>
-
-<span class="sd">    In high-content screening, multiple acquisition runs may be performed on the</span>
-<span class="sd">    same plate (e.g., at different timepoints or with different settings).</span>
-<span class="sd">    This class groups related images from a single acquisition session.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Unique identifier within the plate for this acquisition&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">maximumfieldcount</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Maximum number of fields-of-view across all wells in this acquisition&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Human-readable name for this acquisition&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Detailed description of the acquisition parameters or purpose&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">starttime</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Acquisition start time as Unix epoch timestamp (seconds since 1970-01-01)&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">endtime</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Acquisition end time as Unix epoch timestamp (seconds since 1970-01-01)&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4620,53 +3647,6 @@ captured within this well.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span>
-<span class="normal">246</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Well</span><span class="p">(</span><span class="n">ZarrGroupModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level well metadata within a plate.</span>
-
-<span class="sd">    This model corresponds to the `.zattrs` file (or zarr.json attributes)</span>
-<span class="sd">    in a well group. It lists all fields-of-view (imaging positions)</span>
-<span class="sd">    captured within this well.</span>
-
-<span class="sd">    !!! example &quot;Typical Structure&quot;</span>
-<span class="sd">        ```</span>
-<span class="sd">        A/1/                   # Well at row A, column 1</span>
-<span class="sd">        ├── .zattrs            # Contains this metadata</span>
-<span class="sd">        ├── 0/                 # First field-of-view</span>
-<span class="sd">        │   ├── .zattrs        # Image metadata</span>
-<span class="sd">        │   ├── 0/             # Highest resolution</span>
-<span class="sd">        │   └── 1/             # Next resolution</span>
-<span class="sd">        └── 1/                 # Second field-of-view</span>
-<span class="sd">        ```</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">well</span><span class="p">:</span> <span class="n">WellDef</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Field-of-view organization for this well&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4762,31 +3742,6 @@ imaging positions captured for this well.</p>
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">WellDef</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Organization of fields-of-view within a well.</span>
-
-<span class="sd">    This is the core content of the `well` metadata field, listing all</span>
-<span class="sd">    imaging positions captured for this well.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">images</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UniqueList</span><span class="p">[</span><span class="n">FieldOfView</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;List of all fields-of-view imaged in this well&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">version</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;0.4&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.4&quot;</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -4883,55 +3838,6 @@ than a single camera frame. Each field-of-view is a complete multiscale image.</
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_plate.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">FieldOfView</span><span class="p">(</span><span class="n">_BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single field-of-view (imaging position) within a well.</span>
-
-<span class="sd">    Wells typically contain multiple fields-of-view when the well area is larger</span>
-<span class="sd">    than a single camera frame. Each field-of-view is a complete multiscale image.</span>
-
-<span class="sd">    This class appears within the `images` list of a [`WellDef`][yaozarrs.v04.WellDef].</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Relative path to this field&#39;s image group &quot;</span>
-            <span class="s2">&quot;(typically a number like &#39;0&#39;, &#39;1&#39;, etc.)&quot;</span>
-        <span class="p">),</span>
-        <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^[A-Za-z0-9]+$&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">acquisition</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Acquisition ID linking this field to a specific acquisition run. &quot;</span>
-            <span class="s2">&quot;Required when the parent plate has multiple acquisitions.&quot;</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -5044,19 +3950,6 @@ than a single camera frame. Each field-of-view is a complete multiscale image.</
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_bf2raw.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Bf2Raw</span><span class="p">(</span><span class="n">ZarrGroupModel</span><span class="p">):</span>
-    <span class="n">bioformats2raw_layout</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;bioformats2raw.layout&quot;</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The top-level identifier metadata added by bioformats2raw&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
@@ -5134,23 +4027,6 @@ than a single camera frame. Each field-of-view is a complete multiscale image.</
 
 
 
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/yaozarrs/v04/_bf2raw.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Series</span><span class="p">(</span><span class="n">ZarrGroupModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Model for the ome group that contains OME-XML metadata.&quot;&quot;&quot;</span>
-
-    <span class="n">series</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">MinLen</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;An array of the same length and the same order as &quot;</span>
-        <span class="s2">&quot;the images defined in the OME-XML&quot;</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-              </details>
 
 
 
