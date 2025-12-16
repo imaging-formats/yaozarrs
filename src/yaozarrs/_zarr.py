@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import TypeVar
 
+    import rich.tree
     import tensorstore  # type: ignore
     import zarr  # type: ignore
     from fsspec import FSMap
@@ -673,6 +674,13 @@ class ZarrGroup(ZarrNode):
         from yaozarrs._tree import render_tree
 
         return render_tree(self, depth=depth, max_per_level=max_per_level)
+
+    def __rich__(self) -> rich.tree.Tree:
+        """Rich representation for use with rich library."""
+        from yaozarrs._tree import _build_tree, _render_rich
+
+        tree = _build_tree(self, depth=4, max_per_level=6)
+        return _render_rich(tree)
 
     def ome_metadata(
         self, *, version: str | None = None
