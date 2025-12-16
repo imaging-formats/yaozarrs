@@ -240,10 +240,13 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
         [
             "array/.zgroup",
             "array/.zarray",
+            "array/.zattrs",
             "group_child/.zgroup",
             "group_child/.zarray",
+            "group_child/.zattrs",
             "missing/.zgroup",
             "missing/.zarray",
+            "missing/.zattrs",
         ]
     )
 

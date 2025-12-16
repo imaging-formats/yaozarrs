@@ -628,9 +628,15 @@ class ZarrGroup(ZarrNode):
             if self._metadata.zarr_format >= 3:
                 metadata_paths.append(f"{child_path}/zarr.json")
             else:
-                # For v2, we need to check both .zgroup and .zarray
+                # For v2, we need to check .zgroup, .zarray, AND .zattrs
+                # The .zattrs file contains OME metadata and must be prefetched
+                # to avoid individual HTTP requests when loading group metadata
                 metadata_paths.extend(
-                    [f"{child_path}/.zgroup", f"{child_path}/.zarray"]
+                    [
+                        f"{child_path}/.zgroup",
+                        f"{child_path}/.zarray",
+                        f"{child_path}/.zattrs",
+                    ]
                 )
 
         # Batch fetch using getitems - _CachedMapper handles fallback if needed
