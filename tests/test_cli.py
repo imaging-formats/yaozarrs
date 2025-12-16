@@ -74,3 +74,62 @@ def test_cli_validate_image_with_labels(write_demo_ome: Callable) -> None:
     path = write_demo_ome("image-with-labels", version="0.5")
     result = main(["validate", str(path)])
     assert result == 0
+
+
+def test_cli_tree_valid_store(
+    write_demo_ome: Callable, capsys: pytest.CaptureFixture
+) -> None:
+    """Test CLI tree command with valid zarr store."""
+    path = write_demo_ome("image", version="0.5")
+    result = main(["tree", str(path)])
+    assert result == 0
+
+    captured = capsys.readouterr()
+    assert path.name in captured.out
+    # Should contain tree icons
+    assert "📊" in captured.out or "🔬" in captured.out
+
+
+def test_cli_tree_with_depth(
+    write_demo_ome: Callable, capsys: pytest.CaptureFixture
+) -> None:
+    """Test CLI tree command with depth limit."""
+    path = write_demo_ome("image", version="0.5")
+    result = main(["tree", str(path), "-d", "1"])
+    assert result == 0
+
+    captured = capsys.readouterr()
+    assert path.name in captured.out
+
+
+def test_cli_tree_with_max_per_level(
+    write_demo_ome: Callable, capsys: pytest.CaptureFixture
+) -> None:
+    """Test CLI tree command with max-per-level limit."""
+    path = write_demo_ome("image", version="0.5")
+    result = main(["tree", str(path), "-n", "1"])
+    assert result == 0
+
+    captured = capsys.readouterr()
+    assert path.name in captured.out
+    # With max_per_level=1 and multiple children, should show ellipsis
+    assert "⋯" in captured.out
+
+
+def test_cli_tree_nonexistent_store(tmp_path: Path) -> None:
+    """Test CLI tree command with nonexistent zarr store."""
+    nonexistent = tmp_path / "nonexistent"
+    result = main(["tree", str(nonexistent)])
+    assert result == 2
+
+
+def test_cli_tree_plate(
+    write_demo_ome: Callable, capsys: pytest.CaptureFixture
+) -> None:
+    """Test CLI tree command with plate zarr store."""
+    path = write_demo_ome("plate", version="0.5")
+    result = main(["tree", str(path), "-d", "2"])
+    assert result == 0
+
+    captured = capsys.readouterr()
+    assert path.name in captured.out

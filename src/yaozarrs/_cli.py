@@ -62,6 +62,33 @@ def validate_command(args: argparse.Namespace) -> int:
         return 2
 
 
+def tree_command(args: argparse.Namespace) -> int:
+    """Execute the tree subcommand.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments
+
+    Returns
+    -------
+    int
+        Exit code (0 for success, 2 for errors)
+    """
+    from yaozarrs._tree import print_tree
+
+    try:
+        group = open_group(args.path)
+        print_tree(group, depth=args.depth, max_per_level=args.max_per_level)
+        return 0
+    except ImportError as e:  # pragma: no cover
+        print(f"ImportError: {e}", file=sys.stderr)
+        return 2
+    except Exception as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main entry point for the CLI.
 
@@ -97,6 +124,32 @@ def main(argv: list[str] | None = None) -> int:
         help="Path or URI to the OME-Zarr store",
     )
     validate_parser.set_defaults(func=validate_command)
+
+    # Tree subcommand
+    tree_parser = subparsers.add_parser(
+        "tree",
+        help="Display the hierarchy of an OME-Zarr store as a tree",
+    )
+    tree_parser.add_argument(
+        "path",
+        help="Path or URI to the OME-Zarr store",
+    )
+    tree_parser.add_argument(
+        "-d",
+        "--depth",
+        type=int,
+        default=None,
+        help="Maximum depth to traverse (default: unlimited)",
+    )
+    tree_parser.add_argument(
+        "-n",
+        "--max-per-level",
+        type=int,
+        default=None,
+        dest="max_per_level",
+        help="Maximum children to show per level (default: unlimited)",
+    )
+    tree_parser.set_defaults(func=tree_command)
 
     # Parse arguments
     args = parser.parse_args(argv)

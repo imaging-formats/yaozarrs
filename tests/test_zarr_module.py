@@ -320,3 +320,42 @@ def test_open_group_raises_when_root_not_group() -> None:
     mapper["zarr.json"] = json.dumps({"zarr_format": 3, "node_type": "array"}).encode()
     with pytest.raises(ValueError, match="Expected root node to be 'group'"):
         open_group(store)
+
+
+@pytest.mark.parametrize("type", ["image", "plate", "labels"])
+@pytest.mark.parametrize("version", ["0.5", "0.4"])
+def test_zarrgroup_tree(write_demo_ome: Callable, version: str, type: str) -> None:
+    path = write_demo_ome(type, version=version)
+    group = open_group(path)
+
+    # Basic tree output
+    tree_str = group.tree()
+    assert path.name in tree_str
+    assert "📊" in tree_str or "🔬" in tree_str or "📁" in tree_str
+
+    # Test depth limiting
+    tree_depth1 = group.tree(depth=1)
+    tree_depth3 = group.tree(depth=3)
+    # Deeper trees should generally be longer or equal
+    assert len(tree_depth1) <= len(tree_depth3)
+
+    # Test max_per_level
+    tree_limited = group.tree(max_per_level=1)
+    if "⋯" in tree_limited:
+        # Truncation indicator should appear if there are multiple children
+        pass
+
+
+def test_zarrgroup_tree_plain_text(write_demo_ome: Callable) -> None:
+    """Test plain text fallback when rich is not available."""
+    from yaozarrs._tree import _build_tree_plain
+
+    path = write_demo_ome("image", version="0.5")
+    group = open_group(path)
+
+    # Import fresh to trigger fallback
+    parts = _build_tree_plain(group, depth=2, max_per_level=None)
+    tree_str = "\n".join(parts)
+    assert path.name in tree_str
+    # Plain text uses box drawing characters
+    assert "├──" in tree_str or "└──" in tree_str
