@@ -233,6 +233,24 @@ def _load_zarray(prefix: str, mapper: Mapping[str, bytes]) -> ZarrMetadata | Non
     return None
 
 
+def _load_attrs(
+    prefix: str, mapper: Mapping[str, bytes], zarr_format: int
+) -> dict[str, Any] | None:
+    """Load just the attributes from a zarr node without full metadata parsing.
+
+    This is a lightweight function for walking up the tree to find inherited
+    OME version information.
+    """
+    if zarr_format >= 3:
+        if json_data := mapper.get(f"{prefix}zarr.json".lstrip("/")):
+            data = json.loads(json_data.decode("utf-8"))
+            return data.get("attributes", {})
+    else:
+        if attrs_data := mapper.get(f"{prefix}.zattrs".lstrip("/")):
+            return json.loads(attrs_data.decode("utf-8"))
+    return None
+
+
 def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMetadata:
     """Load and parse zarr metadata (v2 or v3).
 
@@ -407,15 +425,13 @@ class ZarrNode:
     the tree and read metadata.
     """  # noqa: E501
 
-    __slots__ = ("_metadata", "_parent_ome_version", "_path", "_store")
+    __slots__ = ("_metadata", "_path", "_store")
 
     def __init__(
         self,
         store: _CachedMapper | FSMap,
         path: str = "",
         meta: ZarrMetadata | None = None,
-        *,
-        _parent_ome_version: str | None = None,
     ) -> None:
         """Initialize a zarr node.
 
@@ -437,7 +453,6 @@ class ZarrNode:
 
         self._store = store
         self._path = str(path).rstrip("/")
-        self._parent_ome_version = _parent_ome_version
         if meta is None:
             self._metadata = _load_zarr_metadata(self._store, self._path)
         elif isinstance(meta, ZarrMetadata):
@@ -549,22 +564,44 @@ class ZarrGroup(ZarrNode):
 
     __slots__ = ("_ome_metadata",)
 
+    def _local_ome_version(self) -> str | None:
+        """Return ome_version from this node's attrs only (no child traversal)."""
+        return self._metadata._guess_ome_version()
+
+    def _inherited_ome_version(self) -> str | None:
+        """Walk up the path tree to find the nearest ancestor with an OME version.
+
+        Uses _store and _path to load parent metadata without requiring parent
+        references. This is a lazy fallback used only when local version detection
+        fails in ome_metadata().
+        """
+        path = self._path
+        while path:
+            # Get parent path
+            path = path.rsplit("/", 1)[0] if "/" in path else ""
+            prefix = f"{path}/" if path else ""
+
+            # Try to load parent attrs and extract version
+            attrs = _load_attrs(prefix, self._store, self._metadata.zarr_format)
+            if attrs is not None:
+                if "ome" in attrs and "version" in attrs["ome"]:
+                    return attrs["ome"]["version"]
+                if ms := attrs.get("multiscales"):
+                    return ms[0].get("version")
+                if plate := attrs.get("plate"):
+                    return plate.get("version")
+        return None
+
     def ome_version(self) -> str | None:
         """Return ome_version if present, else None.
 
         Attempt to determine version as minimally as possible without
-        parsing full models.
+        parsing full models. For bioformats2raw layouts, looks into child "0".
         """
-        attrs = self._metadata.attributes
-        if "ome" in attrs:
-            if "version" in attrs["ome"]:
-                return attrs["ome"]["version"]
-        # TODO: this is probably flaky
-        if ms := attrs.get("multiscales"):
-            return ms[0]["version"]
-        if plate := attrs.get("plate"):
-            return plate["version"]
-        if "bioformats2raw.layout" in attrs:
+        if v := self._local_ome_version():
+            return v
+        # bioformats2raw case - safe because _getitem_* uses _local_ome_version
+        if "bioformats2raw.layout" in self._metadata.attributes:
             if "0" in self and isinstance(group := self["0"], ZarrGroup):
                 return group.ome_version()
         return None
@@ -592,9 +629,7 @@ class ZarrGroup(ZarrNode):
         if not hasattr(self, "_ome_metadata"):
             meta = self._metadata
             fallback_version = (
-                version
-                or self._metadata._guess_ome_version()
-                or self._parent_ome_version
+                version or self._local_ome_version() or self._inherited_ome_version()
             )
             self._ome_metadata = meta.ome_metadata(version=fallback_version)
         return self._ome_metadata
@@ -677,15 +712,10 @@ class ZarrGroup(ZarrNode):
         """Get a v3 child node."""
         prefix = f"{child_path}/"
         if (meta := _load_zarr_json(prefix, self._store)) is not None:
-            parent_version = self.ome_version() or self._parent_ome_version
             if meta.node_type == "group":
-                return ZarrGroup(
-                    self._store, child_path, meta, _parent_ome_version=parent_version
-                )
+                return ZarrGroup(self._store, child_path, meta)
             elif meta.node_type == "array":
-                return ZarrArray(
-                    self._store, child_path, meta, _parent_ome_version=parent_version
-                )
+                return ZarrArray(self._store, child_path, meta)
             else:  # pragma: no cover
                 raise ValueError(f"Unknown node_type: {meta.node_type}")
 
@@ -694,17 +724,11 @@ class ZarrGroup(ZarrNode):
     def _getitem_v2(self, child_path: str, key: str) -> ZarrGroup | ZarrArray:
         """Get a v2 child node."""
         prefix = f"{child_path}/"
-        parent_version = self.ome_version() or self._parent_ome_version
-        # Try group
         if (meta := _load_zgroup(prefix, self._store)) is not None:
-            return ZarrGroup(
-                self._store, child_path, meta, _parent_ome_version=parent_version
-            )
+            return ZarrGroup(self._store, child_path, meta)
 
         if (meta := _load_zarray(prefix, self._store)) is not None:
-            return ZarrArray(
-                self._store, child_path, meta, _parent_ome_version=parent_version
-            )
+            return ZarrArray(self._store, child_path, meta)
 
         raise KeyError(key)
 
