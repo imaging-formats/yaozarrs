@@ -7,6 +7,7 @@ otherwise falls back to standard library.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -25,6 +26,36 @@ TREE_BRANCH = "├── "
 TREE_LAST = "└── "
 TREE_PIPE = "│   "
 TREE_SPACE = "    "
+
+
+# =============================================================================
+# Intermediate Representation
+# =============================================================================
+
+
+@dataclass
+class TreeNode:
+    """Intermediate representation for tree nodes.
+
+    This class captures all the data needed for rendering a tree node,
+    independent of the rendering method (plain text or rich).
+    """
+
+    name: str
+    icon: str
+    node_type: str  # "group" or "array"
+    # For groups: list of (filename, ome_annotation) tuples
+    metadata_files: list[tuple[str, str]] = field(default_factory=list)
+    children: list[TreeNode] = field(default_factory=list)
+    truncated: bool = False
+    # For arrays
+    dtype: str | None = None
+    shape: tuple[int, ...] | None = None
+
+
+# =============================================================================
+# Data Fetching (builds intermediate representation)
+# =============================================================================
 
 
 def _natural_sort_key(s: str) -> list:
@@ -53,7 +84,7 @@ def _get_node_icon(node: ZarrGroup | ZarrArray) -> str:
         except Exception:
             pass
         return ICON_GROUP
-    return ""
+    return ""  # pragma: no cover
 
 
 def _get_ome_type_annotation(node: ZarrGroup | ZarrArray) -> str:
@@ -203,23 +234,31 @@ def _get_child_keys(group: ZarrGroup) -> list[str]:
     children: set[str] = set()
     store = group._store
 
-    # Try filesystem listing first (works for local and some remote stores)
+    # Try filesystem listing (works for local and some remote stores)
+    # Skip for HTTP/cloud stores that don't support directory listing
     if hasattr(store, "_fsmap") and hasattr(store._fsmap, "fs"):
         fs = store._fsmap.fs
-        root = store._fsmap.root
-        prefix = f"{group._path}/" if group._path else ""
-        full_path = f"{root}/{prefix}".rstrip("/") if prefix else root
 
-        try:
-            entries = fs.ls(full_path, detail=False)
-            for entry in entries:
-                name = entry.rstrip("/").rsplit("/", 1)[-1]
-                # Skip metadata files
-                if name.startswith(".") or name == "zarr.json":
-                    continue
-                children.add(name)
-        except Exception:
-            pass
+        # Check filesystem protocol - skip listing for HTTP/cloud stores
+        fs_protocol = getattr(fs, "protocol", "")
+        protocols = [fs_protocol] if isinstance(fs_protocol, str) else list(fs_protocol)
+        skip_listing = any(p in ("http", "https", "s3", "gs", "az") for p in protocols)
+
+        if not skip_listing:
+            root = store._fsmap.root
+            prefix = f"{group._path}/" if group._path else ""
+            full_path = f"{root}/{prefix}".rstrip("/") if prefix else root
+
+            try:
+                entries = fs.ls(full_path, detail=False)
+                for entry in entries:
+                    name = entry.rstrip("/").rsplit("/", 1)[-1]
+                    # Skip metadata files
+                    if name.startswith(".") or name == "zarr.json":
+                        continue
+                    children.add(name)
+            except Exception:
+                pass
 
     # If filesystem listing didn't work, try OME metadata
     if not children:
@@ -232,128 +271,183 @@ def _get_child_keys(group: ZarrGroup) -> list[str]:
     return sorted(child_list, key=_natural_sort_key)
 
 
-def _build_tree_plain(
+def _build_tree(
     group: ZarrGroup,
     depth: int | None,
     max_per_level: int | None,
     current_depth: int = 0,
-    prefix: str = "",
-    is_last: bool = True,
     name: str | None = None,
-) -> list[str]:
-    """Build plain text tree representation with metadata files.
+) -> TreeNode:
+    """Build the intermediate tree representation.
 
     Parameters
     ----------
     group : ZarrGroup
-        The group to render.
+        The group to build a tree for.
     depth : int | None
         Maximum depth to traverse (None for unlimited).
     max_per_level : int | None
         Maximum children per level (None for unlimited).
     current_depth : int
         Current traversal depth.
-    prefix : str
-        Prefix for the current line (for tree drawing).
-    is_last : bool
-        Whether this is the last child at this level.
     name : str | None
-        Name to display for this node.
+        Name to display for this node (defaults to store path basename).
+
+    Returns
+    -------
+    TreeNode
+        The intermediate tree representation.
+    """
+    from yaozarrs._zarr import ZarrArray, ZarrGroup
+
+    # Determine node name
+    if name is None:
+        name = group.store_path.rsplit("/", 1)[-1] or group.store_path
+
+    # Get icon and OME annotation
+    icon = _get_node_icon(group)
+    ome_annotation = _get_ome_type_annotation(group)
+
+    # Build metadata files list with annotations
+    metadata_file_names = _get_metadata_files(group)
+    metadata_files: list[tuple[str, str]] = []
+    for mf in metadata_file_names:
+        if mf in ("zarr.json", ".zattrs"):
+            metadata_files.append((mf, ome_annotation))
+        else:
+            metadata_files.append((mf, ""))
+
+    # Create the node
+    node = TreeNode(
+        name=name,
+        icon=icon,
+        node_type="group",
+        metadata_files=metadata_files,
+    )
+
+    # Get children if within depth limit
+    if depth is None or current_depth < depth:
+        child_keys = _get_child_keys(group)
+
+        # Apply max_per_level limit before prefetching
+        if max_per_level is not None and len(child_keys) > max_per_level:
+            child_keys = child_keys[:max_per_level]
+            node.truncated = True
+
+        # Prefetch only the children we'll actually display
+        if child_keys:
+            group.prefetch_children(child_keys)
+
+        # Build child nodes
+        for key in child_keys:
+            try:
+                child = group[key]
+            except (KeyError, Exception):
+                continue
+
+            if isinstance(child, ZarrGroup):
+                child_node = _build_tree(
+                    child,
+                    depth,
+                    max_per_level,
+                    current_depth + 1,
+                    key,
+                )
+                node.children.append(child_node)
+            elif isinstance(child, ZarrArray):
+                # Array node
+                array_node = TreeNode(
+                    name=key,
+                    icon=_get_node_icon(child),
+                    node_type="array",
+                    dtype=str(child._metadata.data_type),
+                    shape=child._metadata.shape,
+                )
+                node.children.append(array_node)
+
+    return node
+
+
+# =============================================================================
+# Rendering Functions
+# =============================================================================
+
+
+def _render_plain(
+    node: TreeNode,
+    prefix: str = "",
+    is_last: bool = True,
+    is_root: bool = True,
+) -> list[str]:
+    """Render a TreeNode to plain text lines.
+
+    Parameters
+    ----------
+    node : TreeNode
+        The tree node to render.
+    prefix : str
+        Current line prefix for tree drawing.
+    is_last : bool
+        Whether this is the last item at its level.
+    is_root : bool
+        Whether this is the root node.
 
     Returns
     -------
     list[str]
         Lines of the tree representation.
     """
-    from yaozarrs._zarr import ZarrArray, ZarrGroup
-
     lines: list[str] = []
 
-    # Root node
-    if name is None:
-        name = group.store_path.rsplit("/", 1)[-1] or group.store_path
-        icon = _get_node_icon(group)
-        lines.append(f"{icon} {name}")
+    # Render the node header
+    if is_root:
+        lines.append(f"{node.icon} {node.name}")
         node_prefix = ""
     else:
-        icon = _get_node_icon(group)
-        lines.append(f"{prefix}{icon} {name}")
+        lines.append(f"{prefix}{node.icon} {node.name}")
         node_prefix = prefix[:-4] + (TREE_SPACE if is_last else TREE_PIPE)
 
-    # Get children and metadata files
-    if depth is None or current_depth < depth:
-        child_keys = _get_child_keys(group)
-    else:
-        child_keys = []
-    metadata_files = _get_metadata_files(group)
-    ome_annotation = _get_ome_type_annotation(group)
+    # For arrays, add dtype and shape info and return (no children/metadata)
+    if node.node_type == "array":
+        # Modify the last line to include array info
+        if node.dtype and node.shape:
+            lines[-1] = lines[-1] + f" ({node.dtype}, {node.shape})"
+        return lines
 
-    # Determine what items we have at this level
-    # For groups: metadata files first, then child nodes
-    all_items: list[tuple[str, str]] = []  # (type, name)
-    for mf in metadata_files:
-        all_items.append(("meta", mf))
-    for ck in child_keys:
-        all_items.append(("child", ck))
+    # Build list of all items to render (metadata files + children)
+    all_items: list[tuple[str, object]] = []  # (type, data)
+    for mf_name, mf_annotation in node.metadata_files:
+        all_items.append(("meta", (mf_name, mf_annotation)))
+    for child in node.children:
+        all_items.append(("child", child))
 
-    # Prefetch children for efficiency
-    if child_keys:
-        group.prefetch_children(child_keys)
+    # Render each item
+    total_items = len(all_items)
+    for i, (item_type, item_data) in enumerate(all_items):
+        is_item_last = (i == total_items - 1) and not node.truncated
 
-    # Apply max_per_level limit to children only
-    truncated = False
-    if max_per_level is not None and len(child_keys) > max_per_level:
-        # Rebuild items with truncated children
-        all_items = []
-        for mf in metadata_files:
-            all_items.append(("meta", mf))
-        for ck in child_keys[:max_per_level]:
-            all_items.append(("child", ck))
-        truncated = True
-
-    # Process each item
-    for i, (item_type, item_name) in enumerate(all_items):
-        is_item_last = (i == len(all_items) - 1) and not truncated
-
-        if current_depth == 0:
+        if is_root:
             line_prefix = TREE_LAST if is_item_last else TREE_BRANCH
         else:
             line_prefix = node_prefix + (TREE_LAST if is_item_last else TREE_BRANCH)
 
         if item_type == "meta":
-            # Metadata file - add OME annotation for .zattrs or zarr.json
-            if item_name in ("zarr.json", ".zattrs"):
-                lines.append(f"{line_prefix}{item_name}{ome_annotation}")
-            else:
-                lines.append(f"{line_prefix}{item_name}")
+            mf_name, mf_annotation = item_data  # type: ignore[misc]
+            lines.append(f"{line_prefix}{mf_name}{mf_annotation}")
         else:
-            # Child node
-            try:
-                child = group[item_name]
-            except (KeyError, Exception):
-                continue
-
-            if isinstance(child, ZarrGroup):
-                child_lines = _build_tree_plain(
-                    child,
-                    depth,
-                    max_per_level,
-                    current_depth + 1,
-                    line_prefix,
-                    is_item_last,
-                    item_name,
-                )
-                lines.extend(child_lines)
-            elif isinstance(child, ZarrArray):
-                # Array node (no metadata files shown for arrays)
-                icon = _get_node_icon(child)
-                shape = child._metadata.shape
-                dtype = child._metadata.data_type
-                lines.append(f"{line_prefix}{icon} {item_name} ({dtype}, {shape})")
+            # Child node - recurse
+            child_node: TreeNode = item_data  # type: ignore[assignment]
+            child_lines = _render_plain(
+                child_node,
+                prefix=line_prefix,
+                is_last=is_item_last,
+                is_root=False,
+            )
+            lines.extend(child_lines)
 
     # Add ellipsis if truncated
-    if truncated:
-        if current_depth == 0:
+    if node.truncated:
+        if is_root:
             lines.append(f"{TREE_LAST}{ICON_ELLIPSIS} ...")
         else:
             lines.append(f"{node_prefix}{TREE_LAST}{ICON_ELLIPSIS} ...")
@@ -361,21 +455,13 @@ def _build_tree_plain(
     return lines
 
 
-def _build_rich_tree(
-    group: ZarrGroup,
-    depth: int | None,
-    max_per_level: int | None,
-) -> Tree:
-    """Build a rich Tree object for the zarr group hierarchy.
+def _render_rich(node: TreeNode) -> Tree:
+    """Render a TreeNode to a rich Tree object.
 
     Parameters
     ----------
-    group : ZarrGroup
-        The group to render.
-    depth : int | None
-        Maximum depth to traverse (None for unlimited).
-    max_per_level : int | None
-        Maximum children per level (None for unlimited).
+    node : TreeNode
+        The tree node to render.
 
     Returns
     -------
@@ -384,73 +470,44 @@ def _build_rich_tree(
     """
     from rich.tree import Tree
 
-    from yaozarrs._zarr import ZarrArray, ZarrGroup
-
-    def add_node_contents(
-        tree_node: Tree,
-        zarr_node: ZarrGroup | ZarrArray,
-        current_depth: int,
-    ) -> None:
-        """Add metadata files and children to a tree node."""
-        # Only show metadata files for groups, not arrays
-        if isinstance(zarr_node, ZarrArray):
+    def add_contents(tree: Tree, tree_node: TreeNode) -> None:
+        """Recursively add contents to a rich tree."""
+        # For arrays, nothing more to add (info is in the label)
+        if tree_node.node_type == "array":
             return
 
-        metadata_files = _get_metadata_files(zarr_node)
-        ome_annotation = _get_ome_type_annotation(zarr_node)
-
-        # Add metadata files for groups
-        for mf in metadata_files:
-            if mf in ("zarr.json", ".zattrs") and ome_annotation:
-                tree_node.add(f"[dim]{mf}[/dim][cyan]{ome_annotation}[/cyan]")
+        # Add metadata files
+        for mf_name, mf_annotation in tree_node.metadata_files:
+            if mf_annotation:
+                tree.add(f"[dim]{mf_name}[/dim][cyan]{mf_annotation}[/cyan]")
             else:
-                tree_node.add(f"[dim]{mf}[/dim]")
+                tree.add(f"[dim]{mf_name}[/dim]")
 
-        # Check depth limit for groups
-        if depth is not None and current_depth >= depth:
-            return
+        # Add children
+        for child in tree_node.children:
+            if child.node_type == "array":
+                label = (
+                    f"[bold]{child.icon} {child.name}[/bold] "
+                    f"[dim]({child.dtype}, {child.shape})[/dim]"
+                )
+                tree.add(label)
+            else:
+                child_tree = tree.add(f"[bold]{child.icon} {child.name}[/bold]")
+                add_contents(child_tree, child)
 
-        child_keys = _get_child_keys(zarr_node)
-        if not child_keys:
-            return
-
-        # Prefetch children for efficiency
-        zarr_node.prefetch_children(child_keys)
-
-        # Apply max_per_level limit
-        truncated = False
-        if max_per_level is not None and len(child_keys) > max_per_level:
-            child_keys = child_keys[:max_per_level]
-            truncated = True
-
-        for key in child_keys:
-            try:
-                child = zarr_node[key]
-            except (KeyError, Exception):
-                continue
-
-            icon = _get_node_icon(child)
-
-            if isinstance(child, ZarrGroup):
-                child_tree = tree_node.add(f"[bold]{icon} {key}[/bold]")
-                add_node_contents(child_tree, child, current_depth + 1)
-            elif isinstance(child, ZarrArray):
-                shape = child._metadata.shape
-                dtype = child._metadata.data_type
-                label = f"[bold]{icon} {key}[/bold] [dim]({dtype}, {shape})[/dim]"
-                tree_node.add(label)
-
-        if truncated:
-            tree_node.add(f"[dim italic]{ICON_ELLIPSIS} ...[/dim italic]")
+        # Add truncation indicator
+        if tree_node.truncated:
+            tree.add(f"[dim italic]{ICON_ELLIPSIS} ...[/dim italic]")
 
     # Create root tree
-    root_name = group.store_path.rsplit("/", 1)[-1] or group.store_path
-    icon = _get_node_icon(group)
-    tree = Tree(f"[bold]{icon} {root_name}[/bold]")
+    root = Tree(f"[bold]{node.icon} {node.name}[/bold]")
+    add_contents(root, node)
+    return root
 
-    add_node_contents(tree, group, 0)
 
-    return tree
+# =============================================================================
+# Public API
+# =============================================================================
 
 
 def print_tree(
@@ -472,13 +529,15 @@ def print_tree(
     max_per_level : int | None, optional
         Maximum number of children to show at each level.
     """
+    tree_data = _build_tree(group, depth, max_per_level)
+
     try:
         from rich import print as rprint
 
-        tree = _build_rich_tree(group, depth, max_per_level)
-        rprint(tree)
+        rich_tree = _render_rich(tree_data)
+        rprint(rich_tree)
     except ImportError:
-        lines = _build_tree_plain(group, depth, max_per_level)
+        lines = _render_plain(tree_data)
         print("\n".join(lines))
 
 
@@ -519,5 +578,6 @@ def render_tree(
     - 📁 Regular group nodes
     - ⋯  Indicates truncated children (when max_per_level is exceeded)
     """
-    lines = _build_tree_plain(group, depth, max_per_level)
+    tree_data = _build_tree(group, depth, max_per_level)
+    lines = _render_plain(tree_data)
     return "\n".join(lines)

@@ -348,13 +348,14 @@ def test_zarrgroup_tree(write_demo_ome: Callable, version: str, type: str) -> No
 
 def test_zarrgroup_tree_plain_text(write_demo_ome: Callable) -> None:
     """Test plain text fallback when rich is not available."""
-    from yaozarrs._tree import _build_tree_plain
+    from yaozarrs._tree import _build_tree, _render_plain
 
     path = write_demo_ome("image", version="0.5")
     group = open_group(path)
 
-    # Import fresh to trigger fallback
-    parts = _build_tree_plain(group, depth=2, max_per_level=None)
+    # Build tree data and render to plain text
+    tree_data = _build_tree(group, depth=2, max_per_level=None)
+    parts = _render_plain(tree_data)
     tree_str = "\n".join(parts)
     assert path.name in tree_str
     # Plain text uses box drawing characters
