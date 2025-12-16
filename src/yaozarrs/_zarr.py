@@ -40,7 +40,6 @@ from pydantic import (
 )
 
 from yaozarrs import v04, v05
-from yaozarrs._base import _BaseModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -54,18 +53,6 @@ if TYPE_CHECKING:
     _T = TypeVar("_T")
 
 __all__ = ["ZarrArray", "ZarrGroup", "ZarrMetadata", "open_group"]
-
-# --------------------------------
-# JSON DOCUMENTS
-# --------------------------------
-"""All of the structures of json docs we might find in a zarr store."""
-
-
-class GenericBf2Raw(_BaseModel):
-    bioformats2raw_layout: Literal[3] = Field(
-        alias="bioformats2raw.layout",
-        description="The top-level identifier metadata added by bioformats2raw",
-    )
 
 
 class ZGroupV2(BaseModel):
@@ -212,9 +199,6 @@ class ZarrMetadata(BaseModel):
                 if "version" in attrs:
                     return attrs["version"]
 
-        # if "bioformats2raw.layout" in attrs:
-        #     if "0" in self and isinstance(group := self["0"], ZarrGroup):
-        #         return group.ome_version()
         return None
 
 
@@ -415,15 +399,23 @@ class _CachedMapper(Mapping[str, bytes]):
 
 
 class ZarrNode:
-    """Base class for zarr nodes (groups and arrays)."""
+    """Base class for zarr nodes ([yaozarrs.ZarrGroup][] and [yaozarrs._zarr.ZarrArray][]).
 
-    __slots__ = ("_metadata", "_path", "_store")
+    This is a minimal implementation that provides access to metadata and hierarchy
+    traversal without requiring a full zarr-python dependency.  You cannot read array
+    data directly without depending on zarr-python or tensorstore, but you can navigate
+    the tree and read metadata.
+    """  # noqa: E501
+
+    __slots__ = ("_metadata", "_parent_ome_version", "_path", "_store")
 
     def __init__(
         self,
         store: _CachedMapper | FSMap,
         path: str = "",
         meta: ZarrMetadata | None = None,
+        *,
+        _parent_ome_version: str | None = None,
     ) -> None:
         """Initialize a zarr node.
 
@@ -445,6 +437,7 @@ class ZarrNode:
 
         self._store = store
         self._path = str(path).rstrip("/")
+        self._parent_ome_version = _parent_ome_version
         if meta is None:
             self._metadata = _load_zarr_metadata(self._store, self._path)
         elif isinstance(meta, ZarrMetadata):
@@ -598,7 +591,12 @@ class ZarrGroup(ZarrNode):
         """Return the OME metadata (as a yaozarrs object) if present, else None."""
         if not hasattr(self, "_ome_metadata"):
             meta = self._metadata
-            self._ome_metadata = meta.ome_metadata(version=version)
+            fallback_version = (
+                version
+                or self._metadata._guess_ome_version()
+                or self._parent_ome_version
+            )
+            self._ome_metadata = meta.ome_metadata(version=fallback_version)
         return self._ome_metadata
 
     @classmethod
@@ -679,10 +677,15 @@ class ZarrGroup(ZarrNode):
         """Get a v3 child node."""
         prefix = f"{child_path}/"
         if (meta := _load_zarr_json(prefix, self._store)) is not None:
+            parent_version = self.ome_version()
             if meta.node_type == "group":
-                return ZarrGroup(self._store, child_path, meta)
+                return ZarrGroup(
+                    self._store, child_path, meta, _parent_ome_version=parent_version
+                )
             elif meta.node_type == "array":
-                return ZarrArray(self._store, child_path, meta)
+                return ZarrArray(
+                    self._store, child_path, meta, _parent_ome_version=parent_version
+                )
             else:  # pragma: no cover
                 raise ValueError(f"Unknown node_type: {meta.node_type}")
 
@@ -691,12 +694,17 @@ class ZarrGroup(ZarrNode):
     def _getitem_v2(self, child_path: str, key: str) -> ZarrGroup | ZarrArray:
         """Get a v2 child node."""
         prefix = f"{child_path}/"
+        parent_version = self.ome_version()
         # Try group
         if (meta := _load_zgroup(prefix, self._store)) is not None:
-            return ZarrGroup(self._store, child_path, meta)
+            return ZarrGroup(
+                self._store, child_path, meta, _parent_ome_version=parent_version
+            )
 
         if (meta := _load_zarray(prefix, self._store)) is not None:
-            return ZarrArray(self._store, child_path, meta)
+            return ZarrArray(
+                self._store, child_path, meta, _parent_ome_version=parent_version
+            )
 
         raise KeyError(key)
 
@@ -707,7 +715,13 @@ class ZarrGroup(ZarrNode):
 
 
 class ZarrArray(ZarrNode):
-    """Wrapper around a zarr v2/v3 array."""
+    """Wrapper around a zarr v2/v3 array.
+
+    This class is not exported publicly. But you may receive this object when traversing
+    a zarr group hierarchy.  It has no ability to directly read array data, but you can
+    convert it to a zarr-python with `to_zarr_python()`, or use another library like
+    tensorstore manually.
+    """
 
     __slots__ = ()
 

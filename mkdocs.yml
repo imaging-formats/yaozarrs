@@ -69,6 +69,7 @@ plugins:
             show_bases: false
             show_symbol_type_toc: true
             show_symbol_type_heading: true
+            merge_init_into_class: true
             heading_level: 3
             show_root_heading: false
             show_root_toc_entry: false
