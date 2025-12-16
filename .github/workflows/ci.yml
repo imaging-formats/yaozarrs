@@ -111,22 +111,28 @@ jobs:
           path: ./.coverage*
           include-hidden-files: true
 
-  # test-realworld:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #     - name: 🐍 Set up Python ${{ matrix.python-version }}
-  #       uses: astral-sh/setup-uv@v7
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #         enable-cache: true
+  test-realworld:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
 
-  #     - name: 🧪 Run Tests
-  #       run: uv run --no-dev --group test --extra io pytest tests/test_realworld.py
+      - name: 🧪 Run Tests
+        run: uv run --no-dev --group test --extra io coverage run -p -m pytest tests/test_realworld.py
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v5
+        with:
+          name: covreport-realworld
+          path: ./.coverage*
+          include-hidden-files: true
 
   upload_coverage:
     if: always()
-    needs: [test]
+    needs: [test, test-realworld]
     uses: pyapp-kit/workflows/.github/workflows/upload-coverage.yml@v2
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
