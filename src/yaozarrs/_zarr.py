@@ -677,7 +677,7 @@ class ZarrGroup(ZarrNode):
         """Get a v3 child node."""
         prefix = f"{child_path}/"
         if (meta := _load_zarr_json(prefix, self._store)) is not None:
-            parent_version = self.ome_version()
+            parent_version = self.ome_version() or self._parent_ome_version
             if meta.node_type == "group":
                 return ZarrGroup(
                     self._store, child_path, meta, _parent_ome_version=parent_version
@@ -694,7 +694,7 @@ class ZarrGroup(ZarrNode):
     def _getitem_v2(self, child_path: str, key: str) -> ZarrGroup | ZarrArray:
         """Get a v2 child node."""
         prefix = f"{child_path}/"
-        parent_version = self.ome_version()
+        parent_version = self.ome_version() or self._parent_ome_version
         # Try group
         if (meta := _load_zgroup(prefix, self._store)) is not None:
             return ZarrGroup(
