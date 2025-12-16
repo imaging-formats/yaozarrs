@@ -36,5 +36,6 @@ repos:
     hooks:
       - id: ty
         name: ty check
-        entry: ty check
+        entry: ty check --project .
         language: python
+        pass_filenames: false
