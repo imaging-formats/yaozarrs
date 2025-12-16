@@ -249,7 +249,6 @@ yaozarrs.validate_zarr_store(uri) # (3)!
         For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found
     ```
 
-
 ### Writing OME-Zarr Stores
 
 See [`yaozarrs.write.v05`][] for convenience functions to write OME-Zarr v0.5
@@ -314,7 +313,40 @@ directly.
 import yaozarrs
 
 # Open a Zarr group at any URI
-yaozarrs.open_group(uri) # (1)!
+group = yaozarrs.open_group(uri)
+print(group.ome_metadata()) # (1)!
+child = group["0"]  # (2)!
+```
+
+1. [`ZarrGroup.ome_metadata`][yaozarrs._zarr.ZarrGroup.ome_metadata] attempts to
+   extract and validate OME-Zarr metadata from the opened group, returning the
+   appropriate typed yaozarrs model (e.g. `yaozarrs.v05.Image`, etc..).
+2. Access arrays and sub-groups using standard dictionary-like syntax. Returns
+   [`ZarrArray`][yaozarrs._zarr.ZarrArray] or [`ZarrGroup`][yaozarrs._zarr.ZarrGroup]
+
+#### Access array data
+
+This package does *not* depend on `zarr` or `tensorstore`, even for validating
+OME-Zarr stores. (It uses a minimal representation of a zarr group internally,
+backed by `fsspec`.)  If you *would* like to actually open arrays, you can use
+either [`ZarrArray.to_tensorstore`][yaozarrs._zarr.ZarrArray.to_tensorstore] or
+[`ZarrArray.to_zarr_python`][yaozarrs._zarr.ZarrArray.to_zarr_python] to cast an
+array node to a full zarr array using your preferred backend.
+
+!!!important
+    These methods require that you have the appropriate backend installed
+    (`tensorstore` or `zarr`).
+
+```python
+from yaozarrs import open_group
+
+group = open_group("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr")
+array = group['0']
+# <ZarrArray https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr/0>
+
+# read bytes using tensorstore or zarr-python:
+ts_array = array.to_tensorstore() # isinstance(ts_array, tensorstore.TensorStore)
+zarr_array = array.to_zarr_python() # isinstance(zarr_array, zarr.Array)
 ```
 
 ## Principles

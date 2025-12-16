@@ -486,7 +486,11 @@ class ZarrNode:
         return MappingProxyType(self._store)
 
     def to_zarr_python(self) -> zarr.Array | zarr.Group:
-        """Convert to a zarr-python Array or Group object (requires `zarr-python`)."""
+        """Convert to a zarr-python Array or Group object.
+
+        !!!important
+            Requires `zarr-python` to be installed.
+        """
         try:
             import zarr  # type: ignore
         except ImportError as e:
@@ -564,6 +568,22 @@ class ZarrGroup(ZarrNode):
 
     __slots__ = ("_ome_metadata",)
 
+    def ome_version(self) -> str | None:
+        """Return ome_version if present, else None.
+
+        Attempt to determine version as minimally as possible without
+        parsing full models. For bioformats2raw layouts, looks into child "0".
+        """
+        if v := self._local_ome_version():
+            return v
+        # special case for bioformats2raw layouts...
+        # which, prior to v0.5, may not have version in the attrs, and may have no
+        # other indication of version except in child "0".
+        if "bioformats2raw.layout" in self._metadata.attributes:
+            if "0" in self and isinstance(group := self["0"], ZarrGroup):
+                return group.ome_version()
+        return None
+
     def _local_ome_version(self) -> str | None:
         """Return ome_version from this node's attrs only (no child traversal)."""
         return self._metadata._guess_ome_version()
@@ -592,20 +612,6 @@ class ZarrGroup(ZarrNode):
                     return plate.get("version")
         return None
 
-    def ome_version(self) -> str | None:
-        """Return ome_version if present, else None.
-
-        Attempt to determine version as minimally as possible without
-        parsing full models. For bioformats2raw layouts, looks into child "0".
-        """
-        if v := self._local_ome_version():
-            return v
-        # bioformats2raw case - safe because _getitem_* uses _local_ome_version
-        if "bioformats2raw.layout" in self._metadata.attributes:
-            if "0" in self and isinstance(group := self["0"], ZarrGroup):
-                return group.ome_version()
-        return None
-
     def validate(self) -> Self:
         """Validate the zarr group structure.
 
@@ -625,7 +631,21 @@ class ZarrGroup(ZarrNode):
     def ome_metadata(
         self, *, version: str | None = None
     ) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
-        """Return the OME metadata (as a yaozarrs object) if present, else None."""
+        """Return the OME metadata (as a yaozarrs object) if present, else None.
+
+        Parameters
+        ----------
+        version : str | None
+            Optional OME-Zarr version to use when parsing metadata.
+            If not provided (default), will attempt to infer from local or inherited
+            attrs.  This determines the union of types that will be tried when casting
+            metadata to a yaozarrs model.
+
+        Returns
+        -------
+        BaseModel | None
+            A yaozarrs OME metadata model (v0.4 or v0.5) if found, else None.
+        """
         if not hasattr(self, "_ome_metadata"):
             meta = self._metadata
             fallback_version = (
@@ -735,7 +755,11 @@ class ZarrGroup(ZarrNode):
     if TYPE_CHECKING:
 
         def to_zarr_python(self) -> zarr.Group:  # type: ignore
-            """Convert to a zarr-python Group object (requires `zarr-python`)."""
+            """Convert to a zarr-python Group object.
+
+            !!!important
+                Requires `zarr-python` to be installed.
+            """
 
 
 class ZarrArray(ZarrNode):
@@ -772,10 +796,18 @@ class ZarrArray(ZarrNode):
     if TYPE_CHECKING:
 
         def to_zarr_python(self) -> zarr.Array:  # type: ignore
-            """Convert to a zarr-python Array object (requires `zarr-python`)."""
+            """Convert to a zarr-python Array object.
+
+            !!!important
+                Requires `zarr-python` to be installed.
+            """
 
     def to_tensorstore(self) -> tensorstore.TensorStore:
-        """Convert to a tensorstore TensorStore object."""
+        """Convert to a tensorstore TensorStore object.
+
+        !!!important
+            Requires `tensorstore` to be installed.
+        """
         try:
             import tensorstore as ts  # type: ignore
         except ImportError as e:
