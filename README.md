@@ -16,6 +16,10 @@
 - can **validate ome-zarr stores** (both metadata and structure) from a URI or zarr store; local or remote.  
   (This functionality additionally requires `fsspec`, but does *not* depend on or require zarr-python or other zarr implementations)
 
+## 📖 Documentation
+
+Full documentation at <https://tlambert03.github.io/yaozarrs/>
+
 
 ## Oh no, not another one 🤦
 

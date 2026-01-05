@@ -2,7 +2,7 @@
 icon: material/download
 ---
 
-## Installing `yaozarrs`
+# Installing `yaozarrs`
 
 The basic package (with no extras) supports metadata creation & validation,
 but lacks structural validation and writing capabilities.
@@ -30,11 +30,17 @@ but lacks structural validation and writing capabilities.
 
 === "from conda"
 
-    Conda install is not yet supported.
-    Please [open an issue](https://github.com/tlambert03/yaozarrs/issues/new)
-    if you want this package on conda.
+    ```sh
+    conda install conda-forge::yaozarrs
+    ```
 
-### Structural validation
+    Note that the conda distribution contains only the core package and no extras.
+    You will need to manually install the following dependencies if you need them:
+    
+    - `conda-forge::fsspec` -  for `yaozarrs.open_group` and any structural validation.
+    - `conda-forge::zarr` OR `conda-forge::tensorstore` - for writing support.
+
+## Structural validation
 
 To enable validation of Zarr hierarchies, include the `io` extra when installing.
 This brings in [`fsspec`](https://github.com/fsspec/filesystem_spec) (but not zarr-python):
@@ -51,14 +57,14 @@ This brings in [`fsspec`](https://github.com/fsspec/filesystem_spec) (but not za
     uv add "yaozarrs[io]"
     ```
 
-### Writing support
+## Writing support
 
 If you want to use the convenience functions in
 [`yaozarrs.write`](./API_Reference/yaozarrs.write.v05.md), to create
 complete OME-Zarr stores with array data, you will need to pick a zarr-array
 library:
 
-- #### `zarr-python`
+- ### `zarr-python`
 
     [`zarr-python`](https://zarr.readthedocs.io/en/stable/) is the reference
     implementation of the Zarr specification for Python.
@@ -77,7 +83,7 @@ library:
 
     Then use `writer="zarr"` in the `yaozarrs.write` functions.
 
-- #### `tensorstore`
+- ### `tensorstore`
 
     [Tensorstore](https://google.github.io/tensorstore/) is an
     alternative zarr-array library developed by Google, which can
@@ -97,7 +103,7 @@ library:
 
     Then use `writer="tensorstore"` in the `yaozarrs.write` functions.
 
-- #### Custom backend
+- ### Custom backend
 
     If you don't want to use either of the provided backends, you can
     [implement your own array-writing functionality](./API_Reference/yaozarrs.write.v05.md#custom-writers)
