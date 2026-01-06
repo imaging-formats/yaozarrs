@@ -40,7 +40,7 @@ pip install yaozarrs[io]
 
 ## Usage
 
-Here are some things you can do with `yaozarrs`.
+Here are some things you can do with `yaozarrs`. (See also, [API Quick Reference](http://talleylambert.com/yaozarrs/#api-quick-reference) in the docs)
 
 1. [Construct valid ome-zarr JSON documents for creating ome-zarr groups](#construct-valid-ome-zarr-json-documents-for-creating-ome-zarr-groups)
 2. [Validate & load existing JSON documents](#validate--load-existing-json-documents)
