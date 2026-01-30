@@ -343,63 +343,156 @@ represented in OME-Zarr:
 
 ## Labels (Segmentation Masks)
 
-Labels are specialized images with integer dtype representing segmentation masks (nuclei, cells, regions of interest, etc.).
+Labels are specialized [images](#working-with-images) with integer dtype
+representing segmentation masks (nuclei, cells, regions of interest, etc.).
+
+They are represented as a special group named "labels/" within an image group.
+
+!!! warning "Careful"
+
+    This is one of the only places in the specification where the *name* of the
+    group itself is normative: it **MUST** be named `labels/`.
+    
+    Conforming readers must *search* for the `labels/` group within an image
+    group to discover it: its presence is not indicated in the parent image
+    metadata.
 
 ??? example "Label Structure and Code"
 
-    **Directory Structure:**
-    ```
-    image.zarr/
-    ├── 0/, 1/, 2/           # Image pyramid
-    └── labels/
-        ├── nuclei/          # Label image (integer dtype)
-        │   ├── .zattrs      # Label metadata
-        │   ├── 0/           # Full resolution labels
-        │   └── 1/           # Downsampled labels
-        └── cells/
-            └── ...
-    ```
+    === "OME-Zarr v0.5 (Zarr v3)"
+        **Directory Structure:**
 
-    **Labels Group Metadata:**
-    ```json
-    {
-      "labels": ["nuclei", "cells"]
-    }
-    ```
+        ```
+        image.zarr/
+        ├── zarr.json            # Image metadata ("attributes.ome.multiscales")
+        ├── 0/                   # Full resolution image
+        ├── 1/                   # Downsampled level 1
+        ├── ...                  # Downsampled level 2
+        └── labels/
+            ├── zarr.json        # Labels group metadata ("attributes.ome.labels")
+            ├── nuclei/          # Label image (integer dtype)
+            │   ├── zarr.json    # Label metadata ("attributes.ome.multiscales", "attributes.ome.image_label")
+            │   ├── 0/           # Full resolution labels
+            │   └── 1/           # Downsampled labels
+            └── cells/
+                └── ...
+        ```
 
-    **Label Image Metadata (`.zattrs` in labels/nuclei/):**
-    ```json
-    {
-      "multiscales": [...],
-      "image-label": {
-        "version": "0.4",
-        "colors": [
-          {"label-value": 1, "rgba": [255, 0, 0, 255]},
-          {"label-value": 2, "rgba": [0, 255, 0, 255]}
-        ],
-        "source": {
-          "image": "../../"
+        **Labels Group Metadata (`labels/zarr.json`):**
+        ```json
+        {
+          "zarr_format": 3,
+          "node_type": "group",
+          "attributes": {
+            "ome": {
+              "labels": ["nuclei", "cells"]
+            }
+          }
         }
-      }
-    }
-    ```
+        ```
 
-    **yaozarrs Code:**
-    ```python
-    from yaozarrs import v04
+        **Label Image Metadata (`labels/nuclei/zarr.json`):**
+        ```json
+        {
+          "zarr_format": 3,
+          "node_type": "group",
+          "attributes": {
+            "ome": {
+              "multiscales": [...],
+              "image_label": {
+                "version": "0.5",
+                "colors": [
+                  {"label_value": 1, "rgba": [255, 0, 0, 255]},
+                  {"label_value": 2, "rgba": [0, 255, 0, 255]}
+                ],
+                "source": {
+                  "image": "../../"
+                }
+              }
+            }
+          }
+        }
+        ```
 
-    # Label metadata stored at labels/nuclei/.zattrs
-    label_image = v04.LabelImage(
-        multiscales=[...],  # Same structure as regular image
-        image_label=v04.ImageLabel(
-            colors=[
-                v04.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
-                v04.LabelColor(label_value=2, rgba=[0, 255, 0, 255])
-            ],
-            source=v04.LabelSource(image="../../")
+        **yaozarrs Code:**
+        ```python
+        from yaozarrs import v05
+
+        # Label metadata stored at labels/nuclei/zarr.json
+        label_image = v05.LabelImage(
+            multiscales=[...],  # Same structure as regular image
+            image_label=v05.ImageLabel(
+                colors=[
+                    v05.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
+                    v05.LabelColor(label_value=2, rgba=[0, 255, 0, 255])
+                ],
+                source=v05.LabelSource(image="../../")
+            )
         )
-    )
-    ```
+        ```
+
+    === "OME-Zarr v0.4 (Zarr v2)"
+
+        **Directory Structure:**
+        ```
+        image.zarr/
+        ├── .zgroup
+        ├── .zattrs              # Image metadata ("multiscales")
+        ├── 0/                   # Full resolution image
+        ├── 1/                   # Downsampled level 1
+        ├── ...                  # Downsampled level 2
+        └── labels/
+            ├── .zgroup
+            ├── .zattrs          # Labels group metadata ("labels")
+            ├── nuclei/          # Label image (integer dtype)
+            │   ├── .zgroup
+            │   ├── .zattrs      # Label metadata ("multiscales", "image-label")
+            │   ├── 0/           # Full resolution labels
+            │   └── 1/           # Downsampled labels
+            └── cells/
+                └── ...
+        ```
+
+        **Labels Group Metadata (`labels/.zattrs`):**
+        ```json
+        {
+          "labels": ["nuclei", "cells"]
+        }
+        ```
+
+        **Label Image Metadata (`labels/nuclei/.zattrs`):**
+        ```json
+        {
+          "multiscales": [...],
+          "image-label": {
+            "version": "0.4",
+            "colors": [
+              {"label-value": 1, "rgba": [255, 0, 0, 255]},
+              {"label-value": 2, "rgba": [0, 255, 0, 255]}
+            ],
+            "source": {
+              "image": "../../"
+            }
+          }
+        }
+        ```
+
+        **yaozarrs Code:**
+        ```python
+        from yaozarrs import v04
+
+        # Label metadata stored at labels/nuclei/.zattrs
+        label_image = v04.LabelImage(
+            multiscales=[...],  # Same structure as regular image
+            image_label=v04.ImageLabel(
+                colors=[
+                    v04.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
+                    v04.LabelColor(label_value=2, rgba=[0, 255, 0, 255])
+                ],
+                source=v04.LabelSource(image="../../")
+            )
+        )
+        ```
 
     !!! warning "Labels must use integer dtype"
         Validation will fail if label arrays use float dtypes. Use `uint8`, `uint16`, `uint32`, or `int32`.
@@ -416,22 +509,46 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
 
 ### Directory Structure
 
-```
-plate.zarr/
-├── .zattrs              # Plate metadata
-├── A/                   # Row A
-│   ├── 1/               # Well A1
-│   │   ├── .zattrs      # Well metadata
-│   │   ├── 0/           # Field 0 (Image with multiscales)
-│   │   │   ├── .zattrs  # Image metadata
-│   │   │   ├── 0/       # Full resolution
-│   │   │   └── 1/       # Downsampled
-│   │   ├── 1/           # Field 1
-│   │   └── labels/      # Optional segmentation
-│   └── 2/               # Well A2
-└── B/                   # Row B
-    └── 1/
-```
+=== "OME-Zarr v0.5 (Zarr v3)"
+
+    ```
+    plate.zarr/
+    ├── zarr.json              # contains Plate metadata ("attributes.ome.plate")
+    ├── A/                     # Row A
+    │   ├── 1/                 # Well A1
+    │   │   ├── zarr.json      # contains Well metadata ("attributes.ome.well")
+    │   │   ├── 0/             # Field 0 (Standard multiscales image)
+    │   │   │   ├── zarr.json  # contains Image metadata ("attributes.ome.multiscales")
+    │   │   │   ├── 0/         # Full resolution
+    │   │   │   ├── 1/         # Downsampled
+    │   │   │   └── labels/    # Optional labels group (see above)
+    │   │   └── 1/             # Field 1
+    │   └── 2/                 # Well A2
+    └── B/                     # Row B
+        └── 1/
+    ```
+
+=== "OME-Zarr v0.4 (Zarr v2)"
+
+    ```
+    plate.zarr/
+    ├── .zgroup
+    ├── .zattrs              # contains Plate metadata ("plate")
+    ├── A/                   # Row A
+    │   ├── 1/               # Well A1
+    │   │   ├── .zgroup
+    │   │   ├── .zattrs      # contains Well metadata ("well")
+    │   │   ├── 0/           # Field 0 (Standard multiscales image)
+    │   │   │   ├── .zgroup
+    │   │   │   ├── .zattrs  # contains Image metadata ("multiscales")
+    │   │   │   ├── 0/       # Full resolution
+    │   │   │   ├── 1/       # Downsampled
+    │   │   │   └── labels/  # Optional labels group (see above)
+    │   │   └── 1/           # Field 1
+    │   └── 2/               # Well A2
+    └── B/                   # Row B
+        └── 1/
+    ```
 
 !!! note "Three-level hierarchy"
     Three groups **MUST** exist above images: **plate** → **row** → **well**
