@@ -1465,26 +1465,110 @@ as well as stage positions and spatial offsets for registration.</p>
 represented in OME-Zarr:</p>
 <p><ome-explorer preset=5d plate-control="false"></ome-explorer></p>
 <h2 id="labels-segmentation-masks">Labels (Segmentation Masks)<a class="headerlink" href="#labels-segmentation-masks" title="Link to this section">#</a></h2>
-<p>Labels are specialized images with integer dtype representing segmentation masks (nuclei, cells, regions of interest, etc.).</p>
+<p>Labels are specialized <a href="#working-with-images">images</a> with integer dtype
+representing segmentation masks (nuclei, cells, regions of interest, etc.).</p>
+<p>They are represented as a special group named "labels/" within an image group.</p>
+<div class="admonition warning">
+<p class="admonition-title">Careful</p>
+<p>This is one of the only places in the specification where the <em>name</em> of the
+group itself is normative: it <strong>MUST</strong> be named <code>labels/</code>.</p>
+<p>Conforming readers must <em>search</em> for the <code>labels/</code> group within an image
+group to discover it: its presence is not indicated in the parent image
+metadata.</p>
+</div>
 <details class="example">
 <summary>Label Structure and Code</summary>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">OME-Zarr v0.5 (Zarr v3)</label><label for="__tabbed_4_2">OME-Zarr v0.4 (Zarr v2)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><strong>Directory Structure:</strong></p>
+<div class="highlight"><pre><span></span><code>image.zarr/
+├── zarr.json            # Image metadata (&quot;attributes.ome.multiscales&quot;)
+├── 0/                   # Full resolution image
+├── 1/                   # Downsampled level 1
+├── ...                  # Downsampled level 2
+└── labels/
+    ├── zarr.json        # Labels group metadata (&quot;attributes.ome.labels&quot;)
+    ├── nuclei/          # Label image (integer dtype)
+    │   ├── zarr.json    # Label metadata (&quot;attributes.ome.multiscales&quot;, &quot;attributes.ome.image_label&quot;)
+    │   ├── 0/           # Full resolution labels
+    │   └── 1/           # Downsampled labels
+    └── cells/
+        └── ...
+</code></pre></div>
+<p><strong>Labels Group Metadata (<code>labels/zarr.json</code>):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;zarr_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;node_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;labels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;nuclei&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cells&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Label Image Metadata (<code>labels/nuclei/zarr.json</code>):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;zarr_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;node_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;multiscales&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;image_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.5&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;colors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;label_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rgba&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]},</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">&quot;label_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rgba&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]}</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;../../&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>yaozarrs Code:</strong>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
+
+<span class="c1"># Label metadata stored at labels/nuclei/zarr.json</span>
+<span class="n">label_image</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">LabelImage</span><span class="p">(</span>
+    <span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>  <span class="c1"># Same structure as regular image</span>
+    <span class="n">image_label</span><span class="o">=</span><span class="n">v05</span><span class="o">.</span><span class="n">ImageLabel</span><span class="p">(</span>
+        <span class="n">colors</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">v05</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">]),</span>
+            <span class="n">v05</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">])</span>
+        <span class="p">],</span>
+        <span class="n">source</span><span class="o">=</span><span class="n">v05</span><span class="o">.</span><span class="n">LabelSource</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s2">&quot;../../&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div></p>
+</div>
+<div class="tabbed-block">
 <p><strong>Directory Structure:</strong>
 <div class="highlight"><pre><span></span><code>image.zarr/
-├── 0/, 1/, 2/           # Image pyramid
+├── .zgroup
+├── .zattrs              # Image metadata (&quot;multiscales&quot;)
+├── 0/                   # Full resolution image
+├── 1/                   # Downsampled level 1
+├── ...                  # Downsampled level 2
 └── labels/
+    ├── .zgroup
+    ├── .zattrs          # Labels group metadata (&quot;labels&quot;)
     ├── nuclei/          # Label image (integer dtype)
-    │   ├── .zattrs      # Label metadata
+    │   ├── .zgroup
+    │   ├── .zattrs      # Label metadata (&quot;multiscales&quot;, &quot;image-label&quot;)
     │   ├── 0/           # Full resolution labels
     │   └── 1/           # Downsampled labels
     └── cells/
         └── ...
 </code></pre></div></p>
-<p><strong>Labels Group Metadata:</strong>
+<p><strong>Labels Group Metadata (<code>labels/.zattrs</code>):</strong>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;labels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;nuclei&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cells&quot;</span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div></p>
-<p><strong>Label Image Metadata (<code>.zattrs</code> in labels/nuclei/):</strong>
+<p><strong>Label Image Metadata (<code>labels/nuclei/.zattrs</code>):</strong>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;multiscales&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
 <span class="w">  </span><span class="nt">&quot;image-label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -1514,6 +1598,9 @@ represented in OME-Zarr:</p>
     <span class="p">)</span>
 <span class="p">)</span>
 </code></pre></div></p>
+</div>
+</div>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Labels must use integer dtype</p>
 <p>Validation will fail if label arrays use float dtypes. Use <code>uint8</code>, <code>uint16</code>, <code>uint32</code>, or <code>int32</code>.</p>
@@ -1525,28 +1612,54 @@ represented in OME-Zarr:</p>
 <p><strong>Plate</strong> → <strong>Rows/Columns</strong> → <strong>Wells</strong> → <strong>Fields of View (Images)</strong></p>
 <p>Each well can contain multiple fields of view (FOVs) across multiple acquisitions (timepoints).</p>
 <h3 id="directory-structure_1">Directory Structure<a class="headerlink" href="#directory-structure_1" title="Link to this section">#</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">OME-Zarr v0.5 (Zarr v3)</label><label for="__tabbed_5_2">OME-Zarr v0.4 (Zarr v2)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>plate.zarr/
-├── .zattrs              # Plate metadata
+├── zarr.json              # contains Plate metadata (&quot;attributes.ome.plate&quot;)
+├── A/                     # Row A
+│   ├── 1/                 # Well A1
+│   │   ├── zarr.json      # contains Well metadata (&quot;attributes.ome.well&quot;)
+│   │   ├── 0/             # Field 0 (Standard multiscales image)
+│   │   │   ├── zarr.json  # contains Image metadata (&quot;attributes.ome.multiscales&quot;)
+│   │   │   ├── 0/         # Full resolution
+│   │   │   ├── 1/         # Downsampled
+│   │   │   └── labels/    # Optional labels group (see above)
+│   │   └── 1/             # Field 1
+│   └── 2/                 # Well A2
+└── B/                     # Row B
+    └── 1/
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>plate.zarr/
+├── .zgroup
+├── .zattrs              # contains Plate metadata (&quot;plate&quot;)
 ├── A/                   # Row A
 │   ├── 1/               # Well A1
-│   │   ├── .zattrs      # Well metadata
-│   │   ├── 0/           # Field 0 (Image with multiscales)
-│   │   │   ├── .zattrs  # Image metadata
+│   │   ├── .zgroup
+│   │   ├── .zattrs      # contains Well metadata (&quot;well&quot;)
+│   │   ├── 0/           # Field 0 (Standard multiscales image)
+│   │   │   ├── .zgroup
+│   │   │   ├── .zattrs  # contains Image metadata (&quot;multiscales&quot;)
 │   │   │   ├── 0/       # Full resolution
-│   │   │   └── 1/       # Downsampled
-│   │   ├── 1/           # Field 1
-│   │   └── labels/      # Optional segmentation
+│   │   │   ├── 1/       # Downsampled
+│   │   │   └── labels/  # Optional labels group (see above)
+│   │   └── 1/           # Field 1
 │   └── 2/               # Well A2
 └── B/                   # Row B
     └── 1/
 </code></pre></div>
+</div>
+</div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Three-level hierarchy</p>
 <p>Three groups <strong>MUST</strong> exist above images: <strong>plate</strong> → <strong>row</strong> → <strong>well</strong></p>
 </div>
 <hr />
 <h3 id="plate-metadata">Plate Metadata<a class="headerlink" href="#plate-metadata" title="Link to this section">#</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">v0.4</label><label for="__tabbed_4_2">v0.5</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">v0.4</label><label for="__tabbed_6_2">v0.5</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p><strong>Spec JSON (<code>.zattrs</code> at plate root):</strong></p>
@@ -1758,7 +1871,7 @@ dumping multiple series (commonly found in image formats supported by
 </div>
 <p>This bioformats2raw layout described in the NGFF spec, is described below:</p>
 <h3 id="directory-structure_2">Directory Structure<a class="headerlink" href="#directory-structure_2" title="Link to this section">#</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">v0.4</label><label for="__tabbed_5_2">v0.5</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">v0.4</label><label for="__tabbed_7_2">v0.5</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>series.ome.zarr               # One converted fileset from bioformats2raw
@@ -1787,7 +1900,7 @@ dumping multiple series (commonly found in image formats supported by
 </div>
 </div>
 <h3 id="metadata">Metadata<a class="headerlink" href="#metadata" title="Link to this section">#</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">v0.4</label><label for="__tabbed_6_2">v0.5</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">v0.4</label><label for="__tabbed_8_2">v0.5</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p><strong>Spec JSON (<code>.zattrs</code> at root):</strong></p>
