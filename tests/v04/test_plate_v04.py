@@ -472,3 +472,19 @@ def test_v04_plate_well():
     assert well.path == "A/01"
     assert well.rowIndex == 0
     assert well.columnIndex == 0
+
+
+def test_fov_path_validation() -> None:
+    """Test FieldOfView.path validation and warnings."""
+    # Alphanumeric only - no warning (warnings are errors by default)
+    fov = v04.FieldOfView(path="0")
+    assert fov.path == "0"
+
+    # Path with dots/underscores/hyphens - warns but succeeds
+    with pytest.warns(UserWarning, match="outside of the NGFF spec"):
+        fov = v04.FieldOfView(path="fov_0.test-1")
+        assert fov.path == "fov_0.test-1"
+
+    # Path with invalid characters (e.g. space) - raises error
+    with pytest.raises(ValidationError, match="should match pattern"):
+        v04.FieldOfView(path="fov 0")

@@ -17,6 +17,7 @@ from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._dim_spec import DimSpec
 from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
+from yaozarrs._util import SuggestDatasetPath
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Image",
@@ -137,12 +138,16 @@ class Dataset(_BaseModel):
     where each level represents the same physical region at different sampling rates.
     """
 
-    path: str = Field(
+    path: Annotated[str, SuggestDatasetPath] = Field(
         description=(
             "Path to the Zarr array for this resolution level, "
-            "relative to the parent multiscale group"
+            "relative to the parent multiscale group. All strings are allowed "
+            "according to the spec, but prefer using only alphanumeric characters, "
+            "dots (.), underscores (_), or hyphens (-) to avoid issues on some "
+            "filesystems or when used in URLs."
         )
     )
+
     coordinateTransformations: CoordinateTransformsList = Field(
         description=(
             "Transformations mapping array indices to physical coordinates. "
