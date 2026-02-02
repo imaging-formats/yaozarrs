@@ -17,7 +17,7 @@ def warn_if_risky_node_name(path: str, field_name: str = "") -> str:
     """
     # note, we allow '/' here to support nested paths within a Zarr store
     # using logical paths rather than file system paths.
-    risky_chars = re.findall(r"[^A-Za-z0-9._-/]", path)
+    risky_chars = re.findall(r"[^A-Za-z0-9._/-]", path)
     if risky_chars and not os.getenv("YAOZARRS_ALLOW_RISKY_NODE_NAMES"):
         if field_name:
             for_field = f" on field '{field_name}'"
