@@ -1,9 +1,9 @@
+import os
 import re
 import warnings
 from functools import partial
 from typing import Annotated, Any, TypeAlias
 
-from coverage.python import os
 from pydantic import AfterValidator, BeforeValidator
 
 
