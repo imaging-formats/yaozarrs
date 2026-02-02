@@ -1,11 +1,10 @@
 import re
 import warnings
 from functools import partial
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from coverage.python import os
 from pydantic import AfterValidator, BeforeValidator
-from traitlets.traitlets import Any
 
 
 def warn_if_risky_node_name(path: str, field_name: str = "") -> str:
