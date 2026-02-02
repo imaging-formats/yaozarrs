@@ -6,8 +6,17 @@ from typing import Annotated, Any, TypeAlias
 
 from pydantic import AfterValidator, BeforeValidator
 
+BAD_NODE_RE = re.compile(r"^(?:|\.+|__.*|.*\/.*)$")
+"""Regular expression matching invalid Zarr node names.
 
-def warn_if_risky_node_name(path: str, field_name: str = "") -> str:
+- must not be the empty string ("")
+- must not include the character "/"
+- must not be a string composed only of period characters, e.g. "." or ".."
+- must not start with the reserved prefix "__"
+"""
+
+
+def validate_node_name(path: str, field_name: str = "") -> str:
     """Warn if the given Zarr node name is potentially risky.
 
     "risky" names include characters outside of the set [A-Za-z0-9._-/], which may
@@ -15,6 +24,12 @@ def warn_if_risky_node_name(path: str, field_name: str = "") -> str:
 
     set YAOZARRS_ALLOW_RISKY_NODE_NAMES=1 to opt out of this warning.
     """
+    if BAD_NODE_RE.match(path):
+        raise ValueError(
+            f"The name {path!r} is not a valid Zarr node name. See "
+            "https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html#node-names"
+        )
+
     # note, we allow '/' here to support nested paths within a Zarr store
     # using logical paths rather than file system paths.
     risky_chars = re.findall(r"[^A-Za-z0-9._/-]", path)
@@ -36,7 +51,7 @@ def warn_if_risky_node_name(path: str, field_name: str = "") -> str:
 
 
 SuggestDatasetPath = AfterValidator(
-    partial(warn_if_risky_node_name, field_name="Dataset.path")
+    partial(validate_node_name, field_name="Dataset.path")
 )
 
 
