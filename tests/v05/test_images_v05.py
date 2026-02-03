@@ -553,3 +553,12 @@ def test_dataset_path_warns_on_risky_characters() -> None:
         path="level_0.test-1",  # all safe: alphanumeric, underscore, dot, hyphen
         coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],
     )
+
+    with pytest.raises(
+        ValueError,
+        match=r"The name '__thing' is not a valid Zarr node name",
+    ):
+        v05.Dataset(
+            path="__thing",  # invalid name according to zarr spec itself
+            coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],
+        )

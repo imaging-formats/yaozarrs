@@ -53,10 +53,7 @@ def validate_node_name(
         # using logical paths rather than file system paths.
         risky_chars = re.findall(r"[^A-Za-z0-9._-]", part)
         if risky_chars and not os.getenv("YAOZARRS_ALLOW_RISKY_NODE_NAMES"):
-            if field_name:
-                for_field = f" on field '{field_name}'"
-            else:
-                for_field = ""
+            for_field = f" on field '{field_name}'" if field_name else ""
             warnings.warn(
                 f"The name {part!r}{for_field} contains potentially risky characters "
                 f"when used as a zarr node: {set(risky_chars)}.\nConsider using only "
