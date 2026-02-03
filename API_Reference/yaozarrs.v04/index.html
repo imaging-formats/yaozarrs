@@ -1805,12 +1805,7 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
 <span class="normal">263</span>
@@ -1844,7 +1839,12 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dims</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DimSpec</span><span class="p">],</span>
@@ -1939,7 +1939,7 @@ where each level represents the same physical region at different sampling rates
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Path to the Zarr array for this resolution level, relative to the parent multiscale group</p>
+                <p>Path to the Zarr array for this resolution level, relative to the parent multiscale group. All strings are allowed according to the spec, but prefer using only alphanumeric characters, dots (.), underscores (_), or hyphens (-) to avoid issues on some filesystems or when used in URLs.</p>
               </div>
             </td>
             <td>
