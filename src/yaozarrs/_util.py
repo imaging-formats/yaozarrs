@@ -16,37 +16,56 @@ BAD_NODE_RE = re.compile(r"^(?:|\.+|__.*|.*\/.*)$")
 """
 
 
-def validate_node_name(path: str, field_name: str = "") -> str:
+def validate_node_name(
+    path: str, field_name: str = "", allow_sep: str | None = "/"
+) -> str:
     """Warn if the given Zarr node name is potentially risky.
 
     "risky" names include characters outside of the set [A-Za-z0-9._-/], which may
     cause issues on some filesystems or when used in URLs.
 
     set YAOZARRS_ALLOW_RISKY_NODE_NAMES=1 to opt out of this warning.
-    """
-    if BAD_NODE_RE.match(path):
-        raise ValueError(
-            f"The name {path!r} is not a valid Zarr node name. See "
-            "https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html#node-names"
-        )
 
-    # note, we allow '/' here to support nested paths within a Zarr store
-    # using logical paths rather than file system paths.
-    risky_chars = re.findall(r"[^A-Za-z0-9._/-]", path)
-    if risky_chars and not os.getenv("YAOZARRS_ALLOW_RISKY_NODE_NAMES"):
-        if field_name:
-            for_field = f" on field '{field_name}'"
-        else:
-            for_field = ""
-        warnings.warn(
-            f"The name {path!r}{for_field} contains potentially risky characters when "
-            f"used as a zarr node: {set(risky_chars)}.\nConsider using only "
-            "alphanumeric characters, dots (.), underscores (_), or hyphens (-) to "
-            "avoid issues on some filesystems or when used in URLs. "
-            "Set YAOZARRS_ALLOW_RISKY_NODE_NAMES=1 to suppress this warning.",
-            UserWarning,
-            stacklevel=3,
-        )
+    Parameters
+    ----------
+    path : str
+        The Zarr node name to validate.
+    field_name : str, optional
+        The name of the field being validated (for warning messages), by default ""
+    allow_sep : str | None, optional
+        If provided, allows the path to *include* this separator character, in which
+        case parts will be validated separately. Use when you want to allow a string
+        to represent a nested path within a Zarr store, by default "/".
+    """
+    if allow_sep:
+        # split on allow_sep to allow nested paths
+        parts = path.split(allow_sep)
+    else:
+        parts = [path]
+    for part in parts:
+        if BAD_NODE_RE.match(part):
+            raise ValueError(
+                f"The name {path!r} is not a valid Zarr node name. See "
+                "https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html#node-names"
+            )
+
+        # note, we allow '/' here to support nested paths within a Zarr store
+        # using logical paths rather than file system paths.
+        risky_chars = re.findall(r"[^A-Za-z0-9._-]", part)
+        if risky_chars and not os.getenv("YAOZARRS_ALLOW_RISKY_NODE_NAMES"):
+            if field_name:
+                for_field = f" on field '{field_name}'"
+            else:
+                for_field = ""
+            warnings.warn(
+                f"The name {part!r}{for_field} contains potentially risky characters "
+                f"when used as a zarr node: {set(risky_chars)}.\nConsider using only "
+                "alphanumeric characters, dots (.), underscores (_), or hyphens (-) to "
+                "avoid issues on some filesystems or when used in URLs. "
+                "Set YAOZARRS_ALLOW_RISKY_NODE_NAMES=1 to suppress this warning.",
+                UserWarning,
+                stacklevel=3,
+            )
     return path
 
 
