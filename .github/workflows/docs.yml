@@ -1,36 +1,37 @@
-name: Deploy MkDocs to GitHub Pages
-
+name: Documentation
 on:
   push:
     branches: [main]
-    tags: [v*]
   pull_request:
-    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
-  build-docs:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
-
-      - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: uv run --group docs mkdocs gh-deploy --strict --force
-
-      - name: Test docs
-        if: github.event_name == 'pull_request'
-        run: uv run --group docs mkdocs build --strict
-      
-      - uses: actions/upload-artifact@v6
         with:
-          name: docs
+          enable-cache: true
+          python-version: "3.13"
+
+      - run: uv run --group docs zensical build --clean --strict
+      - uses: actions/upload-pages-artifact@v4
+        with:
           path: site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment

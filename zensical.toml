@@ -30,7 +30,7 @@ features = [
   "toc.follow",
 ]
 font.text = "Inter"
-# font.code = "Fira Code"
+font.code = "Fira Code"
 
 [project.markdown_extensions.admonition]
 [project.markdown_extensions.attr_list]
@@ -42,11 +42,13 @@ permalink_title = "Link to this section"
 [project.markdown_extensions.pymdownx.inlinehilite]
 [project.markdown_extensions.pymdownx.superfences]
 [project.markdown_extensions.pymdownx.highlight]
+pygments_lang_class = true
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
 [project.markdown_extensions.pymdownx.emoji]
 emoji_index = "zensical.extensions.emoji.twemoji"
 emoji_generator = "zensical.extensions.emoji.to_svg"
+
 
 [[project.theme.palette]]
 scheme = "default"
@@ -72,6 +74,8 @@ heading_level = 3
 show_root_heading = false
 show_root_toc_entry = false
 members_order = "__all__"
+separate_signature = true
+show_signature_annotations = true
 
 [[project.plugins.mkdocstrings.handlers.python.options.extensions]]
 griffe_fieldz = { strip_annotated = true }
