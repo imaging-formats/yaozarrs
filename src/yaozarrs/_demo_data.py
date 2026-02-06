@@ -124,8 +124,14 @@ def write_ome_image(
         n_channels = shape[axes.index("c")] if "c" in axes else 1
         channels = []
 
+        # Determine appropriate window values based on dtype
+        if np.issubdtype(np.dtype(dtype), np.integer):
+            win_max = np.iinfo(dtype).max
+        else:
+            win_max = 1.0
+
         for i in range(n_channels):
-            channel = {}
+            channel = {"window": {"start": 0, "min": 0, "end": win_max, "max": win_max}}
             if channel_names and i < len(channel_names):
                 channel["label"] = channel_names[i]
             if channel_colors and i < len(channel_colors):

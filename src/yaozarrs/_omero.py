@@ -1,6 +1,7 @@
-from typing import ClassVar, Literal
+import re
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import ConfigDict, Field
+from pydantic import AfterValidator, ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
 
@@ -18,6 +19,16 @@ class OmeroWindow(_BaseModel):
     max: float = Field(description="Maximum allowed intensity value for this channel")
 
 
+def _valid_hex(value: str) -> str:
+    """Ensure a string is a valid 6-character hex color code."""
+    value = value.lstrip("#").upper()
+    if len(value) == 3:
+        value = "".join(2 * c for c in value)
+    if len(value) != 6 or not re.fullmatch(r"[0-9A-F]{6}", value):
+        raise ValueError(f"Invalid hex color code: {value}")
+    return value
+
+
 class OmeroChannel(_BaseModel):
     """Rendering settings for a single channel.
 
@@ -25,8 +36,7 @@ class OmeroChannel(_BaseModel):
     color mapping, intensity windowing, and visibility.
     """
 
-    window: OmeroWindow | None = Field(
-        default=None,
+    window: OmeroWindow = Field(
         description="Intensity window for this channel",
     )
     label: str | None = Field(
@@ -37,9 +47,8 @@ class OmeroChannel(_BaseModel):
         default=None,
         description="Colormap family (typically 'linear' for fluorescence)",
     )
-    color: str | None = Field(
-        default=None,
-        description="Display color as hex string (e.g., 'FF0000' for red)",
+    color: Annotated[str, AfterValidator(_valid_hex)] = Field(
+        description="Display color as hex string without # (e.g., 'FF0000' for red)",
     )
     active: bool | None = Field(
         default=None,

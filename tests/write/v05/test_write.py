@@ -240,9 +240,24 @@ def test_write_image_with_omero(tmp_path: Path, writer: ZarrWriter) -> None:
         update={
             "omero": v05.Omero(
                 channels=[
-                    v05.OmeroChannel(color="FF0000", label="Red", active=True),
-                    v05.OmeroChannel(color="00FF00", label="Green", active=True),
-                    v05.OmeroChannel(color="0000FF", label="Blue", active=True),
+                    v05.OmeroChannel(
+                        window=v05.OmeroWindow(start=0, min=0, end=255, max=255),
+                        color="FF0000",
+                        label="Red",
+                        active=True,
+                    ),
+                    v05.OmeroChannel(
+                        window=v05.OmeroWindow(start=0, min=0, end=255, max=255),
+                        color="00FF00",
+                        label="Green",
+                        active=True,
+                    ),
+                    v05.OmeroChannel(
+                        window=v05.OmeroWindow(start=0, min=0, end=255, max=255),
+                        color="0000FF",
+                        label="Blue",
+                        active=True,
+                    ),
                 ],
                 rdefs=v05.OmeroRenderingDefs(model="color"),
             )
