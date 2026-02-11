@@ -430,6 +430,22 @@ def test_bf2raw_builder_conflict_detection(
         getattr(builder, second_method)("0", image, [data])
 
 
+def test_bf2raw_instantiation_by_field_name() -> None:
+    """Test that Bf2Raw can be instantiated using the Python field name.
+
+    Bf2Raw has a field `bioformats2raw_layout` with alias `bioformats2raw.layout`.
+    Both `Bf2RawBuilder.prepare()` and `Bf2RawBuilder._ensure_initialized()` use
+    `Bf2Raw(bioformats2raw_layout=3)` (the field name, not the alias).
+    This requires `populate_by_name=True` (pydantic <2.9) or `validate_by_name=True`
+    (pydantic >=2.9) to be set in the model config.
+    """
+    from yaozarrs.v05._bf2raw import Bf2Raw
+
+    # This is what _write.py does internally at lines 1087 and 1136
+    bf2raw = Bf2Raw(bioformats2raw_layout=3)
+    assert bf2raw.bioformats2raw_layout == 3
+
+
 # =============================================================================
 # write_plate and PlateBuilder tests
 # =============================================================================
