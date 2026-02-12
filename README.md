@@ -18,7 +18,7 @@
 
 ## 📖 Documentation
 
-Full documentation at <https://tlambert03.github.io/yaozarrs/>
+Full documentation at <https://imaging-formats.github.io/yaozarrs/>
 
 
 ## Oh no, not another one 🤦

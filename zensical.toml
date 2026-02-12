@@ -1,7 +1,7 @@
 [project]
 site_name = "YAOZARRS ‼️"
 site_description = "Yet another ome-zarr model."
-site_url = "https://tlambert03.github.io/yaozarrs/"
+site_url = "https://imaging-formats.github.io/yaozarrs/"
 repo_url = "https://github.com/imaging-formats/yaozarrs"
 repo_name = "imaging-formats/yaozarrs"
 site_author = "Talley Lambert"
