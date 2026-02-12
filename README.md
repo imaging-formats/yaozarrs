@@ -1,10 +1,10 @@
 # yaozarrs ‼️
 
-[![License](https://img.shields.io/pypi/l/yaozarrs.svg?color=green)](https://github.com/tlambert03/yaozarrs/raw/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/yaozarrs.svg?color=green)](https://github.com/imaging-formats/yaozarrs/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/yaozarrs.svg?color=green)](https://pypi.org/project/yaozarrs)
 [![Python Version](https://img.shields.io/pypi/pyversions/yaozarrs.svg?color=green)](https://python.org)
-[![CI](https://github.com/tlambert03/yaozarrs/actions/workflows/ci.yml/badge.svg)](https://github.com/tlambert03/yaozarrs/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/tlambert03/yaozarrs/branch/main/graph/badge.svg)](https://codecov.io/gh/tlambert03/yaozarrs)
+[![CI](https://github.com/imaging-formats/yaozarrs/actions/workflows/ci.yml/badge.svg)](https://github.com/imaging-formats/yaozarrs/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/imaging-formats/yaozarrs/branch/main/graph/badge.svg)](https://codecov.io/gh/imaging-formats/yaozarrs)
 
 ***Yet Another Ome-ZARR Schema!***
 
@@ -170,7 +170,7 @@ location
 An example validation error (for a file that has *many* problems):
 
 ```bash
-uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/tlambert03/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
+uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
 ```
 
 ```txt

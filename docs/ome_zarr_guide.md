@@ -899,7 +899,7 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 - [yaozarrs API Documentation](API_Reference/yaozarrs.md) - Complete API reference
 - [Zarr Format Specification](https://zarr-specs.readthedocs.io/) - Zarr v2 and v3 specs
 - [OME Data Model](https://docs.openmicroscopy.org/ome-model/) - Full OME-XML specification
-- [GitHub Repository](https://github.com/tlambert03/yaozarrs) - Source code and issues
+- [GitHub Repository](https://github.com/imaging-formats/yaozarrs) - Source code and issues
 
 ---
 

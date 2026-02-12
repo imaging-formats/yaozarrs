@@ -85,8 +85,8 @@ old_docs = [
 ]
 
 [project.urls]
-homepage = "https://github.com/tlambert03/yaozarrs"
-repository = "https://github.com/tlambert03/yaozarrs"
+homepage = "https://github.com/imaging-formats/yaozarrs"
+repository = "https://github.com/imaging-formats/yaozarrs"
 
 [project.scripts]
 yaozarrs = "yaozarrs._cli:main"
