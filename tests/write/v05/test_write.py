@@ -15,6 +15,7 @@ import yaozarrs
 from yaozarrs import DimSpec, v05
 from yaozarrs.write.v05 import (
     Bf2RawBuilder,
+    LabelsBuilder,
     PlateBuilder,
     _write,
     prepare_image,
@@ -100,6 +101,26 @@ def _make_plate(
         for c in col_names
     }
     return plate, images
+
+
+def _make_label_image() -> v05.LabelImage:
+    """Create a simple v05.LabelImage model for testing."""
+    return v05.LabelImage(  # type: ignore
+        multiscales=[
+            v05.Multiscale(
+                axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
+                datasets=[
+                    v05.Dataset(
+                        path="0",
+                        coordinateTransformations=[
+                            v05.ScaleTransformation(scale=[1.0, 1.0])
+                        ],
+                    )
+                ],
+            )
+        ],
+        image_label=v05.ImageLabel(),  # type: ignore
+    )
 
 
 # =============================================================================
@@ -742,6 +763,84 @@ def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> N
     assert frame_count == math.prod(shape[:-2])
     np.testing.assert_array_equal(arr, reference)
     yaozarrs.validate_zarr_store(dest)
+
+
+# =============================================================================
+# LabelsBuilder incremental tests
+# =============================================================================
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+@pytest.mark.parametrize("use_prepare", [False, True], ids=["write", "prepare"])
+def test_labels_builder_incremental(
+    tmp_path: Path, writer: ZarrWriter, use_prepare: bool
+) -> None:
+    """Test that LabelsBuilder can add labels incrementally across instances."""
+    labels_dest = tmp_path / "my_image.zarr" / "labels"
+
+    # Add first label
+    builder1 = LabelsBuilder(labels_dest, writer=writer)
+    if use_prepare:
+        builder1.add_label("cell_masks", _make_label_image(), ((64, 64), np.uint32))
+        _path, arrays = builder1.prepare()
+        arrays["cell_masks/0"][:] = np.zeros((64, 64), dtype=np.uint32)
+    else:
+        builder1.write_label(
+            "cell_masks", _make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+        )
+
+    # Verify first label exists
+    labels_meta = json.loads((labels_dest / "zarr.json").read_bytes())
+    assert labels_meta["attributes"]["ome"]["labels"] == ["cell_masks"]
+
+    # Add second label with new builder instance
+    builder2 = LabelsBuilder(labels_dest, writer=writer)
+    if use_prepare:
+        builder2.add_label("nuclear_masks", _make_label_image(), ((64, 64), np.uint32))
+        _path, arrays = builder2.prepare()
+        arrays["nuclear_masks/0"][:] = np.zeros((64, 64), dtype=np.uint32)
+    else:
+        builder2.write_label(
+            "nuclear_masks", _make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+        )
+
+    # Verify both labels are present
+    labels_meta = json.loads((labels_dest / "zarr.json").read_bytes())
+    assert set(labels_meta["attributes"]["ome"]["labels"]) == {
+        "cell_masks",
+        "nuclear_masks",
+    }
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+@pytest.mark.parametrize("overwrite", [False, True])
+def test_labels_builder_duplicate_handling(
+    tmp_path: Path, writer: ZarrWriter, overwrite: bool
+) -> None:
+    """Test duplicate label handling with/without overwrite."""
+    labels_dest = tmp_path / "my_image.zarr" / "labels"
+
+    # Write first label
+    builder1 = LabelsBuilder(labels_dest, writer=writer)
+    builder1.write_label(
+        "cell_masks", _make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+    )
+
+    # Try to write same label again
+    builder2 = LabelsBuilder(labels_dest, writer=writer, overwrite=overwrite)
+    if overwrite:
+        # Should succeed and not duplicate
+        builder2.write_label(
+            "cell_masks", _make_label_image(), np.ones((64, 64), dtype=np.uint32)
+        )
+        labels_meta = json.loads((labels_dest / "zarr.json").read_bytes())
+        assert labels_meta["attributes"]["ome"]["labels"] == ["cell_masks"]
+    else:
+        # Should raise error
+        with pytest.raises(ValueError, match="already exists in the labels group"):
+            builder2.write_label(
+                "cell_masks", _make_label_image(), np.zeros((64, 64), dtype=np.uint32)
+            )
 
 
 # =============================================================================

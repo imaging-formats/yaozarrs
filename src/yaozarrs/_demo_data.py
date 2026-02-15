@@ -133,9 +133,9 @@ def write_ome_image(
         for i in range(n_channels):
             channel = {"window": {"start": 0, "min": 0, "end": win_max, "max": win_max}}
             if channel_names and i < len(channel_names):
-                channel["label"] = channel_names[i]
+                channel["label"] = channel_names[i]  # pyright: ignore
             if channel_colors and i < len(channel_colors):
-                channel["color"] = f"{channel_colors[i]:06x}"
+                channel["color"] = f"{channel_colors[i]:06x}"  # pyright: ignore
             channels.append(channel)
 
         metadata_kwargs["metadata"] = {"omero": {"channels": channels}}

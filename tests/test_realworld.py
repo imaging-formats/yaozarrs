@@ -96,13 +96,21 @@ WARN_URLS = (
 
 skip_errors = []
 with suppress(ImportError):
-    from aiohttp.client_exceptions import ClientConnectorDNSError
+    from aiohttp.client_exceptions import (
+        ClientConnectorDNSError,
+        ConnectionTimeoutError,
+    )
 
     skip_errors.append(ClientConnectorDNSError)
+    skip_errors.append(ConnectionTimeoutError)
 with suppress(ImportError):
     from botocore.exceptions import EndpointConnectionError
 
     skip_errors.append(EndpointConnectionError)
+with suppress(ImportError):
+    from fsspec.exceptions import FSTimeoutError
+
+    skip_errors.append(FSTimeoutError)
 
 
 @pytest.mark.parametrize("url", VALID_URLS + WARN_URLS)

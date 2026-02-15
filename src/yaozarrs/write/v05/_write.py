@@ -1741,6 +1741,9 @@ class LabelsBuilder:
         self._initialized = False
         self._written_labels: list[str] = []
 
+        # Load existing labels from labels/zarr.json if it exists
+        self._preexisting_labels: list[str] = self._load_existing_labels()
+
     @property
     def root_path(self) -> Path:
         """Path to the labels group."""
@@ -1882,9 +1885,18 @@ class LabelsBuilder:
         if not self._labels:  # pragma: no cover
             raise ValueError("No labels added. Use add_label() before prepare().")
 
-        # Create labels/zarr.json with LabelsGroup metadata
-        labels_group = LabelsGroup(labels=list(self._labels.keys()))
-        _create_zarr3_group(self._dest, labels_group, self._overwrite)
+        # Merge existing labels with new labels
+        all_labels = list(self._preexisting_labels)
+        all_labels.extend([new for new in self._labels if new not in all_labels])
+
+        # Create or update labels/zarr.json with LabelsGroup metadata
+        # If labels group already exists, just update the metadata file with new labels
+        labels_group = LabelsGroup(labels=all_labels)
+        if self._dest.exists() and (self._dest / "zarr.json").exists():
+            _update_zarr3_group(self._dest, labels_group)
+        else:
+            # Create new group
+            _create_zarr3_group(self._dest, labels_group, self._overwrite)
 
         # Create arrays for each label using prepare_image
         all_arrays: dict[str, Any] = {}
@@ -1911,11 +1923,33 @@ class LabelsBuilder:
 
     # ------------------ Internal methods ------------------
 
+    def _load_existing_labels(self) -> list[str]:
+        """Load existing labels from labels/zarr.json if it exists."""
+        zarr_json_path = self._dest / "zarr.json"
+        if not zarr_json_path.exists():
+            return []
+
+        try:
+            with open(zarr_json_path) as f:
+                data = json.load(f)
+            labels = data.get("attributes", {}).get("ome", {}).get("labels", [])
+            return labels if isinstance(labels, list) else []
+        except (json.JSONDecodeError, KeyError):
+            # If we can't parse it, assume no existing labels
+            return []
+
     def _validate_label_name(self, name: str) -> None:
         if name in self._written_labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already written via write_label().")
         if name in self._labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already added via add_label().")
+
+        # Check if label already exists in the labels group
+        if name in self._preexisting_labels and not self._overwrite:
+            raise ValueError(
+                f"Label '{name}' already exists in the labels group. "
+                f"Use overwrite=True to replace it."
+            )
 
     def _ensure_initialized(self) -> None:
         """Create labels group directory if not already done.
@@ -1935,14 +1969,24 @@ class LabelsBuilder:
 
         Similar to Bf2RawBuilder._update_ome_series(), this regenerates
         the LabelsGroup metadata from currently written labels and rewrites
-        zarr.json.
+        zarr.json. Merges with existing labels from the group.
         """
         if label_name in self._written_labels:
             # already added ... this is an internal method, don't need to raise
             return  # pragma: no cover
 
         self._written_labels.append(label_name)
-        labels_group = LabelsGroup(labels=self._written_labels)
+
+        # Merge existing labels with newly written labels
+        # If overwrite mode and label exists, it will be written to same path
+        # Otherwise, we add new labels to the list
+        all_labels = list(self._preexisting_labels)
+        for new_label in self._written_labels:
+            if new_label not in all_labels:
+                all_labels.append(new_label)
+            # If label exists and we're in overwrite mode, it's already in the list
+
+        labels_group = LabelsGroup(labels=all_labels)
         zarr_json = {
             "zarr_format": 3,
             "node_type": "group",
@@ -2206,6 +2250,25 @@ def _create_zarr3_group(
         zarr_json["attributes"] = {
             "ome": ome_model.model_dump(mode="json", exclude_none=True),
         }
+    zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
+
+
+def _update_zarr3_group(
+    dest_path: Path,
+    ome_model: OMEMetadata,
+    indent: int = 2,
+) -> None:
+    """Update the ome metadata in an existing zarr group."""
+    zarr_json_path = dest_path / "zarr.json"
+    if not zarr_json_path.exists():
+        raise FileNotFoundError(f"Zarr group metadata not found at {zarr_json_path}")
+
+    with open(zarr_json_path) as f:
+        zarr_json = json.load(f)
+
+    zarr_json["attributes"] = {
+        "ome": ome_model.model_dump(mode="json", exclude_none=True),
+    }
     zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
 
 
