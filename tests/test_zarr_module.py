@@ -287,6 +287,28 @@ def test_zarrgroup_to_zarr_python(v2_store: Path) -> None:
     assert isinstance(result, zarr.Group)
 
 
+@pytest.mark.parametrize("converter", ["to_zarr_python", "to_tensorstore"])
+def test_path_with_spaces(
+    write_demo_ome: Callable, converter: str, tmp_path: Path
+) -> None:
+    """to_zarr_python/to_tensorstore should work when the path has spaces."""
+    if converter == "to_zarr_python":
+        pytest.importorskip("zarr")
+    else:
+        pytest.importorskip("tensorstore")
+
+    import shutil
+
+    src = write_demo_ome("image", version="0.4")
+    dest = tmp_path / "path with spaces" / "store.zarr"
+    shutil.copytree(src, dest)
+
+    group = open_group(dest)
+    array = group["0"]
+    result = getattr(array, converter)()
+    assert result is not None
+
+
 @pytest.mark.parametrize("type", ["image", "plate", "labels"])
 @pytest.mark.parametrize("version", ["0.5", "0.4"])
 def test_zarrgroup_from_zarr_python(

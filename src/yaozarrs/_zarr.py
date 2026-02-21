@@ -485,6 +485,22 @@ class ZarrNode:
         """Return the underlying store mapping (read-only)."""
         return MappingProxyType(self._store)
 
+    def _full_path(self) -> tuple[FSMap, str, str]:
+        """Return (fsmap, full_path, protocol) for this node."""
+        mapper = self._store
+        if isinstance(mapper, _CachedMapper):
+            mapper = mapper._fsmap
+
+        if self._path:
+            full_path = f"{mapper.root.rstrip('/')}/{self._path}"
+        else:
+            full_path = mapper.root
+
+        protocol = mapper.fs.protocol
+        if isinstance(protocol, tuple):
+            protocol = protocol[0]
+        return mapper, full_path, protocol
+
     def to_zarr_python(self) -> zarr.Array | zarr.Group:
         """Convert to a zarr-python Array or Group object.
 
@@ -496,7 +512,10 @@ class ZarrNode:
         except ImportError as e:
             raise ImportError("zarr package is required for to_zarr_python()") from e
 
-        return zarr.open(self.store_path, mode="r")
+        mapper, full_path, _protocol = self._full_path()
+        # Use fsspec's protocol handling for all cases - it returns plain filesystem
+        # paths for local files and proper URIs for remote stores
+        return zarr.open(mapper.fs.unstrip_protocol(full_path), mode="r")
 
     @classmethod
     def node_type(cls) -> Literal["group", "array"]:
@@ -520,22 +539,10 @@ class ZarrNode:
         str
             A URI string that follows standard protocol://path format.
         """
-        # Unwrap cached mapper to access underlying FSMap
-        mapper = self._store
-        if isinstance(mapper, _CachedMapper):
-            mapper = mapper._fsmap
-
-        # Build the full path including our internal zarr path
-        if self._path:
-            full_path = f"{mapper.root.rstrip('/')}/{self._path}"
-        else:
-            full_path = mapper.root
+        mapper, full_path, protocol = self._full_path()
 
         # For local file systems, use Path.as_uri() for proper cross-platform
         # URI formatting (especially Windows which needs file:///C:/ not file://C:/)
-        protocol = mapper.fs.protocol
-        if isinstance(protocol, tuple):
-            protocol = protocol[0]
         if protocol in ("file", "local"):
             return Path(full_path).as_uri()
 
