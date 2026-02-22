@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import TypeVar
 
+    import rich.tree
     import tensorstore  # type: ignore
     import zarr  # type: ignore
     from fsspec import FSMap
@@ -632,6 +633,61 @@ class ZarrGroup(ZarrNode):
 
         validate_zarr_store(self)
         return self
+
+    def tree(
+        self, *, depth: int | None = None, max_per_level: int | None = None
+    ) -> str:
+        """Return a tree representation of the zarr group hierarchy.
+
+        Parameters
+        ----------
+        depth : int | None, optional
+            Maximum depth to traverse. None for unlimited depth.
+            Using a smaller depth improves performance for large hierarchies.
+        max_per_level : int | None, optional
+            Maximum number of children to show at each level.
+            Additional children are indicated with an ellipsis.
+            None for unlimited children.
+
+        Returns
+        -------
+        str
+            String representation of the tree.
+
+        Notes
+        -----
+        Uses rich library for enhanced rendering if available,
+        otherwise falls back to plain text with Unicode box characters.
+
+        Icons:
+        - 📦 Array nodes
+        - 🖼️ Image groups (multiscales)
+        - 🏷️ Label image groups
+        - 🅾️ Other OME-zarr group nodes
+        - 📁 Regular group nodes
+        - ⋯  Indicates truncated children (when max_per_level is exceeded)
+
+        Examples
+        --------
+        >>> group = open_group("https://example.com/data.zarr")
+        >>> print(group.tree(depth=2, max_per_level=5))
+        🖼️ data.zarr
+        ├── 📁 A
+        │   ├── 🖼️ 1
+        │   ├── 🖼️ 2
+        │   ⋯ ...
+        └── 📦 labels (uint8, (100, 100))
+        """
+        from yaozarrs._tree import render_tree
+
+        return render_tree(self, depth=depth, max_per_level=max_per_level)
+
+    def __rich__(self) -> rich.tree.Tree:
+        """Rich representation for use with rich library."""
+        from yaozarrs._tree import _build_tree, _render_rich
+
+        tree = _build_tree(self, depth=4, max_per_level=6)
+        return _render_rich(tree)
 
     def ome_metadata(
         self, *, version: str | None = None

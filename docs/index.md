@@ -278,7 +278,7 @@ write.v05.Bf2RawBuilder(...)
 ### CLI validation
 
 The CLI command provides a quick way to validate any zarr store as an OME-Zarr
-store.  Here, "store" here refers to any URI (local path, http(s) url, or s3 url.
+store.  Here, "store" refers to any URI (local path, http(s) url, or s3 url.
 
 !!!important
     Requires `fsspec`. install with `pip install yaozarrs[io]`
@@ -301,9 +301,44 @@ store.  Here, "store" here refers to any URI (local path, http(s) url, or s3 url
   Type: Image
 ```
 
+### CLI tree view
+
+Visualize the hierarchy of any OME-Zarr store with `yaozarrs tree`:
+
+=== "with uvx"
+
+    ```sh
+    uvx "yaozarrs[io]" tree https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+    ```
+
+=== "from installed package"
+
+    ```sh
+    yaozarrs tree https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+    ```
+
+```
+🖼️ 6001240_labels.zarr
+├── zarr.json  <- v05.Image
+├── 📦 0 (uint16, (2, 236, 275, 271))
+├── 📦 1 (uint16, (2, 236, 137, 135))
+├── 📦 2 (uint16, (2, 236, 68, 67))
+└── 🏷️ labels
+    ├── zarr.json  <- v05.LabelsGroup
+    └── 🖼️ 0
+        ├── zarr.json  <- v05.LabelImage
+        ├── 📦 0 (int8, (1, 236, 275, 271))
+        ├── 📦 1 (int8, (1, 236, 137, 135))
+        ├── 📦 2 (int8, (1, 236, 68, 67))
+        └── 📦 3 (int8, (1, 236, 34, 33))
+```
+
+Use `--depth` / `-d` to limit traversal depth, and `--max-per-level` / `-n` to
+cap the number of children shown at each level.
+
 ### Loading OME-Zarr Stores
 
-[`yaozarrs.open_group`][] teturns a small wrapper around a zarr group with
+[`yaozarrs.open_group`][] returns a small wrapper around a zarr group with
 minimal functionality: [`yaozarrs.ZarrGroup`][].  Requires the [`yaozarrs[io]`
 extra](./installation.md#structural-validation) to support remote URIs.  This
 class is used behind the scenes for structural validation, but can also be used
@@ -323,6 +358,13 @@ child = group["0"]  # (2)!
    appropriate typed yaozarrs model (e.g. `yaozarrs.v05.Image`, etc..).
 2. Access arrays and sub-groups using standard dictionary-like syntax. Returns
    [`ZarrArray`][yaozarrs._zarr.ZarrArray] or [`ZarrGroup`][yaozarrs._zarr.ZarrGroup]
+
+You can also get a tree view of the hierarchy programmatically with
+[`ZarrGroup.tree()`][yaozarrs._zarr.ZarrGroup.tree]:
+
+```python
+print(group.tree(depth=2))
+```
 
 #### Access array data
 
@@ -363,7 +405,7 @@ Zarr itself is a *specification* with multiple implementations:  There are many
 ways to read and write Zarr stores (e.g. `zarr-python`, `tensorstore`,
 `acquire-zarr`, `zarrs`, etc..) and **yaozarrs makes no assumptions about which
 implementation you may want to use**.  Similarly, OME NGFF is a *metadata
-sepcification*, defining what JSON documents and hierarchy structure must look
+specification*, defining what JSON documents and hierarchy structure must look
 like.
 
 1. At its core, **yaozarrs provides pydantic models for OME-Zarr metadata
