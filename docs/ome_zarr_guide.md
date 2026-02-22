@@ -3,7 +3,7 @@ icon: material/book-open-variant
 title: Guide to OME-Zarr
 ---
 
-# Yaozzars Guide to OME-Zarr
+# Yaozarrs Guide to OME-Zarr
 
 <script type="module" src="/javascripts/ome_explorer.js"></script>
 
@@ -56,7 +56,7 @@ title: Guide to OME-Zarr
     spec takes precedence!
 
 OME-Zarr is a file format specification used by the bioimaging community for
-storing multi-dimensional data. It is a "meta-specication", based on the
+storing multi-dimensional data. It is a "meta-specification", based on the
 pre-existing Zarr format, which is designed for the storage of chunked,
 compressed, N-dimensional arrays. OME-Zarr **extends** Zarr by adding metadata
 conventions specific to bioimaging, making it easier to store and share complex
