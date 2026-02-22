@@ -7,6 +7,7 @@ otherwise falls back to standard library.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -16,23 +17,15 @@ from yaozarrs._zarr import ZarrArray, ZarrGroup
 if TYPE_CHECKING:
     from rich.tree import Tree
 
+ICON_ARRAY = "📊"
+ICON_OME_GROUP = "🅾️"
+ICON_GROUP = "📁"
+ICON_ELLIPSIS = "⋯"
 
-# Icons for different node types
-ICON_ARRAY = "📊"  # Array nodes
-ICON_OME_GROUP = "🅾️"  # OME-zarr group nodes (microscope for bio data)
-ICON_GROUP = "📁"  # Regular (non-ome-zarr) group nodes
-ICON_ELLIPSIS = "⋯"  # Ellipsis for truncated children
-
-# Tree drawing characters (for non-rich output)
 TREE_BRANCH = "├── "
 TREE_LAST = "└── "
 TREE_PIPE = "│   "
 TREE_SPACE = "    "
-
-
-# =============================================================================
-# Intermediate Representation
-# =============================================================================
 
 
 @dataclass
@@ -55,21 +48,9 @@ class TreeNode:
     shape: tuple[int, ...] | None = None
 
 
-# =============================================================================
-# Data Fetching (builds intermediate representation)
-# =============================================================================
-
-
 def _natural_sort_key(s: str) -> list:
-    """Return a key for natural sorting (numeric-aware).
-
-    Splits string into text and numeric parts for proper ordering:
-    "A/1", "A/2", "A/10" instead of "A/1", "A/10", "A/2"
-    """
-    import re
-
-    parts = re.split(r"(\d+)", s)
-    return [int(p) if p.isdigit() else p.lower() for p in parts]
+    """Natural sort key: "A/1", "A/2", "A/10" instead of "A/1", "A/10", "A/2"."""
+    return [int(p) if p.isdigit() else p.lower() for p in re.split(r"(\d+)", s)]
 
 
 def _get_node_icon(node: ZarrGroup | ZarrArray) -> str:
@@ -124,12 +105,9 @@ def _get_metadata_files(node: ZarrGroup | ZarrArray) -> list[str]:
     """Get the list of metadata files for a node."""
     if node.zarr_format >= 3:
         return ["zarr.json"]
-    else:
-        # v2: different files for groups vs arrays
-        if isinstance(node, ZarrArray):
-            return [".zarray", ".zattrs"]
-        else:
-            return [".zgroup", ".zattrs"]
+    if isinstance(node, ZarrArray):
+        return [".zarray", ".zattrs"]
+    return [".zgroup", ".zattrs"]
 
 
 def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
@@ -144,77 +122,35 @@ def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
     if ome_meta is None:
         return None
 
-    children: list[str] = []
-
-    # v0.5 Image or LabelImage: children are multiscale dataset paths
-    if isinstance(ome_meta, v05.Image):
-        for ms in ome_meta.multiscales:
-            for ds in ms.datasets:
-                if ds.path not in children:
-                    children.append(ds.path)
-        # Also check for labels subgroup
+    if isinstance(ome_meta, (v05.Image, v04.Image)):
+        children = list(
+            dict.fromkeys(ds.path for ms in ome_meta.multiscales for ds in ms.datasets)
+        )
         if "labels" in group:
             children.append("labels")
         return children
 
-    # v0.5 Plate: children are well paths (like "A/1", "B/2")
-    if isinstance(ome_meta, v05.Plate):
-        for well in ome_meta.plate.wells:
-            if well.path not in children:
-                children.append(well.path)
-        return children
+    if isinstance(ome_meta, (v05.Plate, v04.Plate)):
+        if plate := ome_meta.plate:
+            return list(dict.fromkeys(w.path for w in plate.wells))
+        return []
 
-    # v0.5 Well: children are field-of-view paths
-    if isinstance(ome_meta, v05.Well):
-        for img in ome_meta.well.images:
-            if img.path not in children:
-                children.append(img.path)
-        return children
+    if isinstance(ome_meta, (v05.Well, v04.Well)):
+        if well := ome_meta.well:
+            return list(dict.fromkeys(img.path for img in well.images))
+        return []
 
-    # v0.5 LabelsGroup: children are label names
-    if isinstance(ome_meta, v05.LabelsGroup):
+    if isinstance(ome_meta, (v05.LabelsGroup, v04.LabelsGroup)):
         return list(ome_meta.labels)
 
-    # v0.4 Image: similar to v0.5
-    if isinstance(ome_meta, v04.Image):
-        for ms in ome_meta.multiscales:
-            for ds in ms.datasets:
-                if ds.path not in children:
-                    children.append(ds.path)
-        # Check for labels
-        if "labels" in group:
-            children.append("labels")
-        return children
-
-    # v0.4 Plate: children are well paths (like "A/1", "B/2")
-    if isinstance(ome_meta, v04.Plate):
-        if ome_meta.plate:
-            for well in ome_meta.plate.wells:
-                if well.path not in children:
-                    children.append(well.path)
-        return children
-
-    # v0.4 Well
-    if isinstance(ome_meta, v04.Well):
-        if ome_meta.well:
-            for img in ome_meta.well.images:
-                if img.path not in children:
-                    children.append(img.path)
-        return children
-
-    # v0.4 Bf2Raw or bioformats2raw: probe for numbered children
     if isinstance(ome_meta, v04.Bf2Raw):
-        # bioformats2raw layouts have numbered children (0, 1, 2, ...)
+        children: list[str] = []
         for i in range(100):  # reasonable upper bound
             if str(i) in group:
                 children.append(str(i))
             else:
                 break
-        return children if children else None
-
-    # v0.4 Labels
-    if hasattr(ome_meta, "labels") and ome_meta.labels:
-        return list(ome_meta.labels)  # ty: ignore
+        return children or None
 
     return None
 
@@ -283,14 +219,12 @@ def _prefetch_plate_hierarchy(
     if ome_meta is None:
         return
 
-    # Stage 1: Get well paths from plate metadata
     if isinstance(ome_meta, (v05.Plate, v04.Plate)):
-        wells = (
-            ome_meta.plate.wells
-            if isinstance(ome_meta, v05.Plate)
-            else (ome_meta.plate.wells if ome_meta.plate else [])
+        plate = ome_meta.plate
+        well_paths = sorted(
+            [w.path for w in (plate.wells if plate else [])],
+            key=_natural_sort_key,
         )
-        well_paths = sorted([w.path for w in wells], key=_natural_sort_key)
         if max_per_level is not None:
             well_paths = well_paths[:max_per_level]
 
@@ -310,13 +244,11 @@ def _prefetch_plate_hierarchy(
                 well = group[wp]
                 well_meta = well.ome_metadata()
                 if isinstance(well_meta, (v05.Well, v04.Well)):
-                    images = (
-                        well_meta.well.images
-                        if isinstance(well_meta, v05.Well)
-                        else (well_meta.well.images if well_meta.well else [])
+                    well_def = well_meta.well
+                    img_paths = sorted(
+                        [img.path for img in (well_def.images if well_def else [])],
+                        key=_natural_sort_key,
                     )
-                    img_paths = [img.path for img in images]
-                    img_paths = sorted(img_paths, key=_natural_sort_key)
                     if max_per_level is not None:
                         img_paths = img_paths[:max_per_level]
                     for ip in img_paths:
@@ -406,14 +338,10 @@ def _build_tree(
     icon = _get_node_icon(group)
     ome_annotation = _get_ome_type_annotation(group)
 
-    # Build metadata files list with annotations
-    metadata_file_names = _get_metadata_files(group)
-    metadata_files: list[tuple[str, str]] = []
-    for mf in metadata_file_names:
-        if mf in ("zarr.json", ".zattrs"):
-            metadata_files.append((mf, ome_annotation))
-        else:
-            metadata_files.append((mf, ""))
+    metadata_files = [
+        (mf, ome_annotation if mf in ("zarr.json", ".zattrs") else "")
+        for mf in _get_metadata_files(group)
+    ]
 
     # Create the node
     node = TreeNode(
@@ -436,7 +364,7 @@ def _build_tree(
         for key in child_keys:
             try:
                 child = group[key]
-            except (KeyError, Exception):
+            except Exception:
                 continue
 
             if isinstance(child, ZarrGroup):
@@ -461,11 +389,6 @@ def _build_tree(
                 node.children.append(array_node)
 
     return node
-
-
-# =============================================================================
-# Rendering Functions
-# =============================================================================
 
 
 def _render_plain(
@@ -509,12 +432,9 @@ def _render_plain(
             lines[-1] = lines[-1] + f" ({node.dtype}, {node.shape})"
         return lines
 
-    # Build list of all items to render (metadata files + children)
-    all_items: list[tuple[str, object]] = []  # (type, data)
-    for mf_name, mf_annotation in node.metadata_files:
-        all_items.append(("meta", (mf_name, mf_annotation)))
-    for child in node.children:
-        all_items.append(("child", child))
+    all_items = [("meta", mf) for mf in node.metadata_files] + [
+        ("child", child) for child in node.children
+    ]
 
     # Render each item
     total_items = len(all_items)
@@ -600,11 +520,6 @@ def _render_rich(node: TreeNode) -> Tree:
     return root
 
 
-# =============================================================================
-# Public API
-# =============================================================================
-
-
 def print_tree(
     group: ZarrGroup,
     depth: int | None = None,
@@ -669,7 +584,7 @@ def render_tree(
 
     Icons:
     - 📊 Array nodes
-    - 🔬 OME-zarr group nodes (groups with OME metadata)
+    - 🅾️ OME-zarr group nodes (groups with OME metadata)
     - 📁 Regular group nodes
     - ⋯  Indicates truncated children (when max_per_level is exceeded)
     """

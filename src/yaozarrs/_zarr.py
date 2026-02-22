@@ -661,7 +661,7 @@ class ZarrGroup(ZarrNode):
 
         Icons:
         - 📊 Array nodes
-        - 🔬 OME-zarr group nodes (groups with OME metadata)
+        - 🅾️ OME-zarr group nodes (groups with OME metadata)
         - 📁 Regular group nodes
         - ⋯  Indicates truncated children (when max_per_level is exceeded)
 
@@ -669,10 +669,10 @@ class ZarrGroup(ZarrNode):
         --------
         >>> group = open_group("https://example.com/data.zarr")
         >>> print(group.tree(depth=2, max_per_level=5))
-        🔬 data.zarr
+        🅾️ data.zarr
         ├── 📁 A
-        │   ├── 🔬 1
-        │   ├── 🔬 2
+        │   ├── 🅾️ 1
+        │   ├── 🅾️ 2
         │   ⋯ ...
         └── 📊 labels (uint8, (100, 100))
         """
