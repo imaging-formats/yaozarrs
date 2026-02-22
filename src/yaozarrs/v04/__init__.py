@@ -23,6 +23,7 @@ from ._labels import (
     LabelColor,
     LabelImage,
     LabelProperty,
+    LabelsGroup,
     LabelSource,
 )
 from ._plate import (
@@ -53,6 +54,7 @@ __all__ = [
     "LabelImage",
     "LabelProperty",
     "LabelSource",
+    "LabelsGroup",
     "Multiscale",
     "OMEZarrGroupJSON",
     "Omero",
