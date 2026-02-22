@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Callable
 from unittest.mock import patch
@@ -296,8 +297,6 @@ def test_path_with_spaces(
         pytest.importorskip("zarr")
     else:
         pytest.importorskip("tensorstore")
-
-    import shutil
 
     src = write_demo_ome("image", version="0.4")
     dest = tmp_path / "path with spaces" / "store.zarr"
