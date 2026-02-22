@@ -513,8 +513,6 @@ class ZarrNode:
             raise ImportError("zarr package is required for to_zarr_python()") from e
 
         mapper, full_path, _protocol = self._full_path()
-        # Use fsspec's protocol handling for all cases - it returns plain filesystem
-        # paths for local files and proper URIs for remote stores
         return zarr.open(mapper.fs.unstrip_protocol(full_path), mode="r")
 
     @classmethod
