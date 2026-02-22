@@ -6,6 +6,7 @@ from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
+from yaozarrs._util import RelaxedFOVPathName
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Plate",
@@ -247,12 +248,12 @@ class FieldOfView(_BaseModel):
     This class appears within the `images` list of a [`WellDef`][yaozarrs.v05.WellDef].
     """
 
-    path: str = Field(
+    path: RelaxedFOVPathName = Field(
         description=(
             "Relative path to this field's image group "
             "(typically a number like '0', '1', etc.)"
         ),
-        pattern=r"^[A-Za-z0-9]+$",
+        # pattern=r"^[A-Za-z0-9]+$",
     )
     acquisition: int | None = Field(
         default=None,

@@ -765,3 +765,19 @@ def test_multiscale_from_dims() -> None:
     # Creates valid Image
     img = v04.Image(multiscales=[ms])
     validate_ome_object(img)
+
+
+def test_dataset_path_warns_on_risky_characters() -> None:
+    """Test that Dataset.path warns on characters outside [A-Za-z0-9._-]."""
+    # Path with risky character (space) should warn
+    with pytest.warns(UserWarning, match=r"Dataset\.path.*risky characters"):
+        v04.Dataset(
+            path="level 0",  # space is risky
+            coordinateTransformations=[v04.ScaleTransformation(scale=[1.0, 1.0])],
+        )
+
+    # Path with safe characters should not warn (warnings are errors by default)
+    v04.Dataset(
+        path="level_0.test-1",  # all safe: alphanumeric, underscore, dot, hyphen
+        coordinateTransformations=[v04.ScaleTransformation(scale=[1.0, 1.0])],
+    )

@@ -434,3 +434,51 @@ V05_INVALID_PLATES: list[tuple[dict, str]] = [
 def test_invalid_v05_plates(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=msg):
         v05.Plate.model_validate(obj)
+
+
+def test_fov_path_validation() -> None:
+    """Test FieldOfView.path validation and warnings."""
+    # Alphanumeric only - no warning (warnings are errors by default)
+    fov = v05.FieldOfView(path="0")
+    assert fov.path == "0"
+
+    # Path with dots/underscores/hyphens - warns but succeeds
+    with pytest.warns(UserWarning, match="outside of the NGFF spec"):
+        fov = v05.FieldOfView(path="fov_0.test-1")
+        assert fov.path == "fov_0.test-1"
+
+    # Path with invalid characters (e.g. space) - raises error
+    with pytest.raises(ValidationError, match="should match pattern"):
+        v05.FieldOfView(path="fov 0")
+
+
+def test_fov_path_strict_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test YAOZARRS_STRICT_FOV_NAMES enforces strict spec compliance."""
+    monkeypatch.setenv("YAOZARRS_STRICT_FOV_NAMES", "1")
+
+    # Alphanumeric only - still works
+    fov = v05.FieldOfView(path="fov0")
+    assert fov.path == "fov0"
+
+    # Path with dots/underscores/hyphens - now raises error
+    with pytest.raises(ValidationError, match="should match pattern"):
+        v05.FieldOfView(path="fov_0")
+
+    with pytest.raises(ValidationError, match="should match pattern"):
+        v05.FieldOfView(path="fov.0")
+
+    with pytest.raises(ValidationError, match="should match pattern"):
+        v05.FieldOfView(path="fov-0")
+
+
+def test_fov_path_ignore_warning_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test YAOZARRS_IGNORE_RISKY_FOV_NAMES suppresses warnings."""
+    monkeypatch.setenv("YAOZARRS_IGNORE_RISKY_FOV_NAMES", "1")
+
+    # Path with dots/underscores/hyphens - no warning (suppressed)
+    fov = v05.FieldOfView(path="fov_0.test-1")
+    assert fov.path == "fov_0.test-1"
+
+    # Path with invalid characters still raises error
+    with pytest.raises(ValidationError, match="should match pattern"):
+        v05.FieldOfView(path="fov 0")

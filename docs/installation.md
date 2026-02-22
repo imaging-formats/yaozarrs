@@ -25,7 +25,7 @@ but lacks structural validation and writing capabilities.
     (shown here using the `io` extra as an example):
 
     ```sh
-    pip install "yaozarrs[io] @ git+https://github.com/tlambert03/yaozarrs.git"
+    pip install "yaozarrs[io] @ git+https://github.com/imaging-formats/yaozarrs.git"
     ```
 
 === "from conda"

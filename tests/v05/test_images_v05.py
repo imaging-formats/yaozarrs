@@ -537,3 +537,28 @@ def test_multiscale_from_dims() -> None:
     img = v05.Image(multiscales=[ms])
     assert img.version == "0.5"
     validate_ome_object(img)
+
+
+def test_dataset_path_warns_on_risky_characters() -> None:
+    """Test that Dataset.path warns on characters outside [A-Za-z0-9._-]."""
+    # Path with risky character (space) should warn
+    with pytest.warns(UserWarning, match=r"Dataset\.path.*risky characters"):
+        v05.Dataset(
+            path="level 0",  # space is risky
+            coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],
+        )
+
+    # Path with safe characters should not warn (warnings are errors by default)
+    v05.Dataset(
+        path="level_0.test-1",  # all safe: alphanumeric, underscore, dot, hyphen
+        coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"The name '__thing' is not a valid Zarr node name",
+    ):
+        v05.Dataset(
+            path="__thing",  # invalid name according to zarr spec itself
+            coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],
+        )

@@ -56,11 +56,9 @@ test-full = [
 ]
 docs = [
     "griffe-fieldz>=0.4.0",
-    "mkdocs-material>=9.7.0",
     "mkdocstrings-python>=2.0.1",
     "ruff>=0.14.8",
-    "zensical>=0.0.11",
-    "click<8.3",
+    "zensical>=0.0.21",
 ]
 dev = [
     { include-group = "test-full" },
@@ -87,8 +85,8 @@ old_docs = [
 ]
 
 [project.urls]
-homepage = "https://github.com/tlambert03/yaozarrs"
-repository = "https://github.com/tlambert03/yaozarrs"
+homepage = "https://github.com/imaging-formats/yaozarrs"
+repository = "https://github.com/imaging-formats/yaozarrs"
 
 [project.scripts]
 yaozarrs = "yaozarrs._cli:main"

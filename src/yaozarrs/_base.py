@@ -6,9 +6,14 @@ from pydantic import VERSION, BaseModel, ConfigDict, Field
 
 __all__ = ["_BaseModel"]
 
-# validate_by_name added in pydantic 2.9, populate_by_name deprecated in 2.11
-_PYDANTIC_V2_9 = tuple(int(x) for x in VERSION.split(".")[:2]) >= (2, 9)
-_by_name_key = "validate_by_name" if _PYDANTIC_V2_9 else "populate_by_name"
+# populate_by_name is deprecated in pydantic v2.11+ (removed in v3).
+# For >=2.11 use validate_by_name + validate_by_alias instead.
+_PYDANTIC_V2_11 = tuple(int(x) for x in VERSION.split(".")[:2]) >= (2, 11)
+_by_name_cfg: dict = (
+    {"validate_by_name": True, "validate_by_alias": True}
+    if _PYDANTIC_V2_11
+    else {"populate_by_name": True}
+)
 
 
 class _BaseModel(BaseModel):
@@ -17,7 +22,7 @@ class _BaseModel(BaseModel):
         validate_assignment=True,
         validate_default=True,
         serialize_by_alias=True,
-        **{_by_name_key: True},  # type: ignore[typeddict-item]
+        **_by_name_cfg,  # type: ignore[typeddict-item]
     )
 
     if not TYPE_CHECKING:

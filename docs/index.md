@@ -191,7 +191,7 @@ yaozarrs.validate_zarr_store(uri) # (3)!
     An example validation error (for a file that has *many* problems):
 
     ```bash
-    uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/tlambert03/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
+    uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
     ```
 
     ```txt
@@ -286,13 +286,13 @@ store.  Here, "store" here refers to any URI (local path, http(s) url, or s3 url
 === "with uvx"
 
     ```sh
-    uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/tlambert03/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
+    uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
     ```
 
 === "from installed package"
 
     ```sh
-    yaozarrs validate https://raw.githubusercontent.com/tlambert03/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
+    yaozarrs validate https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
     ```
 
 ```sh

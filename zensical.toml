@@ -1,0 +1,82 @@
+[project]
+site_name = "YAOZARRS ‼️"
+site_description = "Yet another ome-zarr model."
+site_url = "https://imaging-formats.github.io/yaozarrs/"
+repo_url = "https://github.com/imaging-formats/yaozarrs"
+repo_name = "imaging-formats/yaozarrs"
+site_author = "Talley Lambert"
+copyright = "2026, Talley Lambert"
+extra_css = ["stylesheets/zensical.css", "stylesheets/extra.css"]
+[[project.extra_javascript]]
+path = "javascripts/yaozarrs-animation.js"
+[[project.extra_javascript]]
+path = "javascripts/ome_explorer.js"
+type = "module"
+
+
+[project.theme]
+icon.logo = "lucide/box"
+features = [
+  "search.highlight",
+  "search.suggest",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "toc.follow",
+]
+font.text = "Inter"
+font.code = "Fira Code"
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = "#"
+permalink_title = "Link to this section"
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.highlight]
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+[project.markdown_extensions.pymdownx.emoji]
+emoji_index = "zensical.extensions.emoji.twemoji"
+emoji_generator = "zensical.extensions.emoji.to_svg"
+
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.plugins.mkdocstrings.handlers.python]
+inventories = ["https://docs.python.org/3/objects.inv"]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "numpy"
+show_bases = false
+show_symbol_type_toc = true
+show_symbol_type_heading = true
+merge_init_into_class = true
+heading_level = 3
+show_root_heading = false
+show_root_toc_entry = false
+members_order = "__all__"
+separate_signature = true
+show_signature_annotations = true
+
+[[project.plugins.mkdocstrings.handlers.python.options.extensions]]
+griffe_fieldz = { strip_annotated = true }
+

@@ -110,7 +110,7 @@ class CreateArrayFunc(Protocol):
     parameter to many functions in this module.  Use this if you'd like to completely
     customize how arrays are created, e.g., using a different backend, or custom
     storage options.  See `_create_array_zarr` and `_create_array_tensorstore` for
-    reference implementations.
+    (our internal) reference implementations.
     """
 
     def __call__(
@@ -178,6 +178,13 @@ def write_image(
     This is the high-level function for writing a complete OME-Zarr image.
     It creates the Zarr group hierarchy, writes metadata, and stores data
     in a single call.
+
+    See Also
+    --------
+    - [`prepare_image`][yaozarrs.write.v05.prepare_image] : Create arrays without
+      writing data (for custom write logic).
+    - [`write_bioformats2raw`][yaozarrs.write.v05.write_bioformats2raw] : Write
+      multi-series bioformats2raw layout.
 
     Parameters
     ----------
@@ -285,11 +292,6 @@ def write_image(
     ...     overwrite=True,
     ... )
     >>> assert (result / "labels" / "cells" / "0" / "zarr.json").exists()
-
-    See Also
-    --------
-    prepare_image : Create arrays without writing data (for custom write logic).
-    write_bioformats2raw : Write multi-series bioformats2raw layout.
     """
     multiscale, datasets_seq = _validate_and_normalize_datasets(image, datasets)
 
@@ -362,6 +364,12 @@ def write_plate(
         │   └── 2/
         └── B/
             └── ...
+
+    See Also
+    --------
+    - [`PlateBuilder`][yaozarrs.write.v05.PlateBuilder]: Builder class for incremental
+      well/field writing.
+    - [`write_image`][yaozarrs.write.v05.write_image]: Write a single Image group.
 
     Parameters
     ----------
@@ -453,11 +461,6 @@ def write_plate(
     ...     plate={"name": "My Experiment"},
     ...     overwrite=True,
     ... )
-
-    See Also
-    --------
-    PlateBuilder : Builder class for incremental well/field writing.
-    write_image : Write a single Image group.
     """
     # Merge user-provided plate metadata with auto-generated
     plate_obj = _merge_plate_metadata(images, plate)
@@ -506,7 +509,8 @@ def write_bioformats2raw(
     and each series as a separate Image subgroup.
 
     This is the high-level function for writing all series at once. For
-    incremental writes, use `Bf2RawBuilder` directly.
+    incremental writes, use [`Bf2RawBuilder`][yaozarrs.write.v05.Bf2RawBuilder]
+    directly.
 
     Writes the following structure:
 
@@ -525,6 +529,12 @@ def write_bioformats2raw(
         └── OME/
             ├── zarr.json          # attributes["ome"]["series"] = ["0", "1", ...]
             └── METADATA.ome.xml   # optional OME-XML (if ome_xml provided)
+
+    See Also
+    --------
+    - [`Bf2RawBuilder`][yaozarrs.write.v05.Bf2RawBuilder] : Builder class for
+      incremental series writing.
+    - [`write_image`][yaozarrs.write.v05.write_image] : Write a single Image group.
 
     Parameters
     ----------
@@ -603,11 +613,6 @@ def write_bioformats2raw(
     True
     >>> (result / "0" / "zarr.json").exists()
     True
-
-    See Also
-    --------
-    Bf2RawBuilder : Builder class for incremental series writing.
-    write_image : Write a single Image group.
     """
     builder = Bf2RawBuilder(
         dest,
@@ -682,6 +687,13 @@ def prepare_image(
     over how data is written (e.g., chunk-by-chunk streaming, parallel writes).
 
     To write data immediately, use `write_image` instead.
+
+    See Also
+    --------
+    - [`write_image`][yaozarrs.write.v05.write_image] : High-level function that writes
+      data immediately.
+    - [`Bf2RawBuilder.prepare`][yaozarrs.write.v05.Bf2RawBuilder.prepare] : Prepare
+      multiple series at once.
 
     Parameters
     ----------
@@ -760,11 +772,6 @@ def prepare_image(
     >>> path, arrays = prepare_image("prepared.zarr", image, ((64, 64), "uint16"))
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
-
-    See Also
-    --------
-    write_image : High-level function that writes data immediately.
-    Bf2RawBuilder.prepare : Prepare multiple series at once.
     """
     if len(image.multiscales) != 1:
         raise NotImplementedError("Image must have exactly one multiscale")
@@ -839,6 +846,12 @@ class Bf2RawBuilder:
        then `prepare()` to create the hierarchy with empty arrays. Write data
        to the returned arrays yourself.
 
+
+    See Also
+    --------
+    - [`write_bioformats2raw`][yaozarrs.write.v05.write_bioformats2raw] : High-level
+      function to write all series at once.
+
     Parameters
     ----------
     dest : str | PathLike
@@ -901,10 +914,6 @@ class Bf2RawBuilder:
     >>> arrays["0/0"][:] = np.zeros((32, 32), dtype=np.uint16)  # Write data yourself
     >>> arrays["1/0"][:] = np.zeros((16, 16), dtype=np.uint16)
     >>> assert path.exists()
-
-    See Also
-    --------
-    write_bioformats2raw : High-level function to write all series at once.
     """
 
     def __init__(
@@ -1174,6 +1183,11 @@ class PlateBuilder:
        then `prepare()` to create the hierarchy with empty arrays. Plate
        metadata is auto-generated from all registered wells.
 
+    See Also
+    --------
+    - [`write_plate`][yaozarrs.write.v05.write_plate] : High-level function to write
+      all wells at once.
+
     Parameters
     ----------
     dest : str | PathLike
@@ -1254,10 +1268,6 @@ class PlateBuilder:
     ...     images={"0": (make_image(), np.zeros((32, 32), dtype=np.uint16))},
     ... )
     <PlateBuilder: 1 wells>
-
-    See Also
-    --------
-    write_plate : High-level function to write all wells at once.
     """
 
     def __init__(
@@ -1637,6 +1647,11 @@ class LabelsBuilder:
        then `prepare()` to create the hierarchy with empty arrays. Write data
        to the returned array handles yourself.
 
+    See Also
+    --------
+    - [`write_image`][yaozarrs.write.v05.write_image] : High-level function with labels
+      parameter for writing everything at once.
+
     Parameters
     ----------
     dest : str | PathLike
@@ -1700,11 +1715,6 @@ class LabelsBuilder:
     <LabelsBuilder: 1 labels>
     >>> path, arrays = builder2.prepare()
     >>> arrays["cells/0"][:] = np.random.randint(0, 10, (64, 64), dtype=np.uint32)
-
-    See Also
-    --------
-    write_image : High-level function with labels parameter for writing everything at
-    once.
     """
 
     def __init__(
@@ -1730,6 +1740,9 @@ class LabelsBuilder:
         # For immediate write workflow
         self._initialized = False
         self._written_labels: list[str] = []
+
+        # Load existing labels from labels/zarr.json if it exists
+        self._preexisting_labels: list[str] = self._load_existing_labels()
 
     @property
     def root_path(self) -> Path:
@@ -1872,9 +1885,18 @@ class LabelsBuilder:
         if not self._labels:  # pragma: no cover
             raise ValueError("No labels added. Use add_label() before prepare().")
 
-        # Create labels/zarr.json with LabelsGroup metadata
-        labels_group = LabelsGroup(labels=list(self._labels.keys()))
-        _create_zarr3_group(self._dest, labels_group, self._overwrite)
+        # Merge existing labels with new labels
+        all_labels = list(self._preexisting_labels)
+        all_labels.extend([new for new in self._labels if new not in all_labels])
+
+        # Create or update labels/zarr.json with LabelsGroup metadata
+        # If labels group already exists, just update the metadata file with new labels
+        labels_group = LabelsGroup(labels=all_labels)
+        if self._dest.exists() and (self._dest / "zarr.json").exists():
+            _update_zarr3_group(self._dest, labels_group)
+        else:
+            # Create new group
+            _create_zarr3_group(self._dest, labels_group, self._overwrite)
 
         # Create arrays for each label using prepare_image
         all_arrays: dict[str, Any] = {}
@@ -1901,11 +1923,33 @@ class LabelsBuilder:
 
     # ------------------ Internal methods ------------------
 
+    def _load_existing_labels(self) -> list[str]:
+        """Load existing labels from labels/zarr.json if it exists."""
+        zarr_json_path = self._dest / "zarr.json"
+        if not zarr_json_path.exists():
+            return []
+
+        try:
+            with open(zarr_json_path) as f:
+                data = json.load(f)
+            labels = data.get("attributes", {}).get("ome", {}).get("labels", [])
+            return labels if isinstance(labels, list) else []
+        except (json.JSONDecodeError, KeyError):
+            # If we can't parse it, assume no existing labels
+            return []
+
     def _validate_label_name(self, name: str) -> None:
         if name in self._written_labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already written via write_label().")
         if name in self._labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already added via add_label().")
+
+        # Check if label already exists in the labels group
+        if name in self._preexisting_labels and not self._overwrite:
+            raise ValueError(
+                f"Label '{name}' already exists in the labels group. "
+                f"Use overwrite=True to replace it."
+            )
 
     def _ensure_initialized(self) -> None:
         """Create labels group directory if not already done.
@@ -1925,14 +1969,24 @@ class LabelsBuilder:
 
         Similar to Bf2RawBuilder._update_ome_series(), this regenerates
         the LabelsGroup metadata from currently written labels and rewrites
-        zarr.json.
+        zarr.json. Merges with existing labels from the group.
         """
         if label_name in self._written_labels:
             # already added ... this is an internal method, don't need to raise
             return  # pragma: no cover
 
         self._written_labels.append(label_name)
-        labels_group = LabelsGroup(labels=self._written_labels)
+
+        # Merge existing labels with newly written labels
+        # If overwrite mode and label exists, it will be written to same path
+        # Otherwise, we add new labels to the list
+        all_labels = list(self._preexisting_labels)
+        for new_label in self._written_labels:
+            if new_label not in all_labels:
+                all_labels.append(new_label)
+            # If label exists and we're in overwrite mode, it's already in the list
+
+        labels_group = LabelsGroup(labels=all_labels)
         zarr_json = {
             "zarr_format": 3,
             "node_type": "group",
@@ -2196,6 +2250,25 @@ def _create_zarr3_group(
         zarr_json["attributes"] = {
             "ome": ome_model.model_dump(mode="json", exclude_none=True),
         }
+    zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
+
+
+def _update_zarr3_group(
+    dest_path: Path,
+    ome_model: OMEMetadata,
+    indent: int = 2,
+) -> None:
+    """Update the ome metadata in an existing zarr group."""
+    zarr_json_path = dest_path / "zarr.json"
+    if not zarr_json_path.exists():
+        raise FileNotFoundError(f"Zarr group metadata not found at {zarr_json_path}")
+
+    with open(zarr_json_path) as f:
+        zarr_json = json.load(f)
+
+    zarr_json["attributes"] = {
+        "ome": ome_model.model_dump(mode="json", exclude_none=True),
+    }
     zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
 
 
