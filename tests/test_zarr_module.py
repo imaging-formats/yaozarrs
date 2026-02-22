@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Callable
 from unittest.mock import patch
@@ -285,6 +286,26 @@ def test_zarrgroup_to_zarr_python(v2_store: Path) -> None:
     group = open_group(v2_store)
     result = group.to_zarr_python()
     assert isinstance(result, zarr.Group)
+
+
+@pytest.mark.parametrize("converter", ["to_zarr_python", "to_tensorstore"])
+def test_path_with_spaces(
+    write_demo_ome: Callable, converter: str, tmp_path: Path
+) -> None:
+    """to_zarr_python/to_tensorstore should work when the path has spaces."""
+    if converter == "to_zarr_python":
+        pytest.importorskip("zarr")
+    else:
+        pytest.importorskip("tensorstore")
+
+    src = write_demo_ome("image", version="0.4")
+    dest = tmp_path / "path with spaces" / "store.zarr"
+    shutil.copytree(src, dest)
+
+    group = open_group(dest)
+    array = group["0"]
+    result = getattr(array, converter)()
+    assert result is not None
 
 
 @pytest.mark.parametrize("type", ["image", "plate", "labels"])
