@@ -17,7 +17,9 @@ from yaozarrs._zarr import ZarrArray, ZarrGroup
 if TYPE_CHECKING:
     from rich.tree import Tree
 
-ICON_ARRAY = "📊"
+ICON_ARRAY = "📦"
+ICON_IMAGE = "🖼️"
+ICON_LABEL = "🏷️"
 ICON_OME_GROUP = "🅾️"
 ICON_GROUP = "📁"
 ICON_ELLIPSIS = "⋯"
@@ -57,15 +59,17 @@ def _get_node_icon(node: ZarrGroup | ZarrArray) -> str:
     """Get the icon for a node based on its type."""
     if isinstance(node, ZarrArray):
         return ICON_ARRAY
-    elif isinstance(node, ZarrGroup):
-        # Check if it's an OME-zarr group
-        try:
-            if node._local_ome_version() is not None:
-                return ICON_OME_GROUP
-        except Exception:
-            pass
+    try:
+        ome = node.ome_metadata()
+    except Exception:
         return ICON_GROUP
-    return ""  # pragma: no cover
+    if ome is None:
+        return ICON_GROUP
+    if isinstance(ome, (v05.Image, v04.Image)):
+        return ICON_IMAGE
+    if isinstance(ome, (v05.LabelsGroup, v04.LabelsGroup)):
+        return ICON_LABEL
+    return ICON_OME_GROUP
 
 
 def _get_ome_type_annotation(node: ZarrGroup | ZarrArray) -> str:
@@ -583,8 +587,10 @@ def render_tree(
     with OME type annotations like '<- v05.Image'.
 
     Icons:
-    - 📊 Array nodes
-    - 🅾️ OME-zarr group nodes (groups with OME metadata)
+    - 📦 Array nodes
+    - 🖼️ Image groups (multiscales)
+    - 🏷️ Label image groups
+    - 🅾️ Other OME-zarr group nodes
     - 📁 Regular group nodes
     - ⋯  Indicates truncated children (when max_per_level is exceeded)
     """

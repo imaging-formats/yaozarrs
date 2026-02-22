@@ -660,8 +660,10 @@ class ZarrGroup(ZarrNode):
         otherwise falls back to plain text with Unicode box characters.
 
         Icons:
-        - 📊 Array nodes
-        - 🅾️ OME-zarr group nodes (groups with OME metadata)
+        - 📦 Array nodes
+        - 🖼️ Image groups (multiscales)
+        - 🏷️ Label image groups
+        - 🅾️ Other OME-zarr group nodes
         - 📁 Regular group nodes
         - ⋯  Indicates truncated children (when max_per_level is exceeded)
 
@@ -669,12 +671,12 @@ class ZarrGroup(ZarrNode):
         --------
         >>> group = open_group("https://example.com/data.zarr")
         >>> print(group.tree(depth=2, max_per_level=5))
-        🅾️ data.zarr
+        🖼️ data.zarr
         ├── 📁 A
-        │   ├── 🅾️ 1
-        │   ├── 🅾️ 2
+        │   ├── 🖼️ 1
+        │   ├── 🖼️ 2
         │   ⋯ ...
-        └── 📊 labels (uint8, (100, 100))
+        └── 📦 labels (uint8, (100, 100))
         """
         from yaozarrs._tree import render_tree
 

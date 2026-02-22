@@ -86,8 +86,8 @@ def test_cli_tree_valid_store(
 
     captured = capsys.readouterr()
     assert path.name in captured.out
-    # Should contain tree icons
-    assert "📊" in captured.out or "🔬" in captured.out
+    # Should contain tree icons (📦=array, 🖼️=image, 🏷️=label, 🅾️=OME group)
+    assert any(icon in captured.out for icon in ("📦", "🖼️", "🏷️", "🅾️"))
 
 
 def test_cli_tree_with_depth(

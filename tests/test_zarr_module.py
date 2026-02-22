@@ -352,7 +352,7 @@ def test_zarrgroup_tree(write_demo_ome: Callable, version: str, type: str) -> No
     # Basic tree output
     tree_str = group.tree()
     assert path.name in tree_str
-    assert "📊" in tree_str or "🔬" in tree_str or "📁" in tree_str
+    assert any(icon in tree_str for icon in ("📦", "🖼️", "🏷️", "🅾️", "📁"))
 
     # Test depth limiting
     tree_depth1 = group.tree(depth=1)
