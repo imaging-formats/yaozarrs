@@ -22,7 +22,7 @@ class _BaseModel(BaseModel):
         validate_assignment=True,
         validate_default=True,
         serialize_by_alias=True,
-        **_by_name_cfg,  # type: ignore[typeddict-item]
+        **_by_name_cfg,
     )
 
     if not TYPE_CHECKING:
