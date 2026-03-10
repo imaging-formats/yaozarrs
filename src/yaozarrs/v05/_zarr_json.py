@@ -272,7 +272,7 @@ Here are ALL the possible zarr.json documents you might encounter with OME metad
 
 from typing import Annotated, Any, Literal, TypeAlias
 
-from pydantic import BaseModel, Discriminator, Tag
+from pydantic import BaseModel, ConfigDict, Discriminator, Tag
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs.v05._bf2raw import Bf2Raw
@@ -334,6 +334,8 @@ OMEMetadata: TypeAlias = Annotated[
 
 class OMEAttributes(_BaseModel):
     """The attributes field of a `zarr.json` document in an ome-zarr group."""
+
+    model_config = ConfigDict(extra="allow")
 
     ome: OMEMetadata
 

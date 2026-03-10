@@ -124,6 +124,8 @@ AnyOMEMetadata: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEMetadata
 class OMEAttributesV5(BaseModel):
     """The attributes field of a zarr.json document that usually appears nested."""
 
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+
     ome: v05.OMEMetadata
 
 
