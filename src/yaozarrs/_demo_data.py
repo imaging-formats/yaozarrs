@@ -131,11 +131,13 @@ def write_ome_image(
             win_max = 1.0
 
         for i in range(n_channels):
-            channel = {"window": {"start": 0, "min": 0, "end": win_max, "max": win_max}}
+            channel: dict[str, Any] = {
+                "window": {"start": 0, "min": 0, "end": win_max, "max": win_max}
+            }
             if channel_names and i < len(channel_names):
-                channel["label"] = channel_names[i]  # pyright: ignore
+                channel["label"] = channel_names[i]
             if channel_colors and i < len(channel_colors):
-                channel["color"] = f"{channel_colors[i]:06x}"  # pyright: ignore
+                channel["color"] = f"{channel_colors[i]:06x}"
             channels.append(channel)
 
         metadata_kwargs["metadata"] = {"omero": {"channels": channels}}
@@ -377,12 +379,14 @@ def write_ome_plate(
             field_paths: list[str | dict] = [str(i) for i in range(fields_per_well)]
 
             # Write well metadata
-            well_metadata: dict = {"images": [{"path": path} for path in field_paths]}
+            well_metadata: dict[str, Any] = {
+                "images": [{"path": path} for path in field_paths]
+            }
 
             if acquisitions:
                 # Add acquisition references to images
                 for i, img in enumerate(well_metadata["images"]):
-                    img["acquisition"] = i % len(acquisitions)
+                    img["acquisition"] = i % len(acquisitions)  # ty: ignore[invalid-assignment]
 
             writer.write_well_metadata(well_group, field_paths)
 

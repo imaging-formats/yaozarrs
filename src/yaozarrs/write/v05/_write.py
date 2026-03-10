@@ -1084,7 +1084,7 @@ class Bf2RawBuilder:
             raise ValueError("No series added. Use add_series() before prepare().")
 
         # Create root zarr.json with bioformats2raw.layout
-        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
+        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # ty: ignore[missing-argument,unknown-argument]
         _create_zarr3_group(self._dest, bf2raw, self._overwrite)
 
         # Create OME/zarr.json with series list
@@ -1133,7 +1133,7 @@ class Bf2RawBuilder:
             return
 
         # Create root zarr.json with bioformats2raw.layout
-        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
+        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # ty: ignore[missing-argument,unknown-argument]
         _create_zarr3_group(self._dest, bf2raw, self._overwrite)
 
         # Create OME directory and write METADATA.ome.xml if provided
@@ -2463,16 +2463,16 @@ def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
         with ctx:
             # Handle both zarr and tensorstore
             if hasattr(array, "store"):  # zarr.Array
-                da.store(dask_data, array, lock=False)  # type: ignore
+                da.store(dask_data, array, lock=False)  # ty: ignore[invalid-argument-type]
             else:  # tensorstore
                 computed = dask_data.compute()
                 array[:].write(computed).result()
 
     else:
         if hasattr(array, "store"):  # zarr.Array
-            array[:] = data  # type: ignore
+            array[:] = data
         else:  # tensorstore
-            array[:].write(data).result()  # type: ignore
+            array[:].write(data).result()
 
 
 # ######################## Array Writing Functions #############################
