@@ -15,7 +15,7 @@ import sys
 from yaozarrs import validate_ome_uri
 
 try:
-    from rich import print  # ty: ignore
+    from rich import print
 except ImportError:
     print = builtins.print  # type: ignore # noqa
 

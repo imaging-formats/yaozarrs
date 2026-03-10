@@ -46,8 +46,8 @@ if TYPE_CHECKING:
     from typing import TypeVar
 
     import rich.tree
-    import tensorstore  # type: ignore
-    import zarr  # type: ignore
+    import tensorstore
+    import zarr
     from fsspec import FSMap
     from typing_extensions import Self
 
@@ -511,7 +511,7 @@ class ZarrNode:
             Requires `zarr-python` to be installed.
         """
         try:
-            import zarr  # type: ignore
+            import zarr
         except ImportError as e:
             raise ImportError("zarr package is required for to_zarr_python()") from e
 
@@ -817,7 +817,7 @@ class ZarrGroup(ZarrNode):
 
     if TYPE_CHECKING:
 
-        def to_zarr_python(self) -> zarr.Group:  # type: ignore
+        def to_zarr_python(self) -> zarr.Group:
             """Convert to a zarr-python Group object.
 
             !!!important
@@ -858,7 +858,7 @@ class ZarrArray(ZarrNode):
 
     if TYPE_CHECKING:
 
-        def to_zarr_python(self) -> zarr.Array:  # type: ignore
+        def to_zarr_python(self) -> zarr.Array:
             """Convert to a zarr-python Array object.
 
             !!!important
@@ -872,7 +872,7 @@ class ZarrArray(ZarrNode):
             Requires `tensorstore` to be installed.
         """
         try:
-            import tensorstore as ts  # type: ignore
+            import tensorstore as ts
         except ImportError as e:
             raise ImportError(
                 "tensorstore package is required for to_tensorstore()"
@@ -949,7 +949,7 @@ def open_group(
     storage_options = storage_options or {}
     if str(uri).startswith("s3://"):
         storage_options.setdefault("anon", True)
-    mapper = get_mapper(uri, **storage_options)  # type: ignore
+    mapper = get_mapper(uri, **storage_options)
 
     if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")

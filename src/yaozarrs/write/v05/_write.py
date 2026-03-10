@@ -2528,16 +2528,16 @@ def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
         with ctx:
             # Handle both zarr and tensorstore
             if hasattr(array, "store"):  # zarr.Array
-                da.store(dask_data, array, lock=False)  # type: ignore
+                da.store(dask_data, array, lock=False)  # ty: ignore[invalid-argument-type]
             else:  # tensorstore
                 computed = dask_data.compute()
                 array[:].write(computed).result()
 
     else:
         if hasattr(array, "store"):  # zarr.Array
-            array[:] = data  # type: ignore
+            array[:] = data
         else:  # tensorstore
-            array[:].write(data).result()  # type: ignore
+            array[:].write(data).result()
 
 
 # ######################## Array Writing Functions #############################

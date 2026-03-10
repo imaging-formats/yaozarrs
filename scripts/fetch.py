@@ -7,7 +7,7 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-import fsspec  # type: ignore
+import fsspec
 
 META_SUFFIXES = (
     "zarr.json",  # Zarr v3
@@ -115,7 +115,7 @@ def metadata_mirror(remote_url: str, local_parent: str, verbose: bool = True) ->
     str
         Path to the local mirrored store directory.
     """
-    fs, root = fsspec.url_to_fs(remote_url)  # type: ignore
+    fs, root = fsspec.url_to_fs(remote_url)
 
     root_path = PurePosixPath(root.rstrip("/"))
     root_name = root_path.name or root_path.parent.name

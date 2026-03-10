@@ -94,7 +94,7 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
             # Format like an exception: module.Class: message
             return f"{category.__module__}.{category.__name__}: {message}\n"
 
-        warnings.formatwarning = _custom_formatwarning  # type: ignore
+        warnings.formatwarning = _custom_formatwarning  # ty: ignore[invalid-assignment]
         try:
             warnings.warn(warning_instance, stacklevel=2)
         finally:

@@ -105,7 +105,7 @@ def _make_plate(
 
 def _make_label_image() -> v05.LabelImage:
     """Create a simple v05.LabelImage model for testing."""
-    return v05.LabelImage(  # type: ignore
+    return v05.LabelImage(  # ty: ignore[missing-argument]
         multiscales=[
             v05.Multiscale(
                 axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
@@ -119,7 +119,7 @@ def _make_label_image() -> v05.LabelImage:
                 ],
             )
         ],
-        image_label=v05.ImageLabel(),  # type: ignore
+        image_label=v05.ImageLabel(),  # ty: ignore[unknown-argument]
     )
 
 
@@ -245,11 +245,11 @@ def test_write_image_mismatch_datasets_error(tmp_path: Path) -> None:
 def test_write_image_invalid_writer(tmp_path: Path) -> None:
     """Test that invalid writer raises error."""
     with pytest.raises(ValueError, match="Unknown writer"):
-        write_image(  # ty: ignore[no-matching-overload]
+        write_image(
             tmp_path / "invalid.zarr",
             _make_image("invalid", {"c": 1.0, "y": 0.5, "x": 0.5}),
             datasets=[np.random.rand(2, 64, 64).astype("float32")],
-            writer="invalid",  # type: ignore
+            writer="invalid",  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -339,14 +339,14 @@ def test_write_image_compression_options(
         _make_image(f"{compression}_test", {"c": 1.0, "y": 0.5, "x": 0.5}),
         datasets=[np.random.rand(2, 32, 32).astype("float32")],
         writer=writer,
-        compression=compression,  # type: ignore
+        compression=compression,
     )
     arr_meta = json.loads((dest / "0" / "zarr.json").read_bytes())
     codecs = arr_meta.get("codecs", [])
     assert codecs[0]["name"] == "bytes"
     if expected_codec:
         assert codecs[1]["name"] == expected_codec
-        for key, val in expected_config.items():  # type: ignore
+        for key, val in expected_config.items():
             assert codecs[1]["configuration"][key] == val
     else:
         assert len(codecs) == 1
@@ -708,7 +708,7 @@ def test_write_plate_compression(
     """Test write_plate with different compression options."""
     dest = tmp_path / f"plate_{compression}.zarr"
     plate, images = _make_plate(n_rows=1, n_cols=1)
-    write_plate(dest, images, plate=plate, compression=compression, writer=writer)  # type: ignore
+    write_plate(dest, images, plate=plate, compression=compression, writer=writer)
     arr_meta = json.loads((dest / "A" / "01" / "0" / "0" / "zarr.json").read_bytes())
     codecs = arr_meta.get("codecs", [])
     assert len(codecs) == (1 if compression == "none" else 2)
@@ -751,7 +751,7 @@ def test_prepare_image_streaming_frames(tmp_path: Path, writer: ZarrWriter) -> N
         frame = np.full((16, 16), frame_count, dtype="uint16")
         if writer == "tensorstore":
             # exercise the async write path for tensorstore
-            futures.append(arr[idx].write(frame))  # type: ignore
+            futures.append(arr[idx].write(frame))
         else:
             arr[idx] = frame
         reference[idx] = frame
