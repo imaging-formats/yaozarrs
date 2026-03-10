@@ -166,6 +166,7 @@ def write_image(
     datasets: ArrayOrPyramid,
     *,
     labels: Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None = None,
+    extra_attributes: dict[str, Any] | None = None,
     writer: ZarrWriter = "auto",
     overwrite: bool = False,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -204,6 +205,10 @@ def write_image(
         Optional label images to write alongside the image. Keys are label names
         (e.g., "cells", "nuclei"), values are (LabelImage, datasets) tuples.
         Labels will be written to `dest/labels/{name}/`. Default is None.
+    extra_attributes : dict[str, Any] | None, optional
+        Additional attributes to write alongside "ome" in zarr.json.
+        For example, `{"custom": {...}}` will produce
+        `attributes: {"ome": {...}, "custom": {...}}`.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. "auto" prefers tensorstore if
         available, otherwise falls back to zarr-python. Pass a custom function
@@ -303,6 +308,7 @@ def write_image(
         dest,
         image,
         specs,
+        extra_attributes=extra_attributes,
         chunks=chunks,
         shards=shards,
         writer=writer,
@@ -337,6 +343,7 @@ def write_plate(
     images: Mapping[tuple[str, str, str], ImageWithDatasets],
     *,
     plate: Plate | dict[str, Any] | None = None,
+    extra_attributes: dict[str, Any] | None = None,
     writer: ZarrWriter = "auto",
     overwrite: bool = False,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -386,6 +393,8 @@ def write_plate(
         - Plate: Use as-is (must match images dict)
         Common dict keys: 'name', 'acquisitions', 'field_count'.
         Auto-generated: 'rows', 'columns', 'wells'.
+    extra_attributes : dict[str, Any] | None, optional
+        Additional attributes to write alongside "ome" in zarr.json.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays. Default is "auto".
     overwrite : bool, optional
@@ -469,6 +478,7 @@ def write_plate(
     builder = PlateBuilder(
         dest,
         plate=plate_obj,
+        extra_attributes=extra_attributes,
         writer=writer,
         chunks=chunks,
         shards=shards,
@@ -494,6 +504,7 @@ def write_bioformats2raw(
     images: Mapping[str, ImageWithDatasets],
     *,
     ome_xml: str | None = None,
+    extra_attributes: dict[str, Any] | None = None,
     writer: ZarrWriter = "auto",
     overwrite: bool = False,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
@@ -548,6 +559,8 @@ def write_bioformats2raw(
     ome_xml : str | None, optional
         OME-XML string to store as `OME/METADATA.ome.xml`.
         Useful for preserving full metadata from converted files.
+    extra_attributes : dict[str, Any] | None, optional
+        Additional attributes to write alongside "ome" in zarr.json.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
         Backend to use for writing arrays.
     overwrite : bool, optional
@@ -617,6 +630,7 @@ def write_bioformats2raw(
     builder = Bf2RawBuilder(
         dest,
         ome_xml=ome_xml,
+        extra_attributes=extra_attributes,
         writer=writer,
         chunks=chunks,
         shards=shards,
@@ -639,6 +653,7 @@ def prepare_image(
     image: Image,
     datasets: ShapeAndDTypeOrPyramid,
     *,
+    extra_attributes: dict[str, Any] | None = ...,
     writer: Literal["zarr"],
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
     shards: tuple[int, ...] | None = ...,
@@ -651,6 +666,7 @@ def prepare_image(
     image: Image,
     datasets: ShapeAndDTypeOrPyramid,
     *,
+    extra_attributes: dict[str, Any] | None = ...,
     writer: Literal["tensorstore"],
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
     shards: tuple[int, ...] | None = ...,
@@ -663,6 +679,7 @@ def prepare_image(
     image: Image,
     datasets: ShapeAndDTypeOrPyramid,
     *,
+    extra_attributes: dict[str, Any] | None = ...,
     writer: Literal["auto"] | CreateArrayFunc = ...,
     chunks: tuple[int, ...] | Literal["auto"] | None = ...,
     shards: tuple[int, ...] | None = ...,
@@ -674,6 +691,7 @@ def prepare_image(
     image: Image,
     datasets: ShapeAndDTypeOrPyramid,
     *,
+    extra_attributes: dict[str, Any] | None = None,
     chunks: tuple[int, ...] | Literal["auto"] | None = "auto",
     shards: tuple[int, ...] | None = None,
     writer: ZarrWriter = "auto",
@@ -709,6 +727,8 @@ def prepare_image(
         - Sequence of `(shape, dtype)`: For multiple datasets (multiscale pyramid)
 
         Must match the number and order of `image.multiscales[0].datasets`.
+    extra_attributes : dict[str, Any] | None, optional
+        Additional attributes to write alongside "ome" in zarr.json.
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape. See `write_image` for details.
     shards : tuple[int, ...] | None, optional
@@ -800,7 +820,7 @@ def prepare_image(
 
     # Create zarr group with Image metadata
     dest_path = Path(dest)
-    _create_zarr3_group(dest_path, image, overwrite)
+    _create_zarr3_group(dest_path, image, overwrite, extra_attributes=extra_attributes)
 
     dimension_names = [ax.name for ax in multiscale.axes]
 
@@ -921,6 +941,7 @@ class Bf2RawBuilder:
         dest: str | PathLike,
         *,
         ome_xml: str | None = None,
+        extra_attributes: dict[str, Any] | None = None,
         writer: ZarrWriter = "auto",
         chunks: ShapeLike | Literal["auto"] | None = "auto",
         shards: ShapeLike | None = None,
@@ -929,6 +950,7 @@ class Bf2RawBuilder:
     ) -> None:
         self._dest = Path(dest)
         self._ome_xml = ome_xml
+        self._extra_attributes = extra_attributes
         self._writer: ZarrWriter = writer
         self._chunks: ShapeLike | Literal["auto"] | None = chunks
         self._shards = shards
@@ -1084,8 +1106,13 @@ class Bf2RawBuilder:
             raise ValueError("No series added. Use add_series() before prepare().")
 
         # Create root zarr.json with bioformats2raw.layout
-        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # ty: ignore[missing-argument,unknown-argument]
-        _create_zarr3_group(self._dest, bf2raw, self._overwrite)
+        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
+        _create_zarr3_group(
+            self._dest,
+            bf2raw,
+            self._overwrite,
+            extra_attributes=self._extra_attributes,
+        )
 
         # Create OME/zarr.json with series list
         ome_path = self._dest / "OME"
@@ -1133,8 +1160,13 @@ class Bf2RawBuilder:
             return
 
         # Create root zarr.json with bioformats2raw.layout
-        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # ty: ignore[missing-argument,unknown-argument]
-        _create_zarr3_group(self._dest, bf2raw, self._overwrite)
+        bf2raw = Bf2Raw(bioformats2raw_layout=3)  # type: ignore
+        _create_zarr3_group(
+            self._dest,
+            bf2raw,
+            self._overwrite,
+            extra_attributes=self._extra_attributes,
+        )
 
         # Create OME directory and write METADATA.ome.xml if provided
         ome_path = self._dest / "OME"
@@ -1152,16 +1184,23 @@ class Bf2RawBuilder:
 
         self._written_series.append(series_name)
         series_model = Series(series=self._written_series)
+        zarr_json_path = self._dest / "OME" / "zarr.json"
+        # Preserve existing extra attributes if present
+        existing_extra: dict[str, Any] = {}
+        if zarr_json_path.exists():
+            existing = json.loads(zarr_json_path.read_text())
+            existing_extra = {
+                k: v for k, v in existing.get("attributes", {}).items() if k != "ome"
+            }
         zarr_json = {
             "zarr_format": 3,
             "node_type": "group",
             "attributes": {
                 "ome": series_model.model_dump(mode="json", exclude_none=True),
+                **existing_extra,
             },
         }
-        (self._dest / "OME" / "zarr.json").write_text(
-            json.dumps(zarr_json, indent=self._indent)
-        )
+        zarr_json_path.write_text(json.dumps(zarr_json, indent=self._indent))
 
 
 class PlateBuilder:
@@ -1275,6 +1314,7 @@ class PlateBuilder:
         dest: str | PathLike,
         *,
         plate: Plate | None = None,
+        extra_attributes: dict[str, Any] | None = None,
         writer: ZarrWriter = "auto",
         chunks: ShapeLike | Literal["auto"] | None = "auto",
         shards: ShapeLike | None = None,
@@ -1283,6 +1323,7 @@ class PlateBuilder:
     ) -> None:
         self._dest = Path(dest)
         self._user_plate = plate  # Store user-provided plate (if any)
+        self._extra_attributes = extra_attributes
         self._writer: ZarrWriter = writer
         self._chunks: ShapeLike | Literal["auto"] | None = chunks
         self._shards = shards
@@ -1482,7 +1523,12 @@ class PlateBuilder:
         plate = _merge_plate_metadata(self._get_images_dict(), self._user_plate)
 
         # Create plate zarr.json
-        _create_zarr3_group(self._dest, plate, self._overwrite)
+        _create_zarr3_group(
+            self._dest,
+            plate,
+            self._overwrite,
+            extra_attributes=self._extra_attributes,
+        )
 
         # Create arrays for each well/field combination
         all_arrays: dict[str, Any] = {}
@@ -1593,6 +1639,7 @@ class PlateBuilder:
             "node_type": "group",
             "attributes": {
                 "ome": plate.model_dump(mode="json", exclude_none=True),
+                **(self._extra_attributes or {}),
             },
         }
         (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
@@ -1987,14 +2034,23 @@ class LabelsBuilder:
             # If label exists and we're in overwrite mode, it's already in the list
 
         labels_group = LabelsGroup(labels=all_labels)
+        zarr_json_path = self._dest / "zarr.json"
+        # Preserve existing extra attributes if present
+        existing_extra: dict[str, Any] = {}
+        if zarr_json_path.exists():
+            existing = json.loads(zarr_json_path.read_text())
+            existing_extra = {
+                k: v for k, v in existing.get("attributes", {}).items() if k != "ome"
+            }
         zarr_json = {
             "zarr_format": 3,
             "node_type": "group",
             "attributes": {
                 "ome": labels_group.model_dump(mode="json", exclude_none=True),
+                **existing_extra,
             },
         }
-        (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
+        zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
 
 
 # ##############################################################################
@@ -2222,6 +2278,7 @@ def _create_zarr3_group(
     ome_model: OMEMetadata | None = None,
     overwrite: bool = False,
     indent: int = 2,
+    extra_attributes: dict[str, Any] | None = None,
 ) -> None:
     """Create a zarr group directory with optional OME metadata in zarr.json."""
     zarr_json_path = dest_path / "zarr.json"
@@ -2246,10 +2303,13 @@ def _create_zarr3_group(
         "zarr_format": 3,
         "node_type": "group",
     }
-    if ome_model is not None:
-        zarr_json["attributes"] = {
-            "ome": ome_model.model_dump(mode="json", exclude_none=True),
-        }
+    if ome_model is not None or extra_attributes:
+        attrs: dict[str, Any] = {}
+        if ome_model is not None:
+            attrs["ome"] = ome_model.model_dump(mode="json", exclude_none=True)
+        if extra_attributes:
+            attrs.update(extra_attributes)
+        zarr_json["attributes"] = attrs
     zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
 
 
@@ -2257,6 +2317,7 @@ def _update_zarr3_group(
     dest_path: Path,
     ome_model: OMEMetadata,
     indent: int = 2,
+    extra_attributes: dict[str, Any] | None = None,
 ) -> None:
     """Update the ome metadata in an existing zarr group."""
     zarr_json_path = dest_path / "zarr.json"
@@ -2266,9 +2327,13 @@ def _update_zarr3_group(
     with open(zarr_json_path) as f:
         zarr_json = json.load(f)
 
-    zarr_json["attributes"] = {
-        "ome": ome_model.model_dump(mode="json", exclude_none=True),
-    }
+    # Preserve existing extra attributes (non-ome keys)
+    existing_attrs = zarr_json.get("attributes", {})
+    attrs: dict[str, Any] = {k: v for k, v in existing_attrs.items() if k != "ome"}
+    attrs["ome"] = ome_model.model_dump(mode="json", exclude_none=True)
+    if extra_attributes:
+        attrs.update(extra_attributes)
+    zarr_json["attributes"] = attrs
     zarr_json_path.write_text(json.dumps(zarr_json, indent=indent))
 
 

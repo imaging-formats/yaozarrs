@@ -844,6 +844,120 @@ def test_labels_builder_duplicate_handling(
 
 
 # =============================================================================
+# Extra attributes tests
+# =============================================================================
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_image_extra_attributes(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test that extra_attributes are written alongside ome in zarr.json."""
+    dest = tmp_path / "extra_attrs.zarr"
+    image = _make_image("test", {"y": 0.5, "x": 0.5})
+    data = np.zeros((64, 64), dtype="uint16")
+    extra = {"ist_metadata": {"affine_transform": [1, 0, 0, 1]}, "custom_key": 42}
+
+    write_image(dest, image, data, extra_attributes=extra, writer=writer)
+
+    zarr_json = json.loads((dest / "zarr.json").read_bytes())
+    attrs = zarr_json["attributes"]
+    assert "ome" in attrs
+    assert attrs["ist_metadata"] == {"affine_transform": [1, 0, 0, 1]}
+    assert attrs["custom_key"] == 42
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_prepare_image_extra_attributes(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test that prepare_image passes extra_attributes through."""
+    dest = tmp_path / "extra_attrs_prepare.zarr"
+    image = _make_image("test", {"y": 0.5, "x": 0.5})
+    extra = {"experiment_id": "EXP-001"}
+
+    prepare_image(
+        dest,
+        image,
+        ((64, 64), "uint16"),
+        extra_attributes=extra,
+        writer=writer,
+    )
+
+    zarr_json = json.loads((dest / "zarr.json").read_bytes())
+    assert zarr_json["attributes"]["experiment_id"] == "EXP-001"
+    assert "ome" in zarr_json["attributes"]
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_extra_attributes_roundtrip(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test that extra attributes survive a write -> read round trip."""
+    dest = tmp_path / "roundtrip.zarr"
+    image = _make_image("test", {"y": 0.5, "x": 0.5})
+    data = np.zeros((64, 64), dtype="uint16")
+    extra = {"custom": {"nested": True}, "version": "1.0"}
+
+    write_image(dest, image, data, extra_attributes=extra, writer=writer)
+
+    # Read back with open_group
+    group = yaozarrs.open_group(dest)
+    assert group.attrs["custom"] == {"nested": True}
+    assert group.attrs["version"] == "1.0"
+    assert "ome" in group.attrs
+
+    # OME metadata still parses correctly
+    ome = group.ome_metadata()
+    assert ome is not None
+
+    # Validate via OMEZarrGroupJSON model (tests OMEAttributes extra="allow")
+    from yaozarrs.v05 import OMEZarrGroupJSON
+
+    zarr_json = json.loads((dest / "zarr.json").read_bytes())
+    parsed = OMEZarrGroupJSON.model_validate(zarr_json)
+    dumped = parsed.model_dump(mode="json", exclude_none=True)
+    assert dumped["attributes"]["custom"] == {"nested": True}
+    assert dumped["attributes"]["version"] == "1.0"
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_bioformats2raw_extra_attributes(
+    tmp_path: Path, writer: ZarrWriter
+) -> None:
+    """Test that extra_attributes work with write_bioformats2raw."""
+    dest = tmp_path / "bf2raw_extra.zarr"
+    image = _make_image("series0", {"y": 0.5, "x": 0.5})
+    extra = {"project": "merfish"}
+
+    write_bioformats2raw(
+        dest,
+        {"0": (image, np.zeros((32, 32), dtype="uint16"))},
+        extra_attributes=extra,
+        writer=writer,
+    )
+
+    zarr_json = json.loads((dest / "zarr.json").read_bytes())
+    assert zarr_json["attributes"]["project"] == "merfish"
+    assert "ome" in zarr_json["attributes"]
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_extra_attributes(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Test that extra_attributes work with write_plate."""
+    dest = tmp_path / "plate_extra.zarr"
+    plate, images = _make_plate(n_rows=1, n_cols=1)
+    extra = {"experiment": "spatial_transcriptomics"}
+
+    write_plate(
+        dest,
+        images,
+        plate=plate,
+        extra_attributes=extra,
+        writer=writer,
+    )
+
+    zarr_json = json.loads((dest / "zarr.json").read_bytes())
+    assert zarr_json["attributes"]["experiment"] == "spatial_transcriptomics"
+    assert "ome" in zarr_json["attributes"]
+
+
+# =============================================================================
 # Doctests
 # =============================================================================
 
