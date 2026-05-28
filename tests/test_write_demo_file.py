@@ -45,7 +45,7 @@ def test_image_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
 
     # Check multiscale levels
     for i in range(3):
-        assert zarr.open_array(str(image_path), mode="r", path=str(i))
+        assert zarr.open_array(str(image_path), mode="r", path=f"s{i}")
 
     metadata_file = image_path / ZATTRS[version]
     with open(metadata_file) as f:
@@ -77,7 +77,7 @@ def test_labels_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
     annotations_group = labels_group["annotations"]
     assert isinstance(labels_group, zarr.Group)
     assert isinstance(annotations_group, zarr.Group)
-    for key in ["0", "1"]:  # Label arrays
+    for key in ["s0", "s1"]:  # Label arrays
         assert isinstance(annotations_group[key], zarr.Array)
 
     metadata_file = labels_path / ZATTRS[version]
@@ -119,6 +119,6 @@ def test_plate_dataset(version: VersionStr, write_demo_ome: Callable) -> None:
             for field in ["0", "1"]:
                 field_group = well_group[field]
                 assert isinstance(field_group, zarr.Group)
-                assert isinstance(field_group["0"], zarr.Array)
+                assert isinstance(field_group["s0"], zarr.Array)
 
     yaozarrs.validate_ome_uri(plate_path / ZATTRS[version])

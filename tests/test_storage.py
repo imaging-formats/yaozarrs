@@ -233,7 +233,7 @@ MULTI_SCALE = {
     "axes": [{"name": "x", "type": "space"}, {"name": "y", "type": "space"}],
     "datasets": [
         {
-            "path": "0",
+            "path": "s0",
             "coordinateTransformations": [{"type": "scale", "scale": [1, 1]}],
         },
     ],
@@ -243,7 +243,7 @@ MULTI_SCALE2 = {
     "axes": [{"name": "x", "type": "space"}, {"name": "y", "type": "space"}],
     "datasets": [
         {
-            "path": "1",
+            "path": "s1",
             "coordinateTransformations": [{"type": "scale", "scale": [1, 1]}],
         },
     ],
@@ -258,22 +258,22 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
         StorageTestCase(
             StorageErrorType.dataset_path_not_found,
             {"type": "image"},
-            lambda p: shutil.rmtree(p / "0"),
+            lambda p: shutil.rmtree(p / "s0"),
         ),
         StorageTestCase(
             StorageErrorType.dataset_not_array,
             {"type": "image"},
-            update_meta("0", ("node_type",), "group"),
+            update_meta("s0", ("node_type",), "group"),
         ),
         StorageTestCase(
             StorageErrorType.dataset_dimension_mismatch,
             {"type": "image"},
-            update_meta("0", ("shape",), [10] * 5),
+            update_meta("s0", ("shape",), [10] * 5),
         ),
         StorageTestCase(
             StorageErrorType.dimension_names_mismatch,
             {"type": "image"},
-            update_meta("0", ("attributes",), {"dimension_names": ["a", "b", "c"]}),
+            update_meta("s0", ("attributes",), {"dimension_names": ["a", "b", "c"]}),
         ),
         StorageTestCase(
             StorageErrorType.well_path_not_found,
@@ -346,7 +346,7 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
         StorageTestCase(
             StorageErrorType.label_non_integer_dtype,
             {"type": "image-with-labels"},
-            update_meta(("labels", "annotations", "0"), ("data_type",), "float32"),
+            update_meta(("labels", "annotations", "s0"), ("data_type",), "float32"),
         ),
         StorageTestCase(
             StorageErrorType.labels_not_group,

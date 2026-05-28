@@ -148,10 +148,7 @@ def write_ome_image(
         group=root,
         axes=axes,
         storage_options={"chunks": chunks},
-        scaler=writer.Scaler(
-            downscale=scale_factor,
-            max_layer=num_levels - 1,
-        ),
+        scale_factors=[scale_factor**i for i in range(1, num_levels)],
         **metadata_kwargs,
     )
 
@@ -244,10 +241,7 @@ def write_ome_labels(
         name=labels_name,
         axes=axes,
         storage_options={"chunks": chunks},
-        scaler=writer.Scaler(
-            downscale=scale_factor,
-            max_layer=num_levels - 1,
-        ),
+        scale_factors=[scale_factor**i for i in range(1, num_levels)],
     )
     # ome-zarr writer does not appear to set version for labels, so do it here
     # TODO: report upstream?
@@ -405,10 +399,7 @@ def write_ome_plate(
                     group=field_group,
                     axes=image_axes,
                     storage_options={"chunks": chunks},
-                    scaler=writer.Scaler(
-                        downscale=scale_factor,
-                        max_layer=num_levels - 1,
-                    ),
+                    scale_factors=[scale_factor**i for i in range(1, num_levels)],
                 )
 
 

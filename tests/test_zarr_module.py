@@ -303,7 +303,7 @@ def test_path_with_spaces(
     shutil.copytree(src, dest)
 
     group = open_group(dest)
-    array = group["0"]
+    array = group["s0"]
     result = getattr(array, converter)()
     assert result is not None
 
@@ -328,9 +328,9 @@ def test_zarrarray_to_tensorstore(write_demo_ome: Callable, version: str) -> Non
     path = write_demo_ome("image", version=version)
     group = open_group(path)
     assert path.name in repr(group)
-    array = group["0"]
+    array = group["s0"]
     assert isinstance(array, ZarrArray)
-    assert f"{path.name}/0" in repr(array)
+    assert f"{path.name}/s0" in repr(array)
     result = array.to_tensorstore()
     assert isinstance(result, ts.TensorStore)
 
