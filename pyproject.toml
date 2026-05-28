@@ -66,7 +66,7 @@ dev = [
     "ipython>=8.37.0",
     "mypy>=1.18.2",
     "pdbpp>=0.11.7; sys_platform != 'win32'",
-    "pre-commit-uv>=4.1.5",
+    "prek>=0.4.3",
     "pyright>=1.1.407",
     "pytest-xdist>=3.8.0",
     "rich>=14.1.0",
