@@ -800,14 +800,10 @@ def prepare_image(
 
     # Normalize to sequence: single (shape, dtype) tuple -> list
     datasets_seq: Sequence[ShapeAndDType]
-    if (
-        isinstance(datasets, tuple)
-        and len(datasets) == 2
-        and isinstance(datasets[0], tuple)  # shape is first element
-    ):
-        datasets_seq = [datasets]  # type: ignore[list-item]
+    if _is_shape_and_dtype(datasets):
+        datasets_seq = [datasets]
     else:
-        datasets_seq = datasets  # type: ignore[assignment]
+        datasets_seq = cast("Sequence[ShapeAndDType]", datasets)
 
     if len(datasets_seq) != len(multiscale.datasets):
         raise ValueError(

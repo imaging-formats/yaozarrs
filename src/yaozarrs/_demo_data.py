@@ -119,7 +119,7 @@ def write_ome_image(
     root = zarr.group(store=store)
 
     # Prepare metadata
-    metadata_kwargs = {}
+    metadata_kwargs: dict[str, Any] = {}
     if channel_names or channel_colors:
         n_channels = shape[axes.index("c")] if "c" in axes else 1
         channels = []
@@ -267,7 +267,7 @@ def write_ome_labels(
             colors.append({"label-value": i + 1, "rgba": list(color)})
 
     # Add additional metadata if needed
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     if parent_image_path:
         kwargs["source"] = {"image": parent_image_path}
 
@@ -347,7 +347,7 @@ def write_ome_plate(
     root = zarr.group(store=store)
 
     # Create well paths
-    well_paths = []
+    well_paths: list[str | dict] = []
     for row_name in rows:
         for col_name in columns:
             well_path = f"{row_name}/{col_name}"
