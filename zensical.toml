@@ -61,7 +61,10 @@ toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
 
 [project.plugins.mkdocstrings.handlers.python]
-inventories = ["https://docs.python.org/3/objects.inv"]
+inventories = [
+    "https://docs.python.org/3/objects.inv",
+    "https://docs.pydantic.dev/latest/objects.inv",
+]
 paths = ["src"]
 
 [project.plugins.mkdocstrings.handlers.python.options]

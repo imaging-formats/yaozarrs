@@ -19,7 +19,9 @@ jobs:
           enable-cache: true
           python-version: "3.13"
 
-      - run: uv run --group docs zensical build --clean --strict
+      # TODO: re-enable --strict once https://github.com/zensical/zensical/issues/700
+      # (and the related autorefs over-flagging) is fixed.
+      - run: uv run --group docs zensical build --clean
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
