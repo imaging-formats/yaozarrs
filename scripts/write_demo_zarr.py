@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "numpy",
-#     "ome-zarr",
+#     "ome-zarr==0.16.0",
 #     "yaozarrs",
 #     "zarr",
 # ]
@@ -83,7 +83,7 @@ def main():
         "--num-levels", type=int, default=2, help="Number of resolution levels"
     )
     img_parser.add_argument(
-        "--scale-factor", type=float, default=2.0, help="Downsampling factor"
+        "--scale-factor", type=int, default=2, help="Downsampling factor"
     )
     img_parser.add_argument(
         "--channels",
@@ -118,7 +118,7 @@ def main():
         "--num-levels", type=int, default=2, help="Number of resolution levels"
     )
     lbl_parser.add_argument(
-        "--scale-factor", type=float, default=2.0, help="Downsampling factor"
+        "--scale-factor", type=int, default=2, help="Downsampling factor"
     )
     lbl_parser.add_argument(
         "--num-labels", type=int, default=5, help="Number of distinct labels"
@@ -169,7 +169,7 @@ def main():
         "--num-levels", type=int, default=2, help="Number of resolution levels"
     )
     plate_parser.add_argument(
-        "--scale-factor", type=float, default=2.0, help="Downsampling factor"
+        "--scale-factor", type=int, default=2, help="Downsampling factor"
     )
     plate_parser.add_argument(
         "--fields-per-well", type=int, default=1, help="Number of fields per well"
