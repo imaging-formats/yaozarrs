@@ -35,7 +35,7 @@ def test_cli_validate_invalid_store(write_demo_ome: Callable) -> None:
     """Test CLI validate command with invalid zarr store."""
     path = write_demo_ome("image", version="0.5")
     # Remove a required dataset to make it invalid
-    shutil.rmtree(path / "0")
+    shutil.rmtree(path / "s0")
 
     result = main(["validate", str(path)])
     assert result == 1

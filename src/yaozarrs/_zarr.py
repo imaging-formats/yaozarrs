@@ -336,7 +336,7 @@ class _CachedMapper(Mapping[str, bytes]):
             val = self._cache[key]
         if isinstance(val, Exception):
             return default
-        return val  # type: ignore[return-value]
+        return val  # ty: ignore[invalid-return-type]
 
     def __contains__(self, key: object) -> bool:
         """Check if a key exists in the mapper."""
@@ -392,10 +392,10 @@ class _CachedMapper(Mapping[str, bytes]):
                         self._cache[key] = None
 
         # Return cached results (only keys with non-None values)
-        result = {}
+        result: dict[str, bytes] = {}
         for key in keys:
             val = self._cache.get(key)
-            if val is not None:
+            if val is not None and not isinstance(val, Exception):
                 result[key] = val
         return result
 
@@ -515,8 +515,11 @@ class ZarrNode:
         except ImportError as e:
             raise ImportError("zarr package is required for to_zarr_python()") from e
 
-        mapper, full_path, _protocol = self._full_path()
-        return zarr.open(mapper.fs.unstrip_protocol(full_path), mode="r")
+        _mapper, full_path, protocol = self._full_path()
+        # zarr's URI parsing doesn't round-trip percent-encoded characters
+        # (e.g. spaces), so for local stores hand it the raw path directly.
+        target = full_path if protocol in ("file", "local") else self.store_path
+        return zarr.open(target, mode="r")
 
     @classmethod
     def node_type(cls) -> Literal["group", "array"]:

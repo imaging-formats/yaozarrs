@@ -100,7 +100,7 @@ def complex_ome_zarr_broken(complex_ome_zarr: Path) -> Path:
 
     # Error 1: Remove a dataset (field image) - dataset_path_not_found
     # Remove resolution level 0 from field A/1/0
-    shutil.rmtree(plate_path / "A" / "1" / "0" / "0")
+    shutil.rmtree(plate_path / "A" / "1" / "0" / "s0")
 
     # Error 2: Make a well into an array instead of group - well_path_not_group
     # Break well A/2 at the well level
@@ -110,20 +110,20 @@ def complex_ome_zarr_broken(complex_ome_zarr: Path) -> Path:
     # Use a different well (B/1) so it's discoverable
     _update_zarr_metadata(
         plate_path,
-        ("B", "1", "0", "0"),
+        ("B", "1", "0", "s0"),
         ("shape",),
         [10, 10, 10, 10, 10],  # Wrong number of dimensions
     )
 
     # Error 4: Make dataset into group instead of array - dataset_not_array
     # Use well B/2, field 0, dataset 0
-    _update_zarr_metadata(plate_path, ("B", "2", "0", "0"), ("node_type",), "group")
+    _update_zarr_metadata(plate_path, ("B", "2", "0", "s0"), ("node_type",), "group")
 
     # Error 5: Wrong dimension_names in array attributes - dimension_names_mismatch
     # Use well B/2, field 1 to keep it separate from error 4
     _update_zarr_metadata(
         plate_path,
-        ("B", "2", "1", "0"),
+        ("B", "2", "1", "s0"),
         ("attributes",),
         {"dimension_names": ["wrong", "names", "here"]},
     )
@@ -167,7 +167,7 @@ def complex_ome_zarr_broken(complex_ome_zarr: Path) -> Path:
     # Set float dtype for B/1/0's label array (resolution level 0)
     _update_zarr_metadata(
         plate_path,
-        ("B", "1", "0", "labels", "annotations", "0"),
+        ("B", "1", "0", "labels", "annotations", "s0"),
         ("data_type",),
         "float32",
     )

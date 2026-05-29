@@ -436,33 +436,29 @@ def _render_plain(
             lines[-1] = lines[-1] + f" ({node.dtype}, {node.shape})"
         return lines
 
-    all_items = [("meta", mf) for mf in node.metadata_files] + [
-        ("child", child) for child in node.children
-    ]
+    n_meta = len(node.metadata_files)
+    total_items = n_meta + len(node.children)
 
-    # Render each item
-    total_items = len(all_items)
-    for i, (item_type, item_data) in enumerate(all_items):
-        is_item_last = (i == total_items - 1) and not node.truncated
-
+    def _line_prefix(is_item_last: bool) -> str:
         if is_root:
-            line_prefix = TREE_LAST if is_item_last else TREE_BRANCH
-        else:
-            line_prefix = node_prefix + (TREE_LAST if is_item_last else TREE_BRANCH)
+            return TREE_LAST if is_item_last else TREE_BRANCH
+        return node_prefix + (TREE_LAST if is_item_last else TREE_BRANCH)
 
-        if item_type == "meta":
-            mf_name, mf_annotation = item_data  # type: ignore[misc]
-            lines.append(f"{line_prefix}{mf_name}{mf_annotation}")
-        else:
-            # Child node - recurse
-            child_node: TreeNode = item_data  # type: ignore[assignment]
-            child_lines = _render_plain(
-                child_node,
-                prefix=line_prefix,
-                is_last=is_item_last,
-                is_root=False,
-            )
-            lines.extend(child_lines)
+    # Render metadata files
+    for i, (mf_name, mf_annotation) in enumerate(node.metadata_files):
+        is_item_last = (i == total_items - 1) and not node.truncated
+        lines.append(f"{_line_prefix(is_item_last)}{mf_name}{mf_annotation}")
+
+    # Render child nodes
+    for j, child_node in enumerate(node.children):
+        is_item_last = (n_meta + j == total_items - 1) and not node.truncated
+        child_lines = _render_plain(
+            child_node,
+            prefix=_line_prefix(is_item_last),
+            is_last=is_item_last,
+            is_root=False,
+        )
+        lines.extend(child_lines)
 
     # Add ellipsis if truncated
     if node.truncated:

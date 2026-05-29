@@ -119,7 +119,7 @@ def write_ome_image(
     root = zarr.group(store=store)
 
     # Prepare metadata
-    metadata_kwargs = {}
+    metadata_kwargs: dict[str, Any] = {}
     if channel_names or channel_colors:
         n_channels = shape[axes.index("c")] if "c" in axes else 1
         channels = []
@@ -148,10 +148,7 @@ def write_ome_image(
         group=root,
         axes=axes,
         storage_options={"chunks": chunks},
-        scaler=writer.Scaler(
-            downscale=scale_factor,
-            max_layer=num_levels - 1,
-        ),
+        scale_factors=[scale_factor**i for i in range(1, num_levels)],
         **metadata_kwargs,
     )
 
@@ -244,10 +241,7 @@ def write_ome_labels(
         name=labels_name,
         axes=axes,
         storage_options={"chunks": chunks},
-        scaler=writer.Scaler(
-            downscale=scale_factor,
-            max_layer=num_levels - 1,
-        ),
+        scale_factors=[scale_factor**i for i in range(1, num_levels)],
     )
     # ome-zarr writer does not appear to set version for labels, so do it here
     # TODO: report upstream?
@@ -267,7 +261,7 @@ def write_ome_labels(
             colors.append({"label-value": i + 1, "rgba": list(color)})
 
     # Add additional metadata if needed
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     if parent_image_path:
         kwargs["source"] = {"image": parent_image_path}
 
@@ -347,7 +341,7 @@ def write_ome_plate(
     root = zarr.group(store=store)
 
     # Create well paths
-    well_paths = []
+    well_paths: list[str | dict] = []
     for row_name in rows:
         for col_name in columns:
             well_path = f"{row_name}/{col_name}"
@@ -405,10 +399,7 @@ def write_ome_plate(
                     group=field_group,
                     axes=image_axes,
                     storage_options={"chunks": chunks},
-                    scaler=writer.Scaler(
-                        downscale=scale_factor,
-                        max_layer=num_levels - 1,
-                    ),
+                    scale_factors=[scale_factor**i for i in range(1, num_levels)],
                 )
 
 
