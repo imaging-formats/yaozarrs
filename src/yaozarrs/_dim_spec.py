@@ -145,3 +145,40 @@ def _axes_datasets(dim_specs: Sequence[DimSpec], nlevels: int) -> dict[str, list
             tforms.append({"translation": [d.translation or 0.0 for d in dim_specs]})
         datasets.append({"path": str(level), "coordinateTransformations": tforms})
     return {"axes": axes, "datasets": datasets}
+
+
+def _coordinate_systems_datasets(
+    dim_specs: Sequence[DimSpec], nlevels: int, coordinate_system: str = "intrinsic"
+) -> dict[str, list[dict]]:
+    """Build v0.6-style ``coordinateSystems`` + ``datasets`` from DimSpecs.
+
+    Unlike the v0.5 :func:`_axes_datasets` (which emits a top-level ``axes`` list
+    and bare scale/translation transforms), v0.6 nests ``axes`` inside a named
+    coordinate system and gives each dataset transform an ``input``/``output``.
+    """
+    axes: list[dict] = [
+        {"name": d.name, "type": d.infer_type(), "unit": d.unit} for d in dim_specs
+    ]
+    coordinate_systems = [{"name": coordinate_system, "axes": axes}]
+
+    datasets = []
+    for level in range(nlevels):
+        scale_tform = [d.scale * d.infer_scale_factor() ** level for d in dim_specs]
+        io = {"input": {"path": str(level)}, "output": {"name": coordinate_system}}
+        if any(d.translation is not None for d in dim_specs):
+            # scale + translation must be wrapped in a single `sequence` transform
+            transform: dict = {
+                "type": "sequence",
+                "transformations": [
+                    {"type": "scale", "scale": scale_tform},
+                    {
+                        "type": "translation",
+                        "translation": [d.translation or 0.0 for d in dim_specs],
+                    },
+                ],
+                **io,
+            }
+        else:
+            transform = {"type": "scale", "scale": scale_tform, **io}
+        datasets.append({"path": str(level), "coordinateTransformations": [transform]})
+    return {"coordinateSystems": coordinate_systems, "datasets": datasets}
