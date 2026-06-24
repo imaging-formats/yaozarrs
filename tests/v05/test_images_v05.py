@@ -92,6 +92,23 @@ V05_VALID_IMAGES = [
             }
         ],
     },
+    # Test with custom axis using a non-null string type (treated as channel-like)
+    {
+        "version": "0.5",
+        "multiscales": [
+            {
+                "name": "custom-string-type",
+                "axes": [
+                    {"name": "angle", "type": "custom"},
+                    X_AXIS,
+                    Y_AXIS,
+                ],
+                "datasets": [
+                    {"path": "0", "coordinateTransformations": [scale_tform(3)]},
+                ],
+            }
+        ],
+    },
     # Test with translation transformation (after scale)
     {
         "version": "0.5",
