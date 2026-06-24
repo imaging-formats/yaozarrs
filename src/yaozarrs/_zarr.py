@@ -330,7 +330,9 @@ class _CachedMapper(Mapping[str, bytes]):
     def get(self, key: str, /, default: bytes) -> bytes: ...
     @overload
     def get(self, key: str, /, default: _T) -> _T: ...
-    def get(self, key: str, default: _T | None = None) -> _T | None:
+    def get(  # ty: ignore[invalid-method-override]
+        self, key: str, default: _T | None = None
+    ) -> _T | None:
         """Get a value from the mapper with caching."""
         if key not in self._cache:
             self._cache[key] = val = self._fsmap.get(key, default)
