@@ -217,8 +217,9 @@ def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
     # The entries MUST be ordered by "type" where the "time" axis must come first (if
     # present), followed by the "channel" or custom axis (if present) and the axes of
     # type "space".
-    type_order = {"time": 0, "channel": 1, None: 1, "space": 2}
-    sorted_axes = sorted(axes, key=lambda ax: type_order.get(ax.type, 3))
+    # custom/null types are ordered alongside "channel" (after time, before space)
+    type_order = {"time": 0, "channel": 1, "space": 2}
+    sorted_axes = sorted(axes, key=lambda ax: type_order.get(ax.type or "", 1))
     if axes != sorted_axes:
         raise ValueError(
             "Axes are not in the required order by type. "

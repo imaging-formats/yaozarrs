@@ -967,7 +967,7 @@ finder = doctest.DocTestFinder()
 @pytest.mark.skipif("zarr" not in WRITERS, reason="zarr writer not available")
 @pytest.mark.parametrize(
     "case",
-    (test for test in finder.find(_write) if test.examples),
+    [test for test in finder.find(_write) if test.examples],
     ids=lambda t: t.name.split(".")[-1],
 )
 def test_write_doctests_parametrized(
