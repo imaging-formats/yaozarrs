@@ -8,13 +8,27 @@ coordinates/displacements transforms).
 
 Legend: 🟢 decided & implemented · 🟡 needs your call · 🔴 known gap vs spec.
 
+## Validation policy
+
+The **JSON schema is the first source of truth**, supplemented by the normative
+prose in `index.md`. Per the ngff-spec developers, **any spec _example_ that
+conflicts with the schema or prose is wrong** (the examples will be fixed
+upstream). So we validate to the schema+prose and do *not* relax rules to make a
+non-conforming example pass. Where our local test fixtures violated the schema we
+fixed our copies (typed the axes; dropped two fabricated `transformations/`
+files; moved the `reference_to_label` labels link from `input` to `output`).
+
 ---
 
 ## Big-picture decisions (please sanity-check)
 
-- 🟢 **Version string is `"0.6.dev4"` only** (your call). `Literal["0.6.dev4"]`
-  everywhere. This is a *dev* string and **will need bumping** when 0.6 is
-  released (likely to `"0.6"`). Grep for `0.6.dev4` to find all sites.
+- 🟢 **Version string accepts the whole 0.6 line.** A shared `OMEV06` type
+  (`v06/_version.py`) is `Annotated[Literal["0.6"] | str, AfterValidator(...)]`
+  used by every versioned model. It accepts `"0.6"`, `"0.6.0"`, and `"0.6.dev*"`
+  tags, but **rejects** a `0.6.Z` patch release where `Z > 0` (e.g. `"0.6.1"`)
+  and anything outside 0.6 (`"0.5"`, `"0.66"`). Default emitted value is
+  `"0.6.dev4"`. Nothing needs bumping when 0.6 lands or when testing a newer dev
+  tag; only the default constant would change to emit a different string.
 - 🟢 **`coordinateSystems` replaces `axes`** (the RFC-5 redesign). On a
   `v06.Multiscale` there is **no `axes` field**; instead there is a required
   `coordinateSystems: list[CoordinateSystem]`, each holding `axes`. For v0.5
@@ -22,11 +36,13 @@ Legend: 🟢 decided & implemented · 🟡 needs your call · 🔴 known gap vs 
   *intrinsic* coordinate system's axes.
 - 🟢 **Dataset transforms now carry `input`/`output`.** Each dataset has exactly
   one transform (`scale`, `identity`, or a `sequence` of scale+translation) with
-  `input={"path": <level>}` and `output={"name": <coordinate-system>}`.
+  `input={"path": <level>}` and `output={"name": <coordinate-system>}`. All
+  datasets in a multiscale **MUST** share the *same* `output.name` (enforced in
+  `Multiscale._post_validate`; the spec requires one intrinsic coordinate system
+  per multiscale).
 - 🟢 **Full transform zoo modeled** (`identity, mapAxis, scale, translation,
   affine, rotation, bijection, sequence, byDimension, displacements,
-  coordinates`) as a discriminated union on `type`, with **v0.5-style pragmatic
-  validation**. Gaps listed below.
+  coordinates`) as a discriminated union on `type`. Remaining gaps listed below.
 - 🟢 **New `Scene` object** modeled (it's in the `ome_zarr` root union) but is
   **experimental** — see below.
 
@@ -39,9 +55,13 @@ Legend: 🟢 decided & implemented · 🟡 needs your call · 🔴 known gap vs 
   a `0` (or negative) scale factor will now fail.
 - 🟢 **`scale` length constraint dropped** in v0.6 (v0.5 had `minItems: 2`).
   Length is instead validated against the axes by the containing `Multiscale`.
-- 🟢 **Axis `type` is now optional and free-form** (no enum). New optional axis
-  fields **`longName`** and **`discrete`**. New `type: "array"` axes exist for
-  array/displacement coordinate systems.
+- 🟢 **An individual axis `type` is a free-form string** (no enum in the
+  non-strict `axes.schema`). New optional axis fields **`longName`** and
+  **`discrete`**. But the *array* as a whole MUST satisfy the `axes.schema`
+  `oneOf`: **either 2-3 `space` axes or ≥2 `array` axes** — this is enforced for
+  *every* coordinate system (`_axes._validate_axes_list`), so a fully type-less
+  axes array is invalid. The `space` branch also enforces the prose rules (≤1
+  time, ≤1 channel/custom, and time→channel/custom→space ordering).
 - 🟢 **`image-label` no longer has its own `version`** (the inner version field
   was removed; version lives once at the `ome` level). `v06.ImageLabel` has no
   `version` field (v05 did).
@@ -54,55 +74,54 @@ Legend: 🟢 decided & implemented · 🟡 needs your call · 🔴 known gap vs 
 
 ---
 
-## 🔴 Where we do NOT fully enforce the spec (pragmatic gaps)
+## Enforced (no longer hedged)
 
-These are deliberate (per "use v0.5 pragmatism as the guide"). Candidates for a
-future "strict mode".
+- 🟢 **Axes structural rules** — the `axes.schema` `oneOf` (2-3 `space` or ≥2
+  `array`) plus the prose rules (≤1 time, ≤1 channel/custom, ordering) are now
+  enforced for **every** coordinate system at the field level
+  (`_axes._validate_axes_list`). Type-less axes arrays are rejected.
+- 🟢 **Coordinate-system `name` uniqueness** — validated directly on
+  `CoordinateSystems` (both `Multiscale` and `Scene`), replacing whole-object
+  `UniqueList` (which missed same-`name`/different-`axes` collisions). *Document*-
+  wide uniqueness (names shared between a multiscale and a sibling scene) is still
+  not cross-checked.
+- 🟢 **`input`/`output` object form required** — the schema requires the object
+  form (`{"name": "in"}`); the bare-string shorthand (`"input": "in"`) is no
+  longer accepted (was an example-driven tolerance; the example is wrong).
+- 🟢 **Multiscale-level `coordinateTransformations` `input.path` SHOULD warning**
+  — restored. (The `reference_to_label` example that contradicted this is wrong
+  and our fixture copy is fixed: the labels link moved to `output`.)
 
-1. **Axes structural rules are only applied when fully typed.** The 2-3 space /
-   ≤1 time / ≤1 channel / ordering rules are enforced **only when every axis has
-   a recognized `space`/`time`/`channel` type.** Real v0.6 examples (e.g.
-   `label_strict/colors_properties.json`) use *type-less* axes
-   (`{"name":"x","unit":"micrometer"}`); hard-failing those would reject valid
-   spec examples. (RFC-3 / PR #75 "Unconstrained Axes" is moving this way.)
-2. **Affine / rotation matrix shapes are not validated.** We only check that
+## 🔴 Where we do NOT fully enforce the spec (remaining gaps)
+
+1. **Affine / rotation matrix shapes are not validated.** We only check that
    exactly one of the inline matrix or `path` is given. The spec restricts
    `rotation` to a square NxN matrix (N in 2..5) and ties affine/rotation
    dimensionality to the axes — not enforced.
-3. **Coordinate-system graph connectivity is not validated.** The spec says the
+2. **Coordinate-system graph connectivity is not validated.** The spec says the
    graph of coordinate systems (via `coordinateTransformations`) MUST be fully
    connected. We don't check this.
-4. **Multiscale-level `coordinateTransformations` are weakly validated.** We
-   accept the transform list but do **not** verify that referenced
-   `input.name`/`output.name` coordinate systems exist, that dimensionality
-   matches, or that an `output.path` obeys the downward-only relative-path rule
+3. **Multiscale-level `coordinateTransformations` — partially validated.** We DO
+   enforce that `input.name == intrinsic`, that `output` references a declared CS
+   (or a labels link via `name`+`path`), and that labels-link transforms are
+   identity/scale/translation. We do **not** verify dimensionality matching or
+   that an `output.path` obeys the downward-only relative-path rule
    (`^(\.\./|/)` forbidden).
-5. **Scene transforms are weakly validated.** We require `input.name` and
-   `output.name` to be present, but do **not** check that they reference declared
-   coordinate systems, nor connectivity, nor path constraints.
-6. **`byDimension` axis references** (`input_axes`/`output_axes`) are typed as
+4. **Scene transforms — partially validated.** We require `input.name` and
+   `output.name` to be present (field-level on `SceneDef.coordinateTransformations`)
+   but do **not** check that they reference declared coordinate systems, nor
+   connectivity, nor path constraints.
+5. **`byDimension` axis references** (`input_axes`/`output_axes`) are typed as
    `list[float]` (the *schema* types them as `number`, even though the prose
    describes them as axis names/indices). We don't validate that they reference
    real axes. (Recorded discrepancy between schema and prose.)
-7. **Coordinate-system `name` uniqueness is only structural.** `coordinateSystems`
-   uses `UniqueList` (whole-object uniqueness). Two coordinate systems with the
-   **same `name` but different `axes`** would currently pass; the spec wants
-   names unique across the whole document.
-8. **Dataset `sequence` ordering is stricter than the schema.** We require
-   exactly one `scale` *followed by* one `translation` (matching the prose
-   description). The schema's `sequence` variant only requires two items, each a
-   `oneOf[scale, translation]` (no order enforced). So we are slightly *stricter*
-   here, not looser.
+6. **`mapAxis` does not enforce `uniqueItems`.** The schema marks the index list
+   `uniqueItems: true`; we enforce the bounds/length but allow duplicate indices.
 
----
-
-## Tolerances (we accept MORE than the schema)
-
-- 🟢 **Bare-string `input`/`output` shorthand.** Some spec examples write
-  `"input": "in"` instead of `"input": {"name": "in"}` (e.g.
-  `transformations/mapAxis1.json`, inconsistently within one file). The schema
-  requires the object form. We coerce a bare string to `{"name": <str>}` on input
-  and always *emit* the object form.
+Note: **dataset `sequence` ordering is intentionally *stricter* than the schema**
+— we require exactly one `scale` *followed by* one `translation` (per the prose);
+the schema's `sequence` variant only requires two `oneOf[scale, translation]`
+items. Stricter, not looser, so it stays.
 
 ---
 
@@ -130,8 +149,13 @@ future "strict mode".
 
 ## Things validated against the real spec examples
 
-All of `ome/ngff-spec/examples/**` (downloaded from `main`) parse/validate as
-expected, except the intentionally-experimental / intentionally-invalid ones
-noted above:
-`multiscales_strict/*`, `label_strict/colors_properties`, `plate_strict/*`,
-`well_strict/*`, `scene/*`, `ome/series-2`, and 12 `transformations/*`.
+Our fixture copies under `tests/data/v06/examples/**` were taken from
+`ome/ngff-spec/examples` on `main`, then **corrected where the upstream example
+violated the schema** (per the policy above): the type-less axes in
+`label_strict/colors_properties`, `multiscales_strict/multiscales_reference_to_label`,
+and the `transformations/*` coordinate systems were given `type: "space"`;
+`mapAxis1`'s bare-string `input`/`output` were objectified; the labels link in
+`reference_to_label` moved to `output`; and the two fabricated 1-D
+`coordinates1d`/`displacement1d` fixtures (never in upstream) were removed
+(`coordinates`/`displacements` transforms are covered by unit tests instead).
+These corrections should be pushed upstream too.

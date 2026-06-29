@@ -5,6 +5,8 @@ from pydantic import Field
 
 from yaozarrs._base import _BaseModel
 
+from ._version import OMEV06
+
 # NOTE (v0.6): structurally identical to v0.5 except for the `version` string.
 # The bf2raw and ome (series) schemas only bumped their `$id`/version enum to
 # "0.6.dev4"; no fields changed.
@@ -39,7 +41,7 @@ class Bf2Raw(_BaseModel):
         numbered as shown above, starting from `0`, e.g., `0/`, `1/`, `2/`, etc.
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )
@@ -74,7 +76,7 @@ class Series(_BaseModel):
         model would simply contain "version".
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )

@@ -11,21 +11,41 @@ object in v0.6 (`scene.schema`) and is still in flux:
 
 !!! warning "Experimental / unstable"
     This object is modeled for completeness (it appears in the `ome_zarr` root
-    union) but the spec around it is actively changing. See `TRICKY_NOTES.md`.
+    union) but the spec around it is actively changing. See `TRICKY_NOTES_v06.md`.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import Field, model_validator
-from typing_extensions import Self
+from pydantic import AfterValidator, Field
 
 from yaozarrs._base import _BaseModel
 
-from ._coordinate_systems import CoordinateSystem
+from ._coordinate_systems import CoordinateSystems
 from ._transforms import Transformation
+from ._version import OMEV06
 
 __all__ = ["ArrayCoordinateSystem", "Scene", "SceneDef"]
+
+
+def _validate_scene_io_names(
+    transforms: list[Transformation],
+) -> list[Transformation]:
+    # In a scene, both input and output must reference a coordinate system by name.
+    for i, t in enumerate(transforms):
+        loc = f"coordinateTransformations[{i}]"
+        if t.input is None or t.input.name is None:
+            raise ValueError(f"{loc}: 'input' must provide a 'name'.")
+        if t.output is None or t.output.name is None:
+            raise ValueError(f"{loc}: 'output' must provide a 'name'.")
+    return transforms
+
+
+SceneTransformList: TypeAlias = Annotated[
+    list[Transformation],
+    MinLen(1),
+    AfterValidator(_validate_scene_io_names),
+]
 
 
 class ArrayCoordinateSystem(_BaseModel):
@@ -45,14 +65,14 @@ class ArrayCoordinateSystem(_BaseModel):
 class SceneDef(_BaseModel):
     """The content of the `scene` metadata field."""
 
-    coordinateTransformations: Annotated[list[Transformation], MinLen(1)] = Field(
+    coordinateTransformations: SceneTransformList = Field(
         description=(
             "Transformations defining spatial relationships between coordinate "
             "systems. Both `input` and `output` reference coordinate systems by "
             "`name`."
         )
     )
-    coordinateSystems: list[CoordinateSystem] | None = Field(
+    coordinateSystems: CoordinateSystems | None = Field(
         default=None,
         description="Coordinate systems combined with the transforms.",
     )
@@ -60,17 +80,6 @@ class SceneDef(_BaseModel):
         default=None,
         description="(Deprecated) array coordinate system; being removed from spec.",
     )
-
-    @model_validator(mode="after")
-    def _validate_io_names(self) -> Self:
-        # In a scene, both input and output must reference a coordinate system by name.
-        for i, t in enumerate(self.coordinateTransformations):
-            loc = f"scene.coordinateTransformations[{i}]"
-            if t.input is None or t.input.name is None:
-                raise ValueError(f"{loc}: 'input' must provide a 'name'.")
-            if t.output is None or t.output.name is None:
-                raise ValueError(f"{loc}: 'output' must provide a 'name'.")
-        return self
 
 
 class Scene(_BaseModel):
@@ -80,10 +89,10 @@ class Scene(_BaseModel):
         `scene.schema` does not list `version` under its `ome` object (likely an
         oversight). For consistency with every other v0.6 document, `yaozarrs`
         keeps a `version` field here, defaulting to "0.6.dev4". See
-        `TRICKY_NOTES.md`.
+        `TRICKY_NOTES_v06.md`.
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )

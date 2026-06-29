@@ -227,13 +227,12 @@ Axis: TypeAlias = Annotated[
 def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
     """Validate a list of Axis for a `CoordinateSystem.axes`.
 
-    !!! note "Pragmatic, type-aware validation"
-        v0.6 makes the axis `type` *optional* (and RFC-3 / ngff-spec PR #75 moves
-        toward fully "unconstrained" axes). Real v0.6 spec examples include axes
-        with no `type` at all (e.g. `{"name": "x", "unit": "micrometer"}`). So we
-        only apply the v0.5-style structural rules (2-3 space axes, <=1 time, <=1
-        channel, ordering) when *every* axis carries a recognized
-        space/time/channel type. See `TRICKY_NOTES.md`.
+    Enforces the `axes.schema` `oneOf`: an axes array MUST be *either* a physical
+    coordinate system with 2-3 `space` axes, *or* an array coordinate system with
+    >=2 `array` axes (exactly one branch). This is a structural schema rule and
+    applies to *every* coordinate system, so a fully type-less axes array is
+    invalid. The physical branch additionally enforces the prose rules (<=1 time,
+    <=1 channel/custom, and time->channel/custom->space ordering).
     """
     # names MUST be unique within the (coordinate system's) list.
     names = [ax.name for ax in axes]
@@ -241,45 +240,49 @@ def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
         raise ValueError(f"Axis names must be unique. Found duplicates in {names}")
 
     types = [getattr(ax, "type", None) for ax in axes]
+    n_space = types.count("space")
+    n_array = types.count("array")
 
-    # The axes.schema `oneOf` allows EITHER a "physical" coordinate system with
-    # 2-3 space axes, OR an "array" coordinate system with >=2 `array` axes.
-    if any(t == "array" for t in types):
-        if sum(t == "array" for t in types) < 2:
-            raise ValueError("An 'array' coordinate system must have >=2 array axes.")
+    # axes.schema oneOf: EXACTLY one of (2-3 space) / (>=2 array) must hold.
+    space_branch = 2 <= n_space <= 3
+    array_branch = n_array >= 2
+    if space_branch == array_branch:  # both or neither -> oneOf violated
+        raise ValueError(
+            "An axes array must contain either 2-3 axes of type 'space' or "
+            f"at least 2 axes of type 'array' (got {n_space} space, {n_array} array)."
+        )
+
+    if array_branch:
+        # array coordinate system: time/channel/ordering rules do not apply.
         return axes
 
-    # Only enforce the (v0.5-style) space/time/channel structural rules when every
-    # axis carries a recognized type; otherwise we cannot reliably apply them and
-    # we accept the axes (matching the permissive spec examples).
-    known = {"space", "time", "channel"}
-    if not all(t in known for t in types):
-        return axes
-
-    n_space_axes = types.count("space")
-    if n_space_axes < 2 or n_space_axes > 3:
-        raise ValueError("There must be 2 or 3 axes of type 'space'.")
+    # physical (space) branch: prose structural rules.
     if types.count("time") > 1:
         raise ValueError("There can be at most 1 axis of type 'time'.")
-    if types.count("channel") > 1:
-        raise ValueError("There can be at most 1 axis of type 'channel'.")
+    # at most one "additional" non-space, non-time axis (channel or null/custom).
+    if len(axes) - n_space - types.count("time") > 1:
+        raise ValueError(
+            "There can be at most 1 axis of type 'channel' or a null/custom type."
+        )
 
-    # The entries SHOULD be ordered by "type" where the "time" axis must come first
-    # (if present), followed by the "channel" axis (if present) and the space axes.
-    # NOTE: pending RFC-3 ("Unconstrained Axes", ngff-spec PR #75) may relax this.
-    type_order = {"time": 0, "channel": 1, "space": 2}
-    sorted_axes = sorted(axes, key=lambda ax: type_order.get(ax.type or "", 3))
-    if axes != sorted_axes:
+    # The entries MUST be ordered by "type": the "time" axis first (if present),
+    # then the "channel"/custom axis (if present), then the space axes.
+    def _order_key(ax: Axis) -> int:
+        t = getattr(ax, "type", None)
+        return 0 if t == "time" else (2 if t == "space" else 1)
+
+    if axes != sorted(axes, key=_order_key):
         raise ValueError(
             "Axes are not in the required order by type. "
-            "Order must be [time,] [channel,] space."
+            "Order must be [time,] [channel/custom,] space."
         )
     return axes
 
 
 AxesList: TypeAlias = Annotated[
     UniqueList[Axis],
-    # v0.6 axes.schema: minItems 1, maxItems 5
+    # v0.6 axes.schema: minItems 1, maxItems 5 (the `oneOf` in _validate_axes_list
+    # imposes an effective minimum of 2).
     Len(min_length=1, max_length=5),
     # hack to get around ordering of multiple after validators
     WrapValidator(lambda v, h: _validate_axes_list(h(v))),

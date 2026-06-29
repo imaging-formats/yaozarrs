@@ -4,10 +4,12 @@
       "name": "in",
       "axes": [
         {
-          "name": "j"
+          "name": "j",
+          "type": "space"
         },
         {
-          "name": "i"
+          "name": "i",
+          "type": "space"
         }
       ]
     },
@@ -15,10 +17,12 @@
       "name": "out1",
       "axes": [
         {
-          "name": "y"
+          "name": "y",
+          "type": "space"
         },
         {
-          "name": "x"
+          "name": "x",
+          "type": "space"
         }
       ]
     },
@@ -26,10 +30,12 @@
       "name": "out2",
       "axes": [
         {
-          "name": "y"
+          "name": "y",
+          "type": "space"
         },
         {
-          "name": "x"
+          "name": "x",
+          "type": "space"
         }
       ]
     }
@@ -42,8 +48,12 @@
         0,
         1
       ],
-      "input": "in",
-      "output": "out1"
+      "input": {
+        "name": "in"
+      },
+      "output": {
+        "name": "out1"
+      }
     },
     {
       "name": "permutation",

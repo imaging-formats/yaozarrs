@@ -28,6 +28,29 @@ def scale_ds(path: str, d: int, out: str = "cs", factor: float = 1.0) -> dict:
     }
 
 
+def scale_vec_ds(path: str, scale: list[float], out: str = "cs") -> dict:
+    return {
+        "path": path,
+        "coordinateTransformations": [
+            {
+                "type": "scale",
+                "scale": scale,
+                "input": {"path": path},
+                "output": {"name": out},
+            }
+        ],
+    }
+
+
+def identity_ds(path: str, out: str = "cs") -> dict:
+    return {
+        "path": path,
+        "coordinateTransformations": [
+            {"type": "identity", "input": {"path": path}, "output": {"name": out}}
+        ],
+    }
+
+
 def seq_ds(path: str, d: int, out: str = "cs", factor: float = 1.0) -> dict:
     return {
         "path": path,
@@ -81,7 +104,7 @@ V06_VALID_IMAGES = [
             }
         ],
     },
-    # type-less axes (allowed in v0.6) -- like the label spec example
+    # typed space axes without units
     {
         "version": "0.6.dev4",
         "multiscales": [
@@ -89,7 +112,10 @@ V06_VALID_IMAGES = [
                 "coordinateSystems": [
                     cs(
                         "phys",
-                        [{"name": "y", "unit": "um"}, {"name": "x", "unit": "um"}],
+                        [
+                            {"name": "y", "type": "space"},
+                            {"name": "x", "type": "space"},
+                        ],
                     )
                 ],
                 "datasets": [scale_ds("0", 2, out="phys")],
@@ -112,16 +138,68 @@ V06_VALID_IMAGES = [
         "multiscales": [
             {
                 "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                "datasets": [identity_ds("0")],
+            }
+        ],
+    },
+    # identity (== scale of ones) as the finest level, then a coarser scaled level
+    {
+        "version": "0.6.dev4",
+        "multiscales": [
+            {
+                "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                "datasets": [identity_ds("0"), scale_vec_ds("1", [2.0, 2.0])],
+            }
+        ],
+    },
+    # anisotropic but element-wise non-decreasing ordering is valid
+    {
+        "version": "0.6.dev4",
+        "multiscales": [
+            {
+                "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
                 "datasets": [
+                    scale_vec_ds("0", [1.0, 1.0]),
+                    scale_vec_ds("1", [1.0, 2.0]),
+                ],
+            }
+        ],
+    },
+    # multiscale-level coordinateTransformations: input=intrinsic, output=another
+    # declared coordinate system
+    {
+        "version": "0.6.dev4",
+        "multiscales": [
+            {
+                "coordinateSystems": [
+                    cs("cs", [X_AXIS, Y_AXIS]),
+                    cs("phys", [X_AXIS, Y_AXIS]),
+                ],
+                "datasets": [scale_ds("0", 2, out="cs")],
+                "coordinateTransformations": [
                     {
-                        "path": "0",
-                        "coordinateTransformations": [
-                            {
-                                "type": "identity",
-                                "input": {"path": "0"},
-                                "output": {"name": "cs"},
-                            }
-                        ],
+                        "type": "scale",
+                        "scale": [2.0, 2.0],
+                        "input": {"name": "cs"},
+                        "output": {"name": "phys"},
+                    }
+                ],
+            }
+        ],
+    },
+    # multiscale-level coordinateTransformations: link to a child labels group
+    # (output has name + path) with an allowed identity transform
+    {
+        "version": "0.6.dev4",
+        "multiscales": [
+            {
+                "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                "datasets": [scale_ds("0", 2, out="cs")],
+                "coordinateTransformations": [
+                    {
+                        "type": "identity",
+                        "input": {"name": "cs"},
+                        "output": {"name": "cs", "path": "labels/foo"},
                     }
                 ],
             }
@@ -165,7 +243,7 @@ V06_INVALID_IMAGES: list[tuple[dict, str]] = [
                 }
             ],
         },
-        "There must be 2 or 3 axes of type 'space'",
+        "either 2-3 axes of type 'space'",
     ),
     # bad axis ordering (space before time)
     (
@@ -288,6 +366,201 @@ V06_INVALID_IMAGES: list[tuple[dict, str]] = [
         },
         "coordinateSystems",
     ),
+    # datasets output to *different* (declared) coordinate systems
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [
+                        cs("cs", [X_AXIS, Y_AXIS]),
+                        cs("other", [X_AXIS, Y_AXIS]),
+                    ],
+                    "datasets": [
+                        scale_ds("0", 2, out="cs", factor=1.0),
+                        scale_ds("1", 2, out="other", factor=2.0),
+                    ],
+                }
+            ],
+        },
+        "must output to the same coordinate system",
+    ),
+    # wrong resolution ordering (ordering check is independent of axis types)
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                    "datasets": [
+                        scale_vec_ds("0", [2.0, 2.0]),
+                        scale_vec_ds("1", [1.0, 1.0]),
+                    ],
+                }
+            ],
+        },
+        "not ordered from highest to lowest resolution",
+    ),
+    # anisotropic, lexicographically "sorted" but element-wise decreasing (dim 2
+    # goes 4 -> 1): must be rejected
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                    "datasets": [
+                        scale_vec_ds("0", [1.0, 4.0]),
+                        scale_vec_ds("1", [2.0, 1.0]),
+                    ],
+                }
+            ],
+        },
+        "not ordered from highest to lowest resolution",
+    ),
+    # identity (scale of ones) after a coarser scaled level: identity is finer
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                    "datasets": [scale_vec_ds("0", [2.0, 2.0]), identity_ds("1")],
+                }
+            ],
+        },
+        "not ordered from highest to lowest resolution",
+    ),
+    # two coordinate systems share a name (differ in axes)
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [
+                        cs("cs", [X_AXIS, Y_AXIS]),
+                        cs("cs", [X_AXIS, Y_AXIS, Z_AXIS]),
+                    ],
+                    "datasets": [scale_ds("0", 2)],
+                }
+            ],
+        },
+        "names must be unique",
+    ),
+    # multiscale-level CT: input is not the intrinsic coordinate system
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [
+                        cs("cs", [X_AXIS, Y_AXIS]),
+                        cs("phys", [X_AXIS, Y_AXIS]),
+                    ],
+                    "datasets": [scale_ds("0", 2, out="cs")],
+                    "coordinateTransformations": [
+                        {
+                            "type": "scale",
+                            "scale": [2.0, 2.0],
+                            "input": {"name": "phys"},
+                            "output": {"name": "cs"},
+                        }
+                    ],
+                }
+            ],
+        },
+        "must be the intrinsic coordinate system",
+    ),
+    # multiscale-level CT: output references an undeclared coordinate system
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                    "datasets": [scale_ds("0", 2, out="cs")],
+                    "coordinateTransformations": [
+                        {
+                            "type": "scale",
+                            "scale": [2.0, 2.0],
+                            "input": {"name": "cs"},
+                            "output": {"name": "nope"},
+                        }
+                    ],
+                }
+            ],
+        },
+        "is not declared in coordinateSystems",
+    ),
+    # multiscale-level CT: labels link (output has path) with a disallowed type
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                    "datasets": [scale_ds("0", 2, out="cs")],
+                    "coordinateTransformations": [
+                        {
+                            "type": "affine",
+                            "affine": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+                            "input": {"name": "cs"},
+                            "output": {"name": "cs", "path": "labels/foo"},
+                        }
+                    ],
+                }
+            ],
+        },
+        "must be an identity, scale, or translation",
+    ),
+    # multiscale-level CT: missing input
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                    "datasets": [scale_ds("0", 2, out="cs")],
+                    "coordinateTransformations": [
+                        {
+                            "type": "scale",
+                            "scale": [2.0, 2.0],
+                            "output": {"name": "cs"},
+                        }
+                    ],
+                }
+            ],
+        },
+        "'input' must reference the intrinsic",
+    ),
+    # type-less axes are invalid (fail the axes.schema oneOf: 0 space, 0 array)
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [
+                        cs("cs", [{"name": "y"}, {"name": "x"}]),
+                    ],
+                    "datasets": [scale_vec_ds("0", [1.0, 1.0])],
+                }
+            ],
+        },
+        "either 2-3 axes of type 'space'",
+    ),
+    # a single axis can never satisfy the oneOf (needs >=2 space or >=2 array)
+    (
+        {
+            "version": "0.6.dev4",
+            "multiscales": [
+                {
+                    "coordinateSystems": [cs("cs", [{"name": "x", "type": "space"}])],
+                    "datasets": [scale_vec_ds("0", [1.0])],
+                }
+            ],
+        },
+        "either 2-3 axes of type 'space'",
+    ),
 ]
 
 
@@ -295,6 +568,60 @@ V06_INVALID_IMAGES: list[tuple[dict, str]] = [
 def test_invalid_v06_images(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=msg):
         v06.Image.model_validate(obj)
+
+
+def test_should_warnings_v06() -> None:
+    from yaozarrs._validation_warning import ValidationWarning
+
+    # dataset transform: input SHOULD omit 'name'
+    obj = {
+        "version": "0.6.dev4",
+        "multiscales": [
+            {
+                "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                "datasets": [
+                    {
+                        "path": "0",
+                        "coordinateTransformations": [
+                            {
+                                "type": "scale",
+                                "scale": [1.0, 1.0],
+                                "input": {"path": "0", "name": "cs"},
+                                "output": {"name": "cs"},
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.warns(ValidationWarning, match="'input' SHOULD omit 'name'"):
+        v06.Image.model_validate(obj)
+
+    # dataset transform: output SHOULD omit 'path'
+    obj2 = {
+        "version": "0.6.dev4",
+        "multiscales": [
+            {
+                "coordinateSystems": [cs("cs", [X_AXIS, Y_AXIS])],
+                "datasets": [
+                    {
+                        "path": "0",
+                        "coordinateTransformations": [
+                            {
+                                "type": "scale",
+                                "scale": [1.0, 1.0],
+                                "input": {"path": "0"},
+                                "output": {"name": "cs", "path": "somewhere"},
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.warns(ValidationWarning, match="'output' SHOULD omit 'path'"):
+        v06.Image.model_validate(obj2)
 
 
 def test_multiscale_from_dims() -> None:

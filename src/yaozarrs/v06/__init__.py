@@ -4,8 +4,11 @@ Specification (in development): the `main` branch of
 <https://github.com/ome/ngff-spec> *is* the v0.6 (currently `0.6.dev4`) spec.
 
 !!! warning "In-development version"
-    v0.6 is still a development version (`0.6.dev4`). Models accept/emit the
-    exact version string `"0.6.dev4"`. The headline change from v0.5 is the
+    v0.6 is still a development version (`0.6.dev4`). Models accept the whole
+    **0.6 line** -- `"0.6"`, `"0.6.0"`, and `"0.6.dev*"` tags -- and emit
+    `"0.6.dev4"` by default, so nothing needs bumping when v0.6 lands or when
+    testing a newer dev tag. (A `0.6.Z` *patch* release such as `"0.6.1"` is
+    rejected: it would be different content.) The headline change from v0.5 is the
     coordinate-systems + coordinate-transformations redesign (RFC-5): the
     multiscale `axes` field is replaced by named `coordinateSystems`, and
     dataset transforms carry `input`/`output`.

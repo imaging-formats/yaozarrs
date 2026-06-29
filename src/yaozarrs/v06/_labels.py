@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from annotated_types import Interval, Len, MinLen
 from pydantic import Field
@@ -7,6 +7,7 @@ from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
 
 from ._image import Image
+from ._version import OMEV06
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     # LabelImage and its dependencies
@@ -149,7 +150,7 @@ class LabelsGroup(_BaseModel):
         ```
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )

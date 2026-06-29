@@ -5,14 +5,17 @@
       "axes": [
         {
           "name": "k",
+          "type": "space",
           "discrete": true
         },
         {
           "name": "j",
+          "type": "space",
           "discrete": false
         },
         {
           "name": "i",
+          "type": "space",
           "discrete": false
         }
       ]
@@ -22,14 +25,17 @@
       "axes": [
         {
           "name": "c",
+          "type": "space",
           "discrete": true
         },
         {
           "name": "y",
+          "type": "space",
           "discrete": false
         },
         {
           "name": "x",
+          "type": "space",
           "discrete": false
         }
       ]

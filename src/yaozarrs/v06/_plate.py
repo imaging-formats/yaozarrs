@@ -8,6 +8,8 @@ from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
 from yaozarrs._util import RelaxedFOVPathName
 
+from ._version import OMEV06
+
 # NOTE (v0.6): the plate and well schemas are structurally identical to v0.5.
 # Only the `version` string changed to "0.6.dev4". This module is a copy of
 # v05/_plate.py with that single change.
@@ -226,7 +228,7 @@ class Plate(_BaseModel):
         - [`FieldOfView`][yaozarrs.v06.FieldOfView]
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )
@@ -303,7 +305,7 @@ class Well(_BaseModel):
         ```
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )

@@ -17,7 +17,9 @@ def _is_json_equivalent(a: Any, b: Any) -> bool:
             return False
         return all(_is_json_equivalent(a[k], b[k]) for k in a)
     if isinstance(a, Sequence) and isinstance(b, Sequence):  # pragma: no cover
-        return all(_is_json_equivalent(x, y) for x, y in zip(a, b, strict=True))
+        return len(a) == len(b) and all(
+            _is_json_equivalent(x, y) for x, y in zip(a, b, strict=True)
+        )
     raise TypeError(  # pragma: no cover
         f"Unsupported type for JSON equivalence: {type(a)}"
     )

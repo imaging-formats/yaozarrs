@@ -56,13 +56,12 @@ def test_type_survives_exclude_unset_roundtrip() -> None:
     TA.validate_json(dumped)
 
 
-def test_bare_string_io_shorthand() -> None:
-    # spec examples use "input": "in" shorthand; we coerce to {"name": "in"}
-    t = TA.validate_python(
-        {"type": "scale", "scale": [2, 2], "input": "in", "output": "out"}
-    )
-    assert t.input.name == "in"
-    assert t.output.name == "out"
+def test_bare_string_io_rejected() -> None:
+    # the schema requires the object form {"name": "in"}; a bare string is invalid
+    with pytest.raises(ValidationError):
+        TA.validate_python(
+            {"type": "scale", "scale": [2, 2], "input": "in", "output": "out"}
+        )
 
 
 @pytest.mark.parametrize(

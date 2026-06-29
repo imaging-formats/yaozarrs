@@ -31,14 +31,17 @@
             "axes": [
               {
                 "name": "z",
+                "type": "space",
                 "unit": "micrometer"
               },
               {
                 "name": "y",
+                "type": "space",
                 "unit": "micrometer"
               },
               {
                 "name": "x",
+                "type": "space",
                 "unit": "micrometer"
               }
             ]
@@ -48,11 +51,11 @@
           {
             "type": "identity",
             "input": {
-              "path": "labels/cell_segmentation",
               "name": "physical"
             },
             "output": {
-              "name": "physical"
+              "name": "physical",
+              "path": "labels/cell_segmentation"
             }
           }
         ]

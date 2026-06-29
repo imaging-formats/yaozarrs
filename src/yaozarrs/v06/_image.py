@@ -1,5 +1,6 @@
+import warnings
 from collections.abc import Sequence
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, TypeAlias
 
 from annotated_types import Len, MinLen
 from pydantic import AfterValidator, Field, WrapValidator, model_validator
@@ -10,8 +11,9 @@ from yaozarrs._dim_spec import DimSpec
 from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
 from yaozarrs._util import SuggestDatasetPath
+from yaozarrs._validation_warning import ValidationWarning
 
-from ._coordinate_systems import CoordinateSystem
+from ._coordinate_systems import CoordinateSystem, CoordinateSystems
 from ._transforms import (
     IdentityTransformation,
     ScaleTransformation,
@@ -19,6 +21,7 @@ from ._transforms import (
     Transformation,
     TranslationTransformation,
 )
+from ._version import OMEV06
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Image",
@@ -52,6 +55,11 @@ def _validate_dataset_transform(
     """
     (t,) = transforms  # Len(1, 1) guarantees exactly one
 
+    # this validation of a SequenceTransformation inside a DatasetTransformList, while
+    # verbose and annoying, is caused because the image.schema *specifically* redefines
+    # the union of valid Transformations inside of the coordinateTransformations list
+    # inside of a Dataset such that SequenceTransformations may only contain
+    # exactly one ScaleTransformation followed by exactly one TranslationTransformation.
     if isinstance(t, SequenceTransformation):
         inner = t.transformations
         scales = [x for x in inner if isinstance(x, ScaleTransformation)]
@@ -78,6 +86,20 @@ def _validate_dataset_transform(
         raise ValueError("A dataset transform's 'input' must provide a 'path'.")
     if t.output is None or t.output.name is None:
         raise ValueError("A dataset transform's 'output' must provide a 'name'.")
+
+    # SHOULD-level: input SHOULD omit `name`, output SHOULD omit `path` (spec).
+    if t.input.name is not None:
+        warnings.warn(
+            "A dataset transform's 'input' SHOULD omit 'name' (only 'path' is used).",
+            ValidationWarning,
+            stacklevel=2,
+        )
+    if t.output.path is not None:
+        warnings.warn(
+            "A dataset transform's 'output' SHOULD omit 'path' (only 'name' is used).",
+            ValidationWarning,
+            stacklevel=2,
+        )
     return transforms
 
 
@@ -159,7 +181,8 @@ class Dataset(_BaseModel):
     @property
     def output_name(self) -> str | None:
         """Name of the coordinate system this dataset maps into."""
-        return None if self.transform.output is None else self.transform.output.name
+        tf = self.transform
+        return None if tf.output is None else tf.output.name
 
     @property
     def ndim(self) -> int | None:
@@ -181,11 +204,32 @@ def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
         )
     if any(n > 5 for n in ndims.values()):
         raise ValueError("Datasets must not have more than 5 dimensions.")
+
+    # The datasets MUST be ordered from highest to lowest resolution: each level
+    # must be coarser-or-equal to the previous one in *every* dimension (its scale
+    # factors element-wise >= the previous level's). The spec
+    # restricts dataset transforms to scale/identity/sequence(scale, translation),
+    # so the scale is always directly available (never hidden in e.g. an affine).
+    # An `identity` level counts as a scale of all ones.
+    if ndims:  # all-identity (or empty) lists carry no scale info -> nothing to order
+        ndim = next(iter(ndims.values()))
+        scales = [
+            (dt.scale_transform.scale if dt.scale_transform else [1.0] * ndim)
+            for dt in datasets
+        ]
+        for i in range(1, len(scales)):
+            prev, cur = scales[i - 1], scales[i]
+            if any(c < p for p, c in zip(prev, cur)):
+                raise ValueError(
+                    "The datasets are not ordered from highest to lowest "
+                    f"resolution: level {i} (scale {cur}) is finer than level "
+                    f"{i - 1} (scale {prev}) in at least one dimension."
+                )
     return datasets
 
 
 DatasetsList: TypeAlias = Annotated[
-    UniqueList[Dataset],
+    list[Dataset],
     MinLen(1),
     # hack to get around ordering of multiple after validators
     WrapValidator(lambda v, h: _validate_datasets_list(h(v))),
@@ -221,7 +265,7 @@ class Multiscale(_BaseModel):
             "Resolution pyramid levels, ordered from highest to lowest resolution"
         )
     )
-    coordinateSystems: Annotated[UniqueList[CoordinateSystem], MinLen(1)] = Field(
+    coordinateSystems: Annotated[CoordinateSystems, MinLen(1)] = Field(
         description=(
             "Named coordinate systems for this image. Datasets `output` into one "
             "of these (conventionally named 'intrinsic')."
@@ -255,6 +299,16 @@ class Multiscale(_BaseModel):
     def _post_validate(self) -> Self:
         cs_names = {cs.name for cs in self.coordinateSystems}
 
+        # All datasets MUST map to the SAME output coordinate system (the spec:
+        # the dataset transform's `output.name` "MUST be the same value for every
+        # resolution level in a single multiscales").
+        out_names = {ds.output_name for ds in self.datasets if ds.output_name}
+        if len(out_names) > 1:
+            raise ValueError(
+                "All datasets in a multiscale must output to the same coordinate "
+                f"system, but found multiple: {sorted(out_names)}."
+            )
+
         # every dataset must output to a declared coordinate system, and (when it
         # has an explicit scale) match that system's dimensionality.
         for _id, ds in enumerate(self.datasets):
@@ -275,26 +329,60 @@ class Multiscale(_BaseModel):
                         f"coordinate system {out!r}."
                     )
 
-        # The "paths" of the datasets MUST be ordered from the highest resolution
-        # to the lowest resolution (largest to smallest scales).
-        intrinsic = self.intrinsic_coordinate_system
-        if intrinsic is not None:
-            spatial_indices = [
-                i for i, ax in enumerate(intrinsic.axes) if ax.type == "space"
-            ]
-            spatial_scales = []
-            for ds in self.datasets:
-                st = ds.scale_transform
-                if st is None:
-                    spatial_scales = []  # identity dataset: skip ordering check
-                    break
-                spatial_scales.append(tuple(st.scale[i] for i in spatial_indices))
-            if spatial_scales and spatial_scales != sorted(spatial_scales):
-                raise ValueError(
-                    "The datasets are not ordered from highest to lowest resolution. "
-                    f"Found spatial scales: {spatial_scales}"
-                )
+        # `multiscales > coordinateTransformations` rules (spec): each transform's
+        # `input` MUST be the intrinsic coordinate system (referenced by `name`),
+        # and `output` MUST reference either a coordinate system declared here (by
+        # `name`) or one in a child `labels` group (by `name` + `path`). In the
+        # labels case the transform MUST be an identity/scale/translation.
+        if self.coordinateTransformations:
+            intrinsic_name = next(iter(out_names), None)
+            for _id, t in enumerate(self.coordinateTransformations):
+                loc = f"coordinateTransformations.[{_id}]"
+                if t.input is None or t.input.name is None:
+                    raise ValueError(
+                        f"at {loc}:\n  'input' must reference the intrinsic "
+                        "coordinate system by 'name'."
+                    )
+                if intrinsic_name is not None and t.input.name != intrinsic_name:
+                    raise ValueError(
+                        f"at {loc}:\n  'input' must be the intrinsic coordinate "
+                        f"system {intrinsic_name!r}, not {t.input.name!r}."
+                    )
+                if t.input.path is not None:
+                    warnings.warn(
+                        f"at {loc}: 'input.path' SHOULD be omitted; the input "
+                        "refers to the intrinsic coordinate system in the same "
+                        "document.",
+                        ValidationWarning,
+                        stacklevel=2,
+                    )
+                if t.output is None or t.output.name is None:
+                    raise ValueError(
+                        f"at {loc}:\n  'output' must reference a coordinate system "
+                        "by 'name'."
+                    )
+                if t.output.path is None:
+                    if t.output.name not in cs_names:
+                        raise ValueError(
+                            f"at {loc}:\n  'output' coordinate system "
+                            f"{t.output.name!r} is not declared in coordinateSystems "
+                            f"{sorted(cs_names)}."
+                        )
+                elif not isinstance(
+                    t,
+                    (
+                        IdentityTransformation,
+                        ScaleTransformation,
+                        TranslationTransformation,
+                    ),
+                ):
+                    raise ValueError(
+                        f"at {loc}:\n  a transform whose 'output' links to a child "
+                        "labels group (via 'path') must be an identity, scale, or "
+                        f"translation, not {t.type!r}."
+                    )
 
+        # NOTE: scale ordering of datasets is validated in `_validate_datasets_list`
         return self
 
     @property
@@ -403,7 +491,7 @@ class Image(_BaseModel):
         For the optional `labels` group, see [LabelsGroup][yaozarrs.v06.LabelsGroup].
     """
 
-    version: Literal["0.6.dev4"] = Field(
+    version: OMEV06 = Field(
         default="0.6.dev4",
         description="OME-NGFF specification version",
     )

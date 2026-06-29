@@ -26,7 +26,7 @@ systems. When nested (inside `sequence`/`bijection`/`byDimension`) it does not.
 
 !!! warning "Pragmatic validation"
     Following the rest of `yaozarrs`, validation here is deliberately pragmatic.
-    See `TRICKY_NOTES.md` in the repo for the (recorded) list of places where we
+    See `TRICKY_NOTES_v06.md` in the repo for the (recorded) list of places where we
     do **not** fully enforce the letter of the spec (e.g. affine/rotation matrix
     shapes, `byDimension` axis references, full coordinate-system-graph
     connectivity).
@@ -77,16 +77,6 @@ class InputOutput(_BaseModel):
         default=None,
         description="Relative downward path to an external multiscale dataset.",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _coerce_bare_string(cls, v: Any) -> Any:
-        # Tolerate the bare-string shorthand `"input": "in"` seen in some spec
-        # examples (the schema requires the object form `{"name": "in"}`). We
-        # accept MORE than the schema here; we always *emit* the object form.
-        if isinstance(v, str):
-            return {"name": v}
-        return v
 
 
 class _Transform(_BaseModel):
@@ -193,7 +183,7 @@ class RotationTransformation(_Transform):
     !!! note "Pragmatic validation"
         The spec restricts the inline matrix to a square NxN matrix with N in
         2..5. We accept any nested list of numbers and do not enforce squareness
-        (recorded in `TRICKY_NOTES.md`).
+        (recorded in `TRICKY_NOTES_v06.md`).
     """
 
     type: Literal["rotation"] = "rotation"
@@ -226,6 +216,10 @@ class SequenceTransformation(_Transform):
     """An ordered sequence of transformations applied in order."""
 
     type: Literal["sequence"] = "sequence"
+    # NB: when a SequenceTransformation is found inside of a dataset's
+    # `coordinateTransformations` list, the transformations may only be of type
+    # `scale` or `translation`. This is enforced by the _validate_dataset_transform
+    # validator in _image.py, not here.
     transformations: list[Transformation] = Field(
         description="Transformations applied in order."
     )
@@ -238,7 +232,7 @@ class ByDimensionItem(_BaseModel):
         description="The transformation applied to the referenced axes."
     )
     # NOTE (v0.6): the schema types these items as `number` even though the prose
-    # describes them as axis names/indices (recorded in TRICKY_NOTES.md). We follow
+    # describes them as axis names/indices (recorded in TRICKY_NOTES_v06.md). We follow
     # the schema and accept numbers.
     input_axes: list[float] = Field(description="Input axes for this transformation.")
     output_axes: list[float] = Field(description="Output axes for this transformation.")

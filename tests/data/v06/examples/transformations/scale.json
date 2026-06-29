@@ -4,10 +4,12 @@
       "name": "in",
       "axes": [
         {
-          "name": "j"
+          "name": "j",
+          "type": "space"
         },
         {
-          "name": "i"
+          "name": "i",
+          "type": "space"
         }
       ]
     },
@@ -15,10 +17,12 @@
       "name": "out",
       "axes": [
         {
-          "name": "y"
+          "name": "y",
+          "type": "space"
         },
         {
-          "name": "x"
+          "name": "x",
+          "type": "space"
         }
       ]
     }
