@@ -88,6 +88,28 @@ imaging datasets.
 
 An **Image** is the fundamental building block of OME-Zarr.
 
+!!! abstract "What's new in v0.6 (`0.6.dev4`)? — a migration cheat-sheet"
+    v0.6 is an *in-development* version. The headline change is the **coordinate
+    systems + transformations** redesign (RFC-5):
+
+    - The multiscale `axes` field is **replaced** by named
+      [`coordinateSystems`][yaozarrs.v06.CoordinateSystem] (the `axes` now live
+      *inside* a coordinate system). See [Axes](#axes).
+    - Each dataset transform now carries **`input`** (the array, by `path`) and
+      **`output`** (a coordinate system, by `name`), and is restricted to a
+      `scale`, an `identity`, or a `sequence` of scale+translation. See
+      [Coordinate Transformations](#coordinate-transformations).
+    - A whole **transform zoo** is added (`affine`, `rotation`, `bijection`,
+      `byDimension`, `displacements`, `coordinates`, …) for multiscale-level and
+      cross-image ([`Scene`][yaozarrs.v06.Scene]) transforms.
+    - Axis `type` is now optional/free-form (`+ longName`, `+ discrete`); `scale`
+      values must be `> 0`; `image-label` is now required on label images.
+    - Plate, Well, bioformats2raw and Omero metadata are unchanged except for the
+      version string (`"0.6.dev4"`).
+
+    Use the `=== "v0.6"` tabs throughout this guide to see each difference, and
+    [`yaozarrs.v06`](../API_Reference/yaozarrs.v06.md) for the models.
+
 As of v0.5, a single image may have **no less than 2 and no more than 5
 dimensions**, and may store multiple resolution levels.
 
@@ -114,7 +136,7 @@ dimensions**, and may store multiple resolution levels.
 
 ### Directory Structure
 
-=== "OME-Zarr v0.5 (Zarr v3)"
+=== "OME-Zarr v0.5 / v0.6 (Zarr v3)"
 
     ```
     image.zarr/
@@ -127,6 +149,12 @@ dimensions**, and may store multiple resolution levels.
     └── 2/                   # downsampled level 2 
         └── ...
     ```
+
+    !!! note "v0.6 has the same on-disk layout as v0.5"
+        The directory/file structure is identical between v0.5 and v0.6 (both are
+        Zarr v3 with metadata under `attributes.ome`). Only the *content* of the
+        `multiscales` metadata changed (`coordinateSystems` + `input`/`output`
+        transforms) and the `version` string (`"0.6.dev4"`).
 
 === "OME-Zarr v0.4 (Zarr v2)"
 
@@ -169,6 +197,13 @@ with `name`, and optional `type` and/or `unit`:
 
     In practice, this limits valid axis combinations to: `[T][C][Z] Y X`  
     *(though no explicit restriction is placed on naming conventions)*
+
+    !!! note "v0.6 relaxes axis typing"
+        In v0.6 the axis `type` is optional and free-form, so `yaozarrs` only
+        enforces the space-count / ordering rules above when *every* axis is
+        typed as `space`/`time`/`channel`. Fully type-less axes (allowed by the
+        spec, and used in some official examples) are accepted as-is. The pending
+        RFC-3 ("Unconstrained Axes") is expected to relax this further.
 
 === "v0.4"
 
@@ -230,6 +265,60 @@ with `name`, and optional `type` and/or `unit`:
         v05.SpaceAxis(name="x", unit="micrometer"),
     ]
     ```
+
+=== "v0.6"
+
+    !!! warning "Big change in v0.6: axes move into a *coordinate system*"
+        In v0.6 the multiscale no longer has an `axes` field. Instead it has a
+        list of named **`coordinateSystems`**, and the `axes` live *inside* each
+        coordinate system. Datasets then map into a coordinate system *by name*
+        (see [Coordinate Transformations](#coordinate-transformations)).
+
+    Also new in v0.6: the axis `type` is now **optional** and free-form (the
+    `space`/`time`/`channel` enum is gone), and axes gained two optional fields,
+    `longName` and `discrete`.
+
+    **Spec JSON:**
+
+    ```json
+    {
+      // found in a "multiscales" object (replaces the old top-level "axes")
+      "coordinateSystems": [
+        {
+          "name": "intrinsic",
+          "axes": [
+            {"name": "c", "type": "channel"},
+            {"name": "z", "type": "space", "unit": "micrometer"},
+            {"name": "y", "type": "space", "unit": "micrometer"},
+            {"name": "x", "type": "space", "unit": "micrometer"}
+          ]
+        }
+      ]
+    }
+    ```
+
+    **yaozarrs Code:**
+
+    ```python
+    from yaozarrs import v06
+
+    coordinate_systems = [
+        v06.CoordinateSystem(
+            name="intrinsic",
+            axes=[
+                v06.ChannelAxis(name="c"),
+                v06.SpaceAxis(name="z", unit="micrometer"),
+                v06.SpaceAxis(name="y", unit="micrometer"),
+                v06.SpaceAxis(name="x", unit="micrometer"),
+            ],
+        )
+    ]
+    ```
+
+    !!! tip "Convenience accessor"
+        For v0.5 parity, [`Multiscale.axes`][yaozarrs.v06.Multiscale.axes] is a
+        read-only property that returns the axes of the *intrinsic* coordinate
+        system.
 
 ---
 
@@ -331,6 +420,87 @@ as well as stage positions and spatial offsets for registration.
           "dimension_names": ["c", "z", "y", "x"]
         }
         ```
+
+=== "v0.6"
+
+    !!! warning "Big change in v0.6: transforms gain `input`/`output`"
+        v0.6 reframes transforms as mappings *between coordinate systems*. A
+        dataset's single transform takes its **`input`** from the array (by
+        `path`) and produces an **`output`** in a coordinate system (by `name`).
+        The allowed dataset transforms are a single `scale`, a single
+        `identity`, or a `sequence` of one `scale` then one `translation`
+        (a bare `scale` + `translation` list is **no longer** valid at the
+        dataset level — wrap them in a `sequence`).
+
+    **Spec JSON (scale only):**
+
+    ```json
+    {
+      "datasets": [{
+        "path": "0",
+        "coordinateTransformations": [
+          {
+            "type": "scale",
+            "scale": [1.0, 0.5, 0.1, 0.1],
+            "input": {"path": "0"},
+            "output": {"name": "intrinsic"}
+          }
+        ]
+      }]
+    }
+    ```
+
+    **Spec JSON (scale + translation, via `sequence`):**
+
+    ```json
+    {
+      "type": "sequence",
+      "input": {"path": "0"},
+      "output": {"name": "intrinsic"},
+      "transformations": [
+        {"type": "scale", "scale": [1.0, 0.5, 0.1, 0.1]},
+        {"type": "translation", "translation": [0.0, 0.0, 100.0, 200.0]}
+      ]
+    }
+    ```
+
+    **yaozarrs Code:**
+
+    ```python
+    from yaozarrs import v06
+
+    dataset = v06.Dataset(
+        path="0",
+        coordinateTransformations=[
+            v06.ScaleTransformation(
+                scale=[1.0, 0.5, 0.1, 0.1],
+                input=v06.InputOutput(path="0"),
+                output=v06.InputOutput(name="intrinsic"),
+            )
+        ],
+    )
+    ```
+
+    !!! tip "Let `from_dims` do the wiring"
+        Building the coordinate system + `input`/`output` by hand is verbose.
+        [`Multiscale.from_dims`][yaozarrs.v06.Multiscale.from_dims] builds it all
+        for you from a list of [`DimSpec`][yaozarrs.DimSpec].
+
+    !!! info "More transform types in v0.6"
+        Beyond `scale`/`translation`/`identity`/`sequence`, v0.6 adds `mapAxis`,
+        `affine`, `rotation`, `bijection`, `byDimension`, `displacements`, and
+        `coordinates`. These appear in *multiscale-level*
+        `coordinateTransformations` and in the new
+        [`Scene`][yaozarrs.v06.Scene] object, not on individual datasets. See
+        [yaozarrs.v06](../API_Reference/yaozarrs.v06.md#coordinate-transformations).
+
+    !!! note "Change: scale must be positive"
+        In v0.6 every `scale` factor must be strictly `> 0` (v0.5 placed no
+        constraint).
+
+    !!! info "v0.6 keeps the `dimension_names` requirement"
+        As in v0.5, each array's `zarr.json` **MUST** include `dimension_names`
+        matching the (intrinsic) coordinate system's axis names.
 
 ---
 

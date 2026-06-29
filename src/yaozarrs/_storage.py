@@ -57,6 +57,10 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
         from yaozarrs.v05._storage import StorageValidatorV05
 
         Validator = StorageValidatorV05
+    elif ome_version.startswith("0.6"):
+        from yaozarrs.v06._storage import StorageValidatorV06
+
+        Validator = StorageValidatorV06
     elif ome_version == "0.4":
         from yaozarrs.v04._storage import StorageValidatorV04
 

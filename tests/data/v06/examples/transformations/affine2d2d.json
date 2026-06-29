@@ -1,0 +1,53 @@
+{
+  "coordinateSystems": [
+    {
+      "name": "ji",
+      "axes": [
+        {
+          "name": "j",
+          "type": "space"
+        },
+        {
+          "name": "i",
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "name": "yx",
+      "axes": [
+        {
+          "name": "y",
+          "type": "space"
+        },
+        {
+          "name": "x",
+          "type": "space"
+        }
+      ]
+    }
+  ],
+  "coordinateTransformations": [
+    {
+      "type": "affine",
+      "affine": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ]
+      ],
+      "input": {
+        "name": "ji"
+      },
+      "output": {
+        "name": "yx"
+      }
+    }
+  ]
+}

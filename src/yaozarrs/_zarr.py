@@ -39,7 +39,7 @@ from pydantic import (
     model_validator,
 )
 
-from yaozarrs import v04, v05
+from yaozarrs import v04, v05, v06
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -118,7 +118,7 @@ ZarrJson: TypeAlias = Annotated[
     ZarrJsonArrayV3 | ZarrJsonGroupV3, Field(discriminator="node_type")
 ]
 
-AnyOMEMetadata: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEMetadata
+AnyOMEMetadata: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEMetadata | v06.OMEMetadata
 
 
 class OMEAttributesV5(BaseModel):
@@ -168,12 +168,14 @@ class ZarrMetadata(BaseModel):
 
     def ome_metadata(
         self, *, version: str | None = None
-    ) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
+    ) -> v05.OMEMetadata | v06.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata if present in attributes, else None."""
         attrs = self.attributes
         version = version or self._guess_ome_version()
         if version == "0.5":
             return TypeAdapter(v05.OMEMetadata).validate_python(attrs["ome"])
+        elif version and version.startswith("0.6"):
+            return TypeAdapter(v06.OMEMetadata).validate_python(attrs["ome"])
         elif version == "0.4":
             return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(attrs)
         elif version:
@@ -698,7 +700,7 @@ class ZarrGroup(ZarrNode):
 
     def ome_metadata(
         self, *, version: str | None = None
-    ) -> v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
+    ) -> v05.OMEMetadata | v06.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata (as a yaozarrs object) if present, else None.
 
         Parameters

@@ -29,9 +29,18 @@ writing functions added via [optional extras](./installation.md).
 
 ### Metadata Creation
 
-You can create OME-Zarr metadata objects using the pydantic models in
-`yaozarrs.v04` and `yaozarrs.v05` modules.  Pick a top-level object (e.g.
+You can create OME-Zarr metadata objects using the pydantic models in the
+`yaozarrs.v04`, `yaozarrs.v05`, and `yaozarrs.v06` modules.  Pick a top-level
+object (e.g.
 [`Image`](./ome_zarr_guide.md#working-with-images), [`Plate`](./ome_zarr_guide.md#working-with-plates), etc..) and create it using standard pydantic model syntax:
+
+!!! info "New: OME-Zarr v0.6 (in development)"
+    Support for the in-development **v0.6** (`0.6.dev4`) spec is available in
+    [`yaozarrs.v06`](./API_Reference/yaozarrs.v06.md). v0.6 replaces the
+    multiscale `axes` field with named `coordinateSystems` and reworks
+    coordinate transformations. See the
+    [migration cheat-sheet](./ome_zarr_guide.md#working-with-images) and the
+    `=== "v0.6"` tabs throughout the guide.
 
 === "From `yaozarrs` models"
 
