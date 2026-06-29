@@ -22,18 +22,6 @@ files; moved the `reference_to_label` labels link from `input` to `output`).
 
 ## Big-picture decisions (please sanity-check)
 
-- 🟢 **Version string accepts the whole 0.6 line.** A shared `OMEV06` type
-  (`v06/_version.py`) is `Annotated[Literal["0.6"] | str, AfterValidator(...)]`
-  used by every versioned model. It accepts `"0.6"`, `"0.6.0"`, and `"0.6.dev*"`
-  tags, but **rejects** a `0.6.Z` patch release where `Z > 0` (e.g. `"0.6.1"`)
-  and anything outside 0.6 (`"0.5"`, `"0.66"`). Default emitted value is
-  `"0.6.dev4"`. Nothing needs bumping when 0.6 lands or when testing a newer dev
-  tag; only the default constant would change to emit a different string.
-- 🟢 **`coordinateSystems` replaces `axes`** (the RFC-5 redesign). On a
-  `v06.Multiscale` there is **no `axes` field**; instead there is a required
-  `coordinateSystems: list[CoordinateSystem]`, each holding `axes`. For v0.5
-  parity we expose a **read-only `Multiscale.axes` property** that returns the
-  *intrinsic* coordinate system's axes.
 - 🟢 **Dataset transforms now carry `input`/`output`.** Each dataset has exactly
   one transform (`scale`, `identity`, or a `sequence` of scale+translation) with
   `input={"path": <level>}` and `output={"name": <coordinate-system>}`. All
