@@ -1,0 +1,45 @@
+{
+  "coordinateSystems": [
+    {
+      "name": "in",
+      "axes": [
+        {
+          "name": "j",
+          "type": "space"
+        },
+        {
+          "name": "i",
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "name": "out",
+      "axes": [
+        {
+          "name": "y",
+          "type": "space"
+        },
+        {
+          "name": "x",
+          "type": "space"
+        }
+      ]
+    }
+  ],
+  "coordinateTransformations": [
+    {
+      "type": "translation",
+      "input": {
+        "name": "in"
+      },
+      "output": {
+        "name": "out"
+      },
+      "translation": [
+        9,
+        -1.42
+      ]
+    }
+  ]
+}

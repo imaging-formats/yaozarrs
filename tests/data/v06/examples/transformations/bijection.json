@@ -1,0 +1,49 @@
+{
+  "coordinateSystems": [
+    {
+      "name": "src",
+      "axes": [
+        {
+          "name": "j",
+          "type": "space"
+        },
+        {
+          "name": "i",
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "name": "tgt",
+      "axes": [
+        {
+          "name": "y",
+          "type": "space"
+        },
+        {
+          "name": "x",
+          "type": "space"
+        }
+      ]
+    }
+  ],
+  "coordinateTransformations": [
+    {
+      "type": "bijection",
+      "forward": {
+        "type": "coordinates",
+        "path": "forward_coordinates"
+      },
+      "inverse": {
+        "type": "coordinates",
+        "path": "inverse_coordinates"
+      },
+      "input": {
+        "name": "src"
+      },
+      "output": {
+        "name": "tgt"
+      }
+    }
+  ]
+}

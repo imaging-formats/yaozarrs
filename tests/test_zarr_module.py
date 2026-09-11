@@ -7,12 +7,6 @@ from typing import TYPE_CHECKING, Callable
 from unittest.mock import patch
 
 import pytest
-
-try:
-    import fsspec
-except ImportError:
-    pytest.skip("fsspec not installed", allow_module_level=True)
-
 from pydantic import BaseModel
 
 from yaozarrs._zarr import (
@@ -23,6 +17,8 @@ from yaozarrs._zarr import (
     _CachedMapper,
     open_group,
 )
+
+fsspec = pytest.importorskip("fsspec")
 
 if TYPE_CHECKING:
     from pathlib import Path

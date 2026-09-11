@@ -7,10 +7,7 @@ from typing import TYPE_CHECKING, Callable
 
 import pytest
 
-try:
-    import zarr  # noqa: F401
-except ImportError:
-    pytest.skip("zarr not installed", allow_module_level=True)
+pytest.importorskip("zarr")
 
 from yaozarrs._cli import main
 

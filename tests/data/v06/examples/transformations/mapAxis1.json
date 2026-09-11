@@ -1,0 +1,73 @@
+{
+  "coordinateSystems": [
+    {
+      "name": "in",
+      "axes": [
+        {
+          "name": "j",
+          "type": "space"
+        },
+        {
+          "name": "i",
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "name": "out1",
+      "axes": [
+        {
+          "name": "y",
+          "type": "space"
+        },
+        {
+          "name": "x",
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "name": "out2",
+      "axes": [
+        {
+          "name": "y",
+          "type": "space"
+        },
+        {
+          "name": "x",
+          "type": "space"
+        }
+      ]
+    }
+  ],
+  "coordinateTransformations": [
+    {
+      "name": "equivalent to identity",
+      "type": "mapAxis",
+      "mapAxis": [
+        0,
+        1
+      ],
+      "input": {
+        "name": "in"
+      },
+      "output": {
+        "name": "out1"
+      }
+    },
+    {
+      "name": "permutation",
+      "type": "mapAxis",
+      "mapAxis": [
+        1,
+        0
+      ],
+      "input": {
+        "name": "in"
+      },
+      "output": {
+        "name": "out2"
+      }
+    }
+  ]
+}

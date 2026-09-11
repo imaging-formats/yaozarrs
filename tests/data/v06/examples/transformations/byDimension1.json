@@ -1,0 +1,71 @@
+{
+  "coordinateSystems": [
+    {
+      "name": "in",
+      "axes": [
+        {
+          "name": "j",
+          "type": "space"
+        },
+        {
+          "name": "i",
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "name": "out",
+      "axes": [
+        {
+          "name": "y",
+          "type": "space"
+        },
+        {
+          "name": "x",
+          "type": "space"
+        }
+      ]
+    }
+  ],
+  "coordinateTransformations": [
+    {
+      "type": "byDimension",
+      "input": {
+        "name": "in"
+      },
+      "output": {
+        "name": "out"
+      },
+      "transformations": [
+        {
+          "transformation": {
+            "type": "translation",
+            "translation": [
+              -1.0
+            ]
+          },
+          "input_axes": [
+            1
+          ],
+          "output_axes": [
+            1
+          ]
+        },
+        {
+          "transformation": {
+            "type": "scale",
+            "scale": [
+              2.0
+            ]
+          },
+          "input_axes": [
+            0
+          ],
+          "output_axes": [
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}
