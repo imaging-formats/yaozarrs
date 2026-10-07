@@ -1406,10 +1406,8 @@ class PlateBuilder:
         # Update plate metadata with the new well
         self._update_plate_metadata()
 
-        # Generate Well metadata for this well and create well subgroup
-        well_group_path = self._dest / f"{row}/{col}"
-        well_metadata = self._generate_well_metadata(list(images))
-        _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
+        # Create the well subgroup (and the row group above it)
+        well_group_path = self._create_well_group(f"{row}/{col}", list(images))
 
         # Write each field of view
         for fov, (image_model, datasets_seq) in normalized_fields.items():
@@ -1530,10 +1528,7 @@ class PlateBuilder:
         all_arrays: dict[str, Any] = {}
 
         for well_path, fields in self._wells.items():
-            # Generate Well metadata and group
-            well_metadata = self._generate_well_metadata(list(fields))
-            well_group_path = self._dest / well_path
-            _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
+            well_group_path = self._create_well_group(well_path, list(fields))
 
             # Create arrays for each field
             for fov, (image_model, datasets) in fields.items():
@@ -1640,14 +1635,26 @@ class PlateBuilder:
         }
         (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
 
-        # Create row directories if needed
-        row_names = {row for (row, _col) in self._written_wells_data.keys()} | {
-            row for row_path in self._wells.keys() for row in [row_path.split("/")[0]]
-        }
-        for row_name in row_names:
-            row_path = self._dest / row_name
-            if not row_path.exists():
-                _create_zarr3_group(row_path, ome_model=None, overwrite=self._overwrite)
+    def _create_well_group(self, well_path: str, field_names: list[str]) -> Path:
+        """Create the group for well ``well_path`` ("A/1") and the row group above it.
+
+        The row group ("A/") is created first if it is not already there; Zarr v3 has
+        no implicit groups, so it needs a ``zarr.json`` of its own for a reader to
+        resolve plate -> row -> well. Returns the path of the well group.
+        """
+        row_path = self._dest / well_path.split("/")[0]
+        row_path.mkdir(parents=True, exist_ok=True)
+        row_json = row_path / "zarr.json"
+        if not row_json.exists():
+            # Not _create_zarr3_group: that treats an existing path as something to
+            # replace, and the row directory already exists once any sibling well
+            # does. A row has no metadata to overwrite, so writing it is idempotent.
+            row_json.write_text(json.dumps({"zarr_format": 3, "node_type": "group"}))
+
+        well_group_path = self._dest / well_path
+        well_metadata = self._generate_well_metadata(field_names)
+        _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
+        return well_group_path
 
     def _generate_well_metadata(self, field_names: list[str]) -> Well:
         """Generate Well metadata from field names.

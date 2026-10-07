@@ -510,6 +510,43 @@ def test_write_plate_multi_field(tmp_path: Path, writer: ZarrWriter) -> None:
     yaozarrs.validate_zarr_store(dest)
 
 
+def _hierarchy(dest: Path) -> dict[str, str]:
+    """Every zarr node in `dest`, as ``{path relative to dest: node_type}``.
+
+    Descends only through groups, since an array's chunk directories are storage
+    rather than hierarchy -- so every directory this *does* reach is required to be a
+    node, and a bare directory left between two groups fails right here.
+    """
+    nodes: dict[str, str] = {}
+
+    def walk(path: Path, rel: str) -> None:
+        zarr_json = path / "zarr.json"
+        assert zarr_json.exists(), f"'{rel}' is a directory but not a zarr node"
+        node_type = json.loads(zarr_json.read_bytes())["node_type"]
+        nodes[rel] = node_type
+        if node_type != "group":
+            return
+        for child in sorted(child for child in path.iterdir() if child.is_dir()):
+            walk(child, f"{rel}/{child.name}" if rel != "." else child.name)
+
+    walk(dest, ".")
+    return nodes
+
+
+def _expected_hierarchy(
+    images: Mapping[tuple[str, str, str], tuple[v05.Image, list[np.ndarray]]],
+) -> dict[str, str]:
+    """The nodes a plate of `images` must have: plate/row/well/field/array."""
+    expected = {".": "group"}
+    for (row, col, fov), (image, _datasets) in images.items():
+        expected[row] = "group"
+        expected[f"{row}/{col}"] = "group"
+        expected[f"{row}/{col}/{fov}"] = "group"
+        for dataset in image.multiscales[0].datasets:
+            expected[f"{row}/{col}/{fov}/{dataset.path}"] = "array"
+    return expected
+
+
 @pytest.mark.parametrize("writer", WRITERS)
 def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test PlateBuilder immediate write workflow."""
@@ -523,6 +560,7 @@ def test_plate_builder_immediate_write(tmp_path: Path, writer: ZarrWriter) -> No
     for (row, col), fields in wells_data.items():
         assert builder.write_well(row=row, col=col, images=fields) is builder
     assert repr(builder) == "<PlateBuilder: 2 wells>"
+    assert _hierarchy(dest) == _expected_hierarchy(images_mapping)
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -531,7 +569,7 @@ def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test PlateBuilder prepare-only workflow."""
 
     dest = tmp_path / "builder_prepare.zarr"
-    plate, images_mapping = _make_plate(n_rows=1, n_cols=1)
+    plate, images_mapping = _make_plate(n_rows=2, n_cols=1)
 
     builder = PlateBuilder(dest, plate=plate, writer=writer)
 
@@ -552,6 +590,7 @@ def test_plate_builder_prepare_only(tmp_path: Path, writer: ZarrWriter) -> None:
         data = np.random.rand(*arr.shape).astype("float32")
         arr[:] = data
 
+    assert _hierarchy(dest) == _expected_hierarchy(images_mapping)
     yaozarrs.validate_zarr_store(dest)
 
 
