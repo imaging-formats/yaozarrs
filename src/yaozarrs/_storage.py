@@ -26,7 +26,7 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
     CLI command.
 
-    Currently only supports OME-Zarr version 0.5.
+    Supports OME-Zarr versions 0.4, 0.5 and 0.6.
 
     Parameters
     ----------
@@ -57,6 +57,10 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
         from yaozarrs.v05._storage import StorageValidatorV05
 
         Validator = StorageValidatorV05
+    elif ome_version.startswith("0.6"):
+        from yaozarrs.v06._storage import StorageValidatorV06
+
+        Validator = StorageValidatorV06
     elif ome_version == "0.4":
         from yaozarrs.v04._storage import StorageValidatorV04
 
@@ -323,6 +327,7 @@ class StorageErrorType(Enum):
     bf2raw_no_images = auto()
     bf2raw_path_not_group = auto()
     dataset_dimension_mismatch = auto()
+    dataset_dtype_mismatch = auto()
     dataset_not_array = auto()
     dataset_path_not_found = auto()
     dimension_names_mismatch = auto()
@@ -337,11 +342,20 @@ class StorageErrorType(Enum):
     label_non_integer_dtype = auto()
     label_path_not_found = auto()
     label_path_not_group = auto()
+    labels_intermediate_metadata = auto()
     labels_metadata_invalid = auto()
     labels_not_group = auto()
     series_invalid_image = auto()
     series_path_not_found = auto()
     series_path_not_group = auto()
+    transform_array_invalid = auto()
+    transform_graph_disconnected = auto()
+    transform_path_not_found = auto()
+    transform_target_invalid = auto()
+    transform_target_not_found = auto()
+    vector_field_invalid = auto()
+    version_mismatch = auto()
+    well_acquisition_invalid = auto()
     well_invalid = auto()
     well_path_not_found = auto()
     well_path_not_group = auto()

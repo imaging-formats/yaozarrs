@@ -1,4 +1,3 @@
-import importlib.util
 from pathlib import Path
 
 import pytest
@@ -13,7 +12,6 @@ try:
 except ImportError:
     connection_exceptions = ()
 
-HAVE_FSSPEC = importlib.util.find_spec("fsspec")
 DATA = Path(__file__).parent / "data"
 V05_DATA = DATA / "v05"
 
@@ -26,9 +24,9 @@ SOURCES = {
 }
 
 
-@pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
 @pytest.mark.parametrize("uri,expected_type", SOURCES.items())
 def test_from_uri(uri: str, expected_type: type) -> None:
+    pytest.importorskip("fsspec")
     try:
         obj = validate_ome_uri(uri)
     except connection_exceptions as e:

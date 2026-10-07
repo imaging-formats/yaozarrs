@@ -12,15 +12,6 @@ import pytest
 from yaozarrs._zarr import open_group
 
 try:
-    import zarr
-except ImportError:
-    pytest.skip("zarr not installed", allow_module_level=True)
-try:
-    import fsspec  # noqa: F401
-except ImportError:
-    pytest.skip("fsspec not installed", allow_module_level=True)
-
-try:
     from aiohttp.client_exceptions import ClientConnectorError
 
     connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
@@ -34,6 +25,9 @@ from yaozarrs._storage import (
     StorageValidationError,
     StorageValidationWarning,
 )
+
+zarr = pytest.importorskip("zarr")
+pytest.importorskip("fsspec")
 
 
 @contextmanager
