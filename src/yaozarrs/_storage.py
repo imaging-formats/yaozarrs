@@ -325,6 +325,7 @@ class StorageErrorType(Enum):
     dataset_dimension_mismatch = auto()
     dataset_not_array = auto()
     dataset_path_not_found = auto()
+    dimension_names_missing = auto()
     dimension_names_mismatch = auto()
     field_image_invalid = auto()
     field_path_not_found = auto()

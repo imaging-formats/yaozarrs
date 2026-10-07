@@ -119,13 +119,13 @@ def complex_ome_zarr_broken(complex_ome_zarr: Path) -> Path:
     # Use well B/2, field 0, dataset 0
     _update_zarr_metadata(plate_path, ("B", "2", "0", "s0"), ("node_type",), "group")
 
-    # Error 5: Wrong dimension_names in array attributes - dimension_names_mismatch
+    # Error 5: Wrong dimension_names in array metadata - dimension_names_mismatch
     # Use well B/2, field 1 to keep it separate from error 4
     _update_zarr_metadata(
         plate_path,
         ("B", "2", "1", "s0"),
-        ("attributes",),
-        {"dimension_names": ["wrong", "names", "here"]},
+        ("dimension_names",),
+        ["wrong", "names", "here"],
     )
 
     # Error 6: Make a field path into array - field_path_not_group

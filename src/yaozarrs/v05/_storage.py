@@ -366,17 +366,26 @@ class StorageValidatorV05:
                     },
                 )
 
-            # Check dimension_names attribute matches axes
-            if dim_names := list(dict(arr.attrs).get("dimension_names", [])):
-                expected_names = [ax.name for ax in multiscale.axes]
-                if dim_names != expected_names:
-                    result.add_error(
-                        StorageErrorType.dimension_names_mismatch,
-                        (*ds_loc, "dimension_names"),
-                        f"Array dimension_names {dim_names} don't match "
-                        f"axes names {expected_names}",
-                        ctx={"actual": dim_names, "expected": expected_names},
-                    )
+            # dimension_names (top-level in zarr.json) must be present and match axes
+            expected_names = [ax.name for ax in multiscale.axes]
+            dim_names = arr.dimension_names
+            if dim_names is None:
+                # spec says MUST, but zarr-python omits it by default: warn only
+                result.add_warning(
+                    StorageErrorType.dimension_names_missing,
+                    (*ds_loc, "dimension_names"),
+                    f"Array '{dataset.path}' has no dimension_names "
+                    f"(expected {expected_names})",
+                    ctx={"expected": expected_names},
+                )
+            elif dim_names != expected_names:
+                result.add_error(
+                    StorageErrorType.dimension_names_mismatch,
+                    (*ds_loc, "dimension_names"),
+                    f"Array dimension_names {dim_names} don't match "
+                    f"axes names {expected_names}",
+                    ctx={"actual": dim_names, "expected": expected_names},
+                )
 
         return result
 

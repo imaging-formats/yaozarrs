@@ -879,6 +879,11 @@ class ZarrArray(ZarrNode):
         # Data type is already normalized to numpy dtype string in _load_metadata
         return self._metadata.data_type
 
+    @property
+    def dimension_names(self) -> list[str | None] | None:
+        """Return the zarr v3 `dimension_names` (top-level in zarr.json), if any."""
+        return getattr(self._metadata, "dimension_names", None)
+
     if TYPE_CHECKING:
 
         def to_zarr_python(self) -> zarr.Array:
