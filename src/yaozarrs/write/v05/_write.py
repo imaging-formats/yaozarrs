@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import importlib.util
+import itertools
 import json
 import math
 import shutil
@@ -72,6 +73,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
     from os import PathLike
 
+    import dask.array as da
     import tensorstore
     import zarr
     from numpy.typing import DTypeLike
@@ -2513,6 +2515,17 @@ def _create_array_tensorstore(
     return store
 
 
+def _align_dask_chunks(data: da.Array, unit: tuple[int, ...]) -> da.Array:
+    """Rechunk axes whose dask chunk boundaries don't fall on `unit` boundaries."""
+    new_chunks: list[int | tuple[int, ...]] = []
+    for chunks, size in zip(data.chunks, unit):
+        bounds = itertools.accumulate(chunks[:-1])
+        new_chunks.append(chunks if all(b % size == 0 for b in bounds) else size)
+    if tuple(new_chunks) == data.chunks:
+        return data
+    return data.rechunk(tuple(new_chunks))
+
+
 def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
     """Write data to an already-created array (zarr or tensorstore)."""
     is_dask = "dask" in sys.modules and hasattr(data, "compute")
@@ -2531,6 +2544,11 @@ def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
         with ctx:
             # Handle both zarr and tensorstore
             if hasattr(array, "store"):  # zarr.Array
+                # With lock=False, dask chunks must not split a zarr write unit
+                # (shard, else chunk): concurrent read-modify-writes of the same
+                # unit would race, and the last writer wins (losing data).
+                write_unit = getattr(array, "shards", None) or array.chunks
+                dask_data = _align_dask_chunks(dask_data, write_unit)
                 da.store(dask_data, array, lock=False)  # ty: ignore[invalid-argument-type]
             else:  # tensorstore
                 computed = dask_data.compute()

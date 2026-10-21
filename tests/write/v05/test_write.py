@@ -191,6 +191,33 @@ def test_write_image_chunks(
 
 
 @pytest.mark.parametrize("writer", WRITERS)
+@pytest.mark.parametrize(
+    ("chunks", "shards"),
+    [((16, 32, 32), None), ((16, 16, 16), (16, 64, 64)), ((1, 32, 32), None)],
+    ids=["chunk-spans-z", "shard-spans-z", "aligned"],
+)
+def test_write_image_dask_misaligned_chunks(
+    tmp_path: Path, writer: ZarrWriter, chunks: tuple, shards: tuple | None
+) -> None:
+    """Dask chunks that split a zarr chunk/shard must not lose data (#63)."""
+    da = pytest.importorskip("dask.array")
+    dest = tmp_path / "dask.zarr"
+    ref = np.random.randint(1, 1000, size=(16, 64, 64)).astype("uint16")
+    # one dask chunk per plane, like `nd2.ND2File.to_dask()`
+    data = da.from_array(ref, chunks=(1, 64, 64))
+    write_image(
+        dest,
+        _make_image("dask_test", {"z": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[data],
+        chunks=chunks,
+        shards=shards,
+        writer=writer,
+    )
+    zarr = pytest.importorskip("zarr")
+    np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
 def test_write_image_metadata_correct(tmp_path: Path, writer: ZarrWriter) -> None:
     """Test that written metadata matches input Image model."""
     dest = tmp_path / "metadata.zarr"
