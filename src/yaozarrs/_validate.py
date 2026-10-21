@@ -35,7 +35,7 @@ def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
     pydantic.ValidationError
         If the validation fails.
     """
-    adapter = TypeAdapter[T](cls or AnyOME)
+    adapter: TypeAdapter[T | AnyOME] = TypeAdapter(cls or AnyOME)
     return adapter.validate_python(node)
 
 
@@ -72,7 +72,7 @@ def validate_ome_json(
     pydantic.ValidationError
         If the validation fails.
     """
-    adapter = TypeAdapter[T](cls or AnyOME)
+    adapter: TypeAdapter[T | AnyOME] = TypeAdapter(cls or AnyOME)
     return adapter.validate_json(data)
 
 
