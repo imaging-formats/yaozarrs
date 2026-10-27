@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from yaozarrs import v05, validate_ome_object
+from yaozarrs._validation_warning import ValidationWarning
 
 # Helper data
 COLUMN_A = {"name": "01"}
@@ -507,3 +508,16 @@ def test_fov_path_ignore_warning_env_var(monkeypatch: pytest.MonkeyPatch) -> Non
     # Path with invalid characters still raises error
     with pytest.raises(ValidationError, match="should match pattern"):
         v05.FieldOfView(path="fov 0")
+
+
+def test_plate_names_differing_by_case_warn() -> None:
+    plate = {
+        "columns": [COLUMN_A],
+        "rows": [{"name": "a"}, {"name": "A"}],
+        "wells": [
+            {"path": "a/01", "rowIndex": 0, "columnIndex": 0},
+            {"path": "A/01", "rowIndex": 1, "columnIndex": 0},
+        ],
+    }
+    with pytest.warns(ValidationWarning, match=r"row names \['a', 'A'\] differ only"):
+        v05.PlateDef.model_validate(plate)
