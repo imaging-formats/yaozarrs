@@ -1,9 +1,9 @@
 """Label building blocks (identical in v0.5 and v0.6)."""
 
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from annotated_types import Interval, Len
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
 
@@ -20,6 +20,9 @@ class LabelColor(_BaseModel):
     Associates a specific label integer value with an RGBA color for
     visualization purposes.
     """
+
+    # "Additional keys under `colors` are allowed."
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     label_value: float = Field(
         description="Integer label value from the segmentation image",
@@ -49,6 +52,9 @@ class LabelProperty(_BaseModel):
         LabelProperty(label_value=2, cell_type="glia", perimeter=180.3)
         ```
     """
+
+    # "an arbitrary number of key-value pairs MAY be present for each label value"
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     label_value: int = Field(
         description="Integer label value from the segmentation image",

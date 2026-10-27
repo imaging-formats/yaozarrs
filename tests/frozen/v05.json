@@ -440,6 +440,7 @@
       "type": "object"
     },
     "LabelColor": {
+      "additionalProperties": true,
       "properties": {
         "label-value": {
           "type": "number"
@@ -505,6 +506,7 @@
       "type": "object"
     },
     "LabelProperty": {
+      "additionalProperties": true,
       "properties": {
         "label-value": {
           "type": "integer"

@@ -284,3 +284,23 @@ V05_INVALID_LABELS_GROUPS: list[tuple[dict, str]] = [
 def test_invalid_v05_labels_groups(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=msg):
         v05.LabelsGroup.model_validate(obj)
+
+
+def test_v05_label_extra_keys_preserved() -> None:
+    # "Additional keys under `colors` are allowed." and "an arbitrary number of
+    # key-value pairs MAY be present for each label value" (properties)
+    label = v05.ImageLabel.model_validate(
+        {
+            "colors": [{"label-value": 1, "rgba": [255, 0, 0, 255], "name": "red"}],
+            "properties": [{"label-value": 1, "cell type": "neuron", "area": 12.5}],
+        }
+    )
+    dumped = label.model_dump(mode="json", exclude_none=True)
+    assert dumped["colors"] == [
+        {"label-value": 1, "rgba": [255, 0, 0, 255], "name": "red"}
+    ]
+    assert dumped["properties"] == [
+        {"label-value": 1, "cell type": "neuron", "area": 12.5}
+    ]
+    prop = v05.LabelProperty(label_value=1, cell_type="neuron")
+    assert prop.model_dump()["cell_type"] == "neuron"
