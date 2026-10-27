@@ -267,7 +267,7 @@ class Multiscale(_BaseModel):
                     raise ValueError(
                         f"{loc}: a transformation to a child label image must be "
                         "identity, scale, translation, or a sequence of a scale and "
-                        "a translation."
+                        "a translation (in either order)."
                     )
                 # (these all preserve dimensionality)
                 n_in = n_out = systems[intrinsic].ndim
@@ -338,7 +338,12 @@ class Multiscale(_BaseModel):
 
 def _is_label_transform(t: CoordinateTransformation) -> bool:
     if isinstance(t, SequenceTransformation):
-        return [step.type for step in t.transformations] == ["scale", "translation"]
+        # "a sequence of a scale and a translation transformation" (no order is given
+        # here, unlike for dataset transformations, so we accept either order)
+        return sorted(step.type for step in t.transformations) == [
+            "scale",
+            "translation",
+        ]
     return t.type in _LABEL_TRANSFORM_TYPES
 
 

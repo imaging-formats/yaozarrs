@@ -111,6 +111,17 @@ VALID_IMAGES = [
             }
         ]
     ),
+    # ... in either order (the labels section gives none)
+    image(
+        transforms=[
+            {
+                **SEQ,
+                "transformations": SEQ["transformations"][::-1],
+                "input": {"name": "physical"},
+                "output": {"name": "physical", "path": "labels/cells"},
+            }
+        ]
+    ),
     # explicit null path means "same document" (conflict N1)
     image(
         systems=[PHYSICAL, OTHER],
