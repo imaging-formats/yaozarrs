@@ -1,5 +1,5 @@
 import warnings
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias, get_args
 
 from pydantic import AfterValidator
 
@@ -20,3 +20,6 @@ def _warn_prerelease(v: str) -> str:
 VersionStr: TypeAlias = Annotated[
     Literal["0.6", "0.6rc0"], AfterValidator(_warn_prerelease)
 ]
+
+VERSIONS: tuple[str, ...] = get_args(get_args(VersionStr)[0])
+"""All `version` strings accepted for OME-Zarr v0.6 documents."""

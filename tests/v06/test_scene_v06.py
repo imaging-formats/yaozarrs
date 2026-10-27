@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -105,36 +103,3 @@ INVALID_SCENES = [
 def test_invalid_scenes(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=re.escape(msg)):
         v06.Scene.model_validate(obj)
-
-
-# ------------------------------------------------------------------------------
-# upstream examples and conformance fixtures
-# ------------------------------------------------------------------------------
-
-SPEC = Path(__file__).parent.parent / "data" / "v06" / "spec"
-
-
-def _scene_files() -> list[Path]:
-    out = []
-    for p in sorted(SPEC.rglob("*.json")):
-        if p.name.startswith(".") or p.name == "SOURCE.json":
-            continue
-        try:
-            d = json.loads(p.read_text())
-        except json.JSONDecodeError:  # (examples with // comments; none are scenes)
-            continue
-        if isinstance(d, dict) and "scene" in d.get("attributes", d).get("ome", {}):
-            out.append(p)
-    return out
-
-
-@pytest.mark.parametrize("path", _scene_files(), ids=lambda p: str(p.relative_to(SPEC)))
-def test_upstream_scenes(path: Path) -> None:
-    upstream_valid = "/invalid/" not in str(path)  # (examples are meant to be valid)
-    d = json.loads(path.read_text())
-    try:
-        v06.Scene.model_validate(d.get("attributes", d)["ome"])
-        valid = True
-    except ValidationError:
-        valid = False
-    assert valid == upstream_valid

@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from yaozarrs import v04, v05
+from yaozarrs import v04, v05, v06
 from yaozarrs._zarr import ZarrArray, ZarrGroup
 
 if TYPE_CHECKING:
@@ -50,6 +50,13 @@ class TreeNode:
     shape: tuple[int, ...] | None = None
 
 
+# OME metadata classes of each kind, across spec versions
+_IMAGE = (v04.Image, v05.Image, v06.Image)
+_LABELS_GROUP = (v04.LabelsGroup, v05.LabelsGroup, v06.LabelsGroup)
+_PLATE = (v04.Plate, v05.Plate, v06.Plate)
+_WELL = (v04.Well, v05.Well, v06.Well)
+
+
 def _natural_sort_key(s: str) -> list:
     """Natural sort key: "A/1", "A/2", "A/10" instead of "A/1", "A/10", "A/2"."""
     return [int(p) if p.isdigit() else p.lower() for p in re.split(r"(\d+)", s)]
@@ -65,9 +72,9 @@ def _get_node_icon(node: ZarrGroup | ZarrArray) -> str:
         return ICON_GROUP
     if ome is None:
         return ICON_GROUP
-    if isinstance(ome, (v05.Image, v04.Image)):
+    if isinstance(ome, _IMAGE):
         return ICON_IMAGE
-    if isinstance(ome, (v05.LabelsGroup, v04.LabelsGroup)):
+    if isinstance(ome, _LABELS_GROUP):
         return ICON_LABEL
     return ICON_OME_GROUP
 
@@ -93,12 +100,8 @@ def _get_ome_type_annotation(node: ZarrGroup | ZarrArray) -> str:
     module = cls.__module__
 
     # Extract version from module (e.g., 'yaozarrs.v05._image' -> 'v05')
-    if ".v05." in module:
-        version = "v05"
-    elif ".v04." in module:
-        version = "v04"
-    else:
-        version = ""
+    match = re.search(r"\.(v\d\d)\.", module)
+    version = match.group(1) if match else ""
 
     if version:
         return f"  <- {version}.{cls.__name__}"
@@ -126,7 +129,7 @@ def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
     if ome_meta is None:
         return None
 
-    if isinstance(ome_meta, (v05.Image, v04.Image)):
+    if isinstance(ome_meta, _IMAGE):
         children = list(
             dict.fromkeys(ds.path for ms in ome_meta.multiscales for ds in ms.datasets)
         )
@@ -134,18 +137,26 @@ def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
             children.append("labels")
         return children
 
-    if isinstance(ome_meta, (v05.Plate, v04.Plate)):
+    if isinstance(ome_meta, _PLATE):
         if plate := ome_meta.plate:
             return list(dict.fromkeys(w.path for w in plate.wells))
         return []
 
-    if isinstance(ome_meta, (v05.Well, v04.Well)):
+    if isinstance(ome_meta, _WELL):
         if well := ome_meta.well:
             return list(dict.fromkeys(img.path for img in well.images))
         return []
 
-    if isinstance(ome_meta, (v05.LabelsGroup, v04.LabelsGroup)):
+    if isinstance(ome_meta, _LABELS_GROUP):
         return list(ome_meta.labels)
+
+    if isinstance(ome_meta, v06.Scene):
+        refs = (
+            r
+            for t in ome_meta.scene.coordinateTransformations
+            for r in (t.input, t.output)
+        )
+        return list(dict.fromkeys(r.path for r in refs if r is not None and r.path))
 
     if isinstance(ome_meta, v04.Bf2Raw):
         children: list[str] = []
@@ -223,7 +234,7 @@ def _prefetch_plate_hierarchy(
     if ome_meta is None:
         return
 
-    if isinstance(ome_meta, (v05.Plate, v04.Plate)):
+    if isinstance(ome_meta, _PLATE):
         plate = ome_meta.plate
         well_paths = sorted(
             [w.path for w in (plate.wells if plate else [])],
@@ -247,7 +258,7 @@ def _prefetch_plate_hierarchy(
             try:
                 well = group[wp]
                 well_meta = well.ome_metadata()
-                if isinstance(well_meta, (v05.Well, v04.Well)):
+                if isinstance(well_meta, _WELL):
                     well_def = well_meta.well
                     img_paths = sorted(
                         [img.path for img in (well_def.images if well_def else [])],
@@ -272,7 +283,7 @@ def _prefetch_plate_hierarchy(
             try:
                 image = group[img_path]
                 img_meta = image.ome_metadata()
-                if isinstance(img_meta, (v05.Image, v04.Image)):
+                if isinstance(img_meta, _IMAGE):
                     for ms in img_meta.multiscales:
                         ds_paths = sorted(
                             [ds.path for ds in ms.datasets], key=_natural_sort_key
@@ -287,7 +298,7 @@ def _prefetch_plate_hierarchy(
         if array_paths:
             group.prefetch_children(array_paths)
 
-    elif isinstance(ome_meta, (v05.Image, v04.Image)):
+    elif isinstance(ome_meta, _IMAGE):
         # For images, just prefetch array paths
         array_paths: list[str] = []
         for ms in ome_meta.multiscales:

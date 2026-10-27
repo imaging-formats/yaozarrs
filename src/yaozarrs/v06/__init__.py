@@ -46,6 +46,7 @@ from ._transforms import (
     SequenceTransformation,
     TranslationTransformation,
 )
+from ._zarr_json import OMEAttributes, OMEMetadata, OMEZarrGroupJSON
 
 __all__ = [
     "Acquisition",
@@ -75,6 +76,9 @@ __all__ = [
     "LabelsGroup",
     "MapAxisTransformation",
     "Multiscale",
+    "OMEAttributes",
+    "OMEMetadata",
+    "OMEZarrGroupJSON",
     "Plate",
     "PlateDef",
     "PlateWell",

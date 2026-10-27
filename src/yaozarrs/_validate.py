@@ -3,10 +3,18 @@ from typing import Annotated, Any, TypeAlias, TypeVar, overload
 
 from pydantic import Discriminator, Tag, TypeAdapter
 
-from . import v04, v05
+from . import v04, v05, v06
 
-AnyOMEGroup: TypeAlias = v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON
-AnyOME: TypeAlias = AnyOMEGroup | v05.OMEMetadata | v05.OMEAttributes
+AnyOMEGroup: TypeAlias = (
+    v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON
+)
+AnyOME: TypeAlias = (
+    AnyOMEGroup
+    | v05.OMEMetadata
+    | v05.OMEAttributes
+    | v06.OMEMetadata
+    | v06.OMEAttributes
+)
 T = TypeVar("T", bound=AnyOME)
 
 # OME version strings -> the package that models them

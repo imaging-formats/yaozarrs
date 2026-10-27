@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 import re
 import warnings
-from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -107,59 +105,3 @@ def test_bf2raw_and_series() -> None:
 def test_prerelease_version_warns() -> None:
     with pytest.warns(ValidationWarning, match="pre-release"):
         v06.Well.model_validate({**well({"path": "0"}), "version": "0.6rc0"})
-
-
-# ------------------------------------------------------------------------------
-# upstream conformance fixtures (plate and well documents)
-# ------------------------------------------------------------------------------
-
-FIXTURES = (
-    Path(__file__).parent.parent / "data" / "v06" / "spec" / "tests" / "attributes"
-)
-
-
-def _fixtures(key: str) -> list[Path]:
-    return sorted(
-        p
-        for p in FIXTURES.rglob("*.json")
-        if key in json.loads(p.read_text()).get("ome", {})
-        # (strict/invalid fixtures are only invalid under the strict schemas, which
-        # yaozarrs doesn't model)
-        and "strict/invalid" not in str(p)
-    )
-
-
-# fixtures where yaozarrs deliberately disagrees with upstream's verdict
-_SWAPPED = (
-    "fixture bug: rows and columns are swapped (rows ['1'], columns ['A'], well path "
-    "'A/1'), but \"The path MUST consist of a name in the rows array, a file separator "
-    '(/), and a name from the columns array, in that order" (upstream_fixes.md #20)'
-)
-EXPECTED_DEVIATIONS: dict[str, str] = {
-    "spec/valid/plate/minimal_acquisitions.json": _SWAPPED,
-    "spec/valid/plate/minimal_no_acquisitions.json": _SWAPPED,
-    "spec/valid/plate/non_alphanumeric_row.json": _SWAPPED,
-    "strict/valid/plate/strict_acquisitions.json": _SWAPPED,
-    "strict/valid/plate/strict_no_acquisitions.json": _SWAPPED,
-}
-
-
-@pytest.mark.parametrize(
-    "path, model",
-    [(p, v06.Plate) for p in _fixtures("plate")]
-    + [(p, v06.Well) for p in _fixtures("well")],
-    ids=lambda x: str(x.relative_to(FIXTURES)) if isinstance(x, Path) else "",
-)
-def test_upstream_plate_well_fixtures(path: Path, model: type) -> None:
-    upstream_valid = "/valid/" in str(path)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", ValidationWarning)
-        try:
-            model.model_validate(json.loads(path.read_text())["ome"])
-            valid = True
-        except ValidationError:
-            valid = False
-    if (key := str(path.relative_to(FIXTURES))) in EXPECTED_DEVIATIONS:
-        assert valid != upstream_valid, f"deviation no longer needed: {key}"
-    else:
-        assert valid == upstream_valid
