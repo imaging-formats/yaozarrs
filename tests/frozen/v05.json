@@ -1,0 +1,1263 @@
+{
+  "pydantic": "2.13",
+  "public": {
+    "Acquisition": {
+      "$ref": "#/$defs/Acquisition"
+    },
+    "Axis": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SpaceAxis"
+        },
+        {
+          "$ref": "#/$defs/TimeAxis"
+        },
+        {
+          "$ref": "#/$defs/ChannelAxis"
+        },
+        {
+          "$ref": "#/$defs/CustomAxis"
+        }
+      ]
+    },
+    "Bf2Raw": {
+      "$ref": "#/$defs/Bf2Raw"
+    },
+    "ChannelAxis": {
+      "$ref": "#/$defs/ChannelAxis"
+    },
+    "Column": {
+      "$ref": "#/$defs/Column"
+    },
+    "CustomAxis": {
+      "$ref": "#/$defs/CustomAxis"
+    },
+    "Dataset": {
+      "$ref": "#/$defs/Dataset"
+    },
+    "FieldOfView": {
+      "$ref": "#/$defs/FieldOfView"
+    },
+    "Image": {
+      "$ref": "#/$defs/Image"
+    },
+    "ImageLabel": {
+      "$ref": "#/$defs/ImageLabel"
+    },
+    "LabelColor": {
+      "$ref": "#/$defs/LabelColor"
+    },
+    "LabelImage": {
+      "$ref": "#/$defs/LabelImage"
+    },
+    "LabelProperty": {
+      "$ref": "#/$defs/LabelProperty"
+    },
+    "LabelSource": {
+      "$ref": "#/$defs/LabelSource"
+    },
+    "LabelsGroup": {
+      "$ref": "#/$defs/LabelsGroup"
+    },
+    "Multiscale": {
+      "$ref": "#/$defs/Multiscale"
+    },
+    "OMEAttributes": {
+      "$ref": "#/$defs/OMEAttributes"
+    },
+    "OMEMetadata": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LabelImage"
+        },
+        {
+          "$ref": "#/$defs/Image"
+        },
+        {
+          "$ref": "#/$defs/Plate"
+        },
+        {
+          "$ref": "#/$defs/Bf2Raw"
+        },
+        {
+          "$ref": "#/$defs/Well"
+        },
+        {
+          "$ref": "#/$defs/LabelsGroup"
+        },
+        {
+          "$ref": "#/$defs/Series"
+        }
+      ]
+    },
+    "OMEZarrGroupJSON": {
+      "$ref": "#/$defs/OMEZarrGroupJSON"
+    },
+    "Omero": {
+      "$ref": "#/$defs/Omero"
+    },
+    "OmeroChannel": {
+      "$ref": "#/$defs/OmeroChannel"
+    },
+    "OmeroRenderingDefs": {
+      "$ref": "#/$defs/OmeroRenderingDefs"
+    },
+    "OmeroWindow": {
+      "$ref": "#/$defs/OmeroWindow"
+    },
+    "Plate": {
+      "$ref": "#/$defs/Plate"
+    },
+    "PlateDef": {
+      "$ref": "#/$defs/PlateDef"
+    },
+    "PlateWell": {
+      "$ref": "#/$defs/PlateWell"
+    },
+    "Row": {
+      "$ref": "#/$defs/Row"
+    },
+    "ScaleTransformation": {
+      "$ref": "#/$defs/ScaleTransformation"
+    },
+    "Series": {
+      "$ref": "#/$defs/Series"
+    },
+    "SpaceAxis": {
+      "$ref": "#/$defs/SpaceAxis"
+    },
+    "TimeAxis": {
+      "$ref": "#/$defs/TimeAxis"
+    },
+    "TranslationTransformation": {
+      "$ref": "#/$defs/TranslationTransformation"
+    },
+    "Well": {
+      "$ref": "#/$defs/Well"
+    },
+    "WellDef": {
+      "$ref": "#/$defs/WellDef"
+    }
+  },
+  "$defs": {
+    "Acquisition": {
+      "properties": {
+        "id": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "maximumfieldcount": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "starttime": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "endtime": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "Bf2Raw": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "bioformats2raw.layout": {
+          "const": 3,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bioformats2raw.layout"
+      ],
+      "type": "object"
+    },
+    "ChannelAxis": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "channel",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "Column": {
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z0-9]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "CustomAxis": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "Dataset": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "coordinateTransformations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ScaleTransformation"
+              },
+              {
+                "$ref": "#/$defs/TranslationTransformation"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "path",
+        "coordinateTransformations"
+      ],
+      "type": "object"
+    },
+    "FieldOfView": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "acquisition": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "type": "object"
+    },
+    "Image": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "multiscales": {
+          "items": {
+            "$ref": "#/$defs/Multiscale"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "omero": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Omero"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "multiscales"
+      ],
+      "type": "object"
+    },
+    "ImageLabel": {
+      "properties": {
+        "colors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LabelColor"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LabelProperty"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LabelSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "version": {
+          "anyOf": [
+            {
+              "const": "0.5",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "LabelColor": {
+      "properties": {
+        "label-value": {
+          "type": "number"
+        },
+        "rgba": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "label-value"
+      ],
+      "type": "object"
+    },
+    "LabelImage": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "multiscales": {
+          "items": {
+            "$ref": "#/$defs/Multiscale"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "omero": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Omero"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "image-label": {
+          "$ref": "#/$defs/ImageLabel"
+        }
+      },
+      "required": [
+        "multiscales",
+        "image-label"
+      ],
+      "type": "object"
+    },
+    "LabelProperty": {
+      "properties": {
+        "label-value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "label-value"
+      ],
+      "type": "object"
+    },
+    "LabelSource": {
+      "properties": {
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "LabelsGroup": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "labels": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "labels"
+      ],
+      "type": "object"
+    },
+    "Multiscale": {
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "axes": {
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/SpaceAxis"
+              },
+              {
+                "$ref": "#/$defs/TimeAxis"
+              },
+              {
+                "$ref": "#/$defs/ChannelAxis"
+              },
+              {
+                "$ref": "#/$defs/CustomAxis"
+              }
+            ]
+          },
+          "maxItems": 5,
+          "minItems": 2,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "datasets": {
+          "items": {
+            "$ref": "#/$defs/Dataset"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "coordinateTransformations": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/ScaleTransformation"
+                  },
+                  {
+                    "$ref": "#/$defs/TranslationTransformation"
+                  }
+                ]
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "axes",
+        "datasets"
+      ],
+      "type": "object"
+    },
+    "OMEAttributes": {
+      "additionalProperties": true,
+      "properties": {
+        "ome": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/LabelImage"
+            },
+            {
+              "$ref": "#/$defs/Image"
+            },
+            {
+              "$ref": "#/$defs/Plate"
+            },
+            {
+              "$ref": "#/$defs/Bf2Raw"
+            },
+            {
+              "$ref": "#/$defs/Well"
+            },
+            {
+              "$ref": "#/$defs/LabelsGroup"
+            },
+            {
+              "$ref": "#/$defs/Series"
+            }
+          ]
+        }
+      },
+      "required": [
+        "ome"
+      ],
+      "type": "object"
+    },
+    "OMEZarrGroupJSON": {
+      "properties": {
+        "uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "zarr_format": {
+          "const": 3,
+          "default": 3,
+          "type": "integer"
+        },
+        "node_type": {
+          "const": "group",
+          "default": "group",
+          "type": "string"
+        },
+        "attributes": {
+          "$ref": "#/$defs/OMEAttributes"
+        }
+      },
+      "required": [
+        "attributes"
+      ],
+      "type": "object"
+    },
+    "Omero": {
+      "additionalProperties": true,
+      "properties": {
+        "channels": {
+          "items": {
+            "$ref": "#/$defs/OmeroChannel"
+          },
+          "type": "array"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rdefs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OmeroRenderingDefs"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "channels"
+      ],
+      "type": "object"
+    },
+    "OmeroChannel": {
+      "properties": {
+        "window": {
+          "$ref": "#/$defs/OmeroWindow"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "family": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "color": {
+          "type": "string"
+        },
+        "active": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "inverted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "coefficient": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "window",
+        "color"
+      ],
+      "type": "object"
+    },
+    "OmeroRenderingDefs": {
+      "additionalProperties": true,
+      "properties": {
+        "model": {
+          "anyOf": [
+            {
+              "enum": [
+                "color",
+                "greyscale"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "defaultT": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "defaultZ": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "projection": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "OmeroWindow": {
+      "properties": {
+        "start": {
+          "type": "number"
+        },
+        "min": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "min",
+        "end",
+        "max"
+      ],
+      "type": "object"
+    },
+    "Plate": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "plate": {
+          "$ref": "#/$defs/PlateDef"
+        },
+        "bioformats2raw.layout": {
+          "anyOf": [
+            {
+              "const": 3,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "plate"
+      ],
+      "type": "object"
+    },
+    "PlateDef": {
+      "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/Column"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/Row"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "wells": {
+          "items": {
+            "$ref": "#/$defs/PlateWell"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "acquisitions": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Acquisition"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "field_count": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "columns",
+        "rows",
+        "wells"
+      ],
+      "type": "object"
+    },
+    "PlateWell": {
+      "properties": {
+        "path": {
+          "pattern": "^[A-Za-z0-9]+/[A-Za-z0-9]+$",
+          "type": "string"
+        },
+        "rowIndex": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "columnIndex": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "rowIndex",
+        "columnIndex"
+      ],
+      "type": "object"
+    },
+    "Row": {
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z0-9]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "ScaleTransformation": {
+      "properties": {
+        "type": {
+          "const": "scale",
+          "default": "scale",
+          "type": "string"
+        },
+        "scale": {
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "scale"
+      ],
+      "type": "object"
+    },
+    "Series": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "series": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "series"
+      ],
+      "type": "object"
+    },
+    "SpaceAxis": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "space",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "enum": [
+                "angstrom",
+                "attometer",
+                "centimeter",
+                "decimeter",
+                "exameter",
+                "femtometer",
+                "foot",
+                "gigameter",
+                "hectometer",
+                "inch",
+                "kilometer",
+                "megameter",
+                "meter",
+                "micrometer",
+                "mile",
+                "millimeter",
+                "nanometer",
+                "parsec",
+                "petameter",
+                "picometer",
+                "terameter",
+                "yard",
+                "yoctometer",
+                "yottameter",
+                "zeptometer",
+                "zettameter"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "TimeAxis": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "const": "time",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "enum": [
+                "attosecond",
+                "centisecond",
+                "day",
+                "decisecond",
+                "exasecond",
+                "femtosecond",
+                "gigasecond",
+                "hectosecond",
+                "hour",
+                "kilosecond",
+                "megasecond",
+                "microsecond",
+                "millisecond",
+                "minute",
+                "nanosecond",
+                "petasecond",
+                "picosecond",
+                "second",
+                "terasecond",
+                "yoctosecond",
+                "yottasecond",
+                "zeptosecond",
+                "zettasecond"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "TranslationTransformation": {
+      "properties": {
+        "type": {
+          "const": "translation",
+          "default": "translation",
+          "type": "string"
+        },
+        "translation": {
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "translation"
+      ],
+      "type": "object"
+    },
+    "Well": {
+      "properties": {
+        "version": {
+          "const": "0.5",
+          "default": "0.5",
+          "type": "string"
+        },
+        "well": {
+          "$ref": "#/$defs/WellDef"
+        }
+      },
+      "required": [
+        "well"
+      ],
+      "type": "object"
+    },
+    "WellDef": {
+      "properties": {
+        "images": {
+          "items": {
+            "$ref": "#/$defs/FieldOfView"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "images"
+      ],
+      "type": "object"
+    }
+  }
+}
