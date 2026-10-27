@@ -163,7 +163,8 @@ class Multiscale(_BaseModel):
     coordinateSystems: Annotated[CoordinateSystemsList, MinLen(1)] = Field(
         description="Coordinate systems of this multiscale image."
     )
-    datasets: Annotated[list[Dataset], MinLen(1)] = Field(
+    # (entries are unique as in v05, although neither the schema nor the prose says so)
+    datasets: Annotated[UniqueList[Dataset], MinLen(1)] = Field(
         description="Resolution levels, ordered from highest to lowest resolution."
     )
     coordinateTransformations: (

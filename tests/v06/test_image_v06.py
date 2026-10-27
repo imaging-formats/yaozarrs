@@ -150,6 +150,8 @@ INVALID_IMAGES = [
         },
         "at least 1 item",
     ),
+    # (as in v05)
+    (image([dataset("s0", scale("s0", 1, 1))] * 2), "List items are not unique"),
     # dataset transformations
     (image([{"path": "s0", "coordinateTransformations": []}]), "at least 1 item"),
     (
