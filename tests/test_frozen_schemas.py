@@ -70,10 +70,10 @@ def test_frozen_schemas(mod: ModuleType) -> None:
     if os.getenv("YAOZARRS_UPDATE_FROZEN"):
         FROZEN_DIR.mkdir(exist_ok=True)
         data = {"pydantic": PYDANTIC_MINOR, **current}
-        path.write_text(json.dumps(data, indent=2) + "\n")
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         return
 
-    frozen = json.loads(path.read_text())
+    frozen = json.loads(path.read_text(encoding="utf-8"))
     if frozen.pop("pydantic") != PYDANTIC_MINOR and current != frozen:
         # pydantic's schema generation changes across releases; only compare
         # strictly when using the same pydantic minor version as the snapshot.

@@ -30,6 +30,9 @@ def _module_name(path: Path) -> str:
     return ".".join(parts)
 
 
+COMMON_FILES = [p for p in PY_FILES if _module_name(p).startswith("yaozarrs._common")]
+
+
 def _version_of(module: str) -> str | None:
     return next((p for p in module.split(".") if VERSION_PART.fullmatch(p)), None)
 
@@ -39,7 +42,7 @@ def _imported_modules(path: Path) -> list[str]:
     module = _module_name(path)
     package = module if path.name == "__init__.py" else module.rpartition(".")[0]
     out = []
-    for node in ast.walk(ast.parse(path.read_text())):
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
         if isinstance(node, ast.Import):
             out.extend(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
@@ -54,7 +57,7 @@ def _imported_modules(path: Path) -> list[str]:
     return [m for m in out if m.startswith("yaozarrs")]
 
 
-@pytest.mark.parametrize("path", PY_FILES, ids=_module_name)
+@pytest.mark.parametrize("path", PY_FILES, ids=[_module_name(p) for p in PY_FILES])
 def test_import_boundaries(path: Path) -> None:
     module = _module_name(path)
     imported = _imported_modules(path)
@@ -69,14 +72,12 @@ def test_import_boundaries(path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "path",
-    [p for p in PY_FILES if _module_name(p).startswith("yaozarrs._common")],
-    ids=_module_name,
+    "path", COMMON_FILES, ids=[_module_name(p) for p in COMMON_FILES]
 )
 def test_common_has_no_version_literals(path: Path) -> None:
     literals = [
         node.value
-        for node in ast.walk(ast.parse(path.read_text()))
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
         if isinstance(node, ast.Constant)
         and isinstance(node.value, str)
         and VERSION_LITERAL.fullmatch(node.value)
