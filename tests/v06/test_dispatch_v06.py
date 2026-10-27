@@ -6,7 +6,6 @@ import json
 from typing import TYPE_CHECKING
 
 import pytest
-from pydantic import VERSION
 
 import yaozarrs
 from yaozarrs import v05, v06
@@ -45,7 +44,6 @@ IMAGE_OME = {
         }
     ],
 }
-PYDANTIC_VERSION = tuple(int(x) for x in VERSION.split(".")[:2])
 ZARR_JSON = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": IMAGE_OME}}
 
 
@@ -65,14 +63,26 @@ def test_validate_ome_object() -> None:
             "wells": [{"path": "A/1", "rowIndex": 0, "columnIndex": 0}],
         },
     }
-    # NOTE: before pydantic 2.8, the (smart-mode) union picked the first member that
-    # validates, and v04.Plate (which keeps `version` inside `plate`) accepts plates
-    # of any version, so this resolved to v04.Plate (for v0.5 plates as well).
-    if PYDANTIC_VERSION >= (2, 8):
+    assert isinstance(yaozarrs.validate_ome_object(plate), v06.Plate)
+    # a v0.5 document still resolves to v05
+    v05_plate = {**plate, "version": "0.5"}
+    assert isinstance(yaozarrs.validate_ome_object(v05_plate), v05.Plate)
+    assert isinstance(yaozarrs.validate_ome_object({"ome": plate}), v06.OMEAttributes)
+
+
+def test_shared_class_warns_once() -> None:
+    # (v05 and v06 share PlateDef; validating against both would warn twice)
+    plate = {
+        "version": "0.6",
+        "plate": {
+            "columns": [{"name": "1"}],
+            "rows": [{"name": "A"}, {"name": "a"}],
+            "wells": [{"path": "A/1", "rowIndex": 0, "columnIndex": 0}],
+        },
+    }
+    with pytest.warns(ValidationWarning, match="differ only by case") as record:
         assert isinstance(yaozarrs.validate_ome_object(plate), v06.Plate)
-        # a v0.5 document still resolves to v05
-        v05_plate = {**plate, "version": "0.5"}
-        assert isinstance(yaozarrs.validate_ome_object(v05_plate), v05.Plate)
+    assert len(record) == 1
 
 
 @pytest.fixture

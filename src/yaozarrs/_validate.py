@@ -4,6 +4,7 @@ from typing import Annotated, Any, TypeAlias, TypeVar, overload
 from pydantic import Discriminator, Tag, TypeAdapter
 
 from . import v04, v05, v06
+from .v06._version import VERSIONS as V06_VERSIONS
 
 AnyOMEGroup: TypeAlias = (
     v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON
@@ -18,7 +19,7 @@ AnyOME: TypeAlias = (
 T = TypeVar("T", bound=AnyOME)
 
 # OME version strings -> the package that models them
-_VERSIONS = {"0.4": "v04", "0.5": "v05"}
+_VERSIONS = {"0.4": "v04", "0.5": "v05", **dict.fromkeys(V06_VERSIONS, "v06")}
 
 
 def _declared_version(obj: Any) -> str | None:
@@ -63,6 +64,7 @@ def _discriminate_any(obj: Any) -> str:
 _AnyOMEGroupByVersion: TypeAlias = Annotated[
     Annotated[v04.OMEZarrGroupJSON, Tag("v04")]
     | Annotated[v05.OMEZarrGroupJSON, Tag("v05")]
+    | Annotated[v06.OMEZarrGroupJSON, Tag("v06")]
     | Annotated[AnyOMEGroup, Tag("unknown")],
     Discriminator(_discriminate_group),
 ]
@@ -71,6 +73,9 @@ _AnyOMEByVersion: TypeAlias = Annotated[
     | Annotated[v05.OMEZarrGroupJSON, Tag("v05-group")]
     | Annotated[v05.OMEAttributes, Tag("v05-attributes")]
     | Annotated[v05.OMEMetadata, Tag("v05-metadata")]
+    | Annotated[v06.OMEZarrGroupJSON, Tag("v06-group")]
+    | Annotated[v06.OMEAttributes, Tag("v06-attributes")]
+    | Annotated[v06.OMEMetadata, Tag("v06-metadata")]
     | Annotated[AnyOME, Tag("unknown")],
     Discriminator(_discriminate_any),
 ]
