@@ -7,8 +7,8 @@ from typing_extensions import Self
 
 from yaozarrs._axis import AxesList
 from yaozarrs._base import _BaseModel
+from yaozarrs._common._omero import Omero
 from yaozarrs._dim_spec import DimSpec
-from yaozarrs._omero import Omero
 from yaozarrs._types import UniqueList
 from yaozarrs._util import SuggestDatasetPath
 

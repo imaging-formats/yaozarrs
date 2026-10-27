@@ -1,76 +1,17 @@
-import warnings
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Len
 from pydantic import (
-    AfterValidator,
     Discriminator,
     Field,
     Tag,
     WrapValidator,
     model_validator,
 )
-from typing_extensions import get_args
-
-from yaozarrs._validation_warning import ValidationWarning
 
 from ._base import _BaseModel
+from ._common._units import SpaceUnits, TimeUnits
 from ._types import UniqueList
-
-ValidSpaceUnit: TypeAlias = Literal[
-    "angstrom",
-    "attometer",
-    "centimeter",
-    "decimeter",
-    "exameter",
-    "femtometer",
-    "foot",
-    "gigameter",
-    "hectometer",
-    "inch",
-    "kilometer",
-    "megameter",
-    "meter",
-    "micrometer",
-    "mile",
-    "millimeter",
-    "nanometer",
-    "parsec",
-    "petameter",
-    "picometer",
-    "terameter",
-    "yard",
-    "yoctometer",
-    "yottameter",
-    "zeptometer",
-    "zettameter",
-]
-
-ValidTimeUnit: TypeAlias = Literal[
-    "attosecond",
-    "centisecond",
-    "day",
-    "decisecond",
-    "exasecond",
-    "femtosecond",
-    "gigasecond",
-    "hectosecond",
-    "hour",
-    "kilosecond",
-    "megasecond",
-    "microsecond",
-    "millisecond",
-    "minute",
-    "nanosecond",
-    "petasecond",
-    "picosecond",
-    "second",
-    "terasecond",
-    "yoctosecond",
-    "yottasecond",
-    "zeptosecond",
-    "zettasecond",
-]
 
 
 class _AxisBase(_BaseModel):
@@ -83,39 +24,6 @@ class _AxisBase(_BaseModel):
 # 2. have units validated in a type-specific way
 # 3. instantiate SpaceAxis, TimeAxis, ChannelAxis without specifying "type" at runtime
 #    (even though it's required in the schema)
-
-_VALID_SPACE_UNITS = get_args(ValidSpaceUnit)
-_VALID_TIME_UNITS = get_args(ValidTimeUnit)
-
-
-def _warn_if_not_space_unit(v: str) -> str:
-    if v not in _VALID_SPACE_UNITS:
-        warnings.warn(
-            f"Warning: Space axis unit {v!r}, SHOULD be one of {_VALID_SPACE_UNITS}",
-            ValidationWarning,
-            stacklevel=3,
-        )
-    return v
-
-
-def _warn_if_not_time_unit(v: str) -> str:
-    if v not in _VALID_TIME_UNITS:
-        warnings.warn(
-            f"Warning: Time axis unit {v!r}, SHOULD be one of {_VALID_TIME_UNITS}",
-            ValidationWarning,
-            stacklevel=3,
-        )
-    return v
-
-
-# these Annotated types give type hinting and IDE autocompletion,
-# but still fallback to string (with a warning) for unrecognized units
-SpaceUnits: TypeAlias = Annotated[
-    ValidSpaceUnit | str, AfterValidator(_warn_if_not_space_unit)
-]
-TimeUnits: TypeAlias = Annotated[
-    ValidTimeUnit | str, AfterValidator(_warn_if_not_time_unit)
-]
 
 
 class CustomAxis(_AxisBase):
