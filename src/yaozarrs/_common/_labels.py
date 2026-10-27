@@ -24,7 +24,9 @@ class LabelColor(_BaseModel):
     # "Additional keys under `colors` are allowed."
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-    label_value: float = Field(
+    # "MUST contain the `label-value` key, whose value MUST be the integer
+    # corresponding to a particular label"
+    label_value: int = Field(
         description="Integer label value from the segmentation image",
         alias="label-value",
     )

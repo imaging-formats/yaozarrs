@@ -6,7 +6,7 @@ from yaozarrs import v05, validate_ome_object
 # Helper data
 COLOR_1 = {"label-value": 1, "rgba": [255, 0, 0, 255]}  # red
 COLOR_2 = {"label-value": 2, "rgba": [0, 255, 0, 255]}  # green
-COLOR_3 = {"label-value": 3.5}  # no color specified
+COLOR_3 = {"label-value": 3}  # no color specified
 
 PROPERTY_1 = {"label-value": 1}
 PROPERTY_2 = {"label-value": 2}
@@ -238,6 +238,18 @@ V05_INVALID_LABELS: list[tuple[dict, str]] = [
             "image-label": {
                 "properties": [
                     {"label-value": 1.5},  # float not allowed for properties
+                ],
+            },
+        },
+        "Input should be a valid integer",
+    ),
+    # Wrong type for label-value in colors (should be int)
+    (
+        {
+            "version": "0.5",
+            "image-label": {
+                "colors": [
+                    {"label-value": 3.5},  # float not allowed for colors either
                 ],
             },
         },

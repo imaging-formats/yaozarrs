@@ -443,7 +443,7 @@
       "additionalProperties": true,
       "properties": {
         "label-value": {
-          "type": "number"
+          "type": "integer"
         },
         "rgba": {
           "anyOf": [
