@@ -155,10 +155,10 @@ def validate_multiscale_axes(axes: Sequence[Axis]) -> None:
     if sum(ax.type == "time" for ax in axes) > 1:
         raise ValueError("There can be at most 1 axis of type 'time'.")
     # `axes` MAY contain one additional entry of `type:channel` or a null / custom type.
-    if sum(ax.type not in ("space", "time") for ax in axes) > 1:
-        raise ValueError(
-            "There can be at most 1 axis of type 'channel' or of a custom/null type."
-        )
+    # NOTE: this sentence is unchanged from v0.5; like v05 we only limit `channel` axes
+    # to one, and allow several custom/untyped axes (within the 5-axis limit).
+    if sum(ax.type == "channel" for ax in axes) > 1:
+        raise ValueError("There can be at most 1 axis of type 'channel'.")
 
     # `axes` entries MUST be ordered by `type` where the `time` axis must come first
     # (if present), followed by the `channel` or custom axis (if present) and the
