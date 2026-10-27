@@ -427,6 +427,31 @@ V05_INVALID_PLATES: list[tuple[dict, str]] = [
         },
         "List items are not unique",
     ),
+    # path doesn't match rowIndex/columnIndex
+    (
+        {
+            "version": "0.5",
+            "plate": {
+                "columns": [COLUMN_A, COLUMN_B],
+                "rows": [ROW_A, ROW_B],
+                "wells": [{"path": "A/01", "rowIndex": 1, "columnIndex": 0}],
+            },
+        },
+        "does not match its rowIndex",
+    ),
+    # duplicate acquisition ids
+    (
+        {
+            "version": "0.5",
+            "plate": {
+                "columns": [COLUMN_A],
+                "rows": [ROW_A],
+                "wells": [WELL_A01],
+                "acquisitions": [ACQUISITION_1, {**ACQUISITION_2, "id": 0}],
+            },
+        },
+        "Acquisition ids must be unique",
+    ),
 ]
 
 
