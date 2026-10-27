@@ -520,8 +520,9 @@ def _require_exactly_one(t: Any, matrix_field: str) -> None:
         )
 
 
-# tolerance for floating point checks of rotation matrices
-_ROTATION_TOL = 1e-6
+# tolerance for floating point checks of rotation matrices (the spec doesn't define
+# one; this accepts hand-written matrices rounded to ~4-5 decimals)
+_ROTATION_TOL = 1e-4
 
 
 def _has_orthonormal_rows(m: list[list[float]]) -> bool:

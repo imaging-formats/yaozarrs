@@ -24,6 +24,8 @@ VALID_TRANSFORMS = [
     {"type": "affine", "affine": [[1, 0, 3], [0, 1, 4]]},
     {"type": "affine", "path": "coordinateTransformations/affine"},
     {"type": "rotation", "rotation": [[c, -s], [s, c]]},
+    # 30 degrees, rounded to 5 decimals
+    {"type": "rotation", "rotation": [[0.86603, -0.5], [0.5, 0.86603]]},
     {"type": "rotation", "path": "coordinateTransformations/rot"},
     {
         "type": "sequence",
