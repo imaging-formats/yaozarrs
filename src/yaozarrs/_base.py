@@ -27,12 +27,24 @@ class _BaseModel(BaseModel):
 
     if not TYPE_CHECKING:
         # "by_alias" is required for round-tripping on pydantic <2.10.0
+        #
+        # "exclude_none": we checked that `null` never carries meaning for any field
+        # defined by the NGFF spec (v0.4 - v0.6): none of the JSON schemas allow
+        # `null` anywhere, and where the prose mentions it (`path` "MAY be omitted or
+        # null") it is equivalent to omitting the key.  Optional fields here default
+        # to `None` meaning "unset", so dumping them would write `null`s that the
+        # official schemas reject.
+        # Caveat: this also drops *user-defined* extra keys whose value is `null`
+        # (e.g. a label property `{"label-value": 1, "class": null}`); pass
+        # `exclude_none=False` to keep them.
         def model_dump_json(self, **kwargs: Any) -> str:
             kwargs.setdefault("by_alias", True)
+            kwargs.setdefault("exclude_none", True)
             return super().model_dump_json(**kwargs)
 
         def model_dump(self, **kwargs: Any) -> str:  # pragma: no cover
             kwargs.setdefault("by_alias", True)
+            kwargs.setdefault("exclude_none", True)
             return super().model_dump(**kwargs)
 
 
