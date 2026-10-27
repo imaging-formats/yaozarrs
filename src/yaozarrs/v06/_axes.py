@@ -3,7 +3,14 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Literal, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import Discriminator, Field, Tag, WrapValidator, model_validator
+from pydantic import (
+    Discriminator,
+    Field,
+    Tag,
+    WrapValidator,
+    field_validator,
+    model_validator,
+)
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._units import SpaceUnits, TimeUnits
@@ -80,6 +87,18 @@ class CustomAxis(_AxisBase):
 
     type: Literal["array", "coordinate", "displacement"] | str | None = None
 
+    @field_validator("type")
+    @classmethod
+    def _not_a_typed_axis(cls, v: str | None) -> str | None:
+        # (an axis of these types can't be used as a CustomAxis: inside an axes list,
+        # the `Axis` union expects the matching typed class)
+        if v in ("space", "time", "channel"):
+            raise ValueError(
+                f"Use {v.title()}Axis for axes of type {v!r} (CustomAxis is for other "
+                "types)."
+            )
+        return v
+
 
 def _axis_discriminator(v: Any) -> str:
     t = v.get("type") if isinstance(v, dict) else getattr(v, "type", None)
@@ -133,8 +152,10 @@ def validate_multiscale_axes(axes: Sequence[Axis]) -> None:
     # multiscales metadata", including "`axes` MUST contain 2 or 3 entries of
     # `type:space`".  But axes.schema allows either 2-3 "space" axes or >= 2 "array"
     # axes, so we accept the latter with a warning.
+    # (only the space-axis rule is relaxed for those; the other rules still apply)
     n_space = sum(ax.type == "space" for ax in axes)
-    if sum(ax.type == "array" for ax in axes) >= 2 and not 2 <= n_space <= 3:
+    array_cs = sum(ax.type == "array" for ax in axes) >= 2 and not 2 <= n_space <= 3
+    if array_cs:
         warnings.warn(
             "Coordinate systems inside multiscales MUST contain 2 or 3 axes of type "
             "'space' according to the spec prose; coordinate systems made of 'array' "
@@ -142,14 +163,13 @@ def validate_multiscale_axes(axes: Sequence[Axis]) -> None:
             ValidationWarning,
             stacklevel=2,
         )
-        return
 
     # The length of `axes` must be between 2 and 5
     if not 2 <= len(axes) <= 5:
         raise ValueError(f"There must be between 2 and 5 axes. Found {len(axes)}.")
 
     # `axes` MUST contain 2 or 3 entries of `type:space`
-    if not 2 <= n_space <= 3:
+    if not array_cs and not 2 <= n_space <= 3:
         raise ValueError("There must be 2 or 3 axes of type 'space'.")
     # `axes` MAY contain one additional entry of `type:time`
     if sum(ax.type == "time" for ax in axes) > 1:

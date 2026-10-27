@@ -96,10 +96,17 @@ class MapAxisTransformation(_TransformBase):
 
     @field_validator("mapAxis")
     @classmethod
-    def _unique(cls, v: list[int]) -> list[int]:
-        # Each index MUST appear exactly once in the array.
-        if len(set(v)) != len(v):
-            raise ValueError(f"mapAxis indices must be unique, got {v}")
+    def _permutation(cls, v: list[int]) -> list[int]:
+        # The length of the array MUST equal the number of dimensions (N) in both the
+        # input and output coordinate systems. Each integer ... MUST be a valid
+        # zero-based index into the input coordinate system's axes ... Each index MUST
+        # appear exactly once in the array.
+        # (so it must be a permutation of 0..N-1, which we can check without knowing N)
+        if sorted(v) != list(range(len(v))):
+            raise ValueError(
+                f"mapAxis must be a permutation of 0..{len(v) - 1} (each index exactly "
+                f"once), got {v}"
+            )
         return v
 
 
@@ -170,7 +177,8 @@ class AffineTransformation(_TransformBase):
     """Affine transformation, as an (M)x(N+1) matrix inline or in a Zarr array."""
 
     type: Literal["affine"] = "affine"
-    affine: list[Annotated[list[float], MinLen(1)]] | None = Field(
+    # (N >= 1, since every coordinate system has at least one axis)
+    affine: list[Annotated[list[float], MinLen(2)]] | None = Field(
         default=None,
         description="(M)x(N+1) matrix, as a list of M rows (for N input axes).",
     )
@@ -195,8 +203,8 @@ class RotationTransformation(_TransformBase):
     """Rotation, as an NxN matrix inline or in a Zarr array."""
 
     type: Literal["rotation"] = "rotation"
-    rotation: list[Annotated[list[float], MinLen(1)]] | None = Field(
-        default=None, description="NxN rotation matrix, as a list of N rows."
+    rotation: Annotated[list[Annotated[list[float], MinLen(1)]], MinLen(1)] | None = (
+        Field(default=None, description="NxN rotation matrix, as a list of N rows.")
     )
     path: str | None = Field(
         default=None, description="Path to a 2D Zarr array holding the matrix."
@@ -266,6 +274,12 @@ class ByDimensionTransformation(_TransformBase):
         # Every axis index in the parent byDimension's `output` coordinate system
         # MUST appear in exactly one child transformation's `outputAxes` array.
         # (that every axis is covered can only be checked knowing the output ndim)
+        for i, item in enumerate(v):
+            if len(set(item.outputAxes)) != len(item.outputAxes):
+                raise ValueError(
+                    f"byDimension transformations[{i}].outputAxes has duplicate axes: "
+                    f"{item.outputAxes}"
+                )
         out = [ax for item in v for ax in item.outputAxes]
         if dupes := sorted({ax for ax in out if out.count(ax) > 1}):
             raise ValueError(
@@ -422,16 +436,19 @@ def check_transform_ndim(t: CoordinateTransformation, n_in: int, n_out: int) -> 
         _check_child(t, "forward", t.forward, n_in, n_out)
         _check_child(t, "inverse", t.inverse, n_out, n_in)
     elif isinstance(t, SequenceTransformation):
-        # (intermediate dimensionality is inferred from each step's parameters;
-        # checking stops at the first step where it can't be)
+        # (intermediate dimensionality is inferred from each step's parameters. Where
+        # it can't be (e.g. after a `coordinates` step), checking resumes at the next
+        # step whose parameters fix its own input size. The last step must produce
+        # the sequence's output.)
         n: int | None = n_in
-        for i, step in enumerate(t.transformations):
-            if (n_next := _output_ndim(step, n)) is None:
-                return
-            _check_child(t, f"transformations[{i}]", step, n, n_next)
+        steps = t.transformations
+        for i, step in enumerate(steps):
+            if n is None:
+                n = _own_ndim(step)[0]
+            n_next = n_out if i == len(steps) - 1 else _output_ndim(step, n)
+            if n is not None and n_next is not None:
+                _check_child(t, f"transformations[{i}]", step, n, n_next)
             n = n_next
-        if n != n_out:
-            _fail(f"steps produce {n} axes")
     elif isinstance(t, ByDimensionTransformation):
         # The integer values in these arrays correspond to the axis indices in the
         # `byDimension`'s ... `input` and `output` coordinate systems
@@ -456,22 +473,41 @@ def _check_child(
         raise ValueError(f"{parent.type}.{loc} -> {e}") from None
 
 
+def _own_ndim(t: Any) -> tuple[int | None, int | None]:
+    """(input, output) dimensionality fixed by `t`'s own parameters, where it is."""
+    if isinstance(t, ScaleTransformation):
+        return len(t.scale), len(t.scale)
+    if isinstance(t, TranslationTransformation):
+        return len(t.translation), len(t.translation)
+    if isinstance(t, MapAxisTransformation):
+        return len(t.mapAxis), len(t.mapAxis)
+    if isinstance(t, RotationTransformation) and t.rotation is not None:
+        return len(t.rotation), len(t.rotation)
+    if isinstance(t, AffineTransformation) and t.affine is not None:
+        return len(t.affine[0]) - 1, len(t.affine)
+    if isinstance(t, ByDimensionTransformation):
+        # (each output axis appears in exactly one item's outputAxes)
+        return None, sum(len(item.outputAxes) for item in t.transformations)
+    return None, None
+
+
 def _output_ndim(t: Any, n_in: int | None) -> int | None:
     """Output dimensionality of `t` for `n_in` input axes, if it can be inferred."""
+    if (n_out := _own_ndim(t)[1]) is not None:
+        return n_out
     if n_in is None:
         return None
-    if isinstance(t, AffineTransformation):
-        return len(t.affine) if t.affine is not None else None
     if isinstance(t, ProjectAxisTransformation):
         return n_in - len(t.droppedInputs or []) + len(t.createdOutputs or [])
     if isinstance(t, SequenceTransformation):
+        n: int | None = n_in
         for step in t.transformations:
-            n_in = _output_ndim(step, n_in)
-        return n_in
+            n = _output_ndim(step, n)
+        return n
     if isinstance(t, BijectionTransformation):
         return _output_ndim(t.forward, n_in)
-    if isinstance(t, (ByDimensionTransformation, CoordinatesTransformation)):
-        return None  # can't tell from parameters alone
+    if isinstance(t, (AffineTransformation, CoordinatesTransformation)):
+        return None  # stored in a Zarr array: can't tell from metadata alone
     return n_in  # all other types preserve dimensionality
 
 

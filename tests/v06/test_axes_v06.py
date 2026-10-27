@@ -148,6 +148,26 @@ def test_multiscale_array_axes_warn() -> None:
         validate_multiscale_axes(AXES.validate_python([I, J]))
 
 
+@pytest.mark.parametrize(
+    "axes, msg",
+    [
+        # only the space-axis rule is relaxed for array coordinate systems
+        ([{"name": f"a{i}", "type": "array"} for i in range(6)], "between 2 and 5"),
+        ([T, {**T, "name": "t2"}, I, J], "at most 1 axis of type 'time'"),
+        ([I, T, J], "required order"),
+    ],
+)
+def test_multiscale_array_axes_other_rules(axes: list[dict], msg: str) -> None:
+    with pytest.warns(ValidationWarning), pytest.raises(ValueError, match=msg):
+        validate_multiscale_axes(AXES.validate_python(axes))
+
+
+@pytest.mark.parametrize("type_", ["space", "time", "channel"])
+def test_custom_axis_rejects_known_types(type_: str) -> None:
+    with pytest.raises(ValidationError, match=f"Use {type_.title()}Axis"):
+        v06.CustomAxis(name="a", type=type_)
+
+
 PARITY_AXES = [
     [Y, X],
     [T, C, Z, Y, X],

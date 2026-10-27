@@ -81,7 +81,8 @@ INVALID_TRANSFORMS = [
     ({"type": "scale", "scale": []}, "at least 1 item"),
     ({"type": "scale", "path": "s"}, "Field required"),  # `scale` is required
     ({"type": "translation", "translation": []}, "at least 1 item"),
-    ({"type": "mapAxis", "mapAxis": [0, 0]}, "must be unique"),
+    ({"type": "mapAxis", "mapAxis": [0, 0]}, "must be a permutation of 0..1"),
+    ({"type": "mapAxis", "mapAxis": [0, 5]}, "must be a permutation of 0..1"),
     ({"type": "mapAxis", "mapAxis": [-1, 0]}, "greater than or equal to 0"),
     ({"type": "projectAxis"}, "at least one of 'droppedInputs'"),
     ({"type": "projectAxis", "droppedInputs": [1, 1]}, "must be unique"),
@@ -89,6 +90,8 @@ INVALID_TRANSFORMS = [
     ({"type": "affine", "affine": [[1, 0, 0]], "path": "a"}, "exactly one of"),
     ({"type": "affine", "affine": [[1, 0, 0], [0, 1]]}, "same length"),
     ({"type": "rotation", "rotation": [[1, 0, 0], [0, 1, 0]]}, "square"),
+    ({"type": "rotation", "rotation": []}, "at least 1 item"),
+    ({"type": "affine", "affine": [[1]]}, "at least 2 items"),
     ({"type": "rotation", "rotation": [[2, 0], [0, 2]]}, "orthonormal rows"),
     ({"type": "rotation", "rotation": [[1, 0], [0, -1]]}, "determinant 1"),
     # "A non-empty array of transformations."
@@ -137,6 +140,19 @@ INVALID_TRANSFORMS = [
             ],
         },
         "output axes [1] appear in more than one",
+    ),
+    (
+        {
+            "type": "byDimension",
+            "transformations": [
+                {
+                    "transformation": {"type": "identity"},
+                    "inputAxes": [0, 1],
+                    "outputAxes": [1, 1],
+                }
+            ],
+        },
+        "transformations[0].outputAxes has duplicate axes",
     ),
     ({"type": "displacements"}, "Field required"),
     ({"type": "bijection", "forward": {"type": "identity"}}, "Field required"),
@@ -220,7 +236,7 @@ def test_check_transform_ndim_ok(obj: dict, n_in: int, n_out: int) -> None:
 NDIM_BAD = [
     ({"type": "identity"}, 2, 3, "same number of axes"),
     (S2, 3, 3, "has 2 values"),
-    ({"type": "mapAxis", "mapAxis": [0, 2]}, 2, 2, "not a permutation"),
+    ({"type": "mapAxis", "mapAxis": [1, 0]}, 3, 3, "has 2 indices"),
     ({"type": "projectAxis", "droppedInputs": [3]}, 3, 2, "out of range"),
     ({"type": "projectAxis", "droppedInputs": [0]}, 3, 3, "drops 1 and creates 0"),
     ({"type": "affine", "affine": [[1, 0, 0], [0, 1, 0]]}, 3, 2, "expected 2x4"),
@@ -230,7 +246,38 @@ NDIM_BAD = [
         {"type": "sequence", "transformations": [S2, {"type": "identity"}]},
         2,
         3,
-        "steps produce 2 axes",
+        "sequence.transformations[1] -> identity: input and output must have",
+    ),
+    # a byDimension step inside a sequence is checked too
+    (
+        {
+            "type": "sequence",
+            "transformations": [
+                {
+                    "type": "byDimension",
+                    "transformations": [
+                        {
+                            "transformation": {"type": "scale", "scale": [2]},
+                            "inputAxes": [9],
+                            "outputAxes": [0],
+                        }
+                    ],
+                }
+            ],
+        },
+        2,
+        2,
+        "byDimension: transformations[0].inputAxes [9] out of range",
+    ),
+    # after a step of unknown output size, checking resumes at the next step
+    (
+        {
+            "type": "sequence",
+            "transformations": [{"type": "coordinates", "path": "c"}, S2],
+        },
+        2,
+        3,
+        "sequence.transformations[1] -> scale: has 2 values",
     ),
     (
         {"type": "sequence", "transformations": [S2, S2]},

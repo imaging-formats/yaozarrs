@@ -360,6 +360,12 @@ EXPECTED_DEVIATIONS: dict[str, str] = {
         "fixture bug: 2-value scale for a 3-axis coordinate system violates "
         '"MUST equal the length of the scale array" (upstream_fixes.md #15)'
     ),
+    "spec/valid/image/multiscales_transform_additional_transforms.json": (
+        "fixture bug: the final byDimension step of a 3D sequence covers only output "
+        "axes 0 and 1, violating \"Every axis index in the parent byDimension's output "
+        "coordinate system MUST appear in exactly one child transformation's "
+        'outputAxes array" (upstream_fixes.md #17)'
+    ),
     "strict/valid/image/multiscales_example.json": (
         'fixture bug: dataset path "1" but input.path "s1" violates "input ... MUST '
         'specify a path field matching the path field of the dataset" '
