@@ -521,3 +521,10 @@ def test_plate_names_differing_by_case_warn() -> None:
     }
     with pytest.warns(ValidationWarning, match=r"row names \['a', 'A'\] differ only"):
         v05.PlateDef.model_validate(plate)
+
+
+def test_well_fov_paths_unique() -> None:
+    # same path but different acquisition: not identical items, still invalid
+    images = [{"path": "0", "acquisition": 0}, {"path": "0", "acquisition": 1}]
+    with pytest.raises(ValidationError, match="Field of view paths must be unique"):
+        v05.WellDef.model_validate({"images": images})

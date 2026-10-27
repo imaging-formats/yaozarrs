@@ -1,7 +1,8 @@
 from typing import Annotated, Literal
 
 from annotated_types import MinLen
-from pydantic import Field
+from pydantic import Field, model_validator
+from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._plate import Acquisition, Column, PlateDef, PlateWell, Row
@@ -116,6 +117,15 @@ class WellDef(_BaseModel):
     images: Annotated[UniqueList[FieldOfView], MinLen(1)] = Field(
         description="List of all fields-of-view imaged in this well",
     )
+
+    @model_validator(mode="after")
+    def _validate_unique_paths(self) -> Self:
+        # The `path` ... MUST NOT be a duplicate of any other `path` in the `images`
+        # list.  (UniqueList only catches fully identical entries.)
+        paths = [img.path for img in self.images]
+        if dupes := sorted({p for p in paths if paths.count(p) > 1}):
+            raise ValueError(f"Field of view paths must be unique. Duplicates: {dupes}")
+        return self
 
 
 # ------------------------------------------------------------------------------
