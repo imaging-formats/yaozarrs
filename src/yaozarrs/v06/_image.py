@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Sequence
 from typing import Annotated, Any, TypeAlias, cast
 
 from annotated_types import Len, MinLen
@@ -7,6 +8,7 @@ from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._omero import Omero
+from yaozarrs._dim_spec import DimSpec
 from yaozarrs._types import UniqueList
 from yaozarrs._util import SuggestDatasetPath
 from yaozarrs._validation_warning import ValidationWarning
@@ -308,6 +310,79 @@ class Multiscale(_BaseModel):
     def ndim(self) -> int:
         """Number of dimensions of the image."""
         return self.intrinsic_coordinate_system.ndim
+
+    @classmethod
+    def from_dims(
+        cls,
+        dims: Sequence[DimSpec],
+        name: str | None = None,
+        n_levels: int = 1,
+        coordinate_system: str = "intrinsic",
+    ) -> Self:
+        """Convenience constructor: Create Multiscale from a sequence of DimSpec.
+
+        Parameters
+        ----------
+        dims : Sequence[DimSpec]
+            A sequence of dimension specifications defining the image dimensions.
+            Must follow OME-Zarr axis ordering: `[time,] [channel,] space...`
+        name : str | None, optional
+            Name for the multiscale. Default is None.
+        n_levels : int, optional
+            Number of resolution levels in the pyramid. Default is 1.
+        coordinate_system : str, optional
+            Name of the (intrinsic) coordinate system that all resolution levels map
+            into. Default is "intrinsic".
+
+        Returns
+        -------
+        Multiscale
+            A fully configured Multiscale model.
+
+        Examples
+        --------
+        >>> from yaozarrs import DimSpec, v06
+        >>> dims = [
+        ...     DimSpec(name="t", size=512, unit="second"),
+        ...     DimSpec(
+        ...         name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0
+        ...     ),
+        ...     DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
+        ...     DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
+        ... ]
+        >>> v06.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)
+        """
+        layout = _coordinate_systems_datasets(dims, n_levels, coordinate_system)
+        return cls.model_validate({"name": name, **layout})
+
+
+def _coordinate_systems_datasets(
+    dims: Sequence[DimSpec], n_levels: int, coordinate_system: str
+) -> dict[str, list[dict]]:
+    """`coordinateSystems` and `datasets` (as dicts) for `Multiscale.from_dims`."""
+    axes = [{"name": d.name, "type": d.infer_type(), "unit": d.unit} for d in dims]
+    datasets = []
+    for level in range(n_levels):
+        path = str(level)
+        factors = [d.scale * d.infer_scale_factor() ** level for d in dims]
+        transform: dict = {"type": "scale", "scale": factors}
+        if any(d.translation is not None for d in dims):
+            # a scale and a translation must be a sequence (scale first)
+            translation = [d.translation or 0.0 for d in dims]
+            transform = {
+                "type": "sequence",
+                "transformations": [
+                    transform,
+                    {"type": "translation", "translation": translation},
+                ],
+            }
+        transform["input"] = {"path": path}
+        transform["output"] = {"name": coordinate_system}
+        datasets.append({"path": path, "coordinateTransformations": [transform]})
+    return {
+        "coordinateSystems": [{"name": coordinate_system, "axes": axes}],
+        "datasets": datasets,
+    }
 
 
 def _is_label_transform(t: CoordinateTransformation) -> bool:

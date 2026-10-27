@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v06
+from yaozarrs import DimSpec, v06
 from yaozarrs._validation_warning import ValidationWarning
 
 Y = {"name": "y", "type": "space", "unit": "micrometer"}
@@ -339,3 +339,51 @@ def test_multiscale_properties() -> None:
     assert s0.translation_transform is None
     assert s1.scale_transform.scale == [2, 2]  # type: ignore[union-attr]
     assert s1.translation_transform.translation == [0.5, 0.5]  # type: ignore[union-attr]
+
+
+def test_multiscale_from_dims() -> None:
+    dims = [
+        DimSpec(name="t", size=10, scale=1.0, unit="second"),
+        DimSpec(name="c", type="channel", size=3),
+        # z with custom scale_factor=1.0 (no downsampling)
+        DimSpec(name="z", size=50, scale=2.0, unit="micrometer", scale_factor=1.0),
+        DimSpec(name="y", size=512, scale=0.5, unit="micrometer", translation=20.0),
+        DimSpec(name="x", size=512, scale=0.5, unit="micrometer", translation=30.0),
+    ]
+    ms = v06.Multiscale.from_dims(dims, name="test_image", n_levels=3)
+
+    assert ms.name == "test_image"
+    assert ms.ndim == 5
+    assert ms.intrinsic_coordinate_system.name == "intrinsic"
+    assert [ax.name for ax in ms.axes] == ["t", "c", "z", "y", "x"]
+    assert [ax.type for ax in ms.axes] == ["time", "channel", "space", "space", "space"]
+    assert ms.axes[0].unit == "second"
+    assert ms.axes[1].unit is None
+
+    # t/c don't scale, z doesn't scale (factor=1.0), xy scale by 2x
+    scales = [ds.scale_transform.scale for ds in ms.datasets]  # type: ignore[union-attr]
+    assert scales == [
+        [1.0, 1.0, 2.0, 0.5, 0.5],
+        [1.0, 1.0, 2.0, 1.0, 1.0],
+        [1.0, 1.0, 2.0, 2.0, 2.0],
+    ]
+    for i, ds in enumerate(ms.datasets):
+        # a scale followed by a translation, mapping the array into "intrinsic"
+        assert ds.transform.type == "sequence"
+        assert ds.translation_transform.translation == [0, 0, 0, 20.0, 30.0]  # type: ignore[union-attr]
+        assert ds.transform.input.path == ds.path == str(i)  # type: ignore[union-attr]
+        assert ds.output_name == "intrinsic"
+
+    img = v06.Image(multiscales=[ms])
+    assert v06.Image.model_validate_json(img.model_dump_json()) == img
+
+
+def test_multiscale_from_dims_without_translation() -> None:
+    dims = [
+        DimSpec(name="y", size=64, scale=0.5),
+        DimSpec(name="x", size=64, scale=0.5),
+    ]
+    ms = v06.Multiscale.from_dims(dims, n_levels=2, coordinate_system="physical")
+    assert [ds.transform.type for ds in ms.datasets] == ["scale", "scale"]
+    assert ms.intrinsic_coordinate_system.name == "physical"
+    assert ms.datasets[1].scale_transform.scale == [1.0, 1.0]  # type: ignore[union-attr]
