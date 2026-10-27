@@ -56,6 +56,11 @@ VALID_SCENES = [
     ),
     # explicit null path: refers to the scene's own coordinate systems (conflict N1)
     scene([{**tile(0), "output": {"name": "world", "path": None}}], [WORLD]),
+    # two coordinate systems of image A are linked within A, so this is connected
+    scene(
+        [BIJECTION, {**tile(0), "input": {"path": "A", "name": "other"}}],
+        [WORLD],
+    ),
 ]
 
 
@@ -81,6 +86,37 @@ INVALID_SCENES = [
     ),
     # dimensionality against the scene's own coordinate systems
     (scene([tile(0, [1, 2, 3])], [WORLD]), "translation: has 3 values"),
+    # ... also when only one side is known
+    (
+        scene(
+            [
+                {
+                    "type": "affine",
+                    "affine": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                    "input": {"path": "tile_0", "name": "physical"},
+                    "output": {"name": "world"},
+                }
+            ],
+            [WORLD],
+        ),
+        "matrix is 3x3, expected 2x3 (input has 2, output has 2 axes); the input size "
+        "here is inferred",
+    ),
+    (
+        scene(
+            [
+                {
+                    "type": "projectAxis",
+                    "droppedInputs": [3],
+                    "input": {"name": "world"},
+                    "output": {"path": "tile_0", "name": "physical"},
+                }
+            ],
+            [WORLD],
+        ),
+        "droppedInputs [3] out of range (input has 2, output has 1 axes); the output "
+        "size here is inferred",
+    ),
     # connectivity
     (scene([tile(0)], [WORLD, {"name": "unused", "axes": [Y, X]}]), "'unused'"),
     (

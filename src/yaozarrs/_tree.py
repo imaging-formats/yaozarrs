@@ -55,6 +55,7 @@ _IMAGE = (v04.Image, v05.Image, v06.Image)
 _LABELS_GROUP = (v04.LabelsGroup, v05.LabelsGroup, v06.LabelsGroup)
 _PLATE = (v04.Plate, v05.Plate, v06.Plate)
 _WELL = (v04.Well, v05.Well, v06.Well)
+_BF2RAW = (v04.Bf2Raw, v05.Bf2Raw, v06.Bf2Raw)
 
 
 def _natural_sort_key(s: str) -> list:
@@ -156,9 +157,12 @@ def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
             for t in ome_meta.scene.coordinateTransformations
             for r in (t.input, t.output)
         )
-        return list(dict.fromkeys(r.path for r in refs if r is not None and r.path))
+        children = list(dict.fromkeys(r.path for r in refs if r is not None and r.path))
+        if "coordinateTransformations" in group:
+            children.append("coordinateTransformations")
+        return children
 
-    if isinstance(ome_meta, v04.Bf2Raw):
+    if isinstance(ome_meta, _BF2RAW):
         children: list[str] = []
         for i in range(100):  # reasonable upper bound
             if str(i) in group:

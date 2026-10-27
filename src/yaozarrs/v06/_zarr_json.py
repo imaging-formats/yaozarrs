@@ -1,7 +1,8 @@
 """The `zarr.json` document of an OME-Zarr v0.6 group, and the `ome` metadata union.
 
-See the v0.5 equivalent (`yaozarrs.v05._zarr_json`) for an annotated walk-through of
-the zarr.json structure; v0.6 has the same structure, plus `scene` groups.
+As in v0.5, OME metadata lives under `attributes.ome` in a group's `zarr.json`, and
+the kind of group (image, label image, labels, plate, well, bioformats2raw, series,
+or scene) is determined by which key that object contains.
 """
 
 from typing import Annotated, Any, Literal, TypeAlias

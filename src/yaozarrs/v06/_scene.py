@@ -17,6 +17,8 @@ from ._transforms import (
     RotationTransformation,
     ScaleTransformation,
     TranslationTransformation,
+    _output_ndim,
+    _own_ndim,
     check_transform_ndim,
 )
 from ._version import VersionStr
@@ -89,27 +91,47 @@ class SceneDef(_BaseModel):
 
     def _check_ndim(self, t: CoordinateTransformation, systems: dict) -> None:
         # (dimensionality is known for the scene's own coordinate systems; those of
-        # image subgroups are checked in storage validation)
+        # image subgroups are checked in storage validation. Where only one side is
+        # known, the other is inferred from the transformation, where possible.)
         def ndim(ref: CoordinateSystemRef | None) -> int | None:
             return systems[ref.name].ndim if ref and ref.path is None else None
 
         n_in, n_out = ndim(t.input), ndim(t.output)
-        if n_in is not None and n_out is not None:
+        inferred = None
+        if n_in is None and n_out is not None:
+            n_in = n_out if isinstance(t, _SAME_NDIM) else _own_ndim(t)[0]
+            inferred = "input"
+        elif n_out is None and n_in is not None:
+            n_out = _output_ndim(t, n_in)
+            inferred = "output"
+        if n_in is None or n_out is None:
+            return
+        try:
             check_transform_ndim(t, n_in, n_out)
-        elif (n := n_in or n_out) is not None and isinstance(t, _SAME_NDIM):
-            check_transform_ndim(t, n, n)
+        except ValueError as e:
+            if inferred is None:
+                raise
+            raise ValueError(
+                f"{e}; the {inferred} size here is inferred, as its coordinate system "
+                "is in an image subgroup"
+            ) from None
 
     def _validate_connected(self, systems: dict) -> None:
         # The graph MUST be connected (but need not be complete): any two coordinate
         # systems in the metadata MUST be linked by a path of one or more coordinate
         # transformations
-        # (nodes are the scene's own coordinate systems and the referenced image
-        # coordinate systems; links are followed in both directions)
-        def node(ref: CoordinateSystemRef | None) -> tuple[str | None, str | None]:
+        # (nodes are the scene's own coordinate systems and the referenced images; the
+        # coordinate systems of one image are linked by its own transformations, so
+        # each image is a single node. Links are followed in both directions.)
+        def node(ref: CoordinateSystemRef | None) -> tuple[str, str | None]:
             # (input/output are known to be set here; see `_validate`)
-            return (ref.path, ref.name) if ref else (None, None)
+            if ref is not None and ref.path is not None:
+                return ("image", ref.path)
+            return ("coordinate system", ref.name if ref else None)
 
-        links: dict[tuple, set[tuple]] = {(None, name): set() for name in systems}
+        links: dict[tuple, set[tuple]] = {
+            ("coordinate system", name): set() for name in systems
+        }
         for t in self.coordinateTransformations:
             a, b = node(t.input), node(t.output)
             links.setdefault(a, set()).add(b)
@@ -121,10 +143,11 @@ class SceneDef(_BaseModel):
                 reached.add(n)
                 todo.append(n)
         if unreached := [n for n in links if n not in reached]:
-            names = [f"{p}:{n}" if p else n for p, n in unreached]
+            names = ", ".join(f"{kind} {name!r}" for kind, name in unreached)
             raise ValueError(
                 f"The scene's coordinate systems are not all linked by its "
-                f"coordinateTransformations; not reachable from {start[1]!r}: {names}"
+                f"coordinateTransformations; not reachable from {start[0]} "
+                f"{start[1]!r}: {names}"
             )
 
 

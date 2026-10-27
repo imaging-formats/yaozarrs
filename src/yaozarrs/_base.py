@@ -51,12 +51,13 @@ class _BaseModel(BaseModel):
 class ZarrGroupModel(_BaseModel):
     """Base class for models that have a direct mapping to a file or URI.
 
-    e.g. v04 .zattrs or v05 zarr.json
+    e.g. v04 .zattrs or v05/v06 zarr.json
 
     See Also
     --------
-    v04.ZarrGroupJSON
-    v05.ZarrGroupJSON
+    v04.OMEZarrGroupJSON
+    v05.OMEZarrGroupJSON
+    v06.OMEZarrGroupJSON
     """
 
     uri: str | None = Field(

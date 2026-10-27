@@ -5,6 +5,8 @@ Specification: <https://ngff.openmicroscopy.org/specifications/0.6/index.html>
 Schema: <https://github.com/ome/ngff-spec/tree/89da1da5b0491f83b7cdde7d123aef763a457029/schemas>
 """
 
+from yaozarrs._common._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
+
 from ._axes import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
 from ._bf2raw import Bf2Raw, Series
 from ._coordinate_systems import CoordinateSystem
@@ -79,6 +81,10 @@ __all__ = [
     "OMEAttributes",
     "OMEMetadata",
     "OMEZarrGroupJSON",
+    "Omero",
+    "OmeroChannel",
+    "OmeroRenderingDefs",
+    "OmeroWindow",
     "Plate",
     "PlateDef",
     "PlateWell",

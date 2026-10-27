@@ -116,9 +116,9 @@ def validate_ome_json(
 
     By default, this will validate `data` against all known OME JSON documents.
     This includes ome-zarr group documents for v04 (found at .zattrs in the zarr group)
-    and v05 (found at zarr.json in the zarr group).  For v05 objects, it also detects
-    data that would valid as the value of the `data["attributes"]["ome"]` key inside
-    a v05 zarr.json document.
+    and v05/v06 (found at zarr.json in the zarr group).  For v05 and v06 objects, it
+    also detects data that would be valid as the value of the
+    `data["attributes"]["ome"]` key inside a zarr.json document.
 
     Parameters
     ----------
@@ -175,8 +175,9 @@ def validate_ome_uri(
     Returns
     -------
     AnyOME: T
-        An instance of `v05.OMEZarrGroupJSON`, `v04.OMEZarrGroupJSON`, or another
-        valid OME-Zarr node type, depending on the object detected.
+        An instance of `v06.OMEZarrGroupJSON`, `v05.OMEZarrGroupJSON`,
+        `v04.OMEZarrGroupJSON`, or another valid OME-Zarr node type, depending on the
+        object detected.
 
     Raises
     ------
