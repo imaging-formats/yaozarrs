@@ -19,14 +19,23 @@ class OmeroWindow(_BaseModel):
     max: float = Field(description="Maximum allowed intensity value for this channel")
 
 
+_HEX6 = re.compile(r"[0-9A-Fa-f]{6}")
+
+
 def _valid_hex(value: str) -> str:
-    """Ensure a string is a valid 6-character hex color code."""
-    value = value.lstrip("#").upper()
-    if len(value) == 3:
-        value = "".join(2 * c for c in value)
-    if len(value) != 6 or not re.fullmatch(r"[0-9A-F]{6}", value):
-        raise ValueError(f"Invalid hex color code: {value}")
-    return value
+    """Ensure a string is a 6-digit hex color code, repairing obvious variants.
+
+    [color] is a string of 6 hexadecimal digits.  Valid values are returned unchanged
+    (case is preserved); obvious variants like "#ff0000" or "f00" are normalized.
+    """
+    if _HEX6.fullmatch(value):
+        return value
+    fixed = value.lstrip("#")
+    if len(fixed) == 3:
+        fixed = "".join(2 * c for c in fixed)
+    if not _HEX6.fullmatch(fixed):
+        raise ValueError(f"Invalid hex color code: {value!r}")
+    return fixed
 
 
 class OmeroChannel(_BaseModel):
