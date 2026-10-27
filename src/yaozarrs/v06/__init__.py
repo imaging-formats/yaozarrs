@@ -28,6 +28,7 @@ from ._plate import (
     Well,
     WellDef,
 )
+from ._scene import Scene, SceneDef
 from ._transforms import (
     AffineTransformation,
     BijectionTransformation,
@@ -81,6 +82,8 @@ __all__ = [
     "RotationTransformation",
     "Row",
     "ScaleTransformation",
+    "Scene",
+    "SceneDef",
     "SequenceTransformation",
     "Series",
     "SpaceAxis",
