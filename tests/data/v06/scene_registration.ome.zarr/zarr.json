@@ -1,0 +1,108 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "scene": {
+        "coordinateSystems": [
+          {
+            "name": "stage",
+            "axes": [
+              {
+                "name": "z",
+                "type": "space",
+                "unit": "micrometer"
+              },
+              {
+                "name": "y",
+                "type": "space",
+                "unit": "micrometer"
+              },
+              {
+                "name": "x",
+                "type": "space",
+                "unit": "micrometer"
+              }
+            ]
+          }
+        ],
+        "coordinateTransformations": [
+          {
+            "type": "sequence",
+            "name": "overview to stage",
+            "input": {
+              "name": "physical",
+              "path": "overview"
+            },
+            "output": {
+              "name": "stage"
+            },
+            "transformations": [
+              {
+                "type": "rotation",
+                "rotation": [
+                  [
+                    1.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.0,
+                    -1.0
+                  ],
+                  [
+                    0.0,
+                    1.0,
+                    0.0
+                  ]
+                ]
+              },
+              {
+                "type": "translation",
+                "translation": [
+                  1520.0,
+                  -8250.0,
+                  12400.0
+                ]
+              }
+            ]
+          },
+          {
+            "type": "affine",
+            "name": "highres to overview (affine registration)",
+            "input": {
+              "name": "physical",
+              "path": "highres"
+            },
+            "output": {
+              "name": "physical",
+              "path": "overview"
+            },
+            "affine": [
+              [
+                0.998,
+                0.0,
+                0.0,
+                12.4
+              ],
+              [
+                0.0021,
+                1.00018,
+                -0.087504,
+                350.2
+              ],
+              [
+                -0.0013,
+                0.087504,
+                1.00018,
+                410.7
+              ]
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

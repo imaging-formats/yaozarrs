@@ -1,0 +1,188 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "multiscales": [
+        {
+          "name": "HeLa_fixed_DAPI_phalloidin",
+          "coordinateSystems": [
+            {
+              "name": "physical",
+              "axes": [
+                {
+                  "name": "c",
+                  "type": "channel",
+                  "discrete": true
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            }
+          ],
+          "datasets": [
+            {
+              "path": "s0",
+              "coordinateTransformations": [
+                {
+                  "type": "scale",
+                  "scale": [
+                    1.0,
+                    0.3,
+                    0.108,
+                    0.108
+                  ],
+                  "input": {
+                    "path": "s0"
+                  },
+                  "output": {
+                    "name": "physical"
+                  }
+                }
+              ]
+            },
+            {
+              "path": "s1",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s1"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        0.3,
+                        0.216,
+                        0.216
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.054,
+                        0.054
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "s2",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s2"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        0.3,
+                        0.432,
+                        0.432
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.162,
+                        0.162
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "coordinateTransformations": [
+            {
+              "type": "identity",
+              "name": "image to nuclei labels",
+              "input": {
+                "name": "physical"
+              },
+              "output": {
+                "name": "physical",
+                "path": "labels/nuclei"
+              }
+            }
+          ],
+          "type": "local_mean",
+          "metadata": {
+            "description": "Block-averaged 2x2 in yx; z is not downsampled.",
+            "method": "skimage.transform.downscale_local_mean",
+            "version": "0.24.0"
+          }
+        }
+      ],
+      "omero": {
+        "name": "HeLa_fixed_DAPI_phalloidin",
+        "channels": [
+          {
+            "label": "DAPI",
+            "color": "0000FF",
+            "active": true,
+            "coefficient": 1,
+            "family": "linear",
+            "inverted": false,
+            "window": {
+              "min": 0,
+              "max": 65535,
+              "start": 180,
+              "end": 4200
+            }
+          },
+          {
+            "label": "Phalloidin-AF568",
+            "color": "FF00FF",
+            "active": true,
+            "coefficient": 1,
+            "family": "linear",
+            "inverted": false,
+            "window": {
+              "min": 0,
+              "max": 65535,
+              "start": 250,
+              "end": 9800
+            }
+          }
+        ],
+        "rdefs": {
+          "defaultT": 0,
+          "defaultZ": 20,
+          "model": "color"
+        }
+      }
+    }
+  }
+}

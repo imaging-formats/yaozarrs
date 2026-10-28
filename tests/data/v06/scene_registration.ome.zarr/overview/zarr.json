@@ -1,0 +1,140 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "multiscales": [
+        {
+          "name": "brain_slice_20x_overview",
+          "coordinateSystems": [
+            {
+              "name": "physical",
+              "axes": [
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            }
+          ],
+          "datasets": [
+            {
+              "path": "s0",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s0"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        2.0,
+                        0.5,
+                        0.5
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "s1",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s1"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        2.0,
+                        1.0,
+                        1.0
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "s2",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s2"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        2.0,
+                        2.0,
+                        2.0
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.75,
+                        0.75
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "type": "local_mean",
+          "metadata": {
+            "description": "Block-averaged 2x2 in yx; z is not downsampled.",
+            "method": "skimage.transform.downscale_local_mean",
+            "version": "0.24.0"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "multiscales": [
+        {
+          "name": "cells",
+          "coordinateSystems": [
+            {
+              "name": "physical",
+              "axes": [
+                {
+                  "name": "c",
+                  "type": "channel",
+                  "discrete": true
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            }
+          ],
+          "datasets": [
+            {
+              "path": "s0",
+              "coordinateTransformations": [
+                {
+                  "type": "scale",
+                  "scale": [
+                    1.0,
+                    0.3,
+                    0.108,
+                    0.108
+                  ],
+                  "input": {
+                    "path": "s0"
+                  },
+                  "output": {
+                    "name": "physical"
+                  }
+                }
+              ]
+            },
+            {
+              "path": "s1",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s1"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        0.3,
+                        0.216,
+                        0.216
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.054,
+                        0.054
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "s2",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s2"
+                  },
+                  "output": {
+                    "name": "physical"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        0.3,
+                        0.432,
+                        0.432
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.162,
+                        0.162
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "type": "nearest",
+          "metadata": {
+            "description": "Every second label in yx (nearest neighbour); z is not downsampled.",
+            "method": "skimage.transform.resize",
+            "version": "0.24.0",
+            "kwargs": {
+              "order": 0,
+              "anti_aliasing": false,
+              "preserve_range": true
+            }
+          }
+        }
+      ],
+      "image-label": {
+        "colors": [
+          {
+            "label-value": 0,
+            "rgba": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "label-value": 1,
+            "rgba": [
+              0,
+              130,
+              200,
+              96
+            ]
+          },
+          {
+            "label-value": 2,
+            "rgba": [
+              245,
+              130,
+              48,
+              96
+            ]
+          },
+          {
+            "label-value": 3,
+            "rgba": [
+              145,
+              30,
+              180,
+              96
+            ]
+          }
+        ],
+        "properties": [
+          {
+            "label-value": 1,
+            "cell_cycle_phase": "G1",
+            "nucleus_label": 1
+          },
+          {
+            "label-value": 2,
+            "cell_cycle_phase": "S",
+            "nucleus_label": 2
+          },
+          {
+            "label-value": 3,
+            "cell_cycle_phase": "M",
+            "nucleus_label": 3,
+            "note": "rounded up, partially out of focus"
+          }
+        ],
+        "source": {
+          "image": "../../"
+        }
+      }
+    }
+  }
+}

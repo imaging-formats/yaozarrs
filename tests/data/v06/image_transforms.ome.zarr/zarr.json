@@ -1,0 +1,380 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "multiscales": [
+        {
+          "name": "OPM_zebrafish_tailfin",
+          "coordinateSystems": [
+            {
+              "name": "intrinsic",
+              "axes": [
+                {
+                  "name": "c",
+                  "type": "channel",
+                  "discrete": true
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            },
+            {
+              "name": "deskewed",
+              "axes": [
+                {
+                  "name": "c",
+                  "type": "channel",
+                  "discrete": true
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            },
+            {
+              "name": "stage",
+              "axes": [
+                {
+                  "name": "c",
+                  "type": "channel",
+                  "discrete": true
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            },
+            {
+              "name": "camera",
+              "axes": [
+                {
+                  "name": "c",
+                  "type": "channel",
+                  "discrete": true
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            }
+          ],
+          "datasets": [
+            {
+              "path": "s0",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s0"
+                  },
+                  "output": {
+                    "name": "intrinsic"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        1.0,
+                        0.4,
+                        0.4
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "s1",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s1"
+                  },
+                  "output": {
+                    "name": "intrinsic"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        1.0,
+                        0.8,
+                        0.8
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.2,
+                        0.2
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "s2",
+              "coordinateTransformations": [
+                {
+                  "type": "sequence",
+                  "input": {
+                    "path": "s2"
+                  },
+                  "output": {
+                    "name": "intrinsic"
+                  },
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        1.0,
+                        1.0,
+                        1.6,
+                        1.6
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        0.6,
+                        0.6
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "coordinateTransformations": [
+            {
+              "type": "affine",
+              "name": "deskew",
+              "input": {
+                "name": "intrinsic"
+              },
+              "output": {
+                "name": "deskewed"
+              },
+              "affine": [
+                [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.5,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.8660254037844386,
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              ]
+            },
+            {
+              "type": "byDimension",
+              "name": "camera rotation relative to stage axes",
+              "input": {
+                "name": "intrinsic"
+              },
+              "output": {
+                "name": "stage"
+              },
+              "transformations": [
+                {
+                  "transformation": {
+                    "type": "scale",
+                    "scale": [
+                      1.0
+                    ]
+                  },
+                  "inputAxes": [
+                    0
+                  ],
+                  "outputAxes": [
+                    0
+                  ]
+                },
+                {
+                  "transformation": {
+                    "type": "rotation",
+                    "rotation": [
+                      [
+                        1.0,
+                        0.0,
+                        0.0
+                      ],
+                      [
+                        0.0,
+                        0.8,
+                        -0.6
+                      ],
+                      [
+                        0.0,
+                        0.6,
+                        0.8
+                      ]
+                    ]
+                  },
+                  "inputAxes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "outputAxes": [
+                    1,
+                    2,
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "mapAxis",
+              "name": "transpose to sensor readout order",
+              "input": {
+                "name": "intrinsic"
+              },
+              "output": {
+                "name": "camera"
+              },
+              "mapAxis": [
+                0,
+                1,
+                3,
+                2
+              ]
+            }
+          ],
+          "type": "local_mean",
+          "metadata": {
+            "description": "Block-averaged 2x2 in yx; the scan axis is not downsampled.",
+            "method": "skimage.transform.downscale_local_mean",
+            "version": "0.24.0"
+          }
+        }
+      ],
+      "omero": {
+        "name": "OPM_zebrafish_tailfin",
+        "channels": [
+          {
+            "label": "kdrl:EGFP",
+            "color": "00FF00",
+            "active": true,
+            "coefficient": 1,
+            "family": "linear",
+            "inverted": false,
+            "window": {
+              "min": 0,
+              "max": 65535,
+              "start": 120,
+              "end": 2500
+            }
+          },
+          {
+            "label": "mpx:mCherry",
+            "color": "FF0000",
+            "active": true,
+            "coefficient": 1,
+            "family": "linear",
+            "inverted": false,
+            "window": {
+              "min": 0,
+              "max": 65535,
+              "start": 100,
+              "end": 1800
+            }
+          }
+        ],
+        "rdefs": {
+          "defaultT": 0,
+          "defaultZ": 150,
+          "model": "color"
+        }
+      }
+    }
+  }
+}

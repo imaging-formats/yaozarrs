@@ -1,0 +1,154 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "multiscales": [
+        {
+          "name": "Position002",
+          "coordinateSystems": [
+            {
+              "name": "physical",
+              "axes": [
+                {
+                  "name": "t",
+                  "type": "time",
+                  "unit": "second"
+                },
+                {
+                  "name": "c",
+                  "type": "channel"
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            }
+          ],
+          "datasets": [
+            {
+              "path": "0",
+              "coordinateTransformations": [
+                {
+                  "type": "scale",
+                  "scale": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.2075,
+                    0.2075
+                  ],
+                  "input": {
+                    "path": "0"
+                  },
+                  "output": {
+                    "name": "physical"
+                  }
+                }
+              ]
+            },
+            {
+              "path": "1",
+              "coordinateTransformations": [
+                {
+                  "type": "scale",
+                  "scale": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.415,
+                    0.415
+                  ],
+                  "input": {
+                    "path": "1"
+                  },
+                  "output": {
+                    "name": "physical"
+                  }
+                }
+              ]
+            },
+            {
+              "path": "2",
+              "coordinateTransformations": [
+                {
+                  "type": "scale",
+                  "scale": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.83,
+                    0.83
+                  ],
+                  "input": {
+                    "path": "2"
+                  },
+                  "output": {
+                    "name": "physical"
+                  }
+                }
+              ]
+            }
+          ],
+          "type": "simple",
+          "metadata": {
+            "description": "bioformats2raw --downsample-type SIMPLE, 2x2 in yx per level",
+            "method": "bioformats2raw",
+            "version": "0.9.4"
+          }
+        }
+      ],
+      "omero": {
+        "name": "Position002",
+        "channels": [
+          {
+            "label": "EGFP",
+            "color": "00FF00",
+            "active": true,
+            "coefficient": 1,
+            "family": "linear",
+            "inverted": false,
+            "window": {
+              "min": 0,
+              "max": 65535,
+              "start": 280,
+              "end": 5400
+            }
+          },
+          {
+            "label": "mCherry",
+            "color": "FF0000",
+            "active": true,
+            "coefficient": 1,
+            "family": "linear",
+            "inverted": false,
+            "window": {
+              "min": 0,
+              "max": 65535,
+              "start": 210,
+              "end": 3900
+            }
+          }
+        ],
+        "rdefs": {
+          "defaultT": 0,
+          "defaultZ": 0,
+          "model": "color"
+        }
+      }
+    }
+  }
+}

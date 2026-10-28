@@ -1,0 +1,128 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "multiscales": [
+        {
+          "coordinateSystems": [
+            {
+              "name": "intrinsic",
+              "axes": [
+                {
+                  "name": "t",
+                  "type": "time",
+                  "unit": "second"
+                },
+                {
+                  "name": "c",
+                  "type": "channel"
+                },
+                {
+                  "name": "z",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "y",
+                  "type": "space",
+                  "unit": "micrometer"
+                },
+                {
+                  "name": "x",
+                  "type": "space",
+                  "unit": "micrometer"
+                }
+              ]
+            }
+          ],
+          "datasets": [
+            {
+              "path": "scale0/image",
+              "coordinateTransformations": [
+                {
+                  "input": {
+                    "path": "scale0/image"
+                  },
+                  "output": {
+                    "name": "intrinsic"
+                  },
+                  "name": "scale0_to_intrinsic",
+                  "type": "sequence",
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        2.0,
+                        1.0,
+                        2.0,
+                        0.3,
+                        0.3
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        10.0,
+                        5.0,
+                        -5.0
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "scale1/image",
+              "coordinateTransformations": [
+                {
+                  "input": {
+                    "path": "scale1/image"
+                  },
+                  "output": {
+                    "name": "intrinsic"
+                  },
+                  "name": "scale1_to_intrinsic",
+                  "type": "sequence",
+                  "transformations": [
+                    {
+                      "type": "scale",
+                      "scale": [
+                        2.0,
+                        1.0,
+                        4.0,
+                        0.6,
+                        0.6
+                      ]
+                    },
+                    {
+                      "type": "translation",
+                      "translation": [
+                        0.0,
+                        0.0,
+                        11.0,
+                        5.15,
+                        -4.85
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "name": "image",
+          "type": "itkwasm_gaussian",
+          "metadata": {
+            "description": "Smoothed with a discrete gaussian filter to generate a scale space, ideal for intensity images. ITK-Wasm implementation is extremely portable and SIMD accelerated.",
+            "method": "itkwasm_downsample.downsample",
+            "version": "2.0.2"
+          },
+          "@type": "ngff:Image"
+        }
+      ]
+    }
+  }
+}

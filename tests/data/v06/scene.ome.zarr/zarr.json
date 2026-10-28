@@ -1,0 +1,58 @@
+{
+  "zarr_format": 3,
+  "node_type": "group",
+  "attributes": {
+    "ome": {
+      "version": "0.6",
+      "scene": {
+        "coordinateSystems": [
+          {
+            "name": "world",
+            "axes": [
+              {
+                "name": "y",
+                "type": "space",
+                "unit": "micrometer"
+              },
+              {
+                "name": "x",
+                "type": "space",
+                "unit": "micrometer"
+              }
+            ]
+          }
+        ],
+        "coordinateTransformations": [
+          {
+            "input": {
+              "path": "tile_0",
+              "name": "intrinsic"
+            },
+            "output": {
+              "name": "world"
+            },
+            "type": "translation",
+            "translation": [
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "input": {
+              "path": "tile_1",
+              "name": "intrinsic"
+            },
+            "output": {
+              "name": "world"
+            },
+            "type": "translation",
+            "translation": [
+              0.0,
+              32.0
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
