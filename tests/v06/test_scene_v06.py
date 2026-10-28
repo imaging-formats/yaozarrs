@@ -54,7 +54,8 @@ VALID_SCENES = [
         ],
         [WORLD, {"name": "other", "axes": [Y, X]}],
     ),
-    # explicit null path: refers to the scene's own coordinate systems (conflict N1)
+    # `path` "MAY be omitted or null when referencing a coordinate system defined in
+    # the scene's own `coordinateSystems`"
     scene([{**tile(0), "output": {"name": "world", "path": None}}], [WORLD]),
     # two coordinate systems of image A are linked within A, so this is connected
     scene(
