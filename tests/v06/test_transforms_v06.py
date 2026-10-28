@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 import re
-from pathlib import Path
 
 import pytest
 from pydantic import TypeAdapter, ValidationError
@@ -12,7 +11,6 @@ from yaozarrs._validation_warning import ValidationWarning
 from yaozarrs.v06._transforms import check_transform_ndim
 
 TRANSFORM = TypeAdapter(v06.CoordinateTransformation)
-EXAMPLES = Path(__file__).parent.parent / "data" / "v06" / "spec" / "examples"
 
 c, s = math.cos(0.3), math.sin(0.3)
 VALID_TRANSFORMS = [
@@ -81,7 +79,7 @@ INVALID_TRANSFORMS = [
     ({"scale": [1, 1]}, "Unable to extract tag using discriminator 'type'"),
     ({"type": "shear", "shear": [1]}, "does not match any of the expected tags"),
     ({"type": "scale", "scale": []}, "at least 1 item"),
-    ({"type": "scale", "path": "s"}, "Field required"),  # (no `path` in the schema)
+    ({"type": "scale", "path": "s"}, "Field required"),  # `scale` is required
     ({"type": "translation", "translation": []}, "at least 1 item"),
     ({"type": "mapAxis", "mapAxis": [0, 0]}, "must be unique"),
     ({"type": "mapAxis", "mapAxis": [-1, 0]}, "greater than or equal to 0"),
@@ -91,7 +89,7 @@ INVALID_TRANSFORMS = [
     ({"type": "affine", "affine": [[1, 0, 0]], "path": "a"}, "exactly one of"),
     ({"type": "affine", "affine": [[1, 0, 0], [0, 1]]}, "same length"),
     ({"type": "rotation", "rotation": [[1, 0, 0], [0, 1, 0]]}, "square"),
-    ({"type": "rotation", "rotation": [[2, 0], [0, 2]]}, "orthonormal"),
+    ({"type": "rotation", "rotation": [[2, 0], [0, 2]]}, "orthonormal rows"),
     ({"type": "rotation", "rotation": [[1, 0], [0, -1]]}, "determinant 1"),
     # "A non-empty array of transformations."
     ({"type": "sequence", "transformations": []}, "at least 1 item"),
@@ -255,7 +253,7 @@ NDIM_BAD = [
         {
             "type": "bijection",
             "forward": {"type": "coordinates", "path": "f"},
-            "inverse": {"type": "displacements", "path": "i"},
+            "inverse": {"type": "coordinates", "path": "i"},
         },
         2,
         3,

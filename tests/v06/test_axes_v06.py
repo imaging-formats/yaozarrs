@@ -8,6 +8,7 @@ from pydantic import TypeAdapter, ValidationError
 from yaozarrs import v06
 from yaozarrs._validation_warning import ValidationWarning
 from yaozarrs.v06._axes import validate_multiscale_axes
+from yaozarrs.v06._coordinate_systems import CoordinateSystemsList
 
 X = {"name": "x", "type": "space", "unit": "micrometer"}
 Y = {"name": "y", "type": "space", "unit": "micrometer"}
@@ -95,8 +96,6 @@ def test_unit_warnings() -> None:
 
 
 def test_coordinate_system_names_unique() -> None:
-    from yaozarrs.v06._coordinate_systems import CoordinateSystemsList
-
     adapter = TypeAdapter(CoordinateSystemsList)
     cs = {"name": "a", "axes": [Y, X]}
     adapter.validate_python([cs, {**cs, "name": "b"}])

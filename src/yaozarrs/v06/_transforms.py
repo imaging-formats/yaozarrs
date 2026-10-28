@@ -1,6 +1,6 @@
 import math
 import warnings
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, NoReturn, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import (
@@ -211,10 +211,12 @@ class RotationTransformation(_TransformBase):
                 raise ValueError("rotation matrix must be square (NxN)")
             # [Rotations] MUST have determinant equal to one, with orthonormal rows
             # and columns.
-            if not _is_rotation_matrix(m):
-                raise ValueError(
-                    "rotation matrix must be orthonormal with determinant 1"
-                )
+            # (for a square matrix, orthonormal rows imply orthonormal columns)
+            if not _has_orthonormal_rows(m):
+                raise ValueError("rotation matrix must have orthonormal rows")
+            # (orthonormal => det is +/-1; a rotation requires +1, not a reflection)
+            if not math.isclose(_det(m), 1.0, abs_tol=_ROTATION_TOL):
+                raise ValueError("rotation matrix must have determinant 1")
         return self
 
 
@@ -370,7 +372,7 @@ def check_transform_ndim(t: CoordinateTransformation, n_in: int, n_out: int) -> 
 
     # The parameter values ... MUST be compatible with input and output space
     # dimensionality
-    def _fail(msg: str) -> None:
+    def _fail(msg: str) -> NoReturn:
         raise ValueError(f"{t.type}: {msg} (input has {n_in}, output has {n_out} axes)")
 
     if isinstance(t, (TranslationTransformation, ScaleTransformation)):
@@ -486,16 +488,14 @@ def _require_exactly_one(t: Any, matrix_field: str) -> None:
 _ROTATION_TOL = 1e-6
 
 
-def _is_rotation_matrix(m: list[list[float]]) -> bool:
+def _has_orthonormal_rows(m: list[list[float]]) -> bool:
     n = len(m)
-    # orthonormal rows (for a square matrix, this implies orthonormal columns)
     for i in range(n):
         for j in range(i, n):
             dot = sum(m[i][k] * m[j][k] for k in range(n))
             if not math.isclose(dot, float(i == j), abs_tol=_ROTATION_TOL):
                 return False
-    # orthonormal => det is +/-1; a rotation requires +1 (not a reflection)
-    return math.isclose(_det(m), 1.0, abs_tol=_ROTATION_TOL)
+    return True
 
 
 def _det(m: list[list[float]]) -> float:
@@ -517,6 +517,7 @@ def _det(m: list[list[float]]) -> float:
 
 
 def _is_closed_form_invertible(t: Any) -> bool:
+    # (not `affine`, which "may be (but is not necessarily) invertible")
     if isinstance(t, SequenceTransformation):
         return all(_is_closed_form_invertible(s) for s in t.transformations)
     return isinstance(
@@ -527,6 +528,5 @@ def _is_closed_form_invertible(t: Any) -> bool:
             TranslationTransformation,
             ScaleTransformation,
             RotationTransformation,
-            AffineTransformation,
         ),
     )
