@@ -98,8 +98,7 @@ class Dataset(_BaseModel):
             )
         # The `name` field under `input` SHOULD be omitted. ... The `path` field of
         # `output` SHOULD be omitted.
-        # (NOTE: another section says "MUST ... omit"; upstream's review intent was
-        # "discouraged and ignored", see ngff-spec#117.)
+        # NOTE: another section says "MUST ... omit", so we only warn.
         if t.input.name is not None or t.output.path is not None:
             warnings.warn(
                 f"Dataset {self.path!r}: the transformation's input 'name' and output "
@@ -145,8 +144,7 @@ class Dataset(_BaseModel):
 
 
 # types allowed when transforming to a coordinate system in a child labels group
-# (the labels section also allows a sequence of a scale and a translation, which the
-# other two sections omit; see ome/ngff#639)
+# (see also `_is_label_transform`)
 _LABEL_TRANSFORM_TYPES = ("identity", "scale", "translation")
 
 
@@ -219,7 +217,10 @@ class Multiscale(_BaseModel):
                 raise ValueError(f"datasets[{i}] ({ds.path!r}): {e}") from None
 
         self._validate_coordinate_transformations(systems, intrinsic)
-        self._validate_connected(systems, intrinsic)
+        # TODO: "The graph MUST be connected" applies to the coordinate systems of the
+        # multiscales and scene metadata combined (a scene may link coordinate systems
+        # within one image), so it can't be checked here.  Revisit once the v0.6
+        # storage validator is in place.
         self._validate_resolution_order(systems[intrinsic])
         return self
 
@@ -247,10 +248,8 @@ class Multiscale(_BaseModel):
             if other.path is None:
                 # The other MUST reference a named coordinate system in the same
                 # multiscales group (by `name`, `path` MAY be omitted or null)
-                # NOTE: we resolve names within this multiscale entry only. A group
-                # may hold several multiscales, whose coordinate system names need not
-                # be unique across entries (raised in review of ngff-spec#137, but not
-                # resolved there).
+                # NOTE: we resolve names within this multiscale entry only (names need
+                # not be unique across the multiscales of a group).
                 if other.name not in systems:
                     raise ValueError(
                         f"{loc}: coordinate system {other.name!r} is not declared in "
@@ -262,8 +261,8 @@ class Multiscale(_BaseModel):
                 # ... or in a child labels group (by `name` and `path`).
                 # When referencing a child labels group, the transformation MUST be
                 # `identity`, `scale`, or `translation`.
-                # (the labels section also allows a sequence of a scale and a
-                # translation; we accept that too, see ome/ngff#639)
+                # NOTE: the labels section also allows "a sequence of a scale and a
+                # translation transformation", so we accept that too (ome/ngff#639).
                 if not _is_label_transform(t):
                     raise ValueError(
                         f"{loc}: a transformation to a child label image must be "
@@ -276,32 +275,6 @@ class Multiscale(_BaseModel):
                 check_transform_ndim(t, n_in, n_out)
             except ValueError as e:
                 raise ValueError(f"{loc}: {e}") from None
-
-    def _validate_connected(
-        self, systems: dict[str, CoordinateSystem], intrinsic: str
-    ) -> None:
-        # The graph MUST be connected (but need not be complete): any two coordinate
-        # systems in the metadata MUST be linked by a path of one or more coordinate
-        # transformations
-        # (dataset transformations link the arrays to the intrinsic coordinate system;
-        # links are followed in both directions)
-        links: dict[str, set[str]] = {name: set() for name in systems}
-        for t in self.coordinateTransformations or ():
-            a = t.input.name if t.input and t.input.path is None else None
-            b = t.output.name if t.output and t.output.path is None else None
-            if a is not None and b is not None and a in links and b in links:
-                links[a].add(b)
-                links[b].add(a)
-        reached, todo = {intrinsic}, [intrinsic]
-        while todo:
-            for name in links[todo.pop()] - reached:
-                reached.add(name)
-                todo.append(name)
-        if unreached := [name for name in systems if name not in reached]:
-            raise ValueError(
-                f"Coordinate systems {unreached} are not linked to the intrinsic "
-                f"coordinate system {intrinsic!r} by any coordinateTransformations."
-            )
 
     def _validate_resolution_order(self, intrinsic: CoordinateSystem) -> None:
         # The `path`s MUST be ordered from largest (i.e. highest resolution) to
@@ -339,8 +312,7 @@ class Multiscale(_BaseModel):
 
 def _is_label_transform(t: CoordinateTransformation) -> bool:
     if isinstance(t, SequenceTransformation):
-        # "a sequence of a scale and a translation transformation" (no order is given
-        # here, unlike for dataset transformations, so we accept either order)
+        # (no order is given here, unlike for dataset transformations)
         return sorted(step.type for step in t.transformations) == [
             "scale",
             "translation",
@@ -357,6 +329,20 @@ class Image(_BaseModel):
     """Top-level OME-NGFF image metadata (`ome` in an image group's `zarr.json`).
 
     Contains one or more multiscale pyramids, plus optional OMERO rendering hints.
+
+    !!! example "Typical Structure"
+        ```
+        my_image/
+        ├── zarr.json          # contains ["ome"]["multiscales"]
+        ├── 0/                 # Highest resolution array
+        ├── 1/                 # Next resolution level
+        └── labels/            # Optional segmentation masks
+            ├── zarr.json      # contains ["ome"]["labels"]
+            └── 0              # Multiscale, labeled image.
+        ```
+
+    !!! note
+        For the optional `labels` group, see [LabelsGroup][yaozarrs.v06.LabelsGroup].
     """
 
     version: VersionStr = Field(default="0.6", description="OME-NGFF version")

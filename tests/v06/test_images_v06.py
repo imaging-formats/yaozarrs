@@ -251,8 +251,6 @@ INVALID_IMAGES = [
         ),
         "translation: has 3 values",
     ),
-    # connectivity
-    (image(systems=[PHYSICAL, OTHER]), "['other'] are not linked to the intrinsic"),
     # resolution order
     (
         image([dataset("s0", scale("s0", 2, 2)), dataset("s1", scale("s1", 1, 1))]),

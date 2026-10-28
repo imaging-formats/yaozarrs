@@ -403,10 +403,9 @@ def check_transform_ndim(t: CoordinateTransformation, n_in: int, n_out: int) -> 
         # The length of the array MUST equal the number of dimensions in both the
         # input and output coordinate systems. Each integer in the array MUST be a
         # valid zero-based index into the input coordinate system's axes
+        # (that it's a permutation of 0..N-1 is checked by MapAxisTransformation)
         if not len(t.mapAxis) == n_in == n_out:
             _fail(f"has {len(t.mapAxis)} indices")
-        if sorted(t.mapAxis) != list(range(n_in)):
-            _fail(f"{t.mapAxis} is not a permutation of 0..{n_in - 1}")
     elif isinstance(t, ProjectAxisTransformation):
         dropped, created = t.droppedInputs or [], t.createdOutputs or []
         if any(i >= n_in for i in dropped):
