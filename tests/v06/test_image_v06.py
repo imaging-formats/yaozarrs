@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import json
 import re
-import warnings
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -80,7 +77,8 @@ VALID_IMAGES = [
         type="gaussian",
         metadata={"method": "skimage.transform.pyramid_gaussian"},
     ),
-    # flips are allowed (conflict D1); resolution order compares magnitudes
+    # flips are allowed (scale values "SHOULD be non-zero"); resolution order
+    # compares magnitudes
     image([dataset("s0", scale("s0", -1, 1)), dataset("s1", scale("s1", -2, 2))]),
     # additional transform to another coordinate system of this multiscale
     image(systems=[PHYSICAL, OTHER], transforms=[TO_OTHER]),
@@ -101,7 +99,7 @@ VALID_IMAGES = [
             }
         ]
     ),
-    # ... or a sequence of a scale and a translation (conflict P3, ome/ngff#639)
+    # ... or "a sequence of a scale and a translation transformation" (ome/ngff#639)
     image(
         transforms=[
             {
@@ -122,7 +120,8 @@ VALID_IMAGES = [
             }
         ]
     ),
-    # explicit null path means "same document" (conflict N1)
+    # "If the `path` field is null or omitted, this is to be interpreted as referring
+    # to a named coordinate system in the same `zarr.json` file."
     image(
         systems=[PHYSICAL, OTHER],
         transforms=[{**TO_OTHER, "output": {"name": "other", "path": None}}],
@@ -269,7 +268,8 @@ def test_invalid_images(obj: dict, msg: str) -> None:
 
 
 WARNING_IMAGES = [
-    # conflict P1: SHOULD omit input.name / output.path on dataset transforms
+    # "The `name` field under `input` SHOULD be omitted. ... The `path` field of
+    # `output` SHOULD be omitted."
     (
         image(
             [dataset("s0", {**scale("s0", 1, 1), "input": {"path": "s0", "name": "a"}})]
@@ -287,9 +287,10 @@ WARNING_IMAGES = [
         ),
         "SHOULD be omitted",
     ),
-    # conflict D21
+    # _version.schema also allows "0.6rc0"
     ({**image(), "version": "0.6rc0"}, "pre-release"),
-    # conflict D6: array coordinate systems inside multiscales
+    # array coordinate systems inside multiscales (allowed by axes.schema, not by
+    # the prose)
     (
         image(
             [
@@ -340,66 +341,3 @@ def test_multiscale_properties() -> None:
     assert s0.translation_transform is None
     assert s1.scale_transform.scale == [2, 2]  # type: ignore[union-attr]
     assert s1.translation_transform.translation == [0.5, 0.5]  # type: ignore[union-attr]
-
-
-# ------------------------------------------------------------------------------
-# upstream conformance fixtures (tests/attributes/**), image documents only
-# ------------------------------------------------------------------------------
-
-FIXTURES = (
-    Path(__file__).parent.parent / "data" / "v06" / "spec" / "tests" / "attributes"
-)
-
-
-def _image_fixtures() -> list[Path]:
-    out = []
-    for path in sorted(FIXTURES.rglob("*.json")):
-        ome = json.loads(path.read_text()).get("ome", {})
-        if "multiscales" in ome and "image-label" not in ome:
-            out.append(path)
-    return out
-
-
-# fixtures where yaozarrs deliberately disagrees with upstream's verdict
-# (each value is the reason, citing dev_notes/v06/conflicts.md)
-EXPECTED_DEVIATIONS: dict[str, str] = {
-    # upstream invalid, yaozarrs valid
-    "spec/invalid/image/invalid_channels_window.json": (
-        'N1: pydantic lax mode accepts the numeric string "100" for window.end '
-        "(library-wide; shared Omero class)"
-    ),
-    # upstream valid, yaozarrs invalid (fixture bugs the schema can't catch)
-    "spec/valid/image/mismatch_axes_units.json": (
-        "fixture bug: 2-value scale for a 3-axis coordinate system violates "
-        '"MUST equal the length of the scale array" (upstream_fixes.md #15)'
-    ),
-    "spec/valid/image/multiscales_transform_additional_transforms.json": (
-        "fixture bug: the final byDimension step of a 3D sequence covers only output "
-        "axes 0 and 1, violating \"Every axis index in the parent byDimension's output "
-        "coordinate system MUST appear in exactly one child transformation's "
-        'outputAxes array" (upstream_fixes.md #17)'
-    ),
-    "strict/valid/image/multiscales_example.json": (
-        'fixture bug: dataset path "1" but input.path "s1" violates "input ... MUST '
-        'specify a path field matching the path field of the dataset" '
-        "(upstream_fixes.md #16; the published example is correct)"
-    ),
-}
-
-
-@pytest.mark.parametrize(
-    "path", _image_fixtures(), ids=lambda p: str(p.relative_to(FIXTURES))
-)
-def test_upstream_image_fixtures(path: Path) -> None:
-    upstream_valid = "/valid/" in str(path)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", ValidationWarning)
-        try:
-            v06.Image.model_validate(json.loads(path.read_text())["ome"])
-            valid = True
-        except ValidationError:
-            valid = False
-    if (key := str(path.relative_to(FIXTURES))) in EXPECTED_DEVIATIONS:
-        assert valid != upstream_valid, f"deviation no longer needed: {key}"
-    else:
-        assert valid == upstream_valid

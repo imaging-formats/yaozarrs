@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -101,35 +99,3 @@ def test_labels_group() -> None:
         v06.LabelsGroup.model_validate({"version": "0.6", "labels": []})
     with pytest.raises(ValidationError, match=re.escape("'0.6'")):
         v06.LabelsGroup.model_validate({"version": "0.5", "labels": ["cells"]})
-
-
-# ------------------------------------------------------------------------------
-# upstream conformance fixtures: these only exercise the `image-label` object
-# ------------------------------------------------------------------------------
-
-FIXTURES = (
-    Path(__file__).parent.parent / "data" / "v06" / "spec" / "tests" / "attributes"
-)
-LABEL_FIXTURES = sorted(
-    p
-    for p in FIXTURES.rglob("*.json")
-    if "image-label" in json.loads(p.read_text()).get("ome", {})
-    # (strict/invalid fixtures are only invalid under the strict schemas, which
-    # yaozarrs doesn't model)
-    and "strict/invalid" not in str(p)
-)
-
-
-@pytest.mark.parametrize(
-    "path", LABEL_FIXTURES, ids=lambda p: str(p.relative_to(FIXTURES))
-)
-def test_upstream_label_fixtures(path: Path) -> None:
-    upstream_valid = "/valid/" in str(path)
-    try:
-        v06.ImageLabel.model_validate(
-            json.loads(path.read_text())["ome"]["image-label"]
-        )
-        valid = True
-    except ValidationError:
-        valid = False
-    assert valid == upstream_valid

@@ -187,7 +187,7 @@ PARITY_AXES = [
 @pytest.mark.parametrize("axes", PARITY_AXES)
 def test_multiscale_axes_rules_match_v05(axes: list[dict]) -> None:
     # the multiscale axes rules are worded identically in v0.5 and v0.6, so v06 must
-    # accept/reject the same axes as v05 (decisions.md, D23)
+    # accept/reject the same axes as v05
     try:
         TypeAdapter(V05AxesList).validate_python(axes)
         v05_ok = True
