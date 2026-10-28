@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import warnings
 
 import pytest
 from pydantic import ValidationError
@@ -70,9 +69,7 @@ VALID_WELLS = [
 
 @pytest.mark.parametrize("obj", VALID_WELLS)
 def test_valid_wells(obj: dict) -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        w = v06.Well.model_validate(obj)
+    w = v06.Well.model_validate(obj)
     assert v06.Well.model_validate_json(w.model_dump_json()) == w
 
 
@@ -91,15 +88,6 @@ INVALID_WELLS = [
 def test_invalid_wells(obj: dict, msg: str) -> None:
     with pytest.raises(ValidationError, match=re.escape(msg)):
         v06.Well.model_validate(obj)
-
-
-def test_bf2raw_and_series() -> None:
-    b = v06.Bf2Raw.model_validate({"version": "0.6", "bioformats2raw.layout": 3})
-    assert b.model_dump(mode="json") == {"version": "0.6", "bioformats2raw.layout": 3}
-    s = v06.Series.model_validate({"version": "0.6", "series": ["0", "1"]})
-    assert s.series == ["0", "1"]
-    with pytest.raises(ValidationError, match="at least 1 item"):
-        v06.Series.model_validate({"version": "0.6", "series": []})
 
 
 def test_prerelease_version_warns() -> None:

@@ -57,11 +57,6 @@ VALID_SCENES = [
     # `path` "MAY be omitted or null when referencing a coordinate system defined in
     # the scene's own `coordinateSystems`"
     scene([{**tile(0), "output": {"name": "world", "path": None}}], [WORLD]),
-    # two coordinate systems of image A are linked within A, so this is connected
-    scene(
-        [BIJECTION, {**tile(0), "input": {"path": "A", "name": "other"}}],
-        [WORLD],
-    ),
 ]
 
 
@@ -86,7 +81,21 @@ INVALID_SCENES = [
         "valid dictionary or instance of CoordinateSystemRef",
     ),
     # dimensionality against the scene's own coordinate systems
-    (scene([tile(0, [1, 2, 3])], [WORLD]), "translation: has 3 values"),
+    (
+        scene(
+            [
+                tile(0),
+                {
+                    "type": "translation",
+                    "translation": [1, 2, 3],
+                    "input": {"name": "world"},
+                    "output": {"name": "other"},
+                },
+            ],
+            [WORLD, {"name": "other", "axes": [Y, X]}],
+        ),
+        "translation: has 3 values (input has 2, output has 2 axes)",
+    ),
     # ... also when only one side is known
     (
         scene(
@@ -117,21 +126,6 @@ INVALID_SCENES = [
         ),
         "droppedInputs [3] out of range (input has 2, output has 1 axes); the output "
         "size here is inferred",
-    ),
-    # connectivity
-    (scene([tile(0)], [WORLD, {"name": "unused", "axes": [Y, X]}]), "'unused'"),
-    (
-        scene(
-            [
-                BIJECTION,
-                {
-                    **BIJECTION,
-                    "input": {"path": "C", "name": "p"},
-                    "output": {"path": "D", "name": "p"},
-                },
-            ]
-        ),
-        "not all linked",
     ),
 ]
 

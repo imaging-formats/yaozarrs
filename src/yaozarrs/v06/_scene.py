@@ -86,7 +86,9 @@ class SceneDef(_BaseModel):
                 self._check_ndim(t, systems)
             except ValueError as e:
                 raise ValueError(f"{loc}: {e}") from None
-        self._validate_connected(systems)
+        # TODO: "The graph MUST be connected" applies to the coordinate systems of the
+        # multiscales and scene metadata combined, so it needs the referenced images.
+        # Revisit once the v0.6 storage validator is in place.
         return self
 
     def _check_ndim(self, t: CoordinateTransformation, systems: dict) -> None:
@@ -115,40 +117,6 @@ class SceneDef(_BaseModel):
                 f"{e}; the {inferred} size here is inferred, as its coordinate system "
                 "is in an image subgroup"
             ) from None
-
-    def _validate_connected(self, systems: dict) -> None:
-        # The graph MUST be connected (but need not be complete): any two coordinate
-        # systems in the metadata MUST be linked by a path of one or more coordinate
-        # transformations
-        # (nodes are the scene's own coordinate systems and the referenced images; the
-        # coordinate systems of one image are linked by its own transformations, so
-        # each image is a single node. Links are followed in both directions.)
-        def node(ref: CoordinateSystemRef | None) -> tuple[str, str | None]:
-            # (input/output are known to be set here; see `_validate`)
-            if ref is not None and ref.path is not None:
-                return ("image", ref.path)
-            return ("coordinate system", ref.name if ref else None)
-
-        links: dict[tuple, set[tuple]] = {
-            ("coordinate system", name): set() for name in systems
-        }
-        for t in self.coordinateTransformations:
-            a, b = node(t.input), node(t.output)
-            links.setdefault(a, set()).add(b)
-            links.setdefault(b, set()).add(a)
-        start = next(iter(links))
-        reached, todo = {start}, [start]
-        while todo:
-            for n in links[todo.pop()] - reached:
-                reached.add(n)
-                todo.append(n)
-        if unreached := [n for n in links if n not in reached]:
-            names = ", ".join(f"{kind} {name!r}" for kind, name in unreached)
-            raise ValueError(
-                f"The scene's coordinate systems are not all linked by its "
-                f"coordinateTransformations; not reachable from {start[0]} "
-                f"{start[1]!r}: {names}"
-            )
 
 
 class Scene(_BaseModel):

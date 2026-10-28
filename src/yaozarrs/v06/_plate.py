@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import AfterValidator, Field, model_validator
@@ -95,7 +95,7 @@ def _validate_fov_path(path: str) -> str:
 
 # The `path` MUST only use characters in the sets `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`.
 # (v0.6 relaxed this from "only alphanumeric characters")
-FieldOfViewPath = Annotated[
+FieldOfViewPath: TypeAlias = Annotated[
     str, Field(pattern=r"^[A-Za-z0-9._-]+$"), AfterValidator(_validate_fov_path)
 ]
 
