@@ -49,7 +49,8 @@ def test_valid_coordinate_systems(obj: dict) -> None:
 INVALID_COORDINATE_SYSTEMS = [
     ({"name": "", "axes": [Y, X]}, "at least 1 character"),
     ({"name": "cs", "axes": [{**Y, "name": ""}, X]}, "at least 1 character"),
-    # AX-06: unique names (differing units don't make them distinct)
+    # "The values in the `name` fields MUST be unique within the same coordinate
+    # system" (differing units don't make them distinct)
     ({"name": "cs", "axes": [{**X, "unit": "nanometer"}, X]}, "Duplicates: ['x']"),
     ({"name": "cs", "axes": []}, "at least 1 item"),
     ({"name": "cs", "axes": [{**X, "discrete": "maybe"}, Y]}, "valid boolean"),
@@ -141,6 +142,6 @@ def test_invalid_multiscale_axes(axes: list[dict], msg: str) -> None:
 
 
 def test_multiscale_array_axes_warn() -> None:
-    # prose: 2-3 space axes; schema (and upstream fixtures): >= 2 array axes allowed
+    # prose: 2-3 space axes; axes.schema: >= 2 array axes are allowed instead
     with pytest.warns(ValidationWarning, match="'array' axes are only allowed"):
         validate_multiscale_axes(AXES.validate_python([I, J]))

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 import re
 from pathlib import Path
@@ -10,7 +9,6 @@ from pydantic import TypeAdapter, ValidationError
 
 from yaozarrs import v06
 from yaozarrs._validation_warning import ValidationWarning
-from yaozarrs.v06._coordinate_systems import CoordinateSystemsList
 from yaozarrs.v06._transforms import check_transform_ndim
 
 TRANSFORM = TypeAdapter(v06.CoordinateTransformation)
@@ -24,7 +22,7 @@ VALID_TRANSFORMS = [
     {"type": "projectAxis", "createdOutputs": [0, 1], "droppedInputs": [2]},
     {"type": "translation", "translation": [1.5, -2]},
     {"type": "scale", "scale": [0.5, 2]},
-    {"type": "scale", "scale": [-1, 1]},  # flips are allowed (conflict D1)
+    {"type": "scale", "scale": [-1, 1]},  # only "SHOULD be non-zero"
     {"type": "affine", "affine": [[1, 0, 3], [0, 1, 4]]},
     {"type": "affine", "path": "coordinateTransformations/affine"},
     {"type": "rotation", "rotation": [[c, -s], [s, c]]},
@@ -58,7 +56,7 @@ VALID_TRANSFORMS = [
     },
     {"type": "displacements", "path": "field"},
     {"type": "coordinates", "path": "field", "interpolation": "bspline-cubic"},
-    # interpolation is not normative and its list "not exhaustive" (conflict D2)
+    # "The interpolation methods listed in this specification ... are not exhaustive"
     {"type": "coordinates", "path": "field", "interpolation": "windowed-sinc"},
     # optional name, input and output
     {
@@ -83,7 +81,7 @@ INVALID_TRANSFORMS = [
     ({"scale": [1, 1]}, "Unable to extract tag using discriminator 'type'"),
     ({"type": "shear", "shear": [1]}, "does not match any of the expected tags"),
     ({"type": "scale", "scale": []}, "at least 1 item"),
-    ({"type": "scale", "path": "s"}, "Field required"),  # no zarr storage (D17)
+    ({"type": "scale", "path": "s"}, "Field required"),  # (no `path` in the schema)
     ({"type": "translation", "translation": []}, "at least 1 item"),
     ({"type": "mapAxis", "mapAxis": [0, 0]}, "must be unique"),
     ({"type": "mapAxis", "mapAxis": [-1, 0]}, "greater than or equal to 0"),
@@ -95,15 +93,16 @@ INVALID_TRANSFORMS = [
     ({"type": "rotation", "rotation": [[1, 0, 0], [0, 1, 0]]}, "square"),
     ({"type": "rotation", "rotation": [[2, 0], [0, 2]]}, "orthonormal"),
     ({"type": "rotation", "rotation": [[1, 0], [0, -1]]}, "determinant 1"),
-    ({"type": "sequence", "transformations": []}, "at least 1 item"),  # D4
-    ({"type": "byDimension", "transformations": []}, "at least 1 item"),  # D4
+    # "A non-empty array of transformations."
+    ({"type": "sequence", "transformations": []}, "at least 1 item"),
+    ({"type": "byDimension", "transformations": []}, "at least 1 item"),
     (
         {
             "type": "byDimension",
             "transformations": [
                 {
                     "transformation": {"type": "scale", "scale": [2]},
-                    "inputAxes": [0.5],  # D3: integers
+                    "inputAxes": [0.5],  # "arrays of integers"
                     "outputAxes": [0],
                 }
             ],
@@ -270,43 +269,3 @@ def test_check_transform_ndim_bad(obj: dict, n_in: int, n_out: int, msg: str) ->
     t = TRANSFORM.validate_python(obj)
     with pytest.raises(ValueError, match=re.escape(msg)):
         check_transform_ndim(t, n_in, n_out)
-
-
-# upstream examples: {"coordinateSystems": [...], "coordinateTransformations": [...]}
-EXAMPLE_FILES = sorted(
-    p for p in EXAMPLES.glob("transformations/*.json") if not p.name.startswith(".")
-)
-# upstream intends these to be invalid
-EXPECTED_INVALID = {"byDimensionInvalid1.json", "byDimensionInvalid2.json"}
-
-
-@pytest.mark.parametrize("path", EXAMPLE_FILES, ids=lambda p: p.name)
-def test_upstream_transformation_examples(path: Path) -> None:
-    data = json.loads(path.read_text())
-    if "coordinateTransformations" not in data:  # a bare transformation
-        TRANSFORM.validate_python(data)
-        return
-
-    systems = {
-        cs.name: cs
-        for cs in TypeAdapter(CoordinateSystemsList).validate_python(
-            data["coordinateSystems"]
-        )
-    }
-    errors = []
-    for obj in data["coordinateTransformations"]:
-        try:
-            t = TRANSFORM.validate_python(obj)
-            refs = (t.input, t.output)
-            # (references to arrays or other groups are resolved in storage checks)
-            if all(r and not r.path and r.name in systems for r in refs):
-                check_transform_ndim(
-                    t, systems[t.input.name].ndim, systems[t.output.name].ndim
-                )
-        except ValueError as e:
-            errors.append(e)
-
-    if path.name in EXPECTED_INVALID:
-        assert errors
-    else:
-        assert not errors

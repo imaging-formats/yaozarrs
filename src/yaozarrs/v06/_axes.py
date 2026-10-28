@@ -129,11 +129,10 @@ def validate_multiscale_axes(axes: Sequence[Axis]) -> None:
     ValueError
         If the axes violate any of the rules.
     """
-    # NOTE: the prose says the rules below "apply to all coordinate systems inside
-    # multiscales metadata", but axes.schema explicitly allows coordinate systems of
-    # >= 2 "array" axes (instead of 2-3 "space" axes), and upstream's valid fixture
-    # `transforms/byDimension.json` uses one as the intrinsic coordinate system of a
-    # multiscale.  We accept those with a warning (see dev_notes/v06/conflicts.md D6).
+    # NOTE: the prose says these rules "apply to all coordinate systems inside
+    # multiscales metadata", including "`axes` MUST contain 2 or 3 entries of
+    # `type:space`".  But axes.schema allows either 2-3 "space" axes or >= 2 "array"
+    # axes, so we accept the latter with a warning.
     n_space = sum(ax.type == "space" for ax in axes)
     if sum(ax.type == "array" for ax in axes) >= 2 and not 2 <= n_space <= 3:
         warnings.warn(
