@@ -1,3 +1,4 @@
+import math
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
@@ -285,6 +286,8 @@ class Multiscale(_BaseModel):
 
         # The "paths" of the datasets MUST be be ordered from the highest resolution to
         # the lowest resolution (i.e. largest to smallest
+        # (checked per spatial axis: a scale may not shrink from one level to the next,
+        # allowing for float noise)
         spatial_indices: dict[int, str] = {
             i: ax.name for i, ax in enumerate(self.axes) if ax.type == "space"
         }
@@ -292,7 +295,11 @@ class Multiscale(_BaseModel):
             tuple(ds.scale_transform.scale[idx] for idx in spatial_indices)
             for ds in self.datasets
         ]
-        if spatial_scales != sorted(spatial_scales):
+        if any(
+            b < a and not math.isclose(a, b, rel_tol=1e-6)
+            for prev, cur in zip(spatial_scales, spatial_scales[1:])
+            for a, b in zip(prev, cur)
+        ):
             raise ValueError(
                 "The datasets are not ordered from highest to lowest resolution. "
                 f"Found spatial scales: {spatial_scales}"

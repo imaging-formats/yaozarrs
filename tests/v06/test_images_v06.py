@@ -127,6 +127,10 @@ VALID_IMAGES = [
         transforms=[{**TO_OTHER, "output": {"name": "other", "path": None}}],
     ),
     {**image(), "version": "0.6", "omero": {"channels": []}},
+    # resolution order allows float noise on an axis that isn't downsampled
+    image(
+        [dataset("s0", scale("s0", 0.5, 1)), dataset("s1", scale("s1", 0.49999999, 2))]
+    ),
 ]
 
 
@@ -254,6 +258,11 @@ INVALID_IMAGES = [
     # resolution order
     (
         image([dataset("s0", scale("s0", 2, 2)), dataset("s1", scale("s1", 1, 1))]),
+        "not ordered from highest to lowest",
+    ),
+    # ... on every spatial axis, not only the first
+    (
+        image([dataset("s0", scale("s0", 1, 4)), dataset("s1", scale("s1", 2, 0.1))]),
         "not ordered from highest to lowest",
     ),
 ]

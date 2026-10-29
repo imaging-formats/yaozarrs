@@ -128,6 +128,29 @@ V05_VALID_IMAGES = [
             }
         ],
     },
+    # resolution order allows float noise on an axis that isn't downsampled
+    {
+        "version": "0.5",
+        "multiscales": [
+            {
+                "axes": [X_AXIS, Y_AXIS],
+                "datasets": [
+                    {
+                        "path": "0",
+                        "coordinateTransformations": [
+                            {"type": "scale", "scale": [0.5, 1.0]}
+                        ],
+                    },
+                    {
+                        "path": "1",
+                        "coordinateTransformations": [
+                            {"type": "scale", "scale": [0.49999999, 2.0]}
+                        ],
+                    },
+                ],
+            }
+        ],
+    },
 ]
 
 
@@ -497,6 +520,32 @@ V05_INVALID_IMAGES: list[tuple[dict, str]] = [
                             "path": "1",
                             "coordinateTransformations": [
                                 {"type": "scale", "scale": [1.0, 1.0]}
+                            ],
+                        },
+                    ],
+                }
+            ],
+        },
+        "The datasets are not ordered from highest to lowest resolution",
+    ),
+    # ... on every spatial axis, not only the first
+    (
+        {
+            "version": "0.5",
+            "multiscales": [
+                {
+                    "axes": [X_AXIS, Y_AXIS],
+                    "datasets": [
+                        {
+                            "path": "0",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 4.0]}
+                            ],
+                        },
+                        {
+                            "path": "1",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [2.0, 0.1]}
                             ],
                         },
                     ],
