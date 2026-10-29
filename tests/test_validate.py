@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 import yaozarrs
-from yaozarrs import v04, v05
+from yaozarrs import v04, v05, v06
 from yaozarrs._validation_warning import ValidationWarning
 
 AXES = [{"name": "y", "type": "space"}, {"name": "x", "type": "space"}]
@@ -26,6 +26,27 @@ V05_PLATE = {
     },
 }
 V04_IMAGE = {"multiscales": [{"version": "0.4", "axes": AXES, "datasets": DATASETS}]}
+V06_IMAGE = {
+    "version": "0.6",
+    "multiscales": [
+        {
+            "coordinateSystems": [{"name": "physical", "axes": AXES}],
+            "datasets": [
+                {
+                    "path": "0",
+                    "coordinateTransformations": [
+                        {
+                            "type": "scale",
+                            "scale": [1, 1],
+                            "input": {"path": "0"},
+                            "output": {"name": "physical"},
+                        }
+                    ],
+                }
+            ],
+        }
+    ],
+}
 
 
 def _zarr_json(ome: dict) -> dict:
@@ -50,6 +71,21 @@ def _zarr_json(ome: dict) -> dict:
 def test_dispatch(obj: dict, cls: type) -> None:
     assert isinstance(yaozarrs.validate_ome_object(obj), cls)
     assert isinstance(yaozarrs.validate_ome_json(json.dumps(obj)), cls)
+
+
+@pytest.mark.parametrize(
+    "obj, cls",
+    [
+        ({**V04_IMAGE, "image-label": {}}, v04.LabelImage),
+        ({**V05_IMAGE, "image-label": {}}, v05.LabelImage),
+        ({**V06_IMAGE, "image-label": {}}, v06.LabelImage),
+    ],
+    ids=["v04", "v05", "v06"],
+)
+def test_label_image_dumped_by_field_name(obj: dict, cls: type) -> None:
+    dumped = yaozarrs.validate_ome_object(obj).model_dump(by_alias=False)
+    assert "image_label" in dumped
+    assert isinstance(yaozarrs.validate_ome_object(dumped), cls)
 
 
 def test_validate_ome_uri(tmp_path: Any) -> None:

@@ -232,7 +232,7 @@ from ._plate import Plate, Well
 
 def _discriminate_ome_v04_metadata(v: Any) -> str | None:
     if isinstance(v, dict):
-        if "image-label" in v:
+        if "image-label" in v or "image_label" in v:
             return "label-image"
         if "multiscales" in v:
             return "image"

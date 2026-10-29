@@ -173,6 +173,8 @@ class ZarrMetadata(BaseModel):
         """Return the OME metadata if present in attributes, else None."""
         attrs = self.attributes
         version = version or self._guess_ome_version()
+        if version in (*V06_VERSIONS, "0.5") and "ome" not in attrs:
+            return None
         if version in V06_VERSIONS:
             return TypeAdapter(v06.OMEMetadata).validate_python(attrs["ome"])
         elif version == "0.5":

@@ -22,7 +22,7 @@ __all__ = ["OMEAttributes", "OMEMetadata", "OMEZarrGroupJSON"]
 
 def _discriminate_ome_v06_metadata(v: Any) -> str | None:
     if isinstance(v, dict):
-        if "image-label" in v:
+        if "image-label" in v or "image_label" in v:
             return "label-image"
         if "multiscales" in v:
             return "image"

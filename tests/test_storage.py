@@ -302,6 +302,12 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             update_meta(("A", "1"), ("attributes", "ome"), {}),
         ),
         StorageTestCase(
+            # no "ome" key at all
+            StorageErrorType.well_invalid,
+            {"type": "plate"},
+            update_meta(("A", "1"), ("attributes",), {}),
+        ),
+        StorageTestCase(
             StorageErrorType.field_path_not_found,
             {"type": "plate"},
             lambda p: shutil.rmtree(p / "A" / "1" / "0"),
@@ -330,6 +336,12 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             StorageErrorType.label_image_invalid,
             {"type": "labels"},
             update_meta("annotations", ("attributes", "ome"), {}),
+        ),
+        StorageTestCase(
+            # no "ome" key at all
+            StorageErrorType.label_image_invalid,
+            {"type": "labels"},
+            update_meta("annotations", ("attributes",), {}),
         ),
         StorageTestCase(
             StorageErrorType.label_multiscale_count_mismatch,
