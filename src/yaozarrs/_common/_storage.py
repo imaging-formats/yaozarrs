@@ -1,4 +1,4 @@
-"""Storage validation shared by OME-Zarr versions that keep metadata under "ome".
+"""Storage validation shared by OME-Zarr versions.
 
 `StorageValidator` walks a hierarchy from its root group and checks that the groups
 and arrays named in the metadata exist and agree with it (dimensionality, label
@@ -88,6 +88,8 @@ class StorageValidator:
 
     # set by each version's subclass
     VERSION: ClassVar[str]
+    # location of the OME metadata within a group's attributes, for error locs
+    LOC_PREFIX: ClassVar[Loc] = ("ome",)
     Image: ClassVar[type]
     LabelImage: ClassVar[type]
     LabelsGroup: ClassVar[type]
@@ -97,11 +99,11 @@ class StorageValidator:
     Series: ClassVar[type]
 
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
-        """Validate a group's attributes, returning the model for its "ome" key."""
+        """Validate a group's attributes, returning its OME metadata model."""
         raise NotImplementedError
 
     def _parse_ome_uri(self, uri: str) -> Any:
-        """Validate the group at `uri`, returning the model for its "ome" key."""
+        """Validate the group at `uri`, returning its OME metadata model."""
         raise NotImplementedError
 
     def _validate_dataset_array(
@@ -126,7 +128,7 @@ class StorageValidator:
         """
         validator = cls()
         ome_metadata = validator._parse_ome(zarr_group.attrs)
-        loc_prefix = ("ome",)
+        loc_prefix = cls.LOC_PREFIX
 
         # Dispatch to appropriate visitor method based on metadata type
         if isinstance(ome_metadata, cls.LabelImage):
