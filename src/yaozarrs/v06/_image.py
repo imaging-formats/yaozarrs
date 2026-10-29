@@ -220,10 +220,9 @@ class Multiscale(_BaseModel):
                 raise ValueError(f"datasets[{i}] ({ds.path!r}): {e}") from None
 
         self._validate_coordinate_transformations(systems, intrinsic)
-        # TODO: "The graph MUST be connected" applies to the coordinate systems of the
+        # NOTE: "The graph MUST be connected" applies to the coordinate systems of the
         # multiscales and scene metadata combined (a scene may link coordinate systems
-        # within one image), so it can't be checked here.  Revisit once the v0.6
-        # storage validator is in place.
+        # within one image), so it's checked in storage validation.
         self._validate_resolution_order(systems[intrinsic])
         return self
 

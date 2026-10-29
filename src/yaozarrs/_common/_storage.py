@@ -128,23 +128,26 @@ class StorageValidator:
         """
         validator = cls()
         ome_metadata = validator._parse_ome(zarr_group.attrs)
-        loc_prefix = cls.LOC_PREFIX
+        return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
-        # Dispatch to appropriate visitor method based on metadata type
-        if isinstance(ome_metadata, cls.LabelImage):
-            return validator.visit_label_image(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, cls.Image):
-            return validator.visit_image(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, cls.LabelsGroup):
-            return validator.visit_labels_group(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, cls.Plate):
-            return validator.visit_plate(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, cls.Well):
-            return validator.visit_well(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, cls.Bf2Raw):
-            return validator.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, cls.Series):  # pragma: no cover
-            return validator.visit_series(zarr_group, ome_metadata, loc_prefix)
+    def visit_root(
+        self, zarr_group: ZarrGroup, ome_metadata: Any, loc_prefix: Loc
+    ) -> ValidationResult:
+        """Dispatch to the visitor method for the root group's metadata type."""
+        if isinstance(ome_metadata, self.LabelImage):
+            return self.visit_label_image(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.Image):
+            return self.visit_image(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.LabelsGroup):
+            return self.visit_labels_group(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.Plate):
+            return self.visit_plate(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.Well):
+            return self.visit_well(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.Bf2Raw):
+            return self.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.Series):  # pragma: no cover
+            return self.visit_series(zarr_group, ome_metadata, loc_prefix)
         else:
             raise NotImplementedError(
                 f"Unknown OME metadata type: {type(ome_metadata).__name__}"

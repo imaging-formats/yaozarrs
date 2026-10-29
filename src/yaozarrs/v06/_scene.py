@@ -86,9 +86,9 @@ class SceneDef(_BaseModel):
                 self._check_ndim(t, systems)
             except ValueError as e:
                 raise ValueError(f"{loc}: {e}") from None
-        # TODO: "The graph MUST be connected" applies to the coordinate systems of the
-        # multiscales and scene metadata combined, so it needs the referenced images.
-        # Revisit once the v0.6 storage validator is in place.
+        # NOTE: "The graph MUST be connected" applies to the coordinate systems of the
+        # multiscales and scene metadata combined, so it needs the referenced images:
+        # it's checked in storage validation.
         return self
 
     def _check_ndim(self, t: CoordinateTransformation, systems: dict) -> None:
