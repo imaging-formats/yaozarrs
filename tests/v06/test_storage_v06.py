@@ -361,6 +361,18 @@ def test_scene_referencing_a_label_image(tmp_path: Path) -> None:
     validate_zarr_store(_scene_with_label_image(tmp_path))
 
 
+def test_scene_image_with_two_multiscales(tmp_path: Path) -> None:
+    # only the multiscales entry the scene references is part of its graph
+    root = make_store(tmp_path, "scene")
+
+    def _second_entry(data: dict) -> None:
+        ms = data["attributes"]["ome"]["multiscales"]
+        ms.append({**ms[0], "name": "alternative"})
+
+    edit("tile_0", _second_entry)(root)
+    validate_zarr_store(root)
+
+
 def test_field_error_has_reason(tmp_path: Path) -> None:
     # a vector axis after the spatial axes isn't a valid multiscale image
     root = make_store(tmp_path, "scene")
@@ -445,8 +457,18 @@ INVALID = [
     ),
     (
         "image_with_labels",
-        edit("labels/cells/s0", lambda d: d.update(data_type="float32")),
+        lambda root: [
+            edit(f"labels/cells/{ds}", lambda d: d.update(data_type="float32"))(root)
+            for ds in ("s0", "s1", "s2")
+        ],
         StorageErrorType.label_non_integer_dtype,
+    ),
+    # The `zarr.json` file for the label image MUST implement the multiscales
+    # specification.
+    (
+        "image_with_labels",
+        lambda root: shutil.rmtree(root / "labels" / "cells" / "s1"),
+        StorageErrorType.dataset_path_not_found,
     ),
     # transformations to a coordinate system in a child labels group
     (

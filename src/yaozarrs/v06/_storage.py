@@ -101,8 +101,18 @@ class StorageValidatorV06(StorageValidator):
     def visit_label_image(
         self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
     ) -> ValidationResult:
-        result = super().visit_label_image(zarr_group, label_image_model, loc_prefix)
-        return result.merge(self._warn_if_disconnected(label_image_model, loc_prefix))
+        # The `zarr.json` file for the label image MUST implement the multiscales
+        # specification.
+        # (so it gets the image checks too; the base class only checks what is
+        # specific to label images)
+        key = f"label:{_norm(zarr_group.path)}"
+        if key in self._visited:
+            return ValidationResult()
+        self._visited.add(key)
+        result = self.visit_image(zarr_group, label_image_model, loc_prefix)
+        return result.merge(
+            super().visit_label_image(zarr_group, label_image_model, loc_prefix)
+        )
 
     def _visit_image(
         self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
@@ -347,6 +357,7 @@ class StorageValidatorV06(StorageValidator):
         nodes: set[Node] = {(None, 0, name) for name in systems}
         edges: list[tuple[Node, Node]] = []
         images: dict[str, Image | None] = {}
+        entries: set[tuple[str, int]] = set()  # (image path, multiscales index)
         resolved_all = True
 
         for t_idx, t in enumerate(scene.coordinateTransformations):
@@ -370,6 +381,7 @@ class StorageValidatorV06(StorageValidator):
             else:
                 (a, cs_in), (b, cs_out) = start, end
                 edges.append((a, b))
+                entries |= {(n[0], n[1]) for n in (a, b) if n[0] is not None}
                 n_in, n_out = cs_in.ndim, cs_out.ndim
                 try:
                     check_transform_ndim(t, n_in, n_out)
@@ -393,6 +405,11 @@ class StorageValidatorV06(StorageValidator):
                 continue  # pragma: no cover  (checked when resolving the reference)
             result = result.merge(self._visit_image(group, image, (*loc_prefix, path)))
             for ms_idx, multiscale in enumerate(image.multiscales):
+                # (only the multiscales entries the scene references: the others are
+                # alternative representations of the image, which a scene reference
+                # can't name; names resolve to the first entry that has them)
+                if (path, ms_idx) not in entries:
+                    continue
                 ms_nodes, ms_edges = _multiscale_graph(path, ms_idx, multiscale)
                 nodes |= ms_nodes
                 edges += ms_edges
@@ -401,9 +418,9 @@ class StorageValidatorV06(StorageValidator):
         # The coordinate systems defined in the multiscales metadata and the `scene`
         # metadata combined with the coordinate transformations form a
         # transformations graph. ... The graph MUST be connected
-        # (the multiscales are those of the images the scene references; we only
-        # check once every reference resolved, so a missing image isn't reported
-        # twice)
+        # (the multiscales are those of the images the scene references, as discussed
+        # in ngff-spec#155; we only check once every reference resolved, so a missing
+        # image isn't reported twice)
         if resolved_all and len(groups := _components(nodes, edges)) > 1:
             result.add_error(
                 StorageErrorType.graph_not_connected,
