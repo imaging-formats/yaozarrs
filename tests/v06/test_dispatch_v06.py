@@ -9,6 +9,7 @@ import pytest
 
 import yaozarrs
 from yaozarrs import v05, v06
+from yaozarrs._storage import StorageValidationError
 from yaozarrs._tree import render_tree
 from yaozarrs._validation_warning import ValidationWarning
 
@@ -114,7 +115,8 @@ def test_tree_annotation(v06_store: Path) -> None:
     assert "<- v06.Image" in render_tree(yaozarrs.open_group(v06_store))
 
 
-def test_storage_validation_not_implemented(v06_store: Path) -> None:
+def test_storage_validation(v06_store: Path) -> None:
     pytest.importorskip("fsspec")
-    with pytest.raises(NotImplementedError, match=r"0\.6"):
+    # (the store holds metadata only, so the v0.6 validator finds no arrays)
+    with pytest.raises(StorageValidationError, match="dataset_path_not_found"):
         yaozarrs.validate_zarr_store(v06_store)

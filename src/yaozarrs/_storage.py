@@ -11,6 +11,7 @@ from typing_extensions import NotRequired, TypedDict
 
 from yaozarrs._validation_warning import ValidationWarning
 from yaozarrs._zarr import ZarrGroup, open_group
+from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,7 +27,7 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
     CLI command.
 
-    Currently only supports OME-Zarr version 0.5.
+    Supports OME-Zarr versions 0.4, 0.5 and 0.6.
 
     Parameters
     ----------
@@ -61,6 +62,10 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
         from yaozarrs.v04._storage import StorageValidatorV04
 
         Validator = StorageValidatorV04
+    elif ome_version in V06_VERSIONS:
+        from yaozarrs.v06._storage import StorageValidatorV06
+
+        Validator = StorageValidatorV06
 
     else:
         raise NotImplementedError(
@@ -322,7 +327,11 @@ class StorageErrorType(Enum):
     bf2raw_invalid_image = auto()
     bf2raw_no_images = auto()
     bf2raw_path_not_group = auto()
+    coordinate_system_not_found = auto()
+    coordinate_system_path_invalid = auto()
+    coordinate_system_path_not_found = auto()
     dataset_dimension_mismatch = auto()
+    dataset_dtype_mismatch = auto()
     dataset_not_array = auto()
     dataset_path_not_found = auto()
     dimension_names_missing = auto()
@@ -343,6 +352,7 @@ class StorageErrorType(Enum):
     series_invalid_image = auto()
     series_path_not_found = auto()
     series_path_not_group = auto()
+    transform_dimension_mismatch = auto()
     well_invalid = auto()
     well_path_not_found = auto()
     well_path_not_group = auto()
