@@ -51,7 +51,13 @@ _FIELDS = (DisplacementsTransformation, CoordinatesTransformation)
 class StorageValidatorV06(StorageValidator):
     """Concrete implementation of storage validator. for OME-ZARR v0.6 spec."""
 
-    __slots__ = ()
+    # (images already visited and parameter checks already done, by normalized path:
+    # references can point back to a group being validated, or to the same group twice)
+    __slots__ = ("_checked", "_visited")
+
+    def __init__(self) -> None:
+        self._visited: set[str] = set()
+        self._checked: set[tuple] = set()
 
     VERSION = "0.6"
     Image = Image
@@ -86,8 +92,11 @@ class StorageValidatorV06(StorageValidator):
         self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate an image that is not part of a scene."""
+        first_visit = _norm(zarr_group.path) not in self._visited
         result = self._visit_image(zarr_group, image_model, loc_prefix)
-        return result.merge(self._warn_if_disconnected(image_model, loc_prefix))
+        if first_visit:
+            result = result.merge(self._warn_if_disconnected(image_model, loc_prefix))
+        return result
 
     def visit_label_image(
         self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
@@ -103,6 +112,9 @@ class StorageValidatorV06(StorageValidator):
         # so its name is the only practical way to find it.  In 0.6, a multiscale
         # transformation MAY point into a child labels group by `path`, so we also
         # visit labels groups found that way, known by their metadata (not their name).
+        if (key := _norm(zarr_group.path)) in self._visited:
+            return ValidationResult()
+        self._visited.add(key)
         result = super().visit_image(zarr_group, image_model, loc_prefix)
         referenced: set[str] = set()
         for ms_idx, multiscale in enumerate(image_model.multiscales):
@@ -179,7 +191,8 @@ class StorageValidatorV06(StorageValidator):
                 else:
                     # The other MUST reference a named coordinate system ... in a
                     # child labels group (by `name` and `path`).
-                    referenced.add(posixpath.normpath(ref.path).split("/", 1)[0])
+                    if (head := _child_head(ref.path)) is not None:
+                        referenced.add(head)
                     cs = self._resolve_label_coordinate_system(
                         zarr_group, ref.path, ref.name, (*t_loc, side), result
                     )
@@ -222,6 +235,14 @@ class StorageValidatorV06(StorageValidator):
     ) -> CoordinateSystem | None:
         """Find coordinate system `name` in the label image at `path`, or add errors."""
         norm = posixpath.normpath(path)
+        if _child_head(path) is None:
+            result.add_error(
+                StorageErrorType.coordinate_system_path_invalid,
+                (*loc, "path"),
+                f"Path '{path}' is not in a child labels group of this image",
+                ctx={"path": path, "expected": "<labels group>/<label image>"},
+            )
+            return None
         if zarr_group.get(norm) is None:
             result.add_error(
                 StorageErrorType.coordinate_system_path_not_found,
@@ -375,6 +396,7 @@ class StorageValidatorV06(StorageValidator):
                 ms_nodes, ms_edges = _multiscale_graph(path, ms_idx, multiscale)
                 nodes |= ms_nodes
                 edges += ms_edges
+                edges += _label_edges(path, ms_idx, multiscale, images)
 
         # The coordinate systems defined in the multiscales metadata and the `scene`
         # metadata combined with the coordinate transformations form a
@@ -459,25 +481,22 @@ class StorageValidatorV06(StorageValidator):
         """
         result = ValidationResult()
         for sub, sub_in, sub_out, sub_loc in _walk(t, n_in, n_out, loc):
-            if isinstance(sub, (AffineTransformation, RotationTransformation)):
-                if sub.path is None:
-                    continue
-                if (
-                    node := self._find_parameters(
-                        holder, sub, sub_loc, in_scene, result
-                    )
-                ) is None:
-                    continue
+            is_matrix = isinstance(sub, (AffineTransformation, RotationTransformation))
+            if not (is_matrix or isinstance(sub, _FIELDS)) or sub.path is None:
+                continue
+            node = self._find_parameters(holder, sub, sub_loc, in_scene, result)
+            if node is None:
+                continue
+            # (the same parameters for the same dimensionality are checked once, e.g.
+            # one field used by both directions of a bijection)
+            if (key := (_norm(node.path), sub.type, sub_in, sub_out)) in self._checked:
+                continue
+            self._checked.add(key)
+            if is_matrix:
                 result = result.merge(
                     self._validate_matrix(holder, node, sub, sub_in, sub_out, sub_loc)
                 )
-            elif isinstance(sub, _FIELDS):
-                if (
-                    node := self._find_parameters(
-                        holder, sub, sub_loc, in_scene, result
-                    )
-                ) is None:
-                    continue
+            else:
                 result = result.merge(
                     self._validate_field(node, sub, sub_in, sub_out, sub_loc)
                 )
@@ -501,9 +520,9 @@ class StorageValidatorV06(StorageValidator):
             # (a leading "/" isn't defined by the spec: try the store root, then the
             # holding group, and only warn if it's in neither)
             rel = posixpath.normpath(path.lstrip("/"))
-            node = ZarrGroup(holder._store, "").get(rel)
+            node = _get(ZarrGroup(holder._store, ""), rel)
             if node is None:
-                node = holder.get(rel)
+                node = _get(holder, rel)
             if node is None:
                 result.add_warning(
                     StorageErrorType.transform_parameters_not_found,
@@ -512,16 +531,18 @@ class StorageValidatorV06(StorageValidator):
                     f"'{holder.path or '.'}', so it was not checked",
                     ctx=ctx,
                 )
-            return node
-        norm = posixpath.normpath(path)
-        if (node := holder.get(norm)) is None:
+                return None
+        elif (node := _get(holder, path)) is None:
+            norm = posixpath.normpath(path)
             result.add_error(
                 StorageErrorType.transform_parameters_not_found,
                 (*loc, "path"),
                 f"Path '{path}' (for {t.type}) not found",
                 ctx={**ctx, "fs_path": _build_fs_path(holder, norm)},
             )
-        elif in_scene and norm.split("/", 1)[0] != "coordinateTransformations":
+            return None
+        location = posixpath.relpath(_norm(node.path) or ".", _norm(holder.path) or ".")
+        if in_scene and location.split("/", 1)[0] != "coordinateTransformations":
             # For transformations that store data or parameters in a Zarr array, those
             # Zarr arrays SHOULD be stored in a Zarr group on the same level as images
             # called "coordinateTransformations".
@@ -586,12 +607,12 @@ class StorageValidatorV06(StorageValidator):
             else "coordinate"
         )
 
-        def _error(msg: str) -> None:
+        def _error(msg: str, **ctx: Any) -> None:
             result.add_error(
                 StorageErrorType.transform_parameters_invalid,
                 (*loc, "path"),
                 f"The {t.type} field at '{t.path}' {msg}",
-                ctx={"path": t.path},
+                ctx={"path": t.path, **ctx},
             )
 
         # `coordinates` and `displacements` transformations store a vector field ...
@@ -605,7 +626,12 @@ class StorageValidatorV06(StorageValidator):
         except ValueError as e:
             model = e
         if not isinstance(model, Image):
-            _error("does not contain valid Image ('multiscales') metadata")
+            reason = (
+                {"error": model}
+                if isinstance(model, Exception)
+                else {"type": type(model).__name__}
+            )
+            _error("does not contain valid Image ('multiscales') metadata", **reason)
             return result
         result = result.merge(self._visit_image(node, model, (*loc, "path")))
 
@@ -651,6 +677,47 @@ class StorageValidatorV06(StorageValidator):
 # ----------------------------------------------------------
 
 
+def _norm(path: str) -> str:
+    """Normalize a path within the store ("" is the root)."""
+    return "" if (norm := posixpath.normpath(path or ".")) == "." else norm
+
+
+def _get(group: ZarrGroup, path: str) -> ZarrGroup | ZarrArray | None:
+    """The node at `path` relative to `group`, by normalized path (None if outside)."""
+    full = _norm(posixpath.join(group.path, path))
+    if full.split("/", 1)[0] == "..":
+        return None
+    root = ZarrGroup(group._store, "")
+    return root if full == "" else root.get(full)
+
+
+def _child_head(path: str) -> str | None:
+    """The first component of `path` if it stays inside the group, else None."""
+    norm = posixpath.normpath(path)
+    if path.startswith("/") or norm == "." or norm.split("/", 1)[0] == "..":
+        return None
+    return norm.split("/", 1)[0]
+
+
+def _label_edges(
+    path: str, ms_idx: int, multiscale: Multiscale, images: dict[str, Image | None]
+) -> list[tuple[Node, Node]]:
+    """Edges from a multiscales entry into label images that a scene references."""
+    edges: list[tuple[Node, Node]] = []
+    for t in multiscale.coordinateTransformations or ():
+        if t.input is None or t.output is None:  # pragma: no cover
+            continue
+        for ref, other in ((t.input, t.output), (t.output, t.input)):
+            if ref.path is None or other.path is not None or not ref.name:
+                continue
+            target = _norm(posixpath.join(path, ref.path))
+            if (label := images.get(target)) is None or other.name is None:
+                continue
+            if (found := _find_coordinate_system(label, ref.name)) is not None:
+                edges.append(((path, ms_idx, other.name), (target, found[0], ref.name)))
+    return edges
+
+
 def _find_coordinate_system(
     image: Image, name: str
 ) -> tuple[int, CoordinateSystem] | None:
@@ -670,7 +737,8 @@ def _multiscale_graph(
     edges = [
         ((path, ms_idx, t.input.name), (path, ms_idx, t.output.name))
         for t in multiscale.coordinateTransformations or ()
-        # (references into child label images can't disconnect the graph)
+        # (references into child label images only matter when a scene references
+        # the label image too: see _label_edges)
         if t.input
         and t.output
         and t.input.path is None
