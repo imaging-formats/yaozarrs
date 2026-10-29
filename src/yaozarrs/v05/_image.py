@@ -7,7 +7,7 @@ from pydantic import AfterValidator, Field, WrapValidator, model_validator
 from typing_extensions import Self
 
 from yaozarrs._axis import AxesList
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._omero import Omero
 from yaozarrs._dim_spec import DimSpec
 from yaozarrs._types import UniqueList
@@ -358,7 +358,7 @@ class Multiscale(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
-class Image(_BaseModel):
+class Image(_OMEDocument):
     """Top-level OME-NGFF image metadata.
 
     This model corresponds to the `zarr.json` file in an image group.

@@ -79,7 +79,7 @@ class LabelsGroup(_BaseModel):
         default="0.5",
         description="OME-NGFF specification version",
     )
-    labels: Annotated[list[str], MinLen(1)] = Field(
+    labels: list[str] = Field(
         description="Paths to individual label image groups within this collection"
     )
 

@@ -302,6 +302,16 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
             update_meta(("A", "1"), ("attributes", "ome"), {}),
         ),
         StorageTestCase(
+            # the plate has several acquisitions, but the fields don't say which
+            StorageErrorType.field_acquisition_missing,
+            {"type": "plate"},
+            update_meta(
+                (),
+                ("attributes", "ome", "plate", "acquisitions"),
+                [{"id": 0}, {"id": 1}],
+            ),
+        ),
+        StorageTestCase(
             # no "ome" key at all
             StorageErrorType.well_invalid,
             {"type": "plate"},

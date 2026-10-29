@@ -77,9 +77,6 @@ VALID_IMAGES = [
         type="gaussian",
         metadata={"method": "skimage.transform.pyramid_gaussian"},
     ),
-    # flips are allowed (scale values "SHOULD be non-zero"); resolution order
-    # compares magnitudes
-    image([dataset("s0", scale("s0", -1, 1)), dataset("s1", scale("s1", -2, 2))]),
     # additional transform to another coordinate system of this multiscale
     image(systems=[PHYSICAL, OTHER], transforms=[TO_OTHER]),
     # ... and in the other direction
@@ -296,6 +293,8 @@ WARNING_IMAGES = [
     ),
     # _version.schema also allows "0.6rc0"
     ({**image(), "version": "0.6rc0"}, "pre-release"),
+    # ... and much 0.6 data uses "0.6.dev4" (accepted by ome-zarr-models and ngff-zarr)
+    ({**image(), "version": "0.6.dev4"}, "pre-release"),
     # array coordinate systems inside multiscales (allowed by axes.schema, not by
     # the prose)
     (
@@ -321,6 +320,12 @@ WARNING_IMAGES = [
             ],
         ),
         "'array' axes are only allowed",
+    ),
+    # dataset scales are pixel sizes, so negative values only warn (ome/ngff#637);
+    # resolution order compares magnitudes
+    (
+        image([dataset("s0", scale("s0", -1, 1)), dataset("s1", scale("s1", -2, 2))]),
+        "scale values SHOULD be positive",
     ),
 ]
 
@@ -376,10 +381,13 @@ def test_multiscale_from_dims() -> None:
         [1.0, 1.0, 2.0, 1.0, 1.0],
         [1.0, 1.0, 2.0, 2.0, 2.0],
     ]
+    # the base translation, plus (pixel size at level N - pixel size at 0) / 2
+    offsets = [0, 0.25, 0.75]
     for i, ds in enumerate(ms.datasets):
         # a scale followed by a translation, mapping the array into "intrinsic"
         assert ds.transform.type == "sequence"
-        assert ds.translation_transform.translation == [0, 0, 0, 20.0, 30.0]  # type: ignore[union-attr]
+        translation = ds.translation_transform.translation  # type: ignore[union-attr]
+        assert translation == [0, 0, 0, 20 + offsets[i], 30 + offsets[i]]
         assert ds.transform.input.path == ds.path == str(i)  # type: ignore[union-attr]
         assert ds.output_name == "intrinsic"
 
@@ -393,6 +401,9 @@ def test_multiscale_from_dims_without_translation() -> None:
         DimSpec(name="x", size=64, scale=0.5),
     ]
     ms = v06.Multiscale.from_dims(dims, n_levels=2, coordinate_system="physical")
-    assert [ds.transform.type for ds in ms.datasets] == ["scale", "scale"]
+    # (the first level needs no translation; the others are offset by half the
+    # change in pixel size, as for binning)
+    assert [ds.transform.type for ds in ms.datasets] == ["scale", "sequence"]
+    assert ms.datasets[1].translation_transform.translation == [0.25, 0.25]  # type: ignore[union-attr]
     assert ms.intrinsic_coordinate_system.name == "physical"
     assert ms.datasets[1].scale_transform.scale == [1.0, 1.0]  # type: ignore[union-attr]

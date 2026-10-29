@@ -3,14 +3,14 @@ from typing import Annotated, Literal
 from annotated_types import MinLen
 from pydantic import Field
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _OMEDocument
 
 from ._version import VersionStr
 
 __all__ = ["Bf2Raw", "Series"]
 
 
-class Bf2Raw(_BaseModel):
+class Bf2Raw(_OMEDocument):
     """Model for `zarr.json` in a group representing multi-series image collections.
 
     The bioformats2raw layout is a transitional specification for filesets that
@@ -44,7 +44,7 @@ class Bf2Raw(_BaseModel):
     )
 
 
-class Series(_BaseModel):
+class Series(_OMEDocument):
     """Model for `OME/zarr.json` in a [`Bf2Raw`][yaozarrs.v06.Bf2Raw] collection.
 
     Used when converting files containing multiple distinct images (e.g.,

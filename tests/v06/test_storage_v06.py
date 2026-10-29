@@ -75,6 +75,14 @@ def _label_ref(data: dict) -> dict:
     return _ms(data)["coordinateTransformations"][0]["output"]
 
 
+def _plate(data: dict) -> dict:
+    return data["attributes"]["ome"]["plate"]
+
+
+def _well(data: dict) -> dict:
+    return data["attributes"]["ome"]["well"]
+
+
 def _scene(data: dict) -> dict:
     return data["attributes"]["ome"]["scene"]
 
@@ -324,21 +332,10 @@ def test_valid_parameter_arrays(
 WARNINGS = [
     # outside of a scene, an unlinked coordinate system only warns
     ("image_2d", _add_orphan_cs(), StorageErrorType.graph_not_connected),
-    # a leading "/" isn't defined by the spec
-    (
-        "image_transforms",
-        _with_matrix(None, path="/missing"),
-        StorageErrorType.transform_parameters_not_found,
-    ),
     # ... SHOULD be stored in a Zarr group ... called "coordinateTransformations"
     (
         "scene",
         _with_field(path="fields/dfield"),
-        StorageErrorType.transform_parameters_location,
-    ),
-    (
-        "scene",
-        _with_field(path="/fields/dfield"),
         StorageErrorType.transform_parameters_location,
     ),
 ]
@@ -423,12 +420,6 @@ def test_label_reference_outside_image(tmp_path: Path) -> None:
     edit("labels/cells", _edit)(root)
     with pytest.raises(StorageValidationError, match="coordinate_system_path_invalid"):
         validate_zarr_store(root / "labels" / "cells")
-
-
-def test_leading_slash_found_at_store_root(tmp_path: Path) -> None:
-    root = make_store(tmp_path, "image_transforms")
-    _with_matrix([4, 5], path="/coordinateTransformations/aff")(root)
-    validate_zarr_store(root)
 
 
 def test_dimension_names_not_checked(tmp_path: Path) -> None:
@@ -588,7 +579,18 @@ INVALID = [
     ),
     # a field that is the image itself (not a field), or outside the store
     ("image_2d", _self_field("."), StorageErrorType.transform_parameters_invalid),
-    ("image_2d", _self_field("../x"), StorageErrorType.transform_parameters_not_found),
+    # (like ngff-zarr: a leading "/" and empty, "." or ".." segments are refused)
+    ("image_2d", _self_field("../x"), StorageErrorType.transform_parameters_invalid),
+    (
+        "image_transforms",
+        _with_matrix([4, 5], path="/coordinateTransformations/aff"),
+        StorageErrorType.transform_parameters_invalid,
+    ),
+    (
+        "image_transforms",
+        _with_matrix([4, 5], path="coordinateTransformations//aff"),
+        StorageErrorType.transform_parameters_invalid,
+    ),
     # displacement fields are multiscale images
     (
         "scene",
@@ -621,6 +623,21 @@ INVALID = [
         "plate",
         lambda root: shutil.rmtree(root / "B" / "2"),
         StorageErrorType.well_path_not_found,
+    ),
+    # [a field] MUST contain an `acquisition` key ... which MUST match one of the
+    # acquisition JSON objects defined in the plate metadata
+    (
+        "plate",
+        edit("A/1", lambda d: _well(d)["images"][0].update(acquisition=5)),
+        StorageErrorType.field_acquisition_invalid,
+    ),
+    (
+        "plate",
+        lambda root: (
+            edit("", lambda d: _plate(d)["acquisitions"].append({"id": 1}))(root),
+            edit("A/1", lambda d: _well(d)["images"][0].pop("acquisition"))(root),
+        ),
+        StorageErrorType.field_acquisition_missing,
     ),
     (
         "plate",

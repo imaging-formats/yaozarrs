@@ -95,7 +95,7 @@ def test_image_label_has_no_version() -> None:
 def test_labels_group() -> None:
     group = v06.LabelsGroup.model_validate({"version": "0.6", "labels": ["cells"]})
     assert group.labels == ["cells"]
-    with pytest.raises(ValidationError, match="at least 1 item"):
-        v06.LabelsGroup.model_validate({"version": "0.6", "labels": []})
+    # (the spec doesn't require any entries)
+    assert v06.LabelsGroup.model_validate({"version": "0.6", "labels": []}).labels == []
     with pytest.raises(ValidationError, match=re.escape("'0.6'")):
         v06.LabelsGroup.model_validate({"version": "0.5", "labels": ["cells"]})

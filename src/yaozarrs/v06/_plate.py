@@ -4,7 +4,7 @@ from annotated_types import MinLen
 from pydantic import AfterValidator, Field, model_validator
 from typing_extensions import Self
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._plate import Acquisition, Column, PlateDef, PlateWell, Row
 from yaozarrs._types import UniqueList
 from yaozarrs._util import BAD_NODE_RE
@@ -30,7 +30,7 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
 # ------------------------------------------------------------------------------
 
 
-class Plate(_BaseModel):
+class Plate(_OMEDocument):
     """Top-level plate metadata for high-content screening.
 
     This model corresponds to the `ome` metadata in a plate group's `zarr.json`,
@@ -148,7 +148,7 @@ class WellDef(_BaseModel):
         return self
 
 
-class Well(_BaseModel):
+class Well(_OMEDocument):
     """Top-level well metadata within a plate.
 
     This model corresponds to the `ome` metadata in a well group's `zarr.json`. It

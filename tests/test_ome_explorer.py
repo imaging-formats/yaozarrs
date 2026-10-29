@@ -248,7 +248,6 @@ def test_json_validates_against_pydantic(config: dict) -> None:
     python_dict = namespace["image"].model_dump(exclude_unset=True, exclude_none=True)
     if ngff_version == "v0.5":
         json_dict = json_dict["attributes"]["ome"]
-        assert json_dict.pop("version") == "0.5"
     assert json_dict == python_dict
 
 

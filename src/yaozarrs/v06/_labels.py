@@ -3,7 +3,7 @@ from typing import Annotated
 from annotated_types import MinLen
 from pydantic import Field
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._labels import LabelColor, LabelProperty, LabelSource
 from yaozarrs._types import UniqueList
 
@@ -61,7 +61,7 @@ class ImageLabel(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
-class LabelsGroup(_BaseModel):
+class LabelsGroup(_OMEDocument):
     """Top-level labels collection metadata.
 
     This model corresponds to the `ome` metadata in the `zarr.json` of a `labels/`
@@ -82,7 +82,7 @@ class LabelsGroup(_BaseModel):
     version: VersionStr = Field(default="0.6", description="OME-NGFF version")
     # [The labels group metadata] MUST contain a JSON object with the key `labels`,
     # whose value is a JSON array of paths to the labeled multiscale image(s).
-    labels: Annotated[list[str], MinLen(1)] = Field(
+    labels: list[str] = Field(
         description="Paths to individual label image groups within this collection"
     )
 

@@ -4,7 +4,7 @@ from annotated_types import MinLen
 from pydantic import Field, model_validator
 from typing_extensions import Self
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _BaseModel, _OMEDocument
 
 from ._coordinate_systems import CoordinateSystemsList
 from ._transforms import (
@@ -119,7 +119,7 @@ class SceneDef(_BaseModel):
             ) from None
 
 
-class Scene(_BaseModel):
+class Scene(_OMEDocument):
     """Top-level scene metadata (`ome` in a scene group's `zarr.json`).
 
     A scene group contains several multiscale images that share a spatial

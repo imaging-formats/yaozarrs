@@ -106,6 +106,10 @@ V05_VALID_LABELS_GROUPS = [
     {
         "labels": ["cell_segmentation", "nucleus_segmentation", "boundary"],
     },
+    # No labels (the spec doesn't require any)
+    {
+        "labels": [],
+    },
 ]
 
 
@@ -277,13 +281,6 @@ def test_invalid_v05_labels(obj: dict, msg: str) -> None:
 
 
 V05_INVALID_LABELS_GROUPS: list[tuple[dict, str]] = [
-    # Empty labels array
-    (
-        {
-            "labels": [],
-        },
-        "at least 1 item",
-    ),
     # Missing labels field
     (
         {},

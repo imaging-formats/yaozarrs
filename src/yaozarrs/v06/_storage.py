@@ -528,38 +528,31 @@ class StorageValidatorV06(StorageValidator):
         result: ValidationResult,
     ) -> ZarrGroup | ZarrArray | None:
         """Return the node at `t.path`, or add an error or warning."""
-        # (the spec only says "a location in this container": a relative path is
-        # resolved against the group whose metadata holds the transformation, as in
-        # the spec's examples)
+        # (the spec only says "a location in this container": a path is resolved
+        # against the group whose metadata holds the transformation, as in the spec's
+        # examples. Like ngff-zarr, which refuses them on read and write, we reject a
+        # leading "/" and empty, "." or ".." segments: nothing defines what they'd
+        # point to)
         path: str = t.path
         ctx: dict = {"path": path}
-        if path.startswith("/"):
-            # (a leading "/" isn't defined by the spec: try the store root, then the
-            # holding group, and only warn if it's in neither)
-            rel = posixpath.normpath(path.lstrip("/"))
-            node = _get(ZarrGroup(holder._store, ""), rel)
-            if node is None:
-                node = _get(holder, rel)
-            if node is None:
-                result.add_warning(
-                    StorageErrorType.transform_parameters_not_found,
-                    (*loc, "path"),
-                    f"Could not find '{path}' (for {t.type}) at the store root or in "
-                    f"'{holder.path or '.'}', so it was not checked",
-                    ctx=ctx,
-                )
-                return None
-        elif (node := _get(holder, path)) is None:
-            norm = posixpath.normpath(path)
+        if path.startswith("/") or any(p in ("", ".", "..") for p in path.split("/")):
+            result.add_error(
+                StorageErrorType.transform_parameters_invalid,
+                (*loc, "path"),
+                f"Path '{path}' (for {t.type}) must be a relative path inside the "
+                "group, with no empty, '.' or '..' segments",
+                ctx=ctx,
+            )
+            return None
+        if (node := holder.get(path)) is None:
             result.add_error(
                 StorageErrorType.transform_parameters_not_found,
                 (*loc, "path"),
                 f"Path '{path}' (for {t.type}) not found",
-                ctx={**ctx, "fs_path": _build_fs_path(holder, norm)},
+                ctx={**ctx, "fs_path": _build_fs_path(holder, path)},
             )
             return None
-        location = posixpath.relpath(_norm(node.path) or ".", _norm(holder.path) or ".")
-        if in_scene and location.split("/", 1)[0] != "coordinateTransformations":
+        if in_scene and path.split("/", 1)[0] != "coordinateTransformations":
             # For transformations that store data or parameters in a Zarr array, those
             # Zarr arrays SHOULD be stored in a Zarr group on the same level as images
             # called "coordinateTransformations".
@@ -697,15 +690,6 @@ class StorageValidatorV06(StorageValidator):
 def _norm(path: str) -> str:
     """Normalize a path within the store ("" is the root)."""
     return "" if (norm := posixpath.normpath(path or ".")) == "." else norm
-
-
-def _get(group: ZarrGroup, path: str) -> ZarrGroup | ZarrArray | None:
-    """The node at `path` relative to `group`, by normalized path (None if outside)."""
-    full = _norm(posixpath.join(group.path, path))
-    if full.split("/", 1)[0] == "..":
-        return None
-    root = ZarrGroup(group._store, "")
-    return root if full == "" else root.get(full)
 
 
 def _child_head(path: str) -> str | None:

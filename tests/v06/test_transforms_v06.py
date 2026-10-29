@@ -199,6 +199,18 @@ def test_bijection_of_invertible_types_warns() -> None:
     assert len(record) == 1  # (validators of recursive models must run only once)
 
 
+def test_bijection_of_singular_scale_doesnt_warn() -> None:
+    # (a scale containing 0 isn't invertible)
+    obj = {
+        "type": "bijection",
+        "forward": {"type": "scale", "scale": [0]},
+        "inverse": {"type": "coordinates", "path": "inv"},
+    }
+    with pytest.warns(ValidationWarning) as record:  # (just the zero-scale SHOULD)
+        TRANSFORM.validate_python(obj)
+    assert [str(r.message) for r in record if "forward" in str(r.message)] == []
+
+
 def test_type_survives_exclude_unset() -> None:
     t = v06.ScaleTransformation(scale=[1, 2])
     assert t.model_dump(exclude_unset=True) == {"type": "scale", "scale": [1, 2]}

@@ -141,7 +141,7 @@ class LabelsGroup(_BaseModel):
         ```
     """
 
-    labels: Annotated[list[str], MinLen(1)] = Field(
+    labels: list[str] = Field(
         description="Paths to individual label image groups within this collection"
     )
 

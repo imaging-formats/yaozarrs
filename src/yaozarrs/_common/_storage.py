@@ -438,6 +438,9 @@ class StorageValidator:
                 well_model = e
             if isinstance(well_model, self.Well):
                 result = result.merge(self.visit_well(well_group, well_model, well_loc))
+                result = result.merge(
+                    self._validate_well_acquisitions(plate_model, well_model, well_loc)
+                )
             else:
                 ctx: dict = {"path": well.path}
                 if isinstance(well_model, Exception):
@@ -451,6 +454,43 @@ class StorageValidator:
                     ctx=ctx,
                 )
 
+        return result
+
+    def _validate_well_acquisitions(
+        self, plate_model: Any, well_model: Any, loc_prefix: Loc
+    ) -> ValidationResult:
+        """Check the wells' field-of-view acquisitions against the plate's."""
+        result = ValidationResult()
+        # If multiple acquisitions were performed in the plate, it MUST contain an
+        # `acquisition` key whose value MUST be an integer identifying the acquisition
+        # which MUST match one of the acquisition JSON objects defined in the plate
+        # metadata.
+        # (like ome-zarr-models, an id isn't checked when the plate lists none)
+        ids = [acq.id for acq in plate_model.plate.acquisitions or ()]
+        for idx, field_image in enumerate(well_model.well.images):
+            loc = (*loc_prefix, "well", "images", idx, "acquisition")
+            if field_image.acquisition is None:
+                if len(ids) > 1:
+                    result.add_error(
+                        StorageErrorType.field_acquisition_missing,
+                        loc,
+                        f"Field '{field_image.path}' has no 'acquisition', but the "
+                        f"plate has {len(ids)} acquisitions",
+                        ctx={"path": field_image.path, "acquisitions": ids},
+                    )
+            elif ids and field_image.acquisition not in ids:
+                result.add_error(
+                    StorageErrorType.field_acquisition_invalid,
+                    loc,
+                    f"Field '{field_image.path}' has acquisition "
+                    f"{field_image.acquisition}, which is not one of the plate's "
+                    f"acquisitions {ids}",
+                    ctx={
+                        "path": field_image.path,
+                        "acquisition": field_image.acquisition,
+                        "acquisitions": ids,
+                    },
+                )
         return result
 
     def visit_well(

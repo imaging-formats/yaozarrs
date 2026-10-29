@@ -7,7 +7,7 @@ from annotated_types import Len, MinLen
 from pydantic import Discriminator, Field, model_validator
 from typing_extensions import Self
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._omero import Omero
 from yaozarrs._dim_spec import DimSpec
 from yaozarrs._types import UniqueList
@@ -98,6 +98,19 @@ class Dataset(_BaseModel):
             raise ValueError(
                 f"Dataset {self.path!r}: the transformation's 'output' must specify "
                 "the 'name' of the intrinsic coordinate system."
+            )
+        # NOTE: dataset scales are pixel sizes: the schema requires them to be > 0 and
+        # the spec editor confirmed "only positive scale values in multi scale
+        # transforms" (ome/ngff#637), while the prose only says "SHOULD be non-zero",
+        # so a negative value only warns.
+        if (scale := self.scale_transform) is not None and any(
+            v < 0 for v in scale.scale
+        ):
+            warnings.warn(
+                f"Dataset {self.path!r}: scale values SHOULD be positive (they are "
+                f"pixel sizes), got {scale.scale}.",
+                ValidationWarning,
+                stacklevel=2,
             )
         # The `name` field under `input` SHOULD be omitted. ... The `path` field of
         # `output` SHOULD be omitted.
@@ -371,9 +384,14 @@ def _coordinate_systems_datasets(
         path = str(level)
         factors = [d.scale * d.infer_scale_factor() ** level for d in dims]
         transform: dict = {"type": "scale", "scale": factors}
-        if any(d.translation is not None for d in dims):
+        # [Translations] are expected to consistently align the datasets across all
+        # scales ... for classical binning, translations should be
+        # (pixel-size-at-resolution-N - pixel-size-at-resolution-0) / 2.
+        translation = [
+            (d.translation or 0.0) + (s - d.scale) / 2 for d, s in zip(dims, factors)
+        ]
+        if any(translation):
             # a scale and a translation must be a sequence (scale first)
-            translation = [d.translation or 0.0 for d in dims]
             transform = {
                 "type": "sequence",
                 "transformations": [
@@ -405,7 +423,7 @@ def _is_label_transform(t: CoordinateTransformation) -> bool:
 # ------------------------------------------------------------------------------
 
 
-class Image(_BaseModel):
+class Image(_OMEDocument):
     """Top-level OME-NGFF image metadata (`ome` in an image group's `zarr.json`).
 
     Contains one or more multiscale pyramids, plus optional OMERO rendering hints.

@@ -4,7 +4,7 @@ from annotated_types import MinLen
 from pydantic import Field, model_validator
 from typing_extensions import Self
 
-from yaozarrs._base import _BaseModel
+from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._plate import Acquisition, Column, PlateDef, PlateWell, Row
 from yaozarrs._types import UniqueList
 from yaozarrs._util import RelaxedFOVPathName
@@ -28,7 +28,7 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
 # ------------------------------------------------------------------------------
 
 
-class Plate(_BaseModel):
+class Plate(_OMEDocument):
     """Top-level plate metadata for high-content screening.
 
     This model corresponds to the `zarr.json` file in a plate group, organizing
@@ -133,7 +133,7 @@ class WellDef(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
-class Well(_BaseModel):
+class Well(_OMEDocument):
     """Top-level well metadata within a plate.
 
     This model corresponds to the `zarr.json` file in a well group. It lists

@@ -556,6 +556,9 @@ def _is_closed_form_invertible(t: Any) -> bool:
     # (not `affine`, which "may be (but is not necessarily) invertible")
     if isinstance(t, SequenceTransformation):
         return all(_is_closed_form_invertible(s) for s in t.transformations)
+    # (a scale is only invertible if all its values are non-zero)
+    if isinstance(t, ScaleTransformation):
+        return all(v != 0 for v in t.scale)
     return isinstance(
         t,
         (

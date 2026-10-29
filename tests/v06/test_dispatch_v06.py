@@ -46,6 +46,10 @@ IMAGE_OME = {
     ],
 }
 ZARR_JSON = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": IMAGE_OME}}
+V05_AXES = [{"name": "y", "type": "space"}, {"name": "x", "type": "space"}]
+V05_DATASETS = [
+    {"path": "0", "coordinateTransformations": [{"type": "scale", "scale": [1, 1]}]}
+]
 
 
 def test_validate_ome_json() -> None:
@@ -120,3 +124,26 @@ def test_storage_validation(v06_store: Path) -> None:
     # (the store holds metadata only, so the v0.6 validator finds no arrays)
     with pytest.raises(StorageValidationError, match="dataset_path_not_found"):
         yaozarrs.validate_zarr_store(v06_store)
+
+
+def test_dev4_dispatches_to_v06() -> None:
+    doc = {**ZARR_JSON, "attributes": {"ome": {**IMAGE_OME, "version": "0.6.dev4"}}}
+    with pytest.warns(ValidationWarning, match="pre-release"):
+        obj = yaozarrs.validate_ome_json(json.dumps(doc))
+    assert isinstance(obj, v06.OMEZarrGroupJSON)
+
+
+def test_version_required_in_json() -> None:
+    # [The `ome` object] MUST contain a `version` key
+    ome = {k: v for k, v in IMAGE_OME.items() if k != "version"}
+    with pytest.raises(ValueError, match="MUST contain a 'version' key"):
+        v06.Image.model_validate_json(json.dumps(ome))
+    with pytest.raises(ValueError, match="MUST contain a 'version' key"):
+        yaozarrs.validate_ome_json(json.dumps(ome), v06.Image)
+    # ... but in Python it has a default, and dumps always include it
+    image = v06.Image.model_validate(ome)
+    assert image.model_dump(exclude_unset=True)["version"] == "0.6"
+    v05_image = v05.Image.model_validate(
+        {"multiscales": [{"axes": V05_AXES, "datasets": V05_DATASETS}]}
+    )
+    assert json.loads(v05_image.model_dump_json(exclude_unset=True))["version"] == "0.5"

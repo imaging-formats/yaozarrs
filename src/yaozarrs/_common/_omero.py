@@ -1,9 +1,11 @@
 import re
+import warnings
 from typing import Annotated, ClassVar, Literal
 
 from pydantic import AfterValidator, ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._validation_warning import ValidationWarning
 
 
 class OmeroWindow(_BaseModel):
@@ -26,7 +28,8 @@ def _valid_hex(value: str) -> str:
     """Ensure a string is a 6-digit hex color code, repairing obvious variants.
 
     [color] is a string of 6 hexadecimal digits.  Valid values are returned unchanged
-    (case is preserved); obvious variants like "#ff0000" or "f00" are normalized.
+    (case is preserved); obvious variants like "#ff0000" or "f00" are normalized, with
+    a warning (they don't conform to the spec).
     """
     if _HEX6.fullmatch(value):
         return value
@@ -35,6 +38,11 @@ def _valid_hex(value: str) -> str:
         fixed = "".join(2 * c for c in fixed)
     if not _HEX6.fullmatch(fixed):
         raise ValueError(f"Invalid hex color code: {value!r}")
+    warnings.warn(
+        f"Omero color {value!r} is not 6 hexadecimal digits; using {fixed!r}.",
+        ValidationWarning,
+        stacklevel=2,
+    )
     return fixed
 
 
