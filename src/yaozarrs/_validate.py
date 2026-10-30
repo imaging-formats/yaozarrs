@@ -87,10 +87,14 @@ _AnyOMEByVersion: TypeAlias = Annotated[
 
 
 @overload
-def validate_ome_object(node: Any, cls: type[T]) -> T: ...
+def validate_ome_object(
+    node: Any, cls: type[T], *, strict: bool | None = None
+) -> T: ...
 @overload
-def validate_ome_object(node: Any) -> AnyOME: ...
-def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
+def validate_ome_object(node: Any, *, strict: bool | None = None) -> AnyOME: ...
+def validate_ome_object(
+    node: Any, cls: type[T] | Any = None, *, strict: bool | None = None
+) -> T | AnyOME:
     """Validate any python object representing an OME-Zarr document or node.
 
     Parameters
@@ -100,6 +104,9 @@ def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
     cls : type[T]
         The class to validate against. Must be a subclass of `BaseModel`.
         If not provided, defaults to `AnyOME`, meaning "any valid OME node object".
+    strict : bool | None
+        If `True`, reject input that would otherwise be coerced to the right type
+        (e.g. `"1"` for an integer). By default, such input is accepted.
 
     Returns
     -------
@@ -112,15 +119,22 @@ def validate_ome_object(node: Any, cls: type[T] | Any = None) -> T | AnyOME:
         If the validation fails.
     """
     adapter: TypeAdapter[T | AnyOME] = TypeAdapter(cls or _AnyOMEByVersion)
-    return adapter.validate_python(node)
+    return adapter.validate_python(node, strict=strict)
 
 
 @overload
-def validate_ome_json(data: str | bytes | bytearray, cls: type[T]) -> T: ...
-@overload
-def validate_ome_json(data: str | bytes | bytearray) -> AnyOME: ...
 def validate_ome_json(
-    data: str | bytes | bytearray, cls: type[T] | Any = None
+    data: str | bytes | bytearray, cls: type[T], *, strict: bool | None = None
+) -> T: ...
+@overload
+def validate_ome_json(
+    data: str | bytes | bytearray, *, strict: bool | None = None
+) -> AnyOME: ...
+def validate_ome_json(
+    data: str | bytes | bytearray,
+    cls: type[T] | Any = None,
+    *,
+    strict: bool | None = None,
 ) -> T | AnyOME:
     """Validate any ome-zarr JSON string or bytes literal.
 
@@ -137,6 +151,9 @@ def validate_ome_json(
     cls : type[T]
         The class to validate against. Must be a subclass of `BaseModel`.
         If not provided, defaults to `OMENode`, meaning any valid OME node object
+    strict : bool | None
+        If `True`, reject input that would otherwise be coerced to the right type
+        (e.g. `"1"` for an integer). By default, such input is accepted.
 
     Returns
     -------
@@ -149,15 +166,19 @@ def validate_ome_json(
         If the validation fails.
     """
     adapter: TypeAdapter[T | AnyOME] = TypeAdapter(cls or _AnyOMEByVersion)
-    return adapter.validate_json(data)
+    return adapter.validate_json(data, strict=strict)
 
 
 @overload
-def validate_ome_uri(uri: str | os.PathLike, cls: type[T]) -> T: ...
-@overload
-def validate_ome_uri(uri: str | os.PathLike) -> AnyOMEGroup: ...
 def validate_ome_uri(
-    uri: str | os.PathLike, cls: type[T] | Any = None
+    uri: str | os.PathLike, cls: type[T], *, strict: bool | None = None
+) -> T: ...
+@overload
+def validate_ome_uri(
+    uri: str | os.PathLike, *, strict: bool | None = None
+) -> AnyOMEGroup: ...
+def validate_ome_uri(
+    uri: str | os.PathLike, cls: type[T] | Any = None, *, strict: bool | None = None
 ) -> T | AnyOMEGroup:
     """Load and validate root metadata in a OME-Zarr group from a URI or local path.
 
@@ -181,6 +202,9 @@ def validate_ome_uri(
         a directory path, or a URL.
     cls : type[T]
         The class to validate against. Must be a subclass of `BaseModel`.
+    strict : bool | None
+        If `True`, reject input that would otherwise be coerced to the right type
+        (e.g. `"1"` for an integer). By default, such input is accepted.
 
     Returns
     -------
@@ -199,6 +223,7 @@ def validate_ome_uri(
     from ._io import read_json_from_uri
 
     json_content, uri_str = read_json_from_uri(uri)
-    obj = validate_ome_json(json_content, cls or _AnyOMEGroupByVersion)  # type: ignore
+    cls = cls or _AnyOMEGroupByVersion
+    obj = validate_ome_json(json_content, cls, strict=strict)  # type: ignore
     obj.uri = uri_str
     return obj

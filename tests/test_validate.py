@@ -151,3 +151,48 @@ def test_unknown_version_is_rejected(obj: dict) -> None:
 def test_malformed(obj: Any) -> None:
     with pytest.raises(ValidationError):
         yaozarrs.validate_ome_object(obj)
+
+
+COERCIBLE = [
+    {"well": {"images": [{"acquisition": "0", "path": "0"}]}},
+    {"version": "0.5", "well": {"images": [{"acquisition": "0", "path": "0"}]}},
+    {
+        "ome": {
+            "version": "0.6",
+            "well": {"images": [{"acquisition": "0", "path": "0"}]},
+        }
+    },
+    {
+        **V05_IMAGE,
+        "omero": {
+            "channels": [
+                {
+                    "color": "ff0000",
+                    "window": {"start": 0, "min": 0, "end": "100", "max": 255},
+                }
+            ]
+        },
+    },
+]
+
+
+@pytest.mark.parametrize("obj", COERCIBLE)
+def test_strict_rejects_what_is_coerced_by_default(obj: dict) -> None:
+    yaozarrs.validate_ome_object(obj)
+    yaozarrs.validate_ome_json(json.dumps(obj))
+    with pytest.raises(ValidationError):
+        yaozarrs.validate_ome_object(obj, strict=True)
+    with pytest.raises(ValidationError):
+        yaozarrs.validate_ome_json(json.dumps(obj), strict=True)
+
+
+@pytest.mark.parametrize("obj", COERCIBLE)
+def test_coerced_input_is_never_output(obj: dict) -> None:
+    dumped = yaozarrs.validate_ome_object(obj).model_dump_json(exclude_unset=True)
+    yaozarrs.validate_ome_json(dumped, strict=True)
+
+
+@pytest.mark.parametrize("obj", [V04_IMAGE, V05_IMAGE, V05_PLATE, V06_IMAGE])
+def test_strict_accepts_valid_documents(obj: dict) -> None:
+    yaozarrs.validate_ome_object(obj, strict=True)
+    yaozarrs.validate_ome_json(json.dumps(obj), strict=True)
