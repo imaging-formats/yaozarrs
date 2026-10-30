@@ -133,16 +133,16 @@ print(obj)
 
 ### Convert metadata between versions
 
-`to_version` converts any metadata model to another version of the spec, keeping
+`convert_version` converts any metadata model to another version of the spec, keeping
 its kind (an `Image` stays an `Image`).
 
 ```python
-from yaozarrs import DimSpec, to_version, v04
+from yaozarrs import DimSpec, convert_version, v04
 
 dims = [DimSpec(name="y", size=64), DimSpec(name="x", size=64)]
 image = v04.Image(multiscales=[v04.Multiscale.from_dims(dims)])
 
-print(type(to_version(image, "0.6")))
+print(type(convert_version(image, "0.6")))
 # <class 'yaozarrs.v06._image.Image'>
 ```
 

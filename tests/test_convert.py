@@ -9,7 +9,14 @@ import pytest
 from pydantic import ValidationError
 from typing_extensions import assert_type
 
-from yaozarrs import ConversionWarning, to_version, v04, v05, v06, validate_ome_object
+from yaozarrs import (
+    ConversionWarning,
+    convert_version,
+    v04,
+    v05,
+    v06,
+    validate_ome_object,
+)
 
 DATA = Path(__file__).parent / "data"
 VERSIONS: dict[str, Any] = {"v04": "0.4", "v05": "0.5", "v06": "0.6"}
@@ -124,9 +131,9 @@ def test_fixture_converts_to_every_version(path: Path, version: Any) -> None:
         pytest.skip("no OME metadata")
     if isinstance(obj, v06.Scene) and version != "0.6":
         with pytest.raises(ValueError, match="no equivalent"):
-            to_version(obj, version)
+            convert_version(obj, version)
         return
-    assert type(to_version(obj, version)) is getattr(
+    assert type(convert_version(obj, version)) is getattr(
         PACKAGES[version], type(obj).__name__
     )
 
@@ -140,7 +147,7 @@ def test_fixture_round_trip_is_exact(path: Path) -> None:
     if source == "0.6":
         pytest.skip("v0.6 can hold more than older versions")
     for via in VERSIONS.values():
-        back = to_version(to_version(obj, via), source)
+        back = convert_version(convert_version(obj, via), source)
         assert back.model_dump() == obj.model_dump()
 
 
@@ -150,7 +157,7 @@ def test_fixture_round_trip_is_exact(path: Path) -> None:
 
 
 def test_upgrade_moves_axes_and_transforms() -> None:
-    ms = to_version(v05.Multiscale.model_validate(_multiscale_05()), "0.6")
+    ms = convert_version(v05.Multiscale.model_validate(_multiscale_05()), "0.6")
     assert ms.coordinateSystems[0].name == "intrinsic"
     assert [ax.name for ax in ms.axes] == ["t", "y", "x"]
     assert ms.axes[0].unit == "second"
@@ -165,16 +172,16 @@ def test_upgrade_moves_axes_and_transforms() -> None:
 
 def test_coordinate_system_name() -> None:
     src = v05.Multiscale.model_validate(_multiscale_05())
-    ms = to_version(src, "0.6", coordinate_system="physical")
+    ms = convert_version(src, "0.6", coordinate_system="physical")
     assert ms.coordinateSystems[0].name == "physical"
     assert ms.datasets[0].output_name == "physical"
 
 
 def test_coordinate_system_never_renames() -> None:
     src = v06.Multiscale.model_validate(_multiscale_06())
-    assert to_version(src, "0.6", coordinate_system="x").datasets[0].output_name == (
-        "intrinsic"
-    )
+    assert convert_version(src, "0.6", coordinate_system="x").datasets[
+        0
+    ].output_name == ("intrinsic")
 
 
 def test_upgrade_folds_multiscale_transforms() -> None:
@@ -188,7 +195,7 @@ def test_upgrade_folds_multiscale_transforms() -> None:
     )
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        ms = to_version(src, "0.6")
+        ms = convert_version(src, "0.6")
 
     assert ms.coordinateTransformations is None
     assert len(ms.coordinateSystems) == 1
@@ -207,7 +214,7 @@ def test_upgrade_folds_multiscale_scale_without_translation() -> None:
     ms = _multiscale_05(
         coordinateTransformations=[{"type": "scale", "scale": [0.1, 2.0, 2.0]}]
     )
-    first, second = to_version(v05.Multiscale.model_validate(ms), "0.6").datasets
+    first, second = convert_version(v05.Multiscale.model_validate(ms), "0.6").datasets
     assert first.transform.type == "scale"
     assert first.scale_transform.scale == pytest.approx([0.1, 1.0, 1.0])
     # a dataset's own translation is still scaled
@@ -220,16 +227,18 @@ def test_tool_version_in_metadata_survives() -> None:
         {"multiscales": [_multiscale_05(metadata=metadata, type="gaussian")]}
     )
     for version in ("0.4", "0.6"):
-        ms = to_version(src, version).multiscales[0]
+        ms = convert_version(src, version).multiscales[0]
         assert ms.metadata == metadata
         assert ms.type == "gaussian"
 
 
 def test_nested_versions_are_replaced() -> None:
     src = _label_image_04(colors=[{"label-value": 1, "rgba": [1, 2, 3, 4]}])
-    assert to_version(src, "0.5").version == "0.5"
-    assert to_version(src, "0.6").version == "0.6"
-    assert to_version(to_version(src, "0.5"), "0.4").image_label.version == "0.4"
+    assert convert_version(src, "0.5").version == "0.5"
+    assert convert_version(src, "0.6").version == "0.6"
+    assert (
+        convert_version(convert_version(src, "0.5"), "0.4").image_label.version == "0.4"
+    )
 
 
 def test_large_label_ids_are_exact_in_v04() -> None:
@@ -241,16 +250,19 @@ def test_large_label_ids_are_exact_in_v04() -> None:
             "image-label": {"colors": [label], "properties": [label]},
         }
     )
-    result = to_version(src, "0.4").model_dump()["image-label"]
+    result = convert_version(src, "0.4").model_dump()["image-label"]
     assert result["colors"] == [label]
     assert result["colors"][0]["label-value"] == result["properties"][0]["label-value"]
-    assert to_version(to_version(src, "0.4"), "0.5").model_dump() == src.model_dump()
+    assert (
+        convert_version(convert_version(src, "0.4"), "0.5").model_dump()
+        == src.model_dump()
+    )
 
 
 def test_custom_label_properties_survive() -> None:
     src = _label_image_04(properties=[{"label-value": 1, "class": "neuron"}])
     for version in ("0.5", "0.6"):
-        result = to_version(src, version)
+        result = convert_version(src, version)
         assert result.model_dump()["image-label"]["properties"] == [
             {"label-value": 1, "class": "neuron"}
         ]
@@ -258,7 +270,7 @@ def test_custom_label_properties_survive() -> None:
 
 def test_null_label_property_survives() -> None:
     src = _label_image_04(properties=[{"label-value": 1, "class": None}])
-    result = to_version(src, "0.5").model_dump(exclude_none=False)
+    result = convert_version(src, "0.5").model_dump(exclude_none=False)
     assert result["image-label"]["properties"] == [{"label-value": 1, "class": None}]
 
 
@@ -270,8 +282,8 @@ def test_omero_is_untouched() -> None:
         ],
     }
     src = v05.Image.model_validate({"multiscales": [_multiscale_05()], "omero": omero})
-    assert to_version(src, "0.6").omero == src.omero
-    assert to_version(src, "0.6").omero.version == "0.1"
+    assert convert_version(src, "0.6").omero == src.omero
+    assert convert_version(src, "0.6").omero.version == "0.1"
 
 
 def test_bf2raw_plate_marker_survives() -> None:
@@ -285,8 +297,8 @@ def test_bf2raw_plate_marker_survives() -> None:
             },
         }
     )
-    assert to_version(src, "0.4").bioformats2raw_layout == 3
-    assert to_version(src, "0.6").bioformats2raw_layout == 3
+    assert convert_version(src, "0.4").bioformats2raw_layout == 3
+    assert convert_version(src, "0.6").bioformats2raw_layout == 3
 
 
 # ------------------------------------------------------------------------------
@@ -321,7 +333,7 @@ def test_bf2raw_plate_marker_survives() -> None:
 def test_downgrade_transforms(transform: dict, expected: list, version: Any) -> None:
     src = v06.Multiscale.model_validate(_multiscale_06(transform))
     # NOTE: a clean downgrade must not warn (pytest is configured to raise on warnings)
-    ms = to_version(src, version)
+    ms = convert_version(src, version)
     assert ms.model_dump()["datasets"][0]["coordinateTransformations"] == expected
     assert [ax.name for ax in ms.axes] == ["y", "x"]
 
@@ -360,7 +372,7 @@ def test_downgrade_drops_with_a_single_warning() -> None:
         }
     )
     with pytest.warns(ConversionWarning) as record:
-        ms = to_version(src, "0.4").multiscales[0]
+        ms = convert_version(src, "0.4").multiscales[0]
     assert len(record) == 1
     message = str(record[0].message)
     assert record[0].filename == __file__
@@ -392,7 +404,7 @@ def test_conversion_warning_can_be_an_error() -> None:
     with warnings.catch_warnings():
         warnings.filterwarnings("error", category=ConversionWarning)
         with pytest.raises(ConversionWarning):
-            to_version(src, "0.5")
+            convert_version(src, "0.5")
 
 
 def test_label_color_extras_warn_only_for_v04() -> None:
@@ -400,12 +412,12 @@ def test_label_color_extras_warn_only_for_v04() -> None:
     src = v05.LabelImage.model_validate(
         {"multiscales": [_multiscale_05()], "image-label": {"colors": colors}}
     )
-    upgraded = to_version(src, "0.6")  # no warning
+    upgraded = convert_version(src, "0.6")  # no warning
     assert upgraded.model_dump()["image-label"]["colors"] == colors
     with pytest.warns(ConversionWarning, match="label color key 'note'"):
-        to_version(src, "0.4")
+        convert_version(src, "0.4")
     with pytest.warns(ConversionWarning, match="label color key 'note'"):
-        to_version(upgraded, "0.4")
+        convert_version(upgraded, "0.4")
 
 
 def test_scene_cannot_be_downgraded() -> None:
@@ -432,8 +444,8 @@ def test_scene_cannot_be_downgraded() -> None:
         }
     )
     with pytest.raises(ValueError, match="no equivalent of 'Scene'"):
-        to_version(scene, "0.5")  # type: ignore
-    assert to_version(scene, "0.6") == scene
+        convert_version(scene, "0.5")  # type: ignore
+    assert convert_version(scene, "0.6") == scene
 
 
 # ------------------------------------------------------------------------------
@@ -444,7 +456,7 @@ def test_scene_cannot_be_downgraded() -> None:
 def test_fractional_label_value_raises() -> None:
     src = _label_image_04(colors=[{"label-value": 1.5, "rgba": [1, 2, 3, 4]}])
     with pytest.raises(ValidationError):
-        to_version(src, "0.5")
+        convert_version(src, "0.5")
 
 
 def test_array_axes_raise_on_downgrade() -> None:
@@ -454,15 +466,15 @@ def test_array_axes_raise_on_downgrade() -> None:
     with pytest.warns(Warning, match="only allowed by the JSON schema"):
         src = v06.Multiscale.model_validate(ms)
     with pytest.raises(ValidationError):
-        to_version(src, "0.5")
+        convert_version(src, "0.5")
 
 
 def test_unsupported_input() -> None:
     with pytest.raises(TypeError, match="Cannot convert"):
-        to_version({"version": "0.5"}, "0.6")  # type: ignore
+        convert_version({"version": "0.5"}, "0.6")  # type: ignore
     src = v05.Multiscale.model_validate(_multiscale_05())
     with pytest.raises(ValueError, match="Unknown version"):
-        to_version(src, "0.7")  # type: ignore
+        convert_version(src, "0.7")  # type: ignore
 
 
 # ------------------------------------------------------------------------------
@@ -474,7 +486,7 @@ def test_same_version_normalizes_prerelease_tag() -> None:
     doc = {"version": "0.6.dev4", "labels": ["a"]}
     with pytest.warns(Warning, match="pre-release"):
         src = v06.LabelsGroup.model_validate(doc)
-    result = to_version(src, "0.6")
+    result = convert_version(src, "0.6")
     assert result.version == "0.6"
     assert result is not src
 
@@ -483,7 +495,7 @@ def test_source_is_not_modified_or_aliased() -> None:
     metadata = {"nested": {"a": 1}}
     src = v05.Image.model_validate({"multiscales": [_multiscale_05(metadata=metadata)]})
     before = src.model_dump()
-    result = to_version(src, "0.6")
+    result = convert_version(src, "0.6")
     assert src.model_dump() == before
     assert result.multiscales[0].metadata == metadata
     assert result.multiscales[0].metadata is not src.multiscales[0].metadata
@@ -494,7 +506,7 @@ def test_uri_is_not_carried_over() -> None:
         {"multiscales": [{**_multiscale_05(), "version": "0.4"}]}
     )
     src.uri = "/some/path/.zattrs"
-    assert to_version(src, "0.4").uri is None
+    assert convert_version(src, "0.4").uri is None
 
 
 def test_subclass_converts_to_its_parent_kind() -> None:
@@ -502,7 +514,7 @@ def test_subclass_converts_to_its_parent_kind() -> None:
         datasets: list | None = None  # clashes with a key of the spec's `Multiscale`
 
     src = MyImage.model_validate({"multiscales": [_multiscale_05()]})
-    assert type(to_version(src, "0.6")) is v06.Image
+    assert type(convert_version(src, "0.6")) is v06.Image
 
 
 @pytest.mark.parametrize("target", ["0.5", "0.6"])
@@ -515,7 +527,7 @@ def test_group_json_keeps_extra_attributes(target: Any) -> None:
             }
         }
     )
-    result = to_version(src, target)
+    result = convert_version(src, target)
     assert type(result) is PACKAGES[target].OMEZarrGroupJSON
     assert result.attributes.ome.version == target
     assert result.attributes.model_extra == {"other": {"keep": "me"}}
@@ -524,20 +536,20 @@ def test_group_json_keeps_extra_attributes(target: Any) -> None:
 def test_group_json_to_v04_returns_the_document() -> None:
     ome = {"version": "0.5", "multiscales": [_multiscale_05()]}
     plain = v05.OMEZarrGroupJSON.model_validate({"attributes": {"ome": ome}})
-    assert isinstance(to_version(plain, "0.4"), v04.Image)
+    assert isinstance(convert_version(plain, "0.4"), v04.Image)
 
     extra = v05.OMEAttributes.model_validate({"other": 1, "ome": ome})
     with pytest.warns(ConversionWarning, match="attribute 'other'"):
-        assert isinstance(to_version(extra, "0.4"), v04.Image)
+        assert isinstance(convert_version(extra, "0.4"), v04.Image)
 
 
 def test_static_return_types() -> None:
     image = v04.Image.model_validate(
         {"multiscales": [{**_multiscale_05(), "version": "0.4"}]}
     )
-    assert_type(to_version(image, "0.4"), v04.Image)
-    assert_type(to_version(image, "0.5"), v05.Image)
-    assert_type(to_version(image, "0.6"), v06.Image)
+    assert_type(convert_version(image, "0.4"), v04.Image)
+    assert_type(convert_version(image, "0.5"), v05.Image)
+    assert_type(convert_version(image, "0.6"), v06.Image)
     label = _label_image_04()
-    assert_type(to_version(label, "0.6"), v06.LabelImage)
-    assert_type(to_version(image.multiscales[0], "0.6"), v06.Multiscale)
+    assert_type(convert_version(label, "0.6"), v06.LabelImage)
+    assert_type(convert_version(image.multiscales[0], "0.6"), v06.Multiscale)

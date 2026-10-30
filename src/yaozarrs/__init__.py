@@ -8,7 +8,7 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "uninstalled"
 
 from . import v04, v05, v06
-from ._convert import ConversionWarning, to_version
+from ._convert import ConversionWarning, convert_version
 from ._dim_spec import DimSpec
 from ._storage import validate_zarr_store
 from ._validate import validate_ome_json, validate_ome_object, validate_ome_uri
@@ -18,8 +18,8 @@ __all__ = [
     "ConversionWarning",
     "DimSpec",
     "ZarrGroup",
+    "convert_version",
     "open_group",
-    "to_version",
     "v04",
     "v05",
     "v06",
