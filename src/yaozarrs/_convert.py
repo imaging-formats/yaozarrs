@@ -64,22 +64,22 @@ def _map_multiscales(doc: dict, func: Callable[[dict], dict]) -> dict:
 
 
 def _upgrade_05_06(doc: dict, coordinate_system: str, dropped: list[str]) -> dict:
-    return _map_multiscales(doc, lambda ms: _upgrade_multiscale(ms, coordinate_system))
+    return _map_multiscales(doc, lambda ms: _multiscale_05_06(ms, coordinate_system))
 
 
-def _upgrade_multiscale(ms: dict, coordinate_system: str) -> dict:
+def _multiscale_05_06(ms: dict, coordinate_system: str) -> dict:
     ms = dict(ms)
     axes = ms.pop("axes")
-    overall = _transform_params(ms.pop("coordinateTransformations", None) or [])
+    overall = _transform_params_05(ms.pop("coordinateTransformations", None) or [])
     ms["coordinateSystems"] = [{"name": coordinate_system, "axes": axes}]
     ms["datasets"] = [
-        _upgrade_dataset(ds, overall, coordinate_system) for ds in ms["datasets"]
+        _dataset_05_06(ds, overall, coordinate_system) for ds in ms["datasets"]
     ]
     return ms
 
 
-def _upgrade_dataset(ds: dict, overall: dict, coordinate_system: str) -> dict:
-    params = _transform_params(ds["coordinateTransformations"])
+def _dataset_05_06(ds: dict, overall: dict, coordinate_system: str) -> dict:
+    params = _transform_params_05(ds["coordinateTransformations"])
     scale, translation = params["scale"], params.get("translation")
     if overall:
         # multiscale transformations are "applied after" those of the datasets, and
@@ -111,16 +111,16 @@ def _upgrade_dataset(ds: dict, overall: dict, coordinate_system: str) -> dict:
     return {**ds, "coordinateTransformations": [transform]}
 
 
-def _transform_params(transforms: list[dict]) -> dict[str, list[float]]:
+def _transform_params_05(transforms: list[dict]) -> dict[str, list[float]]:
     """Return eg `{"scale": [...], "translation": [...]}` for a v0.5 transform list."""
     return {t["type"]: t[t["type"]] for t in transforms}
 
 
 def _downgrade_06_05(doc: dict, coordinate_system: str, dropped: list[str]) -> dict:
-    return _map_multiscales(doc, lambda ms: _downgrade_multiscale(ms, dropped))
+    return _map_multiscales(doc, lambda ms: _multiscale_06_05(ms, dropped))
 
 
-def _downgrade_multiscale(ms: dict, dropped: list[str]) -> dict:
+def _multiscale_06_05(ms: dict, dropped: list[str]) -> dict:
     ms = dict(ms)
     systems = ms.pop("coordinateSystems")
     intrinsic = ms["datasets"][0]["coordinateTransformations"][0]["output"]["name"]
@@ -140,13 +140,13 @@ def _downgrade_multiscale(ms: dict, dropped: list[str]) -> dict:
 
     ms["axes"] = axes
     ms["datasets"] = [
-        {**ds, "coordinateTransformations": _downgrade_transform(ds, len(axes))}
+        {**ds, "coordinateTransformations": _transform_06_05(ds, len(axes))}
         for ds in ms["datasets"]
     ]
     return ms
 
 
-def _downgrade_transform(ds: dict, ndim: int) -> list[dict]:
+def _transform_06_05(ds: dict, ndim: int) -> list[dict]:
     transform = ds["coordinateTransformations"][0]
     if transform["type"] == "identity":
         return [{"type": "scale", "scale": [1.0] * ndim}]
