@@ -205,12 +205,13 @@ def test_upgrade_folds_multiscale_transforms() -> None:
 
 def test_upgrade_folds_multiscale_scale_without_translation() -> None:
     ms = _multiscale_05(
-        coordinateTransformations=[{"type": "scale", "scale": [0.1, 1.0, 1.0]}]
+        coordinateTransformations=[{"type": "scale", "scale": [0.1, 2.0, 2.0]}]
     )
-    del ms["datasets"][1]
-    result = to_version(v05.Multiscale.model_validate(ms), "0.6")
-    assert result.datasets[0].transform.type == "scale"
-    assert result.datasets[0].scale_transform.scale == pytest.approx([0.1, 0.5, 0.5])
+    first, second = to_version(v05.Multiscale.model_validate(ms), "0.6").datasets
+    assert first.transform.type == "scale"
+    assert first.scale_transform.scale == pytest.approx([0.1, 1.0, 1.0])
+    # a dataset's own translation is still scaled
+    assert second.translation_transform.translation == pytest.approx([0.0, 0.5, 0.5])
 
 
 def test_tool_version_in_metadata_survives() -> None:
@@ -498,7 +499,7 @@ def test_uri_is_not_carried_over() -> None:
 
 def test_subclass_converts_to_its_parent_kind() -> None:
     class MyImage(v05.Image):
-        pass
+        datasets: list | None = None  # clashes with a key of the spec's `Multiscale`
 
     src = MyImage.model_validate({"multiscales": [_multiscale_05()]})
     assert type(to_version(src, "0.6")) is v06.Image

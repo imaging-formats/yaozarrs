@@ -10,9 +10,12 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Any, Callable, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, overload
 
 from . import v04, v05, v06
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 __all__ = ["ConversionWarning", "to_version"]
 
@@ -32,7 +35,7 @@ _KINDS = (
     "Scene",
 )
 # model class -> (the version it belongs to, its name in every version's package)
-_MODELS: dict[type, tuple[str, str]] = {
+_MODELS: dict[type[BaseModel], tuple[str, str]] = {
     getattr(package, kind): (version, kind)
     for version, package in _PACKAGES.items()
     for kind in _KINDS
@@ -199,17 +202,18 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
             return ome
         return package.OMEAttributes.model_validate({**extra, "ome": ome})
 
-    source, kind = next(
-        (_MODELS[cls] for cls in type(obj).__mro__ if cls in _MODELS),
-        (None, None),
-    )
-    if source is None or kind is None:
+    base = next((cls for cls in type(obj).__mro__ if cls in _MODELS), None)
+    if base is None:
         raise TypeError(f"Cannot convert object of type {type(obj).__name__!r}.")
+    source, kind = _MODELS[base]
     if not hasattr(package, kind):
         raise ValueError(f"OME-Zarr v{version} has no equivalent of {kind!r}.")
 
     # (not excluding None, which would drop user-defined keys whose value is `null`)
-    doc = _strip_versions(obj.model_dump(exclude_none=False))
+    dumped = obj.model_dump(exclude_none=False)
+    # (the fields of a subclass aren't part of the spec, and may clash with its keys)
+    fields = {field.alias or name for name, field in base.model_fields.items()}
+    doc = _strip_versions({k: v for k, v in dumped.items() if k in fields})
     start, stop = _ORDER.index(source), _ORDER.index(version)
     path = _ORDER[start : stop + 1] if start <= stop else _ORDER[stop : start + 1][::-1]
     for hop in zip(path, path[1:]):
