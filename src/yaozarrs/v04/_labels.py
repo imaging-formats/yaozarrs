@@ -1,7 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from annotated_types import Interval, Len, MinLen
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UniqueList
@@ -60,6 +60,9 @@ class LabelProperty(_BaseModel):
         LabelProperty(label_value=2, cell_type="glia", perimeter=180.3)
         ```
     """
+
+    # "an arbitrary number of key-value pairs MAY be present for each label value"
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     label_value: int = Field(
         description="Integer label value from the segmentation image",

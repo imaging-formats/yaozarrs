@@ -285,3 +285,13 @@ class Plate(ZarrGroupModel):
     plate: PlateDef = Field(
         description="Plate layout and well organization",
     )
+
+    # If the top-level group represents a plate, the "bioformats2raw.layout" metadata
+    # will be present but the "plate" key MUST also be present
+    bioformats2raw_layout: Literal[3] | None = Field(
+        default=None,
+        alias="bioformats2raw.layout",
+        description=(
+            "Marker indicating this plate was created by bioformats2raw version 3"
+        ),
+    )

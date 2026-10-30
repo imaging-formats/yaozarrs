@@ -1,5 +1,5 @@
 {
-  "pydantic": "2.13",
+  "pydantic": "2.14",
   "public": {
     "Acquisition": {
       "$ref": "#/$defs/Acquisition"
@@ -510,6 +510,7 @@
       "type": "object"
     },
     "LabelProperty": {
+      "additionalProperties": true,
       "properties": {
         "label-value": {
           "type": "integer"
@@ -874,6 +875,18 @@
         },
         "plate": {
           "$ref": "#/$defs/PlateDef"
+        },
+        "bioformats2raw.layout": {
+          "anyOf": [
+            {
+              "const": 3,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
