@@ -131,6 +131,30 @@ print(obj)
 # Series(version='0.5', series=['0', '1'])
 ```
 
+### Convert metadata between versions
+
+`to_version` converts any metadata model to another version of the spec, keeping
+its kind (an `Image` stays an `Image`).
+
+```python
+from yaozarrs import DimSpec, to_version, v04
+
+dims = [DimSpec(name="y", size=64), DimSpec(name="x", size=64)]
+image = v04.Image(multiscales=[v04.Multiscale.from_dims(dims)])
+
+print(type(to_version(image, "0.6")))
+# <class 'yaozarrs.v06._image.Image'>
+```
+
+Metadata that the target version can't express is dropped with a
+`ConversionWarning`, which you can turn into an error using
+`warnings.filterwarnings("error", category=yaozarrs.ConversionWarning)`.
+
+> [!NOTE]
+> This converts metadata only: no store is read or written. v0.5 and v0.6 stores
+> differ only in their group metadata, but v0.4 stores use Zarr v2 while later
+> versions use Zarr v3, so their arrays differ too.
+
 ### Validate any zarr store using the CLI
 
 > [!IMPORTANT]  
