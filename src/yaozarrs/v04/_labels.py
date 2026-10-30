@@ -33,7 +33,10 @@ class LabelColor(_BaseModel):
     visualization purposes.
     """
 
-    label_value: float = Field(
+    # NOTE: the spec and schema disagree here: the prose says the value "MUST be an
+    # integer", while label.schema says "number".  We accept both, as the schema does,
+    # but keep integers as integers (as a float, a large label id would lose precision).
+    label_value: int | float = Field(
         description="Label value from the segmentation image",
         alias="label-value",
     )

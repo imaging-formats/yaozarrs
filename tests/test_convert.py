@@ -231,6 +231,21 @@ def test_nested_versions_are_replaced() -> None:
     assert to_version(to_version(src, "0.5"), "0.4").image_label.version == "0.4"
 
 
+def test_large_label_ids_are_exact_in_v04() -> None:
+    big = 2**53 + 1  # not representable as a float
+    label = {"label-value": big}
+    src = v05.LabelImage.model_validate(
+        {
+            "multiscales": [_multiscale_05()],
+            "image-label": {"colors": [label], "properties": [label]},
+        }
+    )
+    result = to_version(src, "0.4").model_dump()["image-label"]
+    assert result["colors"] == [label]
+    assert result["colors"][0]["label-value"] == result["properties"][0]["label-value"]
+    assert to_version(to_version(src, "0.4"), "0.5").model_dump() == src.model_dump()
+
+
 def test_custom_label_properties_survive() -> None:
     src = _label_image_04(properties=[{"label-value": 1, "class": "neuron"}])
     for version in ("0.5", "0.6"):

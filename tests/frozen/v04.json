@@ -441,7 +441,14 @@
     "LabelColor": {
       "properties": {
         "label-value": {
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ]
         },
         "rgba": {
           "anyOf": [
