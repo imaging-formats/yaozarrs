@@ -23,7 +23,10 @@ _VERSIONS = {"0.4": "v04", "0.5": "v05", **dict.fromkeys(V06_VERSIONS, "v06")}
 
 
 def _declared_version(obj: Any) -> str | None:
-    """Return the package for the OME version that `obj` declares (if known)."""
+    """Return the package for the OME version that `obj` declares (if any).
+
+    An unknown version returns a tag that matches no model, so that it gets rejected.
+    """
     if isinstance(obj, dict) and isinstance(obj.get("attributes"), dict):
         obj = obj["attributes"].get("ome")  # a zarr.json document
     elif isinstance(obj, dict) and "ome" in obj:
@@ -40,7 +43,9 @@ def _declared_version(obj: Any) -> str | None:
             if isinstance(inner, dict) and "version" in inner:
                 version = inner["version"]
                 break
-    return _VERSIONS.get(version) if isinstance(version, str) else None
+    if version is None:
+        return None
+    return _VERSIONS.get(str(version), f"version {version!r}")
 
 
 def _discriminate_group(obj: Any) -> str:
@@ -49,7 +54,7 @@ def _discriminate_group(obj: Any) -> str:
 
 def _discriminate_any(obj: Any) -> str:
     version = _declared_version(obj)
-    if version in (None, "v04"):
+    if version not in ("v05", "v06"):
         return version or "unknown"
     if "attributes" in obj:
         return f"{version}-group"
@@ -59,8 +64,8 @@ def _discriminate_any(obj: Any) -> str:
 # The default validation targets.  A document that declares a version is validated
 # only against that version's models: in a plain union, pydantic validates it against
 # every member (running their validators, and warnings, even for members that end up
-# failing), and lists every member's errors.  Documents without a (known) version are
-# tried against all of them.
+# failing), and lists every member's errors.  Documents without a version are tried
+# against all of them.
 _AnyOMEGroupByVersion: TypeAlias = Annotated[
     Annotated[v04.OMEZarrGroupJSON, Tag("v04")]
     | Annotated[v05.OMEZarrGroupJSON, Tag("v05")]

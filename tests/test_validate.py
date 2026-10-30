@@ -116,6 +116,27 @@ def test_errors_only_for_declared_version() -> None:
 @pytest.mark.parametrize(
     "obj",
     [
+        {"multiscales": [{"version": "0.3", "axes": AXES, "datasets": DATASETS}]},
+        {"well": {"version": "foo", "images": [{"path": "0"}]}},
+        {"version": "9.9", "well": {"images": [{"path": "0"}]}},
+        {"ome": {"version": "9.9", "well": {"images": [{"path": "0"}]}}},
+        {
+            "zarr_format": 3,
+            "node_type": "group",
+            "attributes": {"ome": {"version": "9.9", "series": ["0"]}},
+        },
+    ],
+)
+def test_unknown_version_is_rejected(obj: dict) -> None:
+    # (rather than being tried against other versions, which may ignore it)
+    with pytest.raises(ValidationError) as exc_info:
+        yaozarrs.validate_ome_object(obj)
+    assert exc_info.value.errors()[0]["type"] == "union_tag_invalid"
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
         None,
         [],
         "0.5",

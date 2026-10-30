@@ -221,6 +221,18 @@ def test_ome_version_ignores_top_level_keys_in_zarr_v3(tmp_path: Path) -> None:
     assert open_group(tmp_path).ome_version() is None
 
 
+def test_validate_unknown_version(write_demo_ome: Callable) -> None:
+    path = write_demo_ome("image", version="0.4")
+    zattrs = path / ".zattrs"
+    attrs = json.loads(zattrs.read_text())
+    attrs["multiscales"][0]["version"] = "0.3"
+    zattrs.write_text(json.dumps(attrs))
+
+    with pytest.raises(StorageValidationError, match=r"version '0\.3'") as exc_info:
+        validate_zarr_store(path)
+    assert exc_info.value.errors()[0]["type"] == "unsupported_version"
+
+
 def test_validate_null_storage(tmp_path: Path) -> None:
     """Test validation with intentionally broken storage."""
     with pytest.raises(OSError, match="No zarr metadata found"):

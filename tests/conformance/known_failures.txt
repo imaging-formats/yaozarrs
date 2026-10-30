@@ -36,16 +36,6 @@ fail  parse_attributes/v0.6/core/invalid/image/invalid_multiscale_transform_inpu
 # Bug: rejected, but with a plain ValueError rather than a validation error.
 error validate_zarr/v0.6/core/invalid/scene/missing_version
 
-# Bug: unknown versions raise NotImplementedError, not a validation error.
-error validate_zarr/v0.4/core/invalid/well/invalid_version
-error validate_zarr/v0.4/core/invalid/plate/invalid_version
-error validate_zarr/v0.4/core/invalid/image/invalid_version
-
-# Bug: unknown versions are accepted as v0.4.
-fail  parse_attributes/v0.4/core/invalid/well/invalid_version
-fail  parse_attributes/v0.4/core/invalid/plate/invalid_version
-fail  parse_attributes/v0.4/core/invalid/image/invalid_version
-
 # Bug: well path with column before row is accepted in v0.4.
 fail  parse_attributes/v0.4/core/invalid/plate/well_path_has_column_before_row
 fail  validate_zarr/v0.4/core/invalid/plate/well_path_has_column_before_row

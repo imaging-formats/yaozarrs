@@ -68,10 +68,12 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
         Validator = StorageValidatorV06
 
     else:
-        raise NotImplementedError(
-            f"Structural validation for OME-Zarr version {ome_version} is "
-            "not implemented."
+        error = ValidationResult().add_error(
+            StorageErrorType.unsupported_version,
+            ("version",),
+            f"Unsupported OME-Zarr version {ome_version!r}",
         )
+        raise StorageValidationError(error.errors)
 
     # Capture RuntimeWarnings from pydantic validators during validation
     # and convert them to StorageValidationWarning
@@ -359,6 +361,7 @@ class StorageErrorType(Enum):
     transform_parameters_invalid = auto()
     transform_parameters_location = auto()
     transform_parameters_not_found = auto()
+    unsupported_version = auto()
     well_invalid = auto()
     well_path_not_found = auto()
     well_path_not_group = auto()
