@@ -1,0 +1,21 @@
+# oztest cases that yaozarrs only passes with `strict=True`: by default, we intentionally
+# coerce interpretable input ("0" for an int), but never output it.
+# Format: `<status> <slug>`.
+fail  parse_attributes/v0.4/core/invalid/well/non_integer_acquisition_id
+fail  parse_attributes/v0.5/core/invalid/well/non_integer_acquisition_id
+fail  parse_attributes/v0.6/core/invalid/well/non_integer_acquisition_id
+fail  parse_attributes/v0.4/core/invalid/plate/non_integer_acquisition_id
+fail  parse_attributes/v0.5/core/invalid/plate/non_integer_acquisition_id
+fail  parse_attributes/v0.6/core/invalid/plate/non_integer_acquisition_id
+fail  parse_attributes/v0.4/core/invalid/image/invalid_channels_window
+fail  parse_attributes/v0.5/core/invalid/image/invalid_channels_window
+fail  parse_attributes/v0.6/core/invalid/image/invalid_channels_window
+fail  validate_zarr/v0.4/core/invalid/well/non_integer_acquisition_id
+fail  validate_zarr/v0.5/core/invalid/well/non_integer_acquisition_id
+fail  validate_zarr/v0.6/core/invalid/well/non_integer_acquisition_id
+fail  validate_zarr/v0.4/core/invalid/plate/non_integer_acquisition_id
+fail  validate_zarr/v0.5/core/invalid/plate/non_integer_acquisition_id
+fail  validate_zarr/v0.6/core/invalid/plate/non_integer_acquisition_id
+fail  validate_zarr/v0.4/core/invalid/image/invalid_channels_window
+fail  validate_zarr/v0.5/core/invalid/image/invalid_channels_window
+fail  validate_zarr/v0.6/core/invalid/image/invalid_channels_window

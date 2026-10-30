@@ -6,20 +6,21 @@ oztest := "oztest @ git+https://github.com/German-BioImaging/oztest@d43847d36cff
 default:
     @just --list
 
-# Run oztest conformance cases and compare with tests/conformance/known_failures.txt
-test-conformance:
+# Run oztest conformance cases and compare with the known failures (`strict` for strict mode)
+test-conformance mode="":
     #!/usr/bin/env bash
     set -euo pipefail
 
+    flag="{{ if mode == "strict" { "--strict" } else if mode == "" { "" } else { error("mode must be 'strict', or omitted") } }}"
     results=$(mktemp -d)
     trap 'rm -rf "$results"' EXIT
     for kind in parse_attributes validate_zarr; do
         uv run -p 3.13 --no-dev --extra io --with "{{ oztest }}" oztest run "$kind" \
             --include-profile core --no-progress --format json --out-file "$results/$kind.json" \
-            python tests/conformance/dingus.py
+            -- python tests/conformance/dingus.py $flag
     done
     uv run -p 3.13 --no-dev --extra io --with "{{ oztest }}" \
-        python tests/conformance/check.py "$results"/*.json
+        python tests/conformance/check.py $flag "$results"/*.json
 
 # Run full coverage tests across Python versions and dependency resolutions
 test-cov-full:
