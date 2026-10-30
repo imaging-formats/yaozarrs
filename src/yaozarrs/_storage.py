@@ -17,7 +17,9 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
+def validate_zarr_store(
+    obj: ZarrGroup | str | Path | Any, *, strict: bool | None = None
+) -> ZarrGroup:
     """Validate both structure and metadata of an OME-Zarr hierarchy.
 
     !!!important
@@ -35,6 +37,9 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
         The zarr store to validate. Can be a URI string, a Path, a parsed
         OMEZarrGroupJSON object, a ZarrGroup instance, or a zarr.Group object
         (for backwards compatibility).
+    strict : bool | None
+        If `True`, reject metadata that would otherwise be coerced to the right type
+        (e.g. `"1"` for an integer). By default, such metadata is accepted.
 
     Returns
     -------
@@ -79,7 +84,7 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     # and convert them to StorageValidationWarning
     with warnings.catch_warnings(record=True) as captured_warnings:
         warnings.filterwarnings("always", category=ValidationWarning)
-        result = Validator.validate_group(zarr_group)
+        result = Validator.validate_group(zarr_group, strict=strict)
 
     # prepend captured warnings to the result
     for w in captured_warnings:

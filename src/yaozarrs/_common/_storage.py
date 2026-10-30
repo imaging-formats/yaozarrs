@@ -84,7 +84,9 @@ class LabelsCheckResult:
 class StorageValidator:
     """Storage validator for one OME-Zarr version (see subclasses)."""
 
-    __slots__ = ()
+    __slots__ = ("strict",)
+
+    strict: bool | None
 
     # set by each version's subclass
     VERSION: ClassVar[str]
@@ -113,13 +115,18 @@ class StorageValidator:
         return ValidationResult()
 
     @classmethod
-    def validate_group(cls, zarr_group: ZarrGroup) -> ValidationResult:
+    def validate_group(
+        cls, zarr_group: ZarrGroup, *, strict: bool | None = None
+    ) -> ValidationResult:
         """Entry point that dispatches to appropriate visitor method.
 
         Parameters
         ----------
         zarr_group : ZarrGroup
             The zarr group to validate.
+        strict : bool | None
+            If `True`, reject metadata that would otherwise be coerced to the right
+            type (e.g. `"1"` for an integer).
 
         Returns
         -------
@@ -127,6 +134,7 @@ class StorageValidator:
             The validation result containing any errors found.
         """
         validator = cls()
+        validator.strict = strict
         ome_metadata = validator._parse_ome(zarr_group.attrs)
         return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
@@ -260,7 +268,9 @@ class StorageValidator:
 
             # Validate as LabelImage
             try:
-                label_image_model = label_group.ome_metadata(version=self.VERSION)
+                label_image_model = label_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 label_image_model = e
             if not isinstance(label_image_model, self.Image):
@@ -433,7 +443,9 @@ class StorageValidator:
 
             # Validate well metadata
             try:
-                well_model = well_group.ome_metadata(version=self.VERSION)
+                well_model = well_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 well_model = e
             if isinstance(well_model, self.Well):
@@ -535,7 +547,9 @@ class StorageValidator:
 
             # Validate field as image group
             try:
-                field_group_model = field_group.ome_metadata(version=self.VERSION)
+                field_group_model = field_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 field_group_model = e
             if isinstance(field_group_model, self.Image):
@@ -627,7 +641,9 @@ class StorageValidator:
 
             # Validate as image group
             try:
-                image_group_meta = image_group.ome_metadata(version=self.VERSION)
+                image_group_meta = image_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 image_group_meta = e
             if isinstance(image_group_meta, self.Image):
@@ -700,7 +716,9 @@ class StorageValidator:
 
             # Validate series as image group
             try:
-                series_group_meta = series_group.ome_metadata(version=self.VERSION)
+                series_group_meta = series_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 series_group_meta = e
             if isinstance(series_group_meta, self.Image):

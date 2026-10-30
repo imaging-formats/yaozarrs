@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import pytest
+from pydantic import ValidationError
 
 from yaozarrs._zarr import open_group
 
@@ -231,6 +232,46 @@ def test_validate_unknown_version(write_demo_ome: Callable) -> None:
     with pytest.raises(StorageValidationError, match=r"version '0\.3'") as exc_info:
         validate_zarr_store(path)
     assert exc_info.value.errors()[0]["type"] == "unsupported_version"
+
+
+def _coerce_scale(zarr_json: Path) -> None:
+    """Make a scale in this image a string, which is only accepted by coercion."""
+    meta = json.loads(zarr_json.read_text())
+    dataset = meta["attributes"]["ome"]["multiscales"][0]["datasets"][0]
+    dataset["coordinateTransformations"][0]["scale"][0] = "1"
+    zarr_json.write_text(json.dumps(meta))
+
+
+def test_validate_strict_rejects_coerced_root_metadata(
+    write_demo_ome: Callable,
+) -> None:
+    path = write_demo_ome("image", version="0.5")
+    _coerce_scale(path / "zarr.json")
+
+    validate_zarr_store(path)
+    with pytest.raises(ValidationError):
+        validate_zarr_store(path, strict=True)
+
+
+def test_validate_strict_rejects_coerced_child_metadata(
+    write_demo_ome: Callable,
+) -> None:
+    path = write_demo_ome("plate", version="0.5")
+    _coerce_scale(path / "A" / "1" / "0" / "zarr.json")
+
+    # (the same group, to check that the cached result isn't reused)
+    group = open_group(path)
+    group.validate()
+    with pytest.raises(StorageValidationError):
+        group.validate(strict=True)
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+@pytest.mark.parametrize("type", ["image", "labels", "plate", "image-with-labels"])
+def test_validate_strict_accepts_valid_stores(
+    type: str, version: str, write_demo_ome: Callable
+) -> None:
+    validate_zarr_store(write_demo_ome(type, version=version), strict=True)
 
 
 def test_validate_null_storage(tmp_path: Path) -> None:

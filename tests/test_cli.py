@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from typing import TYPE_CHECKING, Callable
 
@@ -39,6 +40,17 @@ def test_cli_validate_invalid_store(write_demo_ome: Callable) -> None:
 
     result = main(["validate", str(path)])
     assert result == 1
+
+
+def test_cli_validate_strict(write_demo_ome: Callable) -> None:
+    path = write_demo_ome("image", version="0.5")
+    meta = json.loads((path / "zarr.json").read_text())
+    dataset = meta["attributes"]["ome"]["multiscales"][0]["datasets"][0]
+    dataset["coordinateTransformations"][0]["scale"][0] = "1"
+    (path / "zarr.json").write_text(json.dumps(meta))
+
+    assert main(["validate", str(path)]) == 0
+    assert main(["validate", str(path), "--strict"]) == 1
 
 
 def test_cli_validate_nonexistent_store(tmp_path: Path) -> None:

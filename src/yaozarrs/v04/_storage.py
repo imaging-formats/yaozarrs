@@ -49,7 +49,7 @@ class StorageValidatorV04(StorageValidator):
 
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
         # Convert mappingproxy to dict for discriminator
-        return _OME_VALIDATOR.validate_python(dict(attrs))
+        return _OME_VALIDATOR.validate_python(dict(attrs), strict=self.strict)
 
     def _parse_ome_uri(self, uri: str) -> Any:
         # In v04, we open the zarr group and validate the attrs directly

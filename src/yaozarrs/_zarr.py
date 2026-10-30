@@ -168,7 +168,7 @@ class ZarrMetadata(BaseModel):
         return val
 
     def ome_metadata(
-        self, *, version: str | None = None
+        self, *, version: str | None = None, strict: bool | None = None
     ) -> v06.OMEMetadata | v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata if present in attributes, else None."""
         attrs = self.attributes
@@ -176,11 +176,17 @@ class ZarrMetadata(BaseModel):
         if version in (*V06_VERSIONS, "0.5") and "ome" not in attrs:
             return None
         if version in V06_VERSIONS:
-            return TypeAdapter(v06.OMEMetadata).validate_python(attrs["ome"])
+            return TypeAdapter(v06.OMEMetadata).validate_python(
+                attrs["ome"], strict=strict
+            )
         elif version == "0.5":
-            return TypeAdapter(v05.OMEMetadata).validate_python(attrs["ome"])
+            return TypeAdapter(v05.OMEMetadata).validate_python(
+                attrs["ome"], strict=strict
+            )
         elif version == "0.4":
-            return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(attrs)
+            return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(
+                attrs, strict=strict
+            )
         elif version:
             raise ValueError(f"Unsupported OME-Zarr version: {version}")
         elif "bioformats2raw.layout" in attrs:
@@ -189,7 +195,7 @@ class ZarrMetadata(BaseModel):
             # to determine version for sure without traversing the tree.
             # so we just try to fallback to v4 if no version has been specified/parsed.
             with suppress(ValidationError):
-                return TypeAdapter(v04.Bf2Raw).validate_python(attrs)
+                return TypeAdapter(v04.Bf2Raw).validate_python(attrs, strict=strict)
         return None
 
     def _guess_ome_version(self) -> str | None:
@@ -650,11 +656,17 @@ class ZarrGroup(ZarrNode):
                     return plate.get("version")
         return None
 
-    def validate(self) -> Self:
+    def validate(self, *, strict: bool | None = None) -> Self:
         """Validate the zarr group structure.
 
         This is a convenience method that calls [`yaozarrs.validate_zarr_store`][]
         on this group.
+
+        Parameters
+        ----------
+        strict : bool | None
+            If `True`, reject input that would otherwise be coerced to the right type
+            (e.g. `"1"` for an integer). By default, such input is accepted.
 
         Raises
         ------
@@ -663,7 +675,7 @@ class ZarrGroup(ZarrNode):
         """
         from yaozarrs._storage import validate_zarr_store
 
-        validate_zarr_store(self)
+        validate_zarr_store(self, strict=strict)
         return self
 
     def tree(
@@ -722,7 +734,7 @@ class ZarrGroup(ZarrNode):
         return _render_rich(tree)
 
     def ome_metadata(
-        self, *, version: str | None = None
+        self, *, version: str | None = None, strict: bool | None = None
     ) -> v06.OMEMetadata | v05.OMEMetadata | v04.OMEZarrGroupJSON | None:
         """Return the OME metadata (as a yaozarrs object) if present, else None.
 
@@ -733,18 +745,24 @@ class ZarrGroup(ZarrNode):
             If not provided (default), will attempt to infer from local or inherited
             attrs.  This determines the union of types that will be tried when casting
             metadata to a yaozarrs model.
+        strict : bool | None
+            If `True`, reject input that would otherwise be coerced to the right type
+            (e.g. `"1"` for an integer). By default, such input is accepted.
 
         Returns
         -------
         BaseModel | None
             A yaozarrs OME metadata model (v0.4, v0.5 or v0.6) if found, else None.
         """
-        if not hasattr(self, "_ome_metadata"):
+        if strict or not hasattr(self, "_ome_metadata"):
             meta = self._metadata
             fallback_version = (
                 version or self._local_ome_version() or self._inherited_ome_version()
             )
-            self._ome_metadata = meta.ome_metadata(version=fallback_version)
+            result = meta.ome_metadata(version=fallback_version, strict=strict)
+            if strict:  # the cache holds the default (coercing) result
+                return result
+            self._ome_metadata = result
         return self._ome_metadata
 
     @classmethod
