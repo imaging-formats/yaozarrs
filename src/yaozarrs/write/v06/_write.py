@@ -55,8 +55,8 @@ from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
     PlateBuilderBase,
+    _check_image_args,
     _prepare_image,
-    _validate_and_normalize_datasets,
     _write_bioformats2raw,
     _write_image,
     _write_plate,
@@ -1541,14 +1541,14 @@ class SceneBuilder:
                 raise ValueError(
                     f"Image '{path}' can't be nested in (or contain) image '{other}'."
                 )
-        _check_model(image, Image, f"Image '{path}': ")
         options = self._array_options(chunks, shards, self._compression)
-        multiscale, datasets_seq = _validate_and_normalize_datasets(
+        multiscale, datasets_seq = _check_image_args(
             image,
             datasets,
+            Image,
             f"Image '{path}': ",
-            chunks=options["chunks"],
-            shards=options["shards"],
+            options["chunks"],
+            options["shards"],
         )
         for item, dataset in zip(datasets_seq, multiscale.datasets):
             shape = item.shape if hasattr(item, "shape") else item[0]

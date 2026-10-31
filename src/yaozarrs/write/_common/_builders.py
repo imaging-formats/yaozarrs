@@ -54,19 +54,21 @@ def _is_shape_and_dtype(obj: Any) -> TypeGuard[ShapeAndDType]:
     return False
 
 
-def _validate_and_normalize_datasets(
+def _check_image_args(
     image: Any,
     datasets: ArrayOrPyramid | ShapeAndDTypeOrPyramid,
+    image_type: type,
     context: str = "",
-    *,
     chunks: Sequence[int] | Literal["auto"] | None = None,
     shards: Sequence[int] | None = None,
 ) -> tuple[Any, Sequence[ArrayLike]]:
-    """Validate image has one multiscale and normalize datasets to a sequence.
+    """Check an image and its datasets, before anything is written.
 
-    `datasets` can be either array-like data or (shape, dtype) specs.  `chunks` and
-    `shards`, if given, must have one entry per dimension of each dataset.
+    Returns its multiscale, and `datasets` (array-like data or (shape, dtype) specs)
+    as a sequence.  `chunks` and `shards`, if given, must have one entry per dimension
+    of each dataset.
     """
+    _check_model(image, image_type, context)
     if len(image.multiscales) != 1:
         raise NotImplementedError(f"{context}Image must have exactly one multiscale")
 
@@ -111,25 +113,10 @@ def _prepare_image(
     compression: CompressionName = "blosc-zstd",
 ) -> tuple[Path, dict[str, Any]]:
     """Create the Image group and its (empty) arrays; see `vNN.prepare_image`."""
-    _check_model(image, image_type)
-    if len(image.multiscales) != 1:
-        raise NotImplementedError("Image must have exactly one multiscale")
-
-    multiscale = image.multiscales[0]
-
-    # Normalize to sequence: single (shape, dtype) tuple -> list
-    datasets_seq: Sequence[ShapeAndDType]
-    if _is_shape_and_dtype(datasets):
-        datasets_seq = [datasets]
-    else:
-        datasets_seq = cast("Sequence[ShapeAndDType]", datasets)
-
-    if len(datasets_seq) != len(multiscale.datasets):
-        raise ValueError(
-            f"Number of dataset specs ({len(datasets_seq)}) must match "
-            f"number of datasets in metadata ({len(multiscale.datasets)})"
-        )
-    _validate_and_normalize_datasets(image, datasets_seq, chunks=chunks, shards=shards)
+    multiscale, specs = _check_image_args(
+        image, datasets, image_type, chunks=chunks, shards=shards
+    )
+    datasets_seq = cast("Sequence[ShapeAndDType]", specs)
 
     # Get create function
     create_func = _get_create_func(writer)
@@ -180,14 +167,18 @@ def _write_image(
     progress: bool = False,
 ) -> Path:
     """Write an Image group with data (and labels); see `vNN.write_image`."""
-    _check_model(image, image_type)
+    multiscale, datasets_seq = _check_image_args(
+        image, datasets, image_type, chunks=chunks, shards=shards
+    )
     for label_name, (label_image, label_datasets) in (labels or {}).items():
-        context = f"Label '{label_name}': "
-        _check_model(label_image, image_type, context)
-        _validate_and_normalize_datasets(
-            label_image, label_datasets, context, chunks=chunks, shards=shards
+        _check_image_args(
+            label_image,
+            label_datasets,
+            image_type,
+            f"Label '{label_name}': ",
+            chunks,
+            shards,
         )
-    multiscale, datasets_seq = _validate_and_normalize_datasets(image, datasets)
 
     # Extract specs from arrays for prepare_image
     specs: list[ShapeAndDType] = [(arr.shape, arr.dtype) for arr in datasets_seq]
@@ -293,10 +284,13 @@ def _write_bioformats2raw(
     """Write a bioformats2raw group with data; see `vNN.write_bioformats2raw`."""
     # (check every series first, so a bad one doesn't leave a partial store behind)
     for series_name, (image_model, datasets) in images.items():
-        context = f"Series '{series_name}': "
-        _check_model(image_model, builder_type._image_type, context)
-        _validate_and_normalize_datasets(
-            image_model, datasets, context, chunks=chunks, shards=shards
+        _check_image_args(
+            image_model,
+            datasets,
+            builder_type._image_type,
+            f"Series '{series_name}': ",
+            chunks,
+            shards,
         )
 
     builder = builder_type(
@@ -396,13 +390,13 @@ class Bf2RawBuilderBase(Generic[Image]):
             If the Image has multiple multiscales.
         """
         self._validate_series_name(name)
-        _check_model(image, self._image_type, f"Series '{name}': ")
-        _validate_and_normalize_datasets(
+        _check_image_args(
             image,
             datasets,
+            self._image_type,
             f"Series '{name}': ",
-            chunks=self._chunks,
-            shards=self._shards,
+            self._chunks,
+            self._shards,
         )
 
         # Initialize root structure if needed
@@ -465,13 +459,13 @@ class Bf2RawBuilderBase(Generic[Image]):
             If the Image has multiple multiscales.
         """
         self._validate_series_name(name)
-        _check_model(image, self._image_type, f"Series '{name}': ")
-        _, datasets_seq = _validate_and_normalize_datasets(
+        _, datasets_seq = _check_image_args(
             image,
             datasets,
+            self._image_type,
             f"Series '{name}': ",
-            chunks=self._chunks,
-            shards=self._shards,
+            self._chunks,
+            self._shards,
         )
         self._series[name] = (image, datasets_seq)
         return self
@@ -868,10 +862,13 @@ class PlateBuilderBase(Generic[Image]):
         """Check a well's fields before anything is written; normalize datasets."""
         normalized: dict[str, tuple[Image, Sequence[Any]]] = {}
         for fov, (image_model, datasets) in images.items():
-            context = f"Well '{row}/{col}', field '{fov}': "
-            _check_model(image_model, self._image_type, context)
-            _, datasets_seq = _validate_and_normalize_datasets(
-                image_model, datasets, context, chunks=self._chunks, shards=self._shards
+            _, datasets_seq = _check_image_args(
+                image_model,
+                datasets,
+                self._image_type,
+                f"Well '{row}/{col}', field '{fov}': ",
+                self._chunks,
+                self._shards,
             )
             normalized[fov] = (image_model, datasets_seq)
         # (the well metadata validates the field names)
@@ -1080,13 +1077,13 @@ class LabelsBuilderBase(Generic[LabelImage]):
             If the LabelImage has multiple multiscales.
         """
         self._validate_label_name(name)
-        _check_model(label_image, self._image_type, f"Label '{name}': ")
-        _validate_and_normalize_datasets(
+        _check_image_args(
             label_image,
             datasets,
+            self._image_type,
             f"Label '{name}': ",
-            chunks=self._chunks,
-            shards=self._shards,
+            self._chunks,
+            self._shards,
         )
 
         # Initialize labels group structure if needed
@@ -1150,13 +1147,13 @@ class LabelsBuilderBase(Generic[LabelImage]):
             If the LabelImage has multiple multiscales.
         """
         self._validate_label_name(name)
-        _check_model(label_image, self._image_type, f"Label '{name}': ")
-        _, specs_seq = _validate_and_normalize_datasets(
+        _, specs_seq = _check_image_args(
             label_image,
             datasets,
+            self._image_type,
             f"Label '{name}': ",
-            chunks=self._chunks,
-            shards=self._shards,
+            self._chunks,
+            self._shards,
         )
         self._labels[name] = (label_image, specs_seq)
         return self
