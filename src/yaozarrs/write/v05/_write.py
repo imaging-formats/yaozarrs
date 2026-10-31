@@ -137,7 +137,8 @@ def write_image(
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape for storage. "auto" (default) calculates ~4MB chunks with
         non-spatial dims set to 1. None uses the full array shape (single chunk).
-        Tuple values are clamped to the array shape.
+        Tuple values must have one entry per array dimension, and are clamped
+        to the array shape.
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.

@@ -115,6 +115,22 @@ def test_scene_builder_per_image_options(tmp_path: Path) -> None:
     assert "blosc" in json.dumps(_array_meta("b")["codecs"])
 
 
+def test_scene_wrong_chunks_ndim(tmp_path: Path) -> None:
+    scene = _scene(_to_world("a"))
+    dest = tmp_path / "s.zarr"
+    with pytest.raises(ValueError, match="Image 'a': chunks="):
+        write_scene(dest, scene, {"a": (_image(), DATA)}, chunks=(8, 8, 8))
+    with pytest.raises(ValueError, match="Image 'a': shards="):
+        write_scene(dest, scene, {"a": (_image(), DATA)}, shards=(8,))
+    with pytest.raises(ValueError, match="Image 'a': chunks="):
+        SceneBuilder(dest, scene).add_image("a", _image(), SPEC, chunks=(8, 8, 8))
+    assert not dest.exists()
+    # (per-image settings replace the builder's)
+    builder = SceneBuilder(dest, scene, chunks=(8, 8, 8))
+    builder.write_image("a", _image(), DATA, chunks=(8, 8))
+    assert (dest / "a" / "0" / "zarr.json").exists()
+
+
 def test_scene_with_label_image(tmp_path: Path) -> None:
     # a reference to a multiscale image *inside* one of the images (here one of its
     # labels) isn't checked when writing: the label image is written separately

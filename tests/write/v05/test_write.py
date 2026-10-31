@@ -196,6 +196,125 @@ def test_write_image_chunks(
     yaozarrs.validate_zarr_store(dest)
 
 
+YX_SPEC = ((64, 64), "uint16")
+
+
+@pytest.mark.parametrize(
+    "write",
+    [
+        pytest.param(
+            lambda dest, kw: write_image(
+                dest, _make_yx_image(), np.zeros((64, 64)), **kw
+            ),
+            id="write_image",
+        ),
+        pytest.param(
+            lambda dest, kw: prepare_image(dest, _make_yx_image(), YX_SPEC, **kw),
+            id="prepare_image",
+        ),
+        pytest.param(
+            lambda dest, kw: write_bioformats2raw(
+                dest, {"0": (_make_yx_image(), np.zeros((64, 64)))}, **kw
+            ),
+            id="write_bioformats2raw",
+        ),
+        pytest.param(
+            lambda dest, kw: write_plate(
+                dest, {("A", "1", "0"): (_make_yx_image(), np.zeros((64, 64)))}, **kw
+            ),
+            id="write_plate",
+        ),
+        pytest.param(
+            lambda dest, kw: Bf2RawBuilder(dest, **kw).write_image(
+                "0", _make_yx_image(), np.zeros((64, 64))
+            ),
+            id="Bf2RawBuilder.write_image",
+        ),
+        pytest.param(
+            lambda dest, kw: Bf2RawBuilder(dest, **kw).add_series(
+                "0", _make_yx_image(), YX_SPEC
+            ),
+            id="Bf2RawBuilder.add_series",
+        ),
+        pytest.param(
+            lambda dest, kw: PlateBuilder(
+                dest, plate=_make_plate(1, 1)[0], **kw
+            ).write_well("A", "01", {"0": (_make_yx_image(), np.zeros((64, 64)))}),
+            id="PlateBuilder.write_well",
+        ),
+        pytest.param(
+            lambda dest, kw: PlateBuilder(
+                dest, plate=_make_plate(1, 1)[0], **kw
+            ).add_well(row="A", col="01", images={"0": (_make_yx_image(), YX_SPEC)}),
+            id="PlateBuilder.add_well",
+        ),
+        pytest.param(
+            lambda dest, kw: LabelsBuilder(dest, **kw).write_label(
+                "cells", _make_label_image(), np.zeros((64, 64))
+            ),
+            id="LabelsBuilder.write_label",
+        ),
+        pytest.param(
+            lambda dest, kw: LabelsBuilder(dest, **kw).add_label(
+                "cells", _make_label_image(), YX_SPEC
+            ),
+            id="LabelsBuilder.add_label",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"chunks": (16, 32, 32)},
+        {"chunks": (32,)},
+        {"chunks": (16, 16), "shards": (32, 32, 32)},
+        {"chunks": (16, 16), "shards": (32,)},
+    ],
+    ids=["chunks-long", "chunks-short", "shards-long", "shards-short"],
+)
+def test_wrong_chunks_or_shards_ndim(tmp_path: Path, write: Any, kwargs: dict) -> None:
+    """Too many or too few entries are rejected before anything is written (#84)."""
+    dest = tmp_path / "bad.zarr"
+    with pytest.raises(ValueError, match=r"(chunks|shards)=.* but dataset '0' has 2"):
+        write(dest, kwargs)
+    assert not dest.exists()
+
+
+def test_wrong_chunks_ndim_keeps_existing_store(tmp_path: Path) -> None:
+    dest = tmp_path / "keep.zarr"
+    data = np.zeros((64, 64), "uint16")
+    write_image(dest, _make_yx_image(), data)
+    with pytest.raises(ValueError, match="chunks="):
+        write_image(dest, _make_yx_image(), data, chunks=(16,), overwrite=True)
+    yaozarrs.validate_zarr_store(dest)
+
+
+def test_wrong_chunks_ndim_in_labels_writes_nothing(tmp_path: Path) -> None:
+    """`chunks` also applies to the labels, which can have fewer dimensions."""
+    dest = tmp_path / "labels.zarr"
+    with pytest.raises(ValueError, match="Label 'cells': chunks="):
+        write_image(
+            dest,
+            _make_image("zyx", {"z": 1.0, "y": 1.0, "x": 1.0}),
+            np.zeros((4, 64, 64), "uint16"),
+            labels={"cells": (_make_label_image(), np.zeros((64, 64), "uint8"))},
+            chunks=(1, 32, 32),
+        )
+    assert not dest.exists()
+
+
+def test_wrong_chunks_ndim_in_later_image_writes_nothing(tmp_path: Path) -> None:
+    dest = tmp_path / "mixed.zarr"
+    zyx = (_make_image("zyx", {"z": 1.0, "y": 1.0, "x": 1.0}), np.zeros((4, 64, 64)))
+    yx = (_make_yx_image(), np.zeros((64, 64)))
+    with pytest.raises(ValueError, match="Series '1': chunks="):
+        write_bioformats2raw(dest, {"0": yx, "1": zyx}, chunks=(32, 32))
+    assert not dest.exists()
+    with pytest.raises(ValueError, match="Well 'A/1', field '1': chunks="):
+        write_plate(dest, {("A", "1", "0"): yx, ("A", "1", "1"): zyx}, chunks=(32, 32))
+    assert not dest.exists()
+
+
 @pytest.mark.parametrize("writer", WRITERS)
 @pytest.mark.parametrize(
     ("chunks", "shards"),

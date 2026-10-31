@@ -171,7 +171,8 @@ def write_image(
     chunks : tuple[int, ...] | "auto" | None, optional
         Chunk shape for storage. "auto" (default) calculates ~4MB chunks with
         non-spatial dims set to 1. None uses the full array shape (single chunk).
-        Tuple values are clamped to the array shape.
+        Tuple values must have one entry per array dimension, and are clamped
+        to the array shape.
     shards : tuple[int, ...] | None, optional
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.
@@ -1377,7 +1378,7 @@ class SceneBuilder:
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        self._check_image(path, image, datasets)
+        self._check_image(path, image, datasets, chunks=chunks, shards=shards)
         # (only the references to this image: the others may not be written yet)
         _check_scene(self._scene, {path: image}, complete=False)
 
@@ -1441,7 +1442,9 @@ class SceneBuilder:
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        _, specs = self._check_image(path, image, datasets)
+        _, specs = self._check_image(
+            path, image, datasets, chunks=chunks, shards=shards
+        )
         options = self._array_options(chunks, shards, compression)
         self._images[path] = (image, specs, options)
         return self
@@ -1521,6 +1524,8 @@ class SceneBuilder:
         image: Any,
         datasets: Any,
         others: Iterable[str] | None = None,
+        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
+        shards: ShapeLike | _Default | None = _Default.BUILDER,
     ) -> tuple[Any, Sequence[Any]]:
         """Check an image (and its path) before anything of it is written.
 
@@ -1537,8 +1542,13 @@ class SceneBuilder:
                     f"Image '{path}' can't be nested in (or contain) image '{other}'."
                 )
         _check_model(image, Image, f"Image '{path}': ")
+        options = self._array_options(chunks, shards, self._compression)
         multiscale, datasets_seq = _validate_and_normalize_datasets(
-            image, datasets, f"Image '{path}': "
+            image,
+            datasets,
+            f"Image '{path}': ",
+            chunks=options["chunks"],
+            shards=options["shards"],
         )
         for item, dataset in zip(datasets_seq, multiscale.datasets):
             shape = item.shape if hasattr(item, "shape") else item[0]
