@@ -147,14 +147,14 @@ def test_cached_mapper_getitems_error_handling(
     def boom(keys, on_error=None):
         raise RuntimeError("boom")
 
-    monkeypatch.setattr(cached._fsmap, "getitems", boom)
+    monkeypatch.setattr(cached._mapper, "getitems", boom)
 
     if get_raises:
 
         def bad_get(key, default=None):
             raise FileNotFoundError("nope")
 
-        monkeypatch.setattr(cached._fsmap, "get", bad_get)
+        monkeypatch.setattr(cached._mapper, "get", bad_get)
 
     key = setup_key if setup_key else "missing"
     kwargs = {"on_error": on_error_arg} if on_error_arg else {}

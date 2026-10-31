@@ -15,7 +15,7 @@ from itertools import chain, product
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from yaozarrs._storage import StorageErrorType, ValidationResult
-from yaozarrs._zarr import ZarrArray, ZarrGroup
+from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -155,9 +155,15 @@ class StorageValidator:
         elif isinstance(ome_metadata, self.Bf2Raw):
             return self.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, self.Series):
-            return self.visit_series(
-                _parent_group(zarr_group), ome_metadata, loc_prefix
-            )
+            if (parent := _parent_group(zarr_group)) is None:
+                warnings.warn(
+                    "Cannot validate series paths: they are relative to the parent of "
+                    "the OME group, which is outside of the store",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return ValidationResult()
+            return self.visit_series(parent, ome_metadata, loc_prefix)
         else:
             raise NotImplementedError(
                 f"Unknown OME metadata type: {type(ome_metadata).__name__}"
@@ -890,8 +896,22 @@ class StorageValidator:
             )
             return result
 
+        store_key = _source_store_key(zarr_group, src_img_rel_path)
+        if store_key is None and not zarr_group._has_uri():
+            warnings.warn(
+                f"Cannot validate label image source {src_img_rel_path!r}: "
+                "it is outside of the store",
+                UserWarning,
+                stacklevel=3,
+            )
+            return result
+
         try:
-            img = self._parse_ome_uri(image_source)
+            if store_key is not None:
+                source_group = _open_group_at(zarr_group._store, store_key)
+                img = self._parse_ome(source_group.attrs)
+            else:
+                img = self._parse_ome_uri(image_source)
             if not isinstance(img, self.Image):
                 result.add_error(
                     StorageErrorType.label_image_source_invalid,
@@ -953,11 +973,28 @@ class StorageValidator:
 # ----------------------------------------------------------
 
 
-def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup:
-    """Return the parent of `zarr_group`, even if it is the root of its store."""
+def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup | None:
+    """Return the parent of `zarr_group`, or None if it can't be reached.
+
+    The parent of a store's root can only be reached through a filesystem.
+    """
+    if zarr_group.path:
+        return _open_group_at(zarr_group._store, posixpath.dirname(zarr_group.path))
+    if not zarr_group._has_uri():
+        return None
     mapper, full_path, _ = zarr_group._full_path()
     parent_root = full_path.rstrip("/").rpartition("/")[0]
     return ZarrGroup(mapper.fs.get_mapper(parent_root))
+
+
+def _source_store_key(zarr_group: ZarrGroup, src_rel_path: str) -> str | None:
+    """Return the path of a source within the store, or None if it's outside of it."""
+    if "://" in src_rel_path or src_rel_path.startswith("/"):
+        return None
+    key = posixpath.normpath(posixpath.join(zarr_group.path, src_rel_path))
+    if key == ".." or key.startswith("../"):
+        return None
+    return "" if key == "." else key
 
 
 def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:

@@ -185,8 +185,8 @@ def _get_child_keys(group: ZarrGroup) -> list[str]:
 
     # Try filesystem listing (works for local and some remote stores)
     # Skip for HTTP/cloud stores that don't support directory listing
-    if hasattr(store, "_fsmap") and hasattr(store._fsmap, "fs"):
-        fs = store._fsmap.fs
+    if hasattr(store, "_mapper") and hasattr(store._mapper, "fs"):
+        fs = store._mapper.fs
 
         # Check filesystem protocol - skip listing for HTTP/cloud stores
         fs_protocol = getattr(fs, "protocol", "")
@@ -194,7 +194,7 @@ def _get_child_keys(group: ZarrGroup) -> list[str]:
         skip_listing = any(p in ("http", "https", "s3", "gs", "az") for p in protocols)
 
         if not skip_listing:
-            root = store._fsmap.root
+            root = store._mapper.root
             prefix = f"{group._path}/" if group._path else ""
             full_path = f"{root}/{prefix}".rstrip("/") if prefix else root
 

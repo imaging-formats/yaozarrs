@@ -14,16 +14,20 @@ from yaozarrs._zarr import ZarrGroup, open_group
 from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
 
 def validate_zarr_store(
-    obj: ZarrGroup | str | Path | Any, *, strict: bool | None = None
+    obj: ZarrGroup | str | Path | Mapping[str, bytes] | Any,
+    *,
+    strict: bool | None = None,
 ) -> ZarrGroup:
     """Validate both structure and metadata of an OME-Zarr hierarchy.
 
     !!!important
-        Requires `yaozarrs[io]` or `fsspec` to be installed.
+        Requires `yaozarrs[io]` or `fsspec` to be installed, unless `obj` is a mapping
+        or a [`yaozarrs.ZarrGroup`][] opened from one.
 
     This is a high-level function to validate both the metadata and the structure
     of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
@@ -33,10 +37,12 @@ def validate_zarr_store(
 
     Parameters
     ----------
-    obj : OMEZarrGroupJSON | ZarrGroup | str | Path | Any
+    obj : OMEZarrGroupJSON | ZarrGroup | str | Path | Mapping[str, bytes] | Any
         The zarr store to validate. Can be a URI string, a Path, a parsed
-        OMEZarrGroupJSON object, a ZarrGroup instance, or a zarr.Group object
-        (for backwards compatibility).
+        OMEZarrGroupJSON object, a ZarrGroup instance, a zarr.Group object
+        (for backwards compatibility), or a mapping of store keys to the bytes of the
+        metadata documents, if you want to do the IO yourself (see
+        [`yaozarrs.open_group`][]).
     strict : bool | None
         If `True`, reject metadata that would otherwise be coerced to the right type
         (e.g. `"1"` for an integer). By default, such metadata is accepted.

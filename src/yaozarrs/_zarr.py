@@ -9,7 +9,8 @@ are not supported.
 
 Array data access is only supported via conversion to tensorstore or zarr-python.
 
-This module requires fsspec for filesystem operations.
+Stores are plain `Mapping[str, bytes]` objects, keyed by paths like `"0/zarr.json"`.
+fsspec is only required to open a store from a URI.
 """
 
 from __future__ import annotations
@@ -315,7 +316,7 @@ def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMeta
 
 
 class _CachedMapper(Mapping[str, bytes]):
-    """Caching wrapper for FSMap that caches metadata file reads.
+    """Caching wrapper for a store mapping that caches metadata file reads.
 
     fsspec does NOT cache individual file reads - it only caches directory
     listings and maintains HTTP connection pools. Since zarr validation
@@ -331,8 +332,8 @@ class _CachedMapper(Mapping[str, bytes]):
     via getitems(), which uses aiohttp to fetch up to 1280 files concurrently.
     """
 
-    def __init__(self, mapper: FSMap) -> None:
-        self._fsmap = mapper
+    def __init__(self, mapper: Mapping[str, bytes]) -> None:
+        self._mapper = mapper
         self._cache: dict[str, bytes | Exception | None] = {}
 
     @overload
@@ -346,7 +347,8 @@ class _CachedMapper(Mapping[str, bytes]):
     ) -> _T | None:
         """Get a value from the mapper with caching."""
         if key not in self._cache:
-            self._cache[key] = val = self._fsmap.get(key, default)
+            val = self._mapper.get(key, default)
+            self._cache[key] = val  # ty: ignore[invalid-assignment]
         else:
             val = self._cache[key]
         if isinstance(val, Exception):
@@ -361,7 +363,7 @@ class _CachedMapper(Mapping[str, bytes]):
         if key in self._cache:
             val = self._cache[key]
         else:
-            self._cache[key] = val = self._fsmap.get(key)
+            self._cache[key] = val = self._mapper.get(key)
         return not isinstance(val, (Exception, NoneType))
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
@@ -394,9 +396,10 @@ class _CachedMapper(Mapping[str, bytes]):
             try:
                 # use on_error='return' to get all results including missing keys
                 # which will be stored as exceptions (usually KeyErrors)
-                results = self._fsmap.getitems(uncached_keys, on_error="return")
+                results = self._mapper.getitems(uncached_keys, on_error="return")
             except Exception:
-                # Batch call itself failed outright - retry every key below.
+                # Batch call failed outright, or the mapping has no `getitems`:
+                # get every key individually below.
                 results = {}
 
             # fsspec normalizes genuine "missing key" errors to KeyError here;
@@ -418,7 +421,7 @@ class _CachedMapper(Mapping[str, bytes]):
 
             for key in failed_keys:
                 try:
-                    self._cache[key] = self._fsmap.get(key)
+                    self._cache[key] = self._mapper.get(key)
                 except Exception:
                     if on_error == "raise":
                         raise
@@ -434,11 +437,11 @@ class _CachedMapper(Mapping[str, bytes]):
 
     def __iter__(self) -> Iterator[str]:
         """Delegate iteration to underlying mapper."""
-        return iter(self._fsmap)
+        return iter(self._mapper)
 
     def __len__(self) -> int:
         """Delegate len to underlying mapper."""
-        return len(self._fsmap)
+        return len(self._mapper)
 
     def __getitem__(self, key: str) -> bytes:
         """Get item from mapper (required by Mapping protocol)."""
@@ -449,7 +452,7 @@ class _CachedMapper(Mapping[str, bytes]):
 
     def __getattr__(self, name: str) -> Any:
         """Delegate all other attributes to the underlying mapper."""
-        return getattr(self._fsmap, name)
+        return getattr(self._mapper, name)
 
 
 class ZarrNode:
@@ -465,7 +468,7 @@ class ZarrNode:
 
     def __init__(
         self,
-        store: _CachedMapper | FSMap,
+        store: Mapping[str, bytes],
         path: str = "",
         meta: ZarrMetadata | None = None,
     ) -> None:
@@ -473,10 +476,9 @@ class ZarrNode:
 
         Parameters
         ----------
-        store : _CachedMapper | FSMap
-            The mapper for the zarr store. Should be a _CachedMapper for best
-            performance, or an FSMap which will be wrapped automatically.  In the future
-            it's possible we could support other mapping types.
+        store : Mapping[str, bytes]
+            The mapping for the zarr store (e.g. an FSMap, or a dict).  Anything other
+            than a _CachedMapper will be wrapped in one, for performance.
         path : str
             The path to this node within the zarr store (relative to the store root).
         meta : dict[str, Any] | ZarrMetadata | None
@@ -521,12 +523,17 @@ class ZarrNode:
         """Return the underlying store mapping (read-only)."""
         return MappingProxyType(self._store)
 
+    def _has_uri(self) -> bool:
+        """Return True if the store is backed by a filesystem (i.e. an FSMap)."""
+        mapper = self._store._mapper
+        return hasattr(mapper, "root") and hasattr(mapper, "fs")
+
     def _full_path(self) -> tuple[FSMap, str, str]:
         """Return (fsmap, full_path, protocol) for this node."""
-        mapper = self._store
-        if isinstance(mapper, _CachedMapper):
-            mapper = mapper._fsmap
+        if not self._has_uri():
+            raise TypeError(f"{self!r} is not backed by a filesystem: it has no URI.")
 
+        mapper: FSMap = self._store._mapper  # ty: ignore[invalid-assignment]
         if self._path:
             full_path = f"{mapper.root.rstrip('/')}/{self._path}"
         else:
@@ -571,11 +578,18 @@ class ZarrNode:
 
         This URI can be used with TensorStore, fsspec, and other libraries.
 
+        Stores that aren't backed by a filesystem have no URI.  For those, this returns
+        a descriptive name for messages instead, such as `"<dict>/A/1"`.
+
         Returns
         -------
         str
             A URI string that follows standard protocol://path format.
         """
+        if not self._has_uri():
+            store_name = type(self._store._mapper).__name__
+            return f"<{store_name}>/{self._path}".rstrip("/")
+
         mapper, full_path, protocol = self._full_path()
 
         # For local file systems, use Path.as_uri() for proper cross-platform
@@ -599,7 +613,8 @@ class ZarrGroup(ZarrNode):
     """Minimal wrapper around a zarr v2/v3 group.
 
     !!!important
-        Requires `yaozarrs[io]` or `fsspec` to be installed.
+        Requires `yaozarrs[io]` or `fsspec` to be installed, unless the store is a
+        mapping that you provide yourself (see [`yaozarrs.open_group`][]).
 
     This class exists to provide minimal zarr group functionality, needed for hierarchy
     traversal and structural validation, without requiring a dependency on a full blown
@@ -931,32 +946,49 @@ class ZarrArray(ZarrNode):
                 "tensorstore package is required for to_tensorstore()"
             ) from e
 
+        fsmap, *_ = self._full_path()
         spec = {
             "driver": "zarr3" if self._metadata.zarr_format == 3 else "zarr",
-            "kvstore": _fsmap_to_tensorstore_kvstore(self._store._fsmap, self._path),
+            "kvstore": _fsmap_to_tensorstore_kvstore(fsmap, self._path),
         }
         future = ts.open(spec)
         return future.result()
 
 
+def _open_group_at(mapper: Mapping[str, bytes], path: str = "") -> ZarrGroup:
+    """Open the group at `path` in `mapper`, raising if it isn't a group."""
+    node = ZarrNode(mapper, path)
+    if node._metadata.node_type != "group":
+        where = f"node at {path!r}" if path else "root node"
+        raise ValueError(
+            f"Expected {where} to be 'group', got '{node._metadata.node_type}'"
+        )
+    return ZarrGroup(node._store, node._path, node._metadata)
+
+
 def open_group(
-    uri: str | os.PathLike | Any, storage_options: dict | None = None
+    uri: str | os.PathLike | Mapping[str, bytes] | Any,
+    storage_options: dict | None = None,
 ) -> ZarrGroup:
-    """Open a zarr v2/v3 group from a URI.
+    """Open a zarr v2/v3 group from a URI or a mapping.
 
     !!!important
-        Requires `yaozarrs[io]` or `fsspec` to be installed.
+        Requires `yaozarrs[io]` or `fsspec` to be installed, unless `uri` is a mapping.
 
-    Returns a small wrapper around the zarr group URI that allows
-    reading metadata and traversing the hierarchy.
+    Returns a small wrapper around the zarr group that allows reading metadata and
+    traversing the hierarchy.
 
     Parameters
     ----------
-    uri : str | os.PathLike
+    uri : str | os.PathLike | Mapping[str, bytes]
         The URI of the zarr store (e.g., "https://...", "s3://...", "/path/to/file"),
-        or a zarr-python Group.
+        or a zarr-python Group.  May also be any mapping of store keys to the bytes of
+        the metadata documents (e.g. `{"zarr.json": b"...", "0/zarr.json": b"..."}`).
+        Only metadata keys are read, and a missing key must behave as it does for a
+        dict: `get` returns `None`.
     storage_options : dict | None
         Additional storage options to pass to fsspec when opening the mapper.
+        Ignored if `uri` is a mapping.
 
     Returns
     -------
@@ -970,17 +1002,21 @@ def open_group(
     ValueError
         If the metadata is invalid or inconsistent, or if the root node is not a group.
     """
+    if isinstance(uri, ZarrGroup):
+        return uri
+
+    # (zarr-python v2 Groups are mappings too, but of nodes, not bytes: handled below)
+    if isinstance(uri, Mapping) and not hasattr(uri, "store"):
+        return _open_group_at(uri)
+
     try:
         from fsspec import FSMap, get_mapper
     except ImportError as e:
         raise ImportError(
-            "fsspec package is required for open_group().  "
+            "fsspec package is required for open_group() with a URI.  "
             "Please install with `pip install yaozarrs[io]` or "
             "`pip install fsspec`."
         ) from e
-
-    if isinstance(uri, ZarrGroup):
-        return uri
 
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
@@ -996,7 +1032,7 @@ def open_group(
             uri = str(uri.store)
     else:  # pragma: no cover
         raise TypeError(
-            "uri must be a string, os.PathLike, or have a 'store' attribute"
+            "uri must be a string, os.PathLike, a mapping, or have a 'store' attribute"
         )
 
     storage_options = storage_options or {}
@@ -1015,15 +1051,7 @@ def open_group(
     if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
 
-    # Wrap in caching layer for metadata-level caching
-    cached_mapper = _CachedMapper(mapper)
-    node = ZarrNode(cached_mapper)
-
-    if node._metadata.node_type != "group":
-        raise ValueError(
-            f"Expected root node to be 'group', got '{node._metadata.node_type}'"
-        )
-    return ZarrGroup(cached_mapper, node._path, node._metadata)
+    return _open_group_at(mapper)
 
 
 # ---------------------------------------------------
