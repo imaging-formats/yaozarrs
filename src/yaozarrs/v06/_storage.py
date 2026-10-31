@@ -103,18 +103,11 @@ class StorageValidatorV06(StorageValidator):
     def visit_label_image(
         self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
     ) -> ValidationResult:
-        # The `zarr.json` file for the label image MUST implement the multiscales
-        # specification.
-        # (so it gets the image checks too; the base class only checks what is
-        # specific to label images)
         key = f"label:{_norm(zarr_group.path)}"
         if key in self._visited:
             return ValidationResult()
         self._visited.add(key)
-        result = self.visit_image(zarr_group, label_image_model, loc_prefix)
-        return result.merge(
-            super().visit_label_image(zarr_group, label_image_model, loc_prefix)
-        )
+        return super().visit_label_image(zarr_group, label_image_model, loc_prefix)
 
     def _visit_image(
         self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc

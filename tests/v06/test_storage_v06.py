@@ -301,6 +301,10 @@ def test_valid_stores(tmp_path: Path, name: str) -> None:
     validate_zarr_store(make_store(tmp_path, name))
 
 
+def test_validate_ome_group_directly(tmp_path: Path) -> None:
+    validate_zarr_store(make_store(tmp_path, "bf2raw") / "OME")
+
+
 def test_labels_group_found_via_transformation(tmp_path: Path) -> None:
     root = make_store(tmp_path, "image_with_labels")
     _rename_labels_group(root)

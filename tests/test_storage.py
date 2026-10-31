@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Callable
+from unittest.mock import Mock
 
 import pytest
 from pydantic import ValidationError
@@ -35,6 +36,7 @@ from yaozarrs._storage import (
     StorageValidationError,
     StorageValidationWarning,
 )
+from yaozarrs.v05._storage import StorageValidatorV05
 
 
 @contextmanager
@@ -532,9 +534,13 @@ def test_validate_invalid_storage(
             validate_zarr_store(path)
 
 
-def _drop_key(zarr_json: Path, key: str) -> None:
+def _drop_key(zarr_json: Path, *keys: str) -> None:
     data = json.loads(zarr_json.read_text())
-    del data[key]
+    *parents, last = keys
+    d = data
+    for k in parents:
+        d = d[k]
+    del d[last]
     zarr_json.write_text(json.dumps(data))
 
 
@@ -544,7 +550,15 @@ def _drop_key(zarr_json: Path, key: str) -> None:
         StorageTestCase(
             StorageErrorType.label_image_invalid,
             {"type": "labels"},
-            update_meta("annotations", ("attributes", "ome"), IMAGE_META),
+            lambda p: _drop_key(
+                p / "annotations" / "zarr.json", "attributes", "ome", "image-label"
+            ),
+        ),
+        StorageTestCase(
+            # valid OME metadata, but not a labels group
+            StorageErrorType.labels_metadata_invalid,
+            {"type": "image-with-labels"},
+            update_meta("labels", ("attributes", "ome"), IMAGE_META),
         ),
         StorageTestCase(
             # zarr-python omits dimension_names unless explicitly passed
@@ -563,6 +577,62 @@ def test_validate_invalid_storage_warns(
     with xfail_internet_error():
         with pytest.warns(StorageValidationWarning, match=str(case.err_type)):
             validate_zarr_store(path)
+
+
+def _write_bf2raw_v04(root: Path, image: Path) -> Path:
+    shutil.copytree(image, root / "0")
+    for sub, attrs in (("", {"bioformats2raw.layout": 3}), ("OME", {"series": ["0"]})):
+        (root / sub).mkdir(exist_ok=True)
+        (root / sub / ".zgroup").write_text('{"zarr_format": 2}')
+        (root / sub / ".zattrs").write_text(json.dumps(attrs))
+    return root
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+def test_validate_ome_group_directly(
+    version: str, write_demo_ome: Callable, tmp_path: Path
+) -> None:
+    """Series paths are relative to the parent of the OME group."""
+    if version == "0.4":
+        # (the demo writer can't write a v0.4 bioformats2raw store)
+        image = write_demo_ome("image", version="0.4")
+        path = _write_bf2raw_v04(tmp_path / "bf2raw.zarr", image)
+    else:
+        path = write_demo_ome("bioformats2raw", write_ome_group=True)
+    validate_zarr_store(path / "OME")
+    validate_zarr_store(open_group(path)["OME"])
+
+    shutil.rmtree(path / "0")
+    with pytest.raises(StorageValidationError, match="series_path_not_found"):
+        validate_zarr_store(path / "OME")
+
+
+def test_bf2raw_series_errors_propagate(
+    write_demo_ome: Callable, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = write_demo_ome("bioformats2raw", write_ome_group=True)
+    monkeypatch.setattr(
+        StorageValidatorV05, "visit_series", Mock(side_effect=RuntimeError("boom"))
+    )
+    with pytest.raises(RuntimeError, match="boom"):
+        validate_zarr_store(path)
+
+
+def test_bf2raw_invalid_ome_group_uses_numbered_paths(write_demo_ome: Callable) -> None:
+    path = write_demo_ome("bioformats2raw", write_ome_group=True)
+    update_meta("OME", ("attributes",), {})(path)
+    validate_zarr_store(path)
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+@pytest.mark.parametrize("root", [".", "labels", "labels/annotations"])
+def test_validate_label_image_arrays(
+    version: str, root: str, write_demo_ome: Callable
+) -> None:
+    path = write_demo_ome("image-with-labels", version=version)
+    shutil.rmtree(path / "labels" / "annotations" / "s0")
+    with pytest.raises(StorageValidationError, match="dataset_path_not_found"):
+        validate_zarr_store(path / root)
 
 
 def test_validate_complex_ome_zarr(complex_ome_zarr: Path) -> None:
