@@ -86,6 +86,9 @@ old_docs = [
     "mkdocstrings-python>=1.18.2",
     "ruff>=0.13.2",
 ]
+bench = [
+    "pytest-codspeed>=5.0.4",
+]
 
 [project.urls]
 homepage = "https://github.com/imaging-formats/yaozarrs"
