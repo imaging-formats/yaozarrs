@@ -64,6 +64,7 @@ docs = [
 ]
 dev = [
     { include-group = "test-full" },
+    { include-group = "bench" },
     { include-group = "docs" },
     "ipython>=8.37.0",
     "mypy>=1.18.2",
