@@ -488,3 +488,10 @@ def test_fov_path_validation() -> None:
     # Path with invalid characters (e.g. space) - raises error
     with pytest.raises(ValidationError, match="should match pattern"):
         v04.FieldOfView(path="fov 0")
+
+
+def test_well_fov_paths_unique() -> None:
+    # same path but different acquisition: not identical items, still invalid
+    images = [{"path": "0", "acquisition": 0}, {"path": "0", "acquisition": 1}]
+    with pytest.raises(ValidationError, match="Field of view paths must be unique"):
+        v04.WellDef.model_validate({"images": images})

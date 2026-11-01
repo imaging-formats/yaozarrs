@@ -1,7 +1,8 @@
 """Plate building blocks (identical in v0.5 and v0.6)."""
 
 import warnings
-from typing import Annotated
+from collections.abc import Sequence
+from typing import Annotated, Any
 
 from annotated_types import MinLen
 from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
@@ -123,6 +124,21 @@ class PlateWell(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
+def check_unique_rows_columns_wells(
+    rows: Sequence[Any], columns: Sequence[Any], wells: Sequence[Any]
+) -> None:
+    """Rows, columns and wells must be unique (also used by v04, same rules)."""
+    # [Each column/row name] MUST NOT be a duplicate of any other `name` in the
+    # `columns`/`rows` array.
+    for kind, items in (("column", columns), ("row", rows)):
+        if dupes := duplicates([x.name for x in items]):
+            raise ValueError(f"Plate {kind} names must be unique. Duplicates: {dupes}")
+    # (no two wells may be equal (uniqueItems), and as a well's path must refer to
+    # the same row/column pair as its indices, that means unique paths)
+    if dupes := duplicates([well.path for well in wells]):
+        raise ValueError(f"Well paths must be unique. Duplicates: {dupes}")
+
+
 class PlateDef(_BaseModel):
     """Plate layout and well organization.
 
@@ -156,17 +172,7 @@ class PlateDef(_BaseModel):
 
     @model_validator(mode="after")
     def _validate_unique(self) -> Self:
-        # [Each column/row name] MUST NOT be a duplicate of any other `name` in the
-        # `columns`/`rows` array.
-        for kind, items in (("column", self.columns), ("row", self.rows)):
-            if dupes := duplicates([x.name for x in items]):
-                raise ValueError(
-                    f"Plate {kind} names must be unique. Duplicates: {dupes}"
-                )
-        # (no two wells may be equal, and as a well's path must match its row and
-        # column, that means unique paths)
-        if dupes := duplicates([well.path for well in self.wells]):
-            raise ValueError(f"Well paths must be unique. Duplicates: {dupes}")
+        check_unique_rows_columns_wells(self.rows, self.columns, self.wells)
         return self
 
     @model_validator(mode="after")
