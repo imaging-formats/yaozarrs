@@ -144,7 +144,11 @@ skip-magic-trailing-comma = false # default is false
 # https://docs.pytest.org/
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = ["--color=yes", "--ignore=tests/test_realworld.py"]
+addopts = [
+    "--color=yes",
+    "--ignore=tests/test_realworld.py",
+    "--ignore=tests/benchmarks",
+]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 
