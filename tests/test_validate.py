@@ -188,6 +188,13 @@ def test_malformed(obj: Any) -> None:
         yaozarrs.validate_ome_object(obj)
 
 
+@pytest.mark.parametrize("data", ["{not json", b"\xff"])
+def test_malformed_json(data: str | bytes) -> None:
+    # (still a ValidationError, not the JSONDecodeError of re-parsing it)
+    with pytest.raises(ValidationError):
+        yaozarrs.validate_ome_json(data)
+
+
 COERCIBLE = [
     {"well": {"images": [{"acquisition": "0", "path": "0"}]}},
     {"version": "0.5", "well": {"images": [{"acquisition": "0", "path": "0"}]}},
