@@ -8,7 +8,7 @@ from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._types import UniqueList
+from yaozarrs._types import UNIQUE_ITEMS, duplicates
 from yaozarrs._validation_warning import ValidationWarning
 
 # ------------------------------------------------------------------------------
@@ -130,13 +130,14 @@ class PlateDef(_BaseModel):
     This is the core content of the `plate` metadata field.
     """
 
-    columns: Annotated[UniqueList[Column], MinLen(1)] = Field(
+    # (uniqueItems is implied by the unique names and paths, see `_validate_unique`)
+    columns: Annotated[list[Column], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Column definitions for the plate grid"
     )
-    rows: Annotated[UniqueList[Row], MinLen(1)] = Field(
+    rows: Annotated[list[Row], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Row definitions for the plate grid"
     )
-    wells: Annotated[UniqueList[PlateWell], MinLen(1)] = Field(
+    wells: Annotated[list[PlateWell], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="List of all wells present in this plate with their grid positions"
     )
 
@@ -152,6 +153,21 @@ class PlateDef(_BaseModel):
         default=None,
         description="Human-readable name for this plate",
     )
+
+    @model_validator(mode="after")
+    def _validate_unique(self) -> Self:
+        # [Each column/row name] MUST NOT be a duplicate of any other `name` in the
+        # `columns`/`rows` array.
+        for kind, items in (("column", self.columns), ("row", self.rows)):
+            if dupes := duplicates([x.name for x in items]):
+                raise ValueError(
+                    f"Plate {kind} names must be unique. Duplicates: {dupes}"
+                )
+        # (no two wells may be equal, and as a well's path must match its row and
+        # column, that means unique paths)
+        if dupes := duplicates([well.path for well in self.wells]):
+            raise ValueError(f"Well paths must be unique. Duplicates: {dupes}")
+        return self
 
     @model_validator(mode="after")
     def _validate_well_indices(self) -> Self:
@@ -198,8 +214,7 @@ class PlateDef(_BaseModel):
         # Each acquisition object MUST contain an `id` key whose value MUST be an
         # unique integer identifier greater than or equal to 0 within the context
         # of the plate
-        ids = [acq.id for acq in self.acquisitions or ()]
-        if dupes := sorted({i for i in ids if ids.count(i) > 1}):
+        if dupes := duplicates([acq.id for acq in self.acquisitions or ()]):
             raise ValueError(
                 f"Acquisition ids must be unique within a plate. Duplicates: {dupes}"
             )

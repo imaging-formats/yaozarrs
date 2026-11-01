@@ -1,3 +1,4 @@
+from collections import Counter
 from collections.abc import Hashable, Mapping, Sequence
 from typing import Annotated, Any, TypeVar
 
@@ -5,6 +6,7 @@ from pydantic import AfterValidator, BaseModel, Field
 from pydantic_core import PydanticCustomError
 
 T = TypeVar("T")
+K = TypeVar("K", str, int)  # (names, paths, ids)
 
 BASIC_TYPES = (str, int, float, bool, type(None))
 
@@ -42,6 +44,8 @@ def _canonical_key(x: Any) -> Hashable:
 
 def _validate_unique_list(v: list[T]) -> list[T]:
     """Validate that all items in the list are unique, using JSON equivalence."""
+    if len(v) < 2:
+        return v
     seen: dict[Hashable, int] = {}
     for i, item in enumerate(v):
         key = _canonical_key(item)
@@ -55,9 +59,17 @@ def _validate_unique_list(v: list[T]) -> list[T]:
     return v
 
 
-# A list that enforces uniqueItems
-UniqueList = Annotated[
-    list[T],
-    AfterValidator(_validate_unique_list),
-    Field(json_schema_extra={"uniqueItems": True}),
-]
+# Declares `uniqueItems` in the JSON schema without checking it.  For lists whose
+# items must have unique names (or paths): that stricter check implies uniqueItems,
+# and is much cheaper than comparing whole items.
+UNIQUE_ITEMS = Field(json_schema_extra={"uniqueItems": True})
+
+# A list that enforces uniqueItems (no two items may be equal, as JSON)
+UniqueList = Annotated[list[T], AfterValidator(_validate_unique_list), UNIQUE_ITEMS]
+
+
+def duplicates(values: Sequence[K]) -> list[K]:
+    """Return the values that occur more than once, sorted."""
+    if len(set(values)) == len(values):
+        return []
+    return sorted(v for v, n in Counter(values).items() if n > 1)

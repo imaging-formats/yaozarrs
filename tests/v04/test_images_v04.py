@@ -382,7 +382,7 @@ V04_INVALID_IMAGES_EXTENDED: list[tuple[dict, str]] = [
                 }
             ]
         },
-        "List items are not unique",
+        "Axis names must be unique",
     ),
     # Transformation with 1D should fail (below minimum)
     (
@@ -555,7 +555,7 @@ V04_INVALID_IMAGES_WITH_MESSAGES: list[tuple[dict, str]] = [
                 }
             ]
         },
-        "List items are not unique",
+        "Axis names must be unique",
     ),
 ]
 
