@@ -1542,7 +1542,7 @@ class SceneBuilder:
                     f"Image '{path}' can't be nested in (or contain) image '{other}'."
                 )
         options = self._array_options(chunks, shards, self._compression)
-        multiscale, datasets_seq = _check_image_args(
+        return _check_image_args(
             image,
             datasets,
             Image,
@@ -1550,14 +1550,6 @@ class SceneBuilder:
             options["chunks"],
             options["shards"],
         )
-        for item, dataset in zip(datasets_seq, multiscale.datasets):
-            shape = item.shape if hasattr(item, "shape") else item[0]
-            if len(shape) != multiscale.ndim:
-                raise ValueError(
-                    f"Image '{path}': dataset '{dataset.path}' has {len(shape)} "
-                    f"dimensions, but the image has {multiscale.ndim} axes."
-                )
-        return multiscale, datasets_seq
 
     def _ensure_initialized(self) -> None:
         """Create the scene group (with the scene metadata) if not already done."""

@@ -281,6 +281,16 @@ def _is_loaded_instance(obj: Any, module: str, cls: str) -> bool:
     return mod is not None and isinstance(obj, getattr(mod, cls))
 
 
+class _TensorStoreTarget:
+    """A `da.store` target that writes each block to a tensorstore array."""
+
+    def __init__(self, array: Any) -> None:
+        self._array = array
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._array[key].write(value).result()
+
+
 def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
     """Write data to an already-created array (zarr, tensorstore, or custom)."""
     is_dask = "dask" in sys.modules and hasattr(data, "compute")
@@ -297,13 +307,20 @@ def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
             ctx = nullcontext()
 
         with ctx:
+            # With lock=False, dask chunks must not split a write unit (shard, else
+            # chunk): concurrent read-modify-writes of the same unit would race, and
+            # the last writer wins (losing data).
             if _is_loaded_instance(array, "zarr", "Array"):
-                # With lock=False, dask chunks must not split a zarr write unit
-                # (shard, else chunk): concurrent read-modify-writes of the same
-                # unit would race, and the last writer wins (losing data).
                 write_unit = getattr(array, "shards", None) or array.chunks
                 dask_data = _align_dask_chunks(dask_data, write_unit)
                 da.store(dask_data, array, lock=False)  # ty: ignore[invalid-argument-type]
+                return
+            if _is_loaded_instance(array, "tensorstore", "TensorStore"):
+                # (block by block, rather than computing the whole array first)
+                write_unit = tuple(array.chunk_layout.write_chunk.shape)
+                dask_data = _align_dask_chunks(dask_data, write_unit)
+                target = _TensorStoreTarget(array)
+                da.store(dask_data, target, lock=False)  # ty: ignore[invalid-argument-type]
                 return
             # The write unit of any other array is unknown (custom arrays may not
             # even expose one), so concurrent chunk writes could lose data.

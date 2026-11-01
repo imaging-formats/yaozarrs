@@ -64,6 +64,7 @@ docs = [
 ]
 dev = [
     { include-group = "test-full" },
+    { include-group = "bench" },
     { include-group = "docs" },
     "ipython>=8.37.0",
     "mypy>=1.18.2",
@@ -85,6 +86,10 @@ old_docs = [
     "mkdocs-material>=9.6.20",
     "mkdocstrings-python>=1.18.2",
     "ruff>=0.13.2",
+]
+bench = [
+    "numpy>=2",
+    "pytest-codspeed>=5.0.4",
 ]
 
 [project.urls]
@@ -139,7 +144,11 @@ skip-magic-trailing-comma = false # default is false
 # https://docs.pytest.org/
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = ["--color=yes", "--ignore=tests/test_realworld.py"]
+addopts = [
+    "--color=yes",
+    "--ignore=tests/test_realworld.py",
+    "--ignore=tests/benchmarks",
+]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 

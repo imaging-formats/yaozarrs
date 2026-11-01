@@ -5,6 +5,7 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/yaozarrs.svg?color=green)](https://python.org)
 [![CI](https://github.com/imaging-formats/yaozarrs/actions/workflows/ci.yml/badge.svg)](https://github.com/imaging-formats/yaozarrs/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/imaging-formats/yaozarrs/branch/main/graph/badge.svg)](https://codecov.io/gh/imaging-formats/yaozarrs)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/imaging-formats/yaozarrs?utm_source=badge)
 
 ***Yet Another Ome-ZARR Schema!***
 

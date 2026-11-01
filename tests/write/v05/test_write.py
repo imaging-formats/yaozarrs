@@ -342,18 +342,42 @@ def test_write_image_dask_misaligned_chunks(
     np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
 
 
+@pytest.mark.skipif("tensorstore" not in WRITERS, reason="needs tensorstore")
+def test_write_dask_tensorstore_streams(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A dask array is written to tensorstore block by block, not computed whole."""
+    da = pytest.importorskip("dask.array")
+    ref = np.random.randint(1, 1000, size=(16, 64, 64)).astype("uint16")
+    data = da.from_array(ref, chunks=(4, 64, 64))
+
+    def _no_compute(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("the whole dask array was computed")
+
+    monkeypatch.setattr(da.Array, "compute", _no_compute)
+    dest = write_image(
+        tmp_path / "dask.zarr",
+        _make_image("dask_test", {"z": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[data],
+        chunks=(4, 32, 32),
+        writer="tensorstore",
+    )
+    zarr = pytest.importorskip("zarr")
+    np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
+
+
 @pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_dask_streams_only_to_zarr(
+def test_write_image_dask_streams_to_backends(
     tmp_path: Path, writer: ZarrWriter, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Real zarr arrays keep writing dask chunks lazily, without computing it all."""
+    """zarr and tensorstore arrays get dask chunks lazily, without computing it all."""
     da = pytest.importorskip("dask.array")
     store = Mock(wraps=da.store)
     monkeypatch.setattr(da, "store", store)
     dest = tmp_path / "dask.zarr"
     ref = np.random.randint(1, 1000, size=(8, 16)).astype("uint16")
     write_image(dest, _make_yx_image(), _as_input("dask", ref), writer=writer)
-    assert store.called == (writer == "zarr")
+    assert store.called
     zarr = pytest.importorskip("zarr")
     np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
 
