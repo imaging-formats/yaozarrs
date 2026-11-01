@@ -422,6 +422,29 @@ V04_INVALID_PLATES_WITH_MESSAGES: list[tuple[dict, str]] = [
         },
         "greater than 0",
     ),
+    # Well path doesn't match its row/column pair (column before row)
+    (
+        {
+            "plate": {
+                "rows": [{"name": "A"}],
+                "columns": [{"name": "1"}],
+                "wells": [{"path": "1/A", "rowIndex": 0, "columnIndex": 0}],
+            }
+        },
+        "Well path '1/A' does not match",
+    ),
+    # Duplicate acquisition ids
+    (
+        {
+            "plate": {
+                "rows": [{"name": "A"}],
+                "columns": [{"name": "1"}],
+                "wells": [{"path": "A/1", "rowIndex": 0, "columnIndex": 0}],
+                "acquisitions": [{"id": 0}, {"id": 0}],
+            }
+        },
+        "Acquisition ids must be unique",
+    ),
 ]
 
 # Combine all invalid cases with specific error messages

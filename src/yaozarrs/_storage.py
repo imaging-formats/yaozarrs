@@ -53,6 +53,14 @@ def validate_zarr_store(
     """
     zarr_group = open_group(obj)
     ome_version = zarr_group.ome_version()
+    if not ome_version and "ome" in zarr_group.attrs:
+        # (OME metadata, so an invalid OME-Zarr group rather than not one at all)
+        error = ValidationResult().add_error(
+            StorageErrorType.version_missing,
+            ("ome", "version"),
+            "The OME metadata must declare its 'version'",
+        )
+        raise StorageValidationError(error.errors)
     if not ome_version:
         raise ValueError(
             f"Unable to determine OME-Zarr version for {zarr_group}. "
@@ -367,6 +375,7 @@ class StorageErrorType(Enum):
     transform_parameters_location = auto()
     transform_parameters_not_found = auto()
     unsupported_version = auto()
+    version_missing = auto()
     well_invalid = auto()
     well_path_not_found = auto()
     well_path_not_group = auto()
