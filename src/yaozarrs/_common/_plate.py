@@ -133,8 +133,9 @@ def check_unique_rows_columns_wells(
     for kind, items in (("column", columns), ("row", rows)):
         if dupes := duplicates([x.name for x in items]):
             raise ValueError(f"Plate {kind} names must be unique. Duplicates: {dupes}")
-    # (no two wells may be equal (uniqueItems), and as a well's path must refer to
-    # the same row/column pair as its indices, that means unique paths)
+    # (no two wells may be equal (uniqueItems).  Ignoring unknown keys, which the
+    # models drop, a well's path and indices must refer to the same row/column pair,
+    # so equal paths mean equal wells)
     if dupes := duplicates([well.path for well in wells]):
         raise ValueError(f"Well paths must be unique. Duplicates: {dupes}")
 
@@ -171,11 +172,6 @@ class PlateDef(_BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_unique(self) -> Self:
-        check_unique_rows_columns_wells(self.rows, self.columns, self.wells)
-        return self
-
-    @model_validator(mode="after")
     def _validate_well_indices(self) -> Self:
         for well in self.wells:
             if well.rowIndex >= len(self.rows):
@@ -198,6 +194,11 @@ class PlateDef(_BaseModel):
                     f"({well.rowIndex}) and columnIndex ({well.columnIndex}), "
                     f"which refer to '{row}/{col}'"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_unique(self) -> Self:
+        check_unique_rows_columns_wells(self.rows, self.columns, self.wells)
         return self
 
     @model_validator(mode="after")

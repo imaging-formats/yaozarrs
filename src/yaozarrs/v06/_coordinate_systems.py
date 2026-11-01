@@ -3,7 +3,7 @@ from typing import Annotated, TypeAlias
 from pydantic import AfterValidator, Field
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._types import UNIQUE_ITEMS, duplicates
+from yaozarrs._types import duplicates
 
 from ._axes import AxesList
 
@@ -36,8 +36,8 @@ def _validate_names(systems: list[CoordinateSystem]) -> list[CoordinateSystem]:
     return systems
 
 
+# (unique names imply uniqueItems, which coordinate_systems.schema declares, but
+# image.schema doesn't for a multiscale's coordinateSystems; see `SceneDef`)
 CoordinateSystemsList: TypeAlias = Annotated[
-    list[CoordinateSystem],
-    UNIQUE_ITEMS,  # (implied by the unique names)
-    AfterValidator(_validate_names),
+    list[CoordinateSystem], AfterValidator(_validate_names)
 ]

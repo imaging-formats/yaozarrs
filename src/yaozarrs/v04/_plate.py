@@ -167,11 +167,6 @@ class PlateDef(_BaseModel):
     version: Literal["0.4"] = "0.4"
 
     @model_validator(mode="after")
-    def _validate_unique(self) -> Self:
-        check_unique_rows_columns_wells(self.rows, self.columns, self.wells)
-        return self
-
-    @model_validator(mode="after")
     def _validate_well_indices(self) -> Self:
         for well in self.wells:
             if well.rowIndex >= len(self.rows):
@@ -184,6 +179,11 @@ class PlateDef(_BaseModel):
                     f"Well {well.path} has columnIndex {well.columnIndex} "
                     f"but only {len(self.columns)} columns exist"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_unique(self) -> Self:
+        check_unique_rows_columns_wells(self.rows, self.columns, self.wells)
         return self
 
 
