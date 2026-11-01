@@ -250,3 +250,27 @@ def test_not_a_model(tmp_path: Path) -> None:
     not_a_plate: Any = "A/1"
     with pytest.raises(TypeError, match=r"plate: expected a v05\.Plate, got str"):
         write_v05.PlateBuilder(tmp_path / "p.zarr", plate=not_a_plate)
+
+
+@pytest.mark.parametrize(("mod", "good", "bad", "plate", "version"), CASES, ids=IDS)
+def test_data_checked_before_writing(
+    tmp_path: Path,
+    mod: ModuleType,
+    good: Callable[[], Any],
+    bad: Any,
+    plate: Any,
+    version: str,
+) -> None:
+    dest = tmp_path / "out.zarr"
+    # data with the wrong number of dimensions for the axes
+    with pytest.raises(ValueError, match=r"has 3 dimensions .*, but the image has 2"):
+        mod.write_image(dest, good(), np.zeros((1, 4, 4), "uint8"))
+    with pytest.raises(ValueError, match=r"has 1 dimensions .*, but the image has 2"):
+        mod.prepare_image(dest, good(), ((4,), "uint8"))
+    # The pixels of the label images MUST be integer data types
+    labels = {"cells": (good(), np.zeros((4, 4), "float32"))}
+    with pytest.raises(ValueError, match="MUST have an integer data type, got float32"):
+        mod.write_image(dest, good(), DATA, labels=labels)
+    with pytest.raises(ValueError, match="integer data type"):
+        mod.LabelsBuilder(dest / "labels").add_label("x", good(), ((4, 4), "float64"))
+    assert not dest.exists()
