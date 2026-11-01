@@ -87,6 +87,7 @@ old_docs = [
     "ruff>=0.13.2",
 ]
 bench = [
+    "numpy>=2",
     "pytest-codspeed>=5.0.4",
 ]
 

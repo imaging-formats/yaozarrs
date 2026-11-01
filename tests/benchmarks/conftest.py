@@ -6,9 +6,12 @@ import importlib.util
 import json
 import shutil
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # The benchmarks rely on the `benchmark` fixture from pytest-codspeed
 # (`uv run --group bench ...`).  Skip them when it isn't installed, so that

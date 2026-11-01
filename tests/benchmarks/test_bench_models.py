@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -12,11 +12,13 @@ from yaozarrs import (
     ConversionWarning,
     DimSpec,
     convert_version,
-    v04,
     v05,
     v06,
     validate_ome_json,
 )
+
+if TYPE_CHECKING:
+    from pytest_codspeed import BenchmarkFixture
 
 DATA = Path(__file__).parent.parent / "data"
 
@@ -29,17 +31,18 @@ DIMS = [
 ]
 
 
-@pytest.mark.parametrize("module", [v04, v05, v06], ids=["v04", "v05", "v06"])
-def test_multiscale_from_dims(benchmark, module) -> None:
+# (v04 and v05 share their from_dims implementation)
+@pytest.mark.parametrize("module", [v05, v06], ids=["v05", "v06"])
+def test_multiscale_from_dims(benchmark: BenchmarkFixture, module: Any) -> None:
     """Build a 5D image with a 5-level pyramid from dimension specs."""
 
-    def build():
+    def build() -> Any:
         return module.Image(multiscales=[module.Multiscale.from_dims(DIMS, n_levels=5)])
 
     benchmark(build)
 
 
-def test_construct_v05_group(benchmark) -> None:
+def test_construct_v05_group(benchmark: BenchmarkFixture) -> None:
     """Build a v0.5 zarr.json document from explicit models (as in the README)."""
 
     def build() -> str:
@@ -67,13 +70,9 @@ def test_construct_v05_group(benchmark) -> None:
 
 
 CONVERSIONS = [
-    ("v04/2551.zarr/A/2/2/.zattrs", "0.6"),
-    ("v04/2551.zarr/.zattrs", "0.5"),
-    ("v05/9822152.zarr/zarr.json", "0.6"),
-    ("v05/9822152.zarr/zarr.json", "0.4"),
-    ("v05/76-45.ome.zarr/zarr.json", "0.6"),
-    ("v06/image_transforms.ome.zarr/zarr.json", "0.5"),
-    ("v06/plate.ome.zarr/zarr.json", "0.4"),
+    ("v04/2551.zarr/A/2/2/.zattrs", "0.6"),  # up two versions
+    ("v05/76-45.ome.zarr/zarr.json", "0.6"),  # large plate
+    ("v06/image_transforms.ome.zarr/zarr.json", "0.5"),  # down, dropping transforms
 ]
 
 
@@ -82,11 +81,11 @@ CONVERSIONS = [
     CONVERSIONS,
     ids=[f"{d.split('/')[0]}-{d.split('/')[1]}-to-{v}" for d, v in CONVERSIONS],
 )
-def test_convert_version(benchmark, doc: str, version: Any) -> None:
+def test_convert_version(benchmark: BenchmarkFixture, doc: str, version: Any) -> None:
     """Convert a validated model to another version of the spec."""
     obj = validate_ome_json((DATA / doc).read_text())
 
-    def convert():
+    def convert() -> Any:
         # metadata that the target can't express is dropped with a warning
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ConversionWarning)
