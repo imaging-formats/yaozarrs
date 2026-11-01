@@ -22,3 +22,32 @@ fail  validate_zarr/v0.4/core/invalid/plate/well_path_has_column_before_row
 
 # Bug: v0.6 scene without a `version` is accepted.
 fail  parse_attributes/v0.6/core/invalid/scene/missing_version
+
+# Questionable case: the vector field's multiscale has 3 axes (vector, y, x) but a
+# 2-value `scale`, which breaks "MUST equal the length of the `scale` array".  The
+# spec's own example (examples/transformations/displacements/displacement_field.json)
+# does the same.
+fail  validate_zarr/v0.6/transform_coordinates/valid/transforms/coordinates
+fail  validate_zarr/v0.6/transform_coordinates/valid/transforms/coordinates_interp
+fail  validate_zarr/v0.6/transform_displacements/valid/transforms/displacements
+fail  validate_zarr/v0.6/transform_displacements/valid/transforms/displacements_interp
+
+# Policy: the `strict` profile uses the strict schemas, which make SHOULD fields
+# required (acquisition `name`/`maximumfieldcount`, plate `name`, and in v0.4 the
+# plate/well `version`).  A missing SHOULD field isn't an error here.
+fail  parse_attributes/v0.4/strict/invalid/plate/missing_acquisition_maximumfieldcount
+fail  parse_attributes/v0.4/strict/invalid/plate/missing_acquisition_name
+fail  parse_attributes/v0.4/strict/invalid/plate/missing_name
+fail  parse_attributes/v0.4/strict/invalid/plate/missing_version
+fail  parse_attributes/v0.4/strict/invalid/well/missing_version
+fail  parse_attributes/v0.5/strict/invalid/plate/missing_acquisition_maximumfieldcount
+fail  parse_attributes/v0.5/strict/invalid/plate/missing_acquisition_name
+fail  parse_attributes/v0.5/strict/invalid/plate/missing_name
+fail  parse_attributes/v0.6/strict/invalid/plate/missing_acquisition_maximumfieldcount
+fail  parse_attributes/v0.6/strict/invalid/plate/missing_acquisition_name
+fail  parse_attributes/v0.6/strict/invalid/plate/missing_name
+
+# Questionable case: dataset `path: "1"` with `input.path: "s1"` (a half-done rename;
+# the spec's published example uses "s1" for both), which breaks "The `input` object
+# MUST specify a `path` field matching the `path` field of the dataset".
+fail  parse_attributes/v0.6/strict/valid/image/multiscales_example
