@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import AfterValidator, Field, WrapValidator, model_validator
+from pydantic import AfterValidator, Field, model_validator
 from typing_extensions import Self
 
 from yaozarrs._axis import AxesList
@@ -201,12 +201,11 @@ def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
 
 
 DatasetsList: TypeAlias = Annotated[
-    UniqueList[Dataset],
+    list[Dataset],
     # NOTE: the MinLen(1) constraint comes from the image.schema,
     # but is not mentioned in the spec.
     MinLen(1),
-    # hack to get around ordering of multiple after validators
-    WrapValidator(lambda v, h: _validate_datasets_list(h(v))),
+    AfterValidator(_validate_datasets_list),
 ]
 
 # ------------------------------------------------------------------------------

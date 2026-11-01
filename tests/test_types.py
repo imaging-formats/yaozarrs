@@ -111,12 +111,13 @@ def test_int_keyed_and_str_keyed_mappings_differ() -> None:
 
 
 def test_unorderable_mapping_keys() -> None:
-    assert Basic(items=[{1: "a", "b": 2}]).items == [{1: "a", "b": 2}]
+    items = [{1: "a", "b": 2}, {"b": 2}]
+    assert Basic(items=items).items == items
 
 
 def test_unsupported_type_raises_type_error() -> None:
     with pytest.raises(TypeError, match="Unsupported type for JSON equivalence"):
-        Basic(items=[{1, 2}])
+        Basic(items=[{1, 2}, {3}])
 
 
 # --- performance ----------------------------------------------------------------

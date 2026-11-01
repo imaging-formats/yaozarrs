@@ -5,6 +5,7 @@ from pydantic import Field, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
+from yaozarrs._types import UNIQUE_ITEMS
 
 from ._coordinate_systems import CoordinateSystemsList
 from ._transforms import (
@@ -52,7 +53,7 @@ class SceneDef(_BaseModel):
     )
     # It MAY contain the field `coordinateSystems`, whose values MUST be an array of
     # valid coordinate systems.
-    coordinateSystems: CoordinateSystemsList | None = Field(
+    coordinateSystems: Annotated[CoordinateSystemsList, UNIQUE_ITEMS] | None = Field(
         default=None,
         description=(
             "Coordinate systems defined by the scene itself (the first one is "
