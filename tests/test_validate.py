@@ -134,6 +134,41 @@ def test_unknown_version_is_rejected(obj: dict) -> None:
     assert exc_info.value.errors()[0]["type"] == "union_tag_invalid"
 
 
+PLATE = {k: v for k, v in V05_PLATE.items() if k != "version"}
+
+
+@pytest.mark.parametrize(
+    "obj, loc",
+    [
+        ({"ome": PLATE}, ("ome", "version")),
+        (_zarr_json(PLATE), ("attributes", "ome", "version")),
+        ({"ome": {k: v for k, v in V06_IMAGE.items() if k != "version"}}, None),
+    ],
+    ids=["attributes", "zarr.json", "v06-image"],
+)
+def test_missing_version_is_not_guessed(obj: dict, loc: tuple | None) -> None:
+    # (a plate is the same in v0.5 and v0.6, so it used to pass as the first of them)
+    with pytest.raises(ValidationError) as from_dict:
+        yaozarrs.validate_ome_object(obj)
+    with pytest.raises(ValidationError) as from_json:
+        yaozarrs.validate_ome_json(json.dumps(obj))
+    for exc_info in (from_dict, from_json):
+        errors = exc_info.value.errors()
+        assert len(errors) == 1  # (not one per version's models)
+        assert errors[0]["type"] == "missing_version"
+        assert errors[0]["loc"] == (loc or ("ome", "version"))
+
+
+def test_documents_valid_without_version() -> None:
+    # v0.4 metadata doesn't need a version, nor does a v0.5 labels group
+    assert isinstance(yaozarrs.validate_ome_object(PLATE), v04.Plate)
+    labels = yaozarrs.validate_ome_object({"ome": {"labels": ["cells"]}})
+    assert isinstance(labels, v05.OMEAttributes)
+    # and models of a given version fill it in
+    assert v06.Plate.model_validate(PLATE).version == "0.6"
+    assert yaozarrs.validate_ome_object(PLATE, v05.Plate).version == "0.5"
+
+
 @pytest.mark.parametrize(
     "obj",
     [

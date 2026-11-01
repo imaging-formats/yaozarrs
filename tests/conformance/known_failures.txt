@@ -13,9 +13,6 @@ fail  parse_attributes/v0.6/core/valid/label/minimal_properties
 fail  parse_attributes/v0.6/core/invalid/image/invalid_multiscale_transform_output
 fail  parse_attributes/v0.6/core/invalid/image/invalid_multiscale_transform_input_output
 
-# Bug: v0.6 scene without a `version` is accepted.
-fail  parse_attributes/v0.6/core/invalid/scene/missing_version
-
 # Questionable case: the vector field's multiscale has 3 axes (vector, y, x) but a
 # 2-value `scale`, which breaks "MUST equal the length of the `scale` array".  The
 # spec's own example (examples/transformations/displacements/displacement_field.json)

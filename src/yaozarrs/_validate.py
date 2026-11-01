@@ -1,11 +1,16 @@
+import json
 import os
-from typing import Annotated, Any, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, TypeAlias, TypeVar, overload
 
-from pydantic import Discriminator, Tag, TypeAdapter
+from pydantic import Discriminator, Tag, TypeAdapter, ValidationError
+from pydantic_core import PydanticCustomError
 
 from . import v04, v05, v06
-from ._base import type_adapter
+from ._base import MISSING_VERSION, REQUIRE_VERSION, type_adapter
 from .v06._version import VERSIONS as V06_VERSIONS
+
+if TYPE_CHECKING:
+    from pydantic_core import InitErrorDetails
 
 AnyOMEGroup: TypeAlias = (
     v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON
@@ -87,6 +92,31 @@ _AnyOMEByVersion: TypeAlias = Annotated[
 ]
 
 
+# The version-independent functions can't guess a document's version: the v0.5 and
+# v0.6 models would each fill in their own, so every document they share (e.g. a
+# plate) would pass as the first of them.  They require it instead (as every
+# document validated from JSON must), which still leaves the documents that don't
+# need one: v0.4 metadata, and v0.5 labels groups.
+_CONTEXT = {REQUIRE_VERSION: True}
+
+
+def _missing_version_error(obj: Any) -> ValidationError | None:
+    """A single error for an `ome` object without a version (instead of one per model).
+
+    `obj` can be a zarr.json document or its attributes.
+    """
+    loc: tuple[str, ...] = ("ome",)
+    if isinstance(obj, dict) and isinstance(obj.get("attributes"), dict):
+        obj, loc = obj["attributes"], ("attributes", "ome")
+    if not isinstance(obj, dict) or not isinstance(ome := obj.get("ome"), dict):
+        return None
+    if "version" in ome:
+        return None
+    error = PydanticCustomError("missing_version", MISSING_VERSION)
+    line: InitErrorDetails = {"type": error, "loc": (*loc, "version"), "input": ome}
+    return ValidationError.from_exception_data("OME metadata", [line])
+
+
 @overload
 def validate_ome_object(
     node: Any, cls: type[T], *, strict: bool | None = None
@@ -97,6 +127,10 @@ def validate_ome_object(
     node: Any, cls: type[T] | Any = None, *, strict: bool | None = None
 ) -> T | AnyOME:
     """Validate any python object representing an OME-Zarr document or node.
+
+    Without `cls`, a v0.5 or v0.6 document must declare its `version` (as the spec
+    requires): it can't be guessed, since many documents are the same in both.  With
+    a `cls` of a given version (e.g. `v06.Plate`), a missing version is filled in.
 
     Parameters
     ----------
@@ -119,8 +153,15 @@ def validate_ome_object(
     pydantic.ValidationError
         If the validation fails.
     """
-    adapter: TypeAdapter[T | AnyOME] = type_adapter(cls or _AnyOMEByVersion)
-    return adapter.validate_python(node, strict=strict)
+    if cls is not None:
+        return type_adapter(cls).validate_python(node, strict=strict)
+    adapter: TypeAdapter[AnyOME] = type_adapter(_AnyOMEByVersion)
+    try:
+        return adapter.validate_python(node, strict=strict, context=_CONTEXT)
+    except ValidationError:
+        if error := _missing_version_error(node):
+            raise error from None
+        raise
 
 
 @overload
@@ -143,7 +184,8 @@ def validate_ome_json(
     This includes ome-zarr group documents for v04 (found at .zattrs in the zarr group)
     and v05/v06 (found at zarr.json in the zarr group).  For v05 and v06 objects, it
     also detects data that would be valid as the value of the
-    `data["attributes"]["ome"]` key inside a zarr.json document.
+    `data["attributes"]["ome"]` key inside a zarr.json document.  A v0.5 or v0.6
+    document must declare its `version`.
 
     Parameters
     ----------
@@ -166,8 +208,19 @@ def validate_ome_json(
     pydantic.ValidationError
         If the validation fails.
     """
-    adapter: TypeAdapter[T | AnyOME] = type_adapter(cls or _AnyOMEByVersion)
-    return adapter.validate_json(data, strict=strict)
+    if cls is not None:
+        return type_adapter(cls).validate_json(data, strict=strict)
+    adapter: TypeAdapter[AnyOME] = type_adapter(_AnyOMEByVersion)
+    try:
+        return adapter.validate_json(data, strict=strict)
+    except ValidationError:
+        try:
+            error = _missing_version_error(json.loads(data))
+        except ValueError:  # (not JSON)
+            error = None
+        if error:
+            raise error from None
+        raise
 
 
 @overload
