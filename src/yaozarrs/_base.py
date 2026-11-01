@@ -32,7 +32,7 @@ def type_adapter(tp: Any) -> TypeAdapter[Any]:
     """Return a TypeAdapter for `tp`, cached (building one rebuilds its schema)."""
     try:
         return _cached_type_adapter(tp)
-    except TypeError:  # (unhashable type expression)
+    except TypeError:  # pragma: no cover  (unhashable type expression)
         return TypeAdapter(tp)
 
 
