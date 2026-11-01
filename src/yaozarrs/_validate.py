@@ -4,6 +4,7 @@ from typing import Annotated, Any, TypeAlias, TypeVar, overload
 from pydantic import Discriminator, Tag, TypeAdapter
 
 from . import v04, v05, v06
+from ._base import type_adapter
 from .v06._version import VERSIONS as V06_VERSIONS
 
 AnyOMEGroup: TypeAlias = (
@@ -118,7 +119,7 @@ def validate_ome_object(
     pydantic.ValidationError
         If the validation fails.
     """
-    adapter: TypeAdapter[T | AnyOME] = TypeAdapter(cls or _AnyOMEByVersion)
+    adapter: TypeAdapter[T | AnyOME] = type_adapter(cls or _AnyOMEByVersion)
     return adapter.validate_python(node, strict=strict)
 
 
@@ -165,7 +166,7 @@ def validate_ome_json(
     pydantic.ValidationError
         If the validation fails.
     """
-    adapter: TypeAdapter[T | AnyOME] = TypeAdapter(cls or _AnyOMEByVersion)
+    adapter: TypeAdapter[T | AnyOME] = type_adapter(cls or _AnyOMEByVersion)
     return adapter.validate_json(data, strict=strict)
 
 

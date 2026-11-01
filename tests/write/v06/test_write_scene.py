@@ -291,7 +291,9 @@ def test_write_scene_checks_before_writing(tmp_path: Path) -> None:
     dest = tmp_path / "s.zarr"
     # (the second image's data doesn't match its axes)
     images = {"a": (_image(), DATA), "b": (_image(), np.zeros((2, 16, 16)))}
-    with pytest.raises(ValueError, match="'0' has 3 dimensions, but the image has 2"):
+    with pytest.raises(
+        ValueError, match=r"'0' has 3 dimensions .*, but the image has 2 axes"
+    ):
         write_scene(dest, scene, images)
     bogus: Any = "?"
     with pytest.raises(ValueError, match="Unknown writer"):

@@ -23,8 +23,11 @@ def _canonical_key(x: Any) -> Hashable:
         # class identity is part of the key because BaseModel.__eq__ compares
         # classes; the fully qualified name keeps same-named models in different
         # modules distinct (e.g. v04.Column vs v05.Column).
+        # (the pydantic-core serializer directly: model_dump_json's Python wrappers
+        # cost more than the serialization itself)
         cls = type(x)
-        return ("model", f"{cls.__module__}.{cls.__qualname__}", x.model_dump_json())
+        dump = cls.__pydantic_serializer__.to_json(x, exclude_none=True)
+        return ("model", f"{cls.__module__}.{cls.__qualname__}", dump)
     if isinstance(x, BASIC_TYPES):
         # returned bare: dict lookup uses hash/__eq__, so numeric equivalences
         # (1 == 1.0 == True) collapse just as `a == b` did.
