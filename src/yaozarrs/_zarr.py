@@ -34,12 +34,12 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    TypeAdapter,
     ValidationError,
     model_validator,
 )
 
 from yaozarrs import v04, v05, v06
+from yaozarrs._base import type_adapter
 from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
@@ -176,15 +176,15 @@ class ZarrMetadata(BaseModel):
         if version in (*V06_VERSIONS, "0.5") and "ome" not in attrs:
             return None
         if version in V06_VERSIONS:
-            return TypeAdapter(v06.OMEMetadata).validate_python(
+            return type_adapter(v06.OMEMetadata).validate_python(
                 attrs["ome"], strict=strict
             )
         elif version == "0.5":
-            return TypeAdapter(v05.OMEMetadata).validate_python(
+            return type_adapter(v05.OMEMetadata).validate_python(
                 attrs["ome"], strict=strict
             )
         elif version == "0.4":
-            return TypeAdapter(v04.OMEZarrGroupJSON).validate_python(
+            return type_adapter(v04.OMEZarrGroupJSON).validate_python(
                 attrs, strict=strict
             )
         elif version:
@@ -195,7 +195,7 @@ class ZarrMetadata(BaseModel):
             # to determine version for sure without traversing the tree.
             # so we just try to fallback to v4 if no version has been specified/parsed.
             with suppress(ValidationError):
-                return TypeAdapter(v04.Bf2Raw).validate_python(attrs, strict=strict)
+                return type_adapter(v04.Bf2Raw).validate_python(attrs, strict=strict)
         return None
 
     def _guess_ome_version(self) -> str | None:

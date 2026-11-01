@@ -1,11 +1,6 @@
 """Yet another ome-zarr model."""
 
-from importlib.metadata import PackageNotFoundError, version
-
-try:
-    __version__ = version("yaozarrs")
-except PackageNotFoundError:  # pragma: no cover
-    __version__ = "uninstalled"
+from typing import Any
 
 from . import v04, v05, v06
 from ._convert import ConversionWarning, convert_version
@@ -28,3 +23,15 @@ __all__ = [
     "validate_ome_uri",
     "validate_zarr_store",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    # (lazily: importing importlib.metadata costs ~15 ms, ~15% of `import yaozarrs`)
+    if name == "__version__":
+        from importlib.metadata import PackageNotFoundError, version
+
+        try:
+            return version("yaozarrs")
+        except PackageNotFoundError:  # pragma: no cover
+            return "uninstalled"
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

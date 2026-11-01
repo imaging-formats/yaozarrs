@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import (
@@ -7,6 +8,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    TypeAdapter,
     model_serializer,
     model_validator,
 )
@@ -14,7 +16,7 @@ from pydantic import (
 if TYPE_CHECKING:
     from pydantic import SerializerFunctionWrapHandler, ValidationInfo
 
-__all__ = ["_BaseModel", "_OMEDocument"]
+__all__ = ["_BaseModel", "_OMEDocument", "type_adapter"]
 
 # populate_by_name is deprecated in pydantic v2.11+ (removed in v3).
 # For >=2.11 use validate_by_name + validate_by_alias instead.
@@ -24,6 +26,19 @@ _by_name_cfg: dict = (
     if _PYDANTIC_V2_11
     else {"populate_by_name": True}
 )
+
+
+def type_adapter(tp: Any) -> TypeAdapter[Any]:
+    """Return a TypeAdapter for `tp`, cached (building one rebuilds its schema)."""
+    try:
+        return _cached_type_adapter(tp)
+    except TypeError:  # (unhashable type expression)
+        return TypeAdapter(tp)
+
+
+@functools.cache
+def _cached_type_adapter(tp: Any) -> TypeAdapter[Any]:
+    return TypeAdapter(tp)
 
 
 class _BaseModel(BaseModel):

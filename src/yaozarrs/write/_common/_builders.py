@@ -65,8 +65,8 @@ def _check_image_args(
     """Check an image and its datasets, before anything is written.
 
     Returns its multiscale, and `datasets` (array-like data or (shape, dtype) specs)
-    as a sequence.  `chunks` and `shards`, if given, must have one entry per dimension
-    of each dataset.
+    as a sequence.  Each dataset must have one dimension per axis, and `chunks` and
+    `shards`, if given, one entry per dimension.
     """
     _check_model(image, image_type, context)
     if len(image.multiscales) != 1:
@@ -86,8 +86,14 @@ def _check_image_args(
             f"number of datasets in metadata ({len(multiscale.datasets)})"
         )
 
+    ndim = len(multiscale.axes)
     for item, dataset in zip(cast("Sequence[Any]", datasets_seq), multiscale.datasets):
         shape = tuple(item.shape if hasattr(item, "shape") else item[0])
+        if len(shape) != ndim:
+            raise ValueError(
+                f"{context}dataset '{dataset.path}' has {len(shape)} dimensions "
+                f"{shape}, but the image has {ndim} axes."
+            )
         for option, value in (("chunks", chunks), ("shards", shards)):
             if value not in (None, "auto") and len(value) != len(shape):
                 raise ValueError(
@@ -97,6 +103,19 @@ def _check_image_args(
                 )
 
     return multiscale, datasets_seq
+
+
+def _check_label_dtypes(datasets_seq: Sequence[Any], context: str) -> None:
+    # The pixels of the label images MUST be integer data types
+    import numpy as np
+
+    for item in datasets_seq:
+        dtype = item.dtype if hasattr(item, "dtype") else item[1]
+        if np.dtype(dtype).kind not in "iu":
+            raise ValueError(
+                f"{context}label images MUST have an integer data type, "
+                f"got {np.dtype(dtype)}."
+            )
 
 
 def _prepare_image(
@@ -171,14 +190,11 @@ def _write_image(
         image, datasets, image_type, chunks=chunks, shards=shards
     )
     for label_name, (label_image, label_datasets) in (labels or {}).items():
-        _check_image_args(
-            label_image,
-            label_datasets,
-            image_type,
-            f"Label '{label_name}': ",
-            chunks,
-            shards,
+        context = f"Label '{label_name}': "
+        _, label_seq = _check_image_args(
+            label_image, label_datasets, image_type, context, chunks, shards
         )
+        _check_label_dtypes(label_seq, context)
 
     # Extract specs from arrays for prepare_image
     specs: list[ShapeAndDType] = [(arr.shape, arr.dtype) for arr in datasets_seq]
@@ -634,6 +650,7 @@ class PlateBuilderBase(Generic[Image]):
 
         # For immediate write workflow
         self._initialized = False
+        self._plate_written = False
         # Track written wells: {(row, col): {fov: (Image, datasets)}}
         self._written_wells_data: dict[
             tuple[str, str], dict[str, ImageWithDatasets]
@@ -943,6 +960,9 @@ class PlateBuilderBase(Generic[Image]):
         Similar to Bf2RawBuilder._update_ome_series(), this regenerates
         the plate metadata from currently written wells and rewrites zarr.json.
         """
+        # (a given Plate doesn't change: rewriting it after every well is O(n^2))
+        if self._user_plate is not None and self._plate_written:
+            return
         plate = self._generate_current_plate_metadata()
         zarr_json = {
             "zarr_format": 3,
@@ -953,6 +973,7 @@ class PlateBuilderBase(Generic[Image]):
             },
         }
         (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
+        self._plate_written = True
 
     def _create_well_group(self, well_path: str, field_names: list[str]) -> Path:
         """Create the group for well ``well_path`` ("A/1") and the row group above it.
@@ -1077,7 +1098,7 @@ class LabelsBuilderBase(Generic[LabelImage]):
             If the LabelImage has multiple multiscales.
         """
         self._validate_label_name(name)
-        _check_image_args(
+        _, datasets_seq = _check_image_args(
             label_image,
             datasets,
             self._image_type,
@@ -1085,6 +1106,7 @@ class LabelsBuilderBase(Generic[LabelImage]):
             self._chunks,
             self._shards,
         )
+        _check_label_dtypes(datasets_seq, f"Label '{name}': ")
 
         # Initialize labels group structure if needed
         self._ensure_initialized()
@@ -1155,6 +1177,7 @@ class LabelsBuilderBase(Generic[LabelImage]):
             self._chunks,
             self._shards,
         )
+        _check_label_dtypes(specs_seq, f"Label '{name}': ")
         self._labels[name] = (label_image, specs_seq)
         return self
 
