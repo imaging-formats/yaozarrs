@@ -598,8 +598,7 @@
             "$ref": "#/$defs/Dataset"
           },
           "minItems": 1,
-          "type": "array",
-          "uniqueItems": true
+          "type": "array"
         },
         "coordinateTransformations": {
           "anyOf": [

@@ -2,16 +2,16 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Len
 from pydantic import (
+    AfterValidator,
     Discriminator,
     Field,
     Tag,
-    WrapValidator,
     model_validator,
 )
 
 from ._base import _BaseModel
 from ._common._units import SpaceUnits, TimeUnits
-from ._types import UniqueList
+from ._types import UNIQUE_ITEMS
 
 
 class _AxisBase(_BaseModel):
@@ -137,8 +137,8 @@ def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
 
 
 AxesList: TypeAlias = Annotated[
-    UniqueList[Axis],
+    list[Axis],
+    UNIQUE_ITEMS,  # (implied by the unique names)
     Len(min_length=2, max_length=5),
-    # hack to get around ordering of multiple after validators
-    WrapValidator(lambda v, h: _validate_axes_list(h(v))),
+    AfterValidator(_validate_axes_list),
 ]

@@ -392,7 +392,7 @@ V05_INVALID_PLATES: list[tuple[dict, str]] = [
         },
         "Input should be greater than or equal to 0",
     ),
-    # Duplicate columns (UniqueList violation)
+    # Duplicate columns
     (
         {
             "version": "0.5",
@@ -402,9 +402,9 @@ V05_INVALID_PLATES: list[tuple[dict, str]] = [
                 "wells": [WELL_A01],
             },
         },
-        "List items are not unique",
+        "Plate column names must be unique",
     ),
-    # Duplicate rows (UniqueList violation)
+    # Duplicate rows
     (
         {
             "version": "0.5",
@@ -414,9 +414,9 @@ V05_INVALID_PLATES: list[tuple[dict, str]] = [
                 "wells": [WELL_A01],
             },
         },
-        "List items are not unique",
+        "Plate row names must be unique",
     ),
-    # Duplicate wells (UniqueList violation)
+    # Duplicate wells
     (
         {
             "version": "0.5",
@@ -426,7 +426,7 @@ V05_INVALID_PLATES: list[tuple[dict, str]] = [
                 "wells": [WELL_A01, WELL_A01],  # duplicate
             },
         },
-        "List items are not unique",
+        "Well paths must be unique",
     ),
     # path doesn't match rowIndex/columnIndex
     (

@@ -174,7 +174,7 @@ V05_INVALID_IMAGES: list[tuple[dict, str]] = [
                 }
             ],
         },
-        "List items are not unique",
+        "Axis names must be unique",
     ),
     # Test different axes with same names (caught by custom name validation)
     (
@@ -461,23 +461,6 @@ V05_INVALID_IMAGES: list[tuple[dict, str]] = [
             ],
         },
         r"The length of the transformation \(3\) does not match the number of axes",
-    ),
-    # Test duplicate datasets (UniqueList violation)
-    (
-        {
-            "version": "0.5",
-            "multiscales": [
-                {
-                    "axes": [X_AXIS, Y_AXIS],
-                    "datasets": [
-                        # duplicates
-                        {"path": "0", "coordinateTransformations": [scale_tform(2)]},
-                        {"path": "0", "coordinateTransformations": [scale_tform(2)]},
-                    ],
-                }
-            ],
-        },
-        "List items are not unique",
     ),
     # Test duplicate multiscales (UniqueList violation)
     (
