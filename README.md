@@ -266,65 +266,11 @@ yaozarrs.validate_zarr_store(
 
 ### Validate without `fsspec`, doing the IO yourself
 
-Validation never reads array data, and only the parts that compare documents need to
-read anything at all:
-
-| What is validated | How | IO |
-| --- | --- | --- |
-| Fields, and the consistency of one document | `validate_ome_json`, `validate_ome_object`, or the models directly | None: you pass in the document |
-| Consistency across a hierarchy of documents | `validate_zarr_store` | Metadata only: `fsspec`, or a mapping that you provide |
-| Values stored in arrays (e.g. the orthonormality of a `rotation` stored at a `path`) | Not validated | |
-
-`validate_zarr_store` and `open_group` accept any `Mapping[str, bytes]` of store keys to
-metadata documents, so you decide how those documents are fetched.  A custom mapping
-can fetch them lazily in `__getitem__`, or you can fetch them up front and pass a dict:
-
-```python
-import json
-import yaozarrs
-
-image = {
-    "version": "0.5",
-    "multiscales": [
-        {
-            "axes": [
-                {"name": "y", "type": "space", "unit": "micrometer"},
-                {"name": "x", "type": "space", "unit": "micrometer"},
-            ],
-            "datasets": [
-                {
-                    "path": "0",
-                    "coordinateTransformations": [
-                        {"type": "scale", "scale": [1.0, 1.0]}
-                    ],
-                }
-            ],
-        }
-    ],
-}
-group = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": image}}
-array = {
-    "zarr_format": 3,
-    "node_type": "array",
-    "shape": [64, 64],
-    "data_type": "uint8",
-    "chunk_grid": {"name": "regular", "configuration": {"chunk_shape": [64, 64]}},
-    "chunk_key_encoding": {"name": "default"},
-    "fill_value": 0,
-    "codecs": [{"name": "bytes"}],
-    "dimension_names": ["y", "x"],
-}
-
-store = {
-    f"{path}zarr.json": json.dumps(doc).encode()
-    for path, doc in [("", group), ("0/", array)]
-}
-yaozarrs.validate_zarr_store(store)
-```
-
-> [!NOTE]
-> Anything that needs a URI (`store_path`, `to_zarr_python()` and `to_tensorstore()`)
-> raises a `TypeError` for these stores.
+`validate_zarr_store` and `open_group` also accept any `Mapping[str, bytes]` of store
+keys (e.g. `"0/zarr.json"`) to metadata documents, so you can fetch those documents
+however you like, without `fsspec`.  Validation never reads array data.  See [Doing the
+IO yourself](https://imaging-formats.github.io/yaozarrs/#doing-the-io-yourself) for an
+example.
 
 ### Open zarr arrays using zarr-python or tensorstore
 
