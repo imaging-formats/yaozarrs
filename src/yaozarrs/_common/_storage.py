@@ -14,11 +14,15 @@ from dataclasses import dataclass
 from itertools import chain, product
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
+from pydantic import ValidationError
+
 from yaozarrs._storage import StorageErrorType, ValidationResult
 from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+    from yaozarrs._storage import ErrorDetails
 
 # ----------------------------------------------------------
 # VALIDATORS
@@ -135,7 +139,22 @@ class StorageValidator:
         """
         validator = cls()
         validator.strict = strict
-        ome_metadata = validator._parse_ome(zarr_group.attrs)
+        try:
+            ome_metadata = validator._parse_ome(zarr_group.attrs)
+        except ValidationError as e:
+            # report invalid root metadata like the rest of the hierarchy, one entry
+            # per pydantic error (the locs already start at the root, e.g. "ome")
+            result = ValidationResult()
+            for err in e.errors():
+                details: ErrorDetails = {
+                    "type": err["type"],
+                    "loc": err["loc"],
+                    "msg": err["msg"],
+                }
+                if "ctx" in err:
+                    details["ctx"] = err["ctx"]
+                result.errors.append(details)
+            return result
         return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
     def visit_root(
