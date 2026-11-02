@@ -285,6 +285,7 @@ def write_plate(
         Mapping of `{(row, col, fov) -> (image_model, [datasets, ...])}`.
         Each tuple key specifies (row_name, column_name, field_of_view) like
         ("A", "1", "0"). Row and column names are auto-extracted from the keys.
+        (Zero-padded column names like "01" are kept as they are.)
     plate : Plate | dict[str, Any] | None, optional
         Optional plate metadata. Can be:
         - None (default): Auto-generate from images dict keys
