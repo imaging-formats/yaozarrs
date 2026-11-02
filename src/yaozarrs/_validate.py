@@ -28,29 +28,35 @@ T = TypeVar("T", bound=AnyOME)
 _VERSIONS = {"0.4": "v04", "0.5": "v05", **dict.fromkeys(V06_VERSIONS, "v06")}
 
 
+def _find_version(obj: Any) -> tuple[Any, tuple[str | int, ...]] | None:
+    """Return the OME version that `obj` declares (if any), and where it is."""
+    loc: tuple[str | int, ...] = ()
+    if isinstance(obj, dict) and isinstance(obj.get("attributes"), dict):
+        obj, loc = obj["attributes"].get("ome"), ("attributes", "ome")  # zarr.json
+    elif isinstance(obj, dict) and "ome" in obj:
+        obj, loc = obj["ome"], ("ome",)  # the attributes of a zarr.json document
+    if not isinstance(obj, dict):
+        return None
+    if obj.get("version") is not None:
+        return obj["version"], (*loc, "version")
+    # (v0.4 declares it inside the metadata object, e.g. multiscales[0].version)
+    for key in ("multiscales", "plate", "well", "image-label"):
+        inner, inner_loc = obj.get(key), (*loc, key)
+        if isinstance(inner, list) and inner:
+            inner, inner_loc = inner[0], (*inner_loc, 0)
+        if isinstance(inner, dict) and inner.get("version") is not None:
+            return inner["version"], (*inner_loc, "version")
+    return None
+
+
 def _declared_version(obj: Any) -> str | None:
     """Return the package for the OME version that `obj` declares (if any).
 
     An unknown version returns a tag that matches no model, so that it gets rejected.
     """
-    if isinstance(obj, dict) and isinstance(obj.get("attributes"), dict):
-        obj = obj["attributes"].get("ome")  # a zarr.json document
-    elif isinstance(obj, dict) and "ome" in obj:
-        obj = obj["ome"]  # the attributes of a zarr.json document
-    if not isinstance(obj, dict):
+    if (found := _find_version(obj)) is None:
         return None
-    version = obj.get("version")
-    if version is None:
-        # (v0.4 declares it inside the metadata object, e.g. multiscales[0].version)
-        for key in ("multiscales", "plate", "well", "image-label"):
-            inner = obj.get(key)
-            if isinstance(inner, list) and inner:
-                inner = inner[0]
-            if isinstance(inner, dict) and "version" in inner:
-                version = inner["version"]
-                break
-    if version is None:
-        return None
+    version = found[0]
     return _VERSIONS.get(str(version), f"version {version!r}")
 
 
@@ -117,6 +123,26 @@ def _missing_version_error(obj: Any) -> ValidationError | None:
     return ValidationError.from_exception_data("OME metadata", [line])
 
 
+def _unsupported_version_error(obj: Any) -> ValidationError | None:
+    """A single error for a version we don't know (instead of the union's errors)."""
+    if (found := _find_version(obj)) is None or str(found[0]) in _VERSIONS:
+        return None
+    version, loc = found
+    supported = ", ".join(v for v in _VERSIONS if v.replace(".", "").isdigit())
+    error = PydanticCustomError(
+        "unsupported_version",
+        "Unsupported OME-Zarr version '{version}' (expected one of {supported})",
+        {"version": version, "supported": supported},
+    )
+    line: InitErrorDetails = {"type": error, "loc": loc, "input": version}
+    return ValidationError.from_exception_data("OME metadata", [line])
+
+
+def _version_error(obj: Any) -> ValidationError | None:
+    """A clearer error for a missing or unsupported version, if that's the problem."""
+    return _missing_version_error(obj) or _unsupported_version_error(obj)
+
+
 @overload
 def validate_ome_object(
     node: Any, cls: type[T], *, strict: bool | None = None
@@ -159,7 +185,7 @@ def validate_ome_object(
     try:
         return adapter.validate_python(node, strict=strict, context=_CONTEXT)
     except ValidationError:
-        if error := _missing_version_error(node):
+        if error := _version_error(node):
             raise error from None
         raise
 
@@ -208,14 +234,14 @@ def validate_ome_json(
     pydantic.ValidationError
         If the validation fails.
     """
-    if cls is not None:
+    if cls is not None and cls is not _AnyOMEGroupByVersion:
         return type_adapter(cls).validate_json(data, strict=strict)
-    adapter: TypeAdapter[AnyOME] = type_adapter(_AnyOMEByVersion)
+    adapter: TypeAdapter[AnyOME] = type_adapter(cls or _AnyOMEByVersion)
     try:
         return adapter.validate_json(data, strict=strict)
     except ValidationError:
         try:
-            error = _missing_version_error(json.loads(data))
+            error = _version_error(json.loads(data))
         except ValueError:  # (not JSON)
             error = None
         if error:
