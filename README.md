@@ -264,6 +264,14 @@ yaozarrs.validate_zarr_store(
 )
 ```
 
+### Validate without `fsspec`, doing the IO yourself
+
+`validate_zarr_store` and `open_group` also accept any `Mapping[str, bytes]` of store
+keys (e.g. `"0/zarr.json"`) to metadata documents, so you can fetch those documents
+however you like, without `fsspec`.  Validation never reads array data.  See [Doing the
+IO yourself](https://imaging-formats.github.io/yaozarrs/#doing-the-io-yourself) for an
+example.
+
 ### Open zarr arrays using zarr-python or tensorstore
 
 > [!IMPORTANT]  

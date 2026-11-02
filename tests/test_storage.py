@@ -168,20 +168,22 @@ def test_validate_storage(uri: str) -> None:
     "type",
     ["image", "labels", "plate", "image-with-labels", "bioformats2raw"],
 )
-def test_validate_valid_demo_storage(type: str, write_demo_ome: Callable) -> None:
+def test_validate_valid_demo_storage(
+    type: str, write_demo_ome: Callable, as_store: Callable
+) -> None:
     """Test validation on demo OME-Zarr files."""
 
     path = write_demo_ome(type, version="0.5")
     with xfail_internet_error():
-        validate_zarr_store(path)
+        validate_zarr_store(as_store(path))
 
     if type == "image-with-labels":
         # Also validate with labels only
-        validate_zarr_store(path / "labels")
-        validate_zarr_store(path / "labels" / "annotations")
+        validate_zarr_store(as_store(path / "labels"))
+        validate_zarr_store(as_store(path / "labels" / "annotations"))
     elif type == "plate":
         # Validate a well only
-        validate_zarr_store(path / "A" / "1")
+        validate_zarr_store(as_store(path / "A" / "1"))
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
@@ -537,13 +539,13 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
     ids=lambda x: x.err_type,
 )
 def test_validate_invalid_storage(
-    case: StorageTestCase, write_demo_ome: Callable
+    case: StorageTestCase, write_demo_ome: Callable, as_store: Callable
 ) -> None:
     path = write_demo_ome(**case.kwargs)
     case.mutator(path)
     with xfail_internet_error():
         with pytest.raises(StorageValidationError, match=str(case.err_type)):
-            validate_zarr_store(path)
+            validate_zarr_store(as_store(path))
 
 
 def _drop_key(zarr_json: Path, *keys: str) -> None:
@@ -582,13 +584,13 @@ def _drop_key(zarr_json: Path, *keys: str) -> None:
     ids=lambda x: x.err_type,
 )
 def test_validate_invalid_storage_warns(
-    case: StorageTestCase, write_demo_ome: Callable
+    case: StorageTestCase, write_demo_ome: Callable, as_store: Callable
 ) -> None:
     path = write_demo_ome(**case.kwargs)
     case.mutator(path)
     with xfail_internet_error():
         with pytest.warns(StorageValidationWarning, match=str(case.err_type)):
-            validate_zarr_store(path)
+            validate_zarr_store(as_store(path))
 
 
 def _write_bf2raw_v04(root: Path, image: Path) -> Path:
@@ -639,12 +641,12 @@ def test_bf2raw_invalid_ome_group_uses_numbered_paths(write_demo_ome: Callable) 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
 @pytest.mark.parametrize("root", [".", "labels", "labels/annotations"])
 def test_validate_label_image_arrays(
-    version: str, root: str, write_demo_ome: Callable
+    version: str, root: str, write_demo_ome: Callable, as_store: Callable
 ) -> None:
     path = write_demo_ome("image-with-labels", version=version)
     shutil.rmtree(path / "labels" / "annotations" / "s0")
     with pytest.raises(StorageValidationError, match="dataset_path_not_found"):
-        validate_zarr_store(path / root)
+        validate_zarr_store(as_store(path / root))
 
 
 def test_validate_complex_ome_zarr(complex_ome_zarr: Path) -> None:
@@ -654,11 +656,13 @@ def test_validate_complex_ome_zarr(complex_ome_zarr: Path) -> None:
         validate_zarr_store(complex_ome_zarr)
 
 
-def test_validate_complex_ome_zarr_broken(complex_ome_zarr_broken: Path) -> None:
+def test_validate_complex_ome_zarr_broken(
+    complex_ome_zarr_broken: Path, as_store: Callable
+) -> None:
     """Test validation on demo OME-Zarr files."""
 
     with pytest.raises(StorageValidationError) as err:
-        validate_zarr_store(complex_ome_zarr_broken)
+        validate_zarr_store(as_store(complex_ome_zarr_broken))
 
     err_types = {e["type"] for e in err.value.errors()}
     assert err_types == {
