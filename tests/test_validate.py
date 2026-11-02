@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pydantic import ValidationError
@@ -11,6 +11,9 @@ from pydantic import ValidationError
 import yaozarrs
 from yaozarrs import v04, v05, v06
 from yaozarrs._validation_warning import ValidationWarning
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 AXES = [{"name": "y", "type": "space"}, {"name": "x", "type": "space"}]
 DATASETS = [
@@ -114,24 +117,42 @@ def test_errors_only_for_declared_version() -> None:
 
 
 @pytest.mark.parametrize(
-    "obj",
+    "obj, loc",
     [
-        {"multiscales": [{"version": "0.3", "axes": AXES, "datasets": DATASETS}]},
-        {"well": {"version": "foo", "images": [{"path": "0"}]}},
-        {"version": "9.9", "well": {"images": [{"path": "0"}]}},
-        {"ome": {"version": "9.9", "well": {"images": [{"path": "0"}]}}},
-        {
-            "zarr_format": 3,
-            "node_type": "group",
-            "attributes": {"ome": {"version": "9.9", "series": ["0"]}},
-        },
+        (
+            {"multiscales": [{"version": "0.3", "axes": AXES, "datasets": DATASETS}]},
+            ("multiscales", 0, "version"),
+        ),
+        ({"well": {"version": "foo", "images": [{"path": "0"}]}}, ("well", "version")),
+        ({"version": "9.9", "well": {"images": [{"path": "0"}]}}, ("version",)),
+        (
+            {"ome": {"version": "9.9", "well": {"images": [{"path": "0"}]}}},
+            ("ome", "version"),
+        ),
+        (
+            _zarr_json({"version": "9.9", "series": ["0"]}),
+            ("attributes", "ome", "version"),
+        ),
     ],
 )
-def test_unknown_version_is_rejected(obj: dict) -> None:
-    # (rather than being tried against other versions, which may ignore it)
-    with pytest.raises(ValidationError) as exc_info:
+def test_unknown_version_is_rejected(obj: dict, loc: tuple) -> None:
+    # (rather than being tried against other versions, which may ignore it), with
+    # a single error saying which versions are supported
+    with pytest.raises(ValidationError) as from_obj:
         yaozarrs.validate_ome_object(obj)
-    assert exc_info.value.errors()[0]["type"] == "union_tag_invalid"
+    with pytest.raises(ValidationError) as from_json:
+        yaozarrs.validate_ome_json(json.dumps(obj))
+    for exc_info in (from_obj, from_json):
+        (err,) = exc_info.value.errors()
+        assert err["type"] == "unsupported_version"
+        assert err["loc"] == loc
+        assert "expected one of 0.4, 0.5, 0.6" in err["msg"]
+
+
+def test_unknown_version_from_uri(tmp_path: Path) -> None:
+    (tmp_path / "zarr.json").write_text(json.dumps(_zarr_json({"version": "0.3"})))
+    with pytest.raises(ValidationError, match=r"Unsupported OME-Zarr version '0\.3'"):
+        yaozarrs.validate_ome_uri(tmp_path)
 
 
 PLATE = {k: v for k, v in V05_PLATE.items() if k != "version"}
