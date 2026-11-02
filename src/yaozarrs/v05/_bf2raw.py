@@ -40,6 +40,7 @@ class Bf2Raw(_OMEDocument):
         description="OME-NGFF specification version",
     )
     bioformats2raw_layout: Literal[3] = Field(
+        default=3,
         alias="bioformats2raw.layout",
         description="Layout version marker added by bioformats2raw (currently 3)",
     )

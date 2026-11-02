@@ -219,12 +219,10 @@
         },
         "bioformats2raw.layout": {
           "const": 3,
+          "default": 3,
           "type": "integer"
         }
       },
-      "required": [
-        "bioformats2raw.layout"
-      ],
       "type": "object"
     },
     "ChannelAxis": {

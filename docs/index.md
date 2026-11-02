@@ -65,7 +65,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
     )
 
     # Export
-    image.model_dump_json(exclude_unset=True, indent=2)  # (1)!
+    image.model_dump_json(indent=2)  # (1)!
     ```
 
     1. [`model_dump_json`][pydantic.BaseModel.model_dump_json] is part of the
@@ -106,7 +106,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
     )
 
     # Export
-    image.model_dump_json(exclude_unset=True, indent=2)  # (2)!
+    image.model_dump_json(indent=2)  # (2)!
     ```
 
     1. [`model_validate`][pydantic.BaseModel.model_validate] is part of the
@@ -140,7 +140,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
     )
 
     # Export
-    image.model_dump_json(exclude_unset=True, indent=2)  # (2)!
+    image.model_dump_json(indent=2)  # (2)!
     ```
     
     1. :eyes: [`yaozarrs.DimSpec`][] is a convenience class for use with
@@ -266,7 +266,7 @@ can fetch them lazily in `__getitem__`, or you can fetch them up front and pass 
 import json
 import yaozarrs
 
-image = {
+image_meta = {
     "version": "0.5",
     "multiscales": [
         {
@@ -285,7 +285,7 @@ image = {
         }
     ],
 }
-group = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": image}}
+group = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": image_meta}}
 array = {
     "zarr_format": 3,
     "node_type": "array",
