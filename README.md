@@ -423,7 +423,9 @@ may suit you better:
   `ome-zarr-py` uses for its metadata. Its models represent zarr groups (built
   on [`pydantic-zarr`](https://github.com/zarr-developers/pydantic-zarr)), with
   the OME metadata as their attributes, and it reads and validates stores
-  through `zarr-python`, which it requires.
+  through `zarr-python`, which it requires. yaozarrs models instead mirror the
+  spec's JSON documents one-to-one, so `v05.Image` is the `ome` object itself,
+  not a zarr group that contains it.
 - [ome-zarr-py](https://github.com/ome/ome-zarr-py) is an OME toolkit for
   reading and writing OME-Zarr images, with dependencies on `zarr`, `dask`,
   `scikit-image` and others.
@@ -433,3 +435,14 @@ may suit you better:
   ITK-Wasm, zarrita, and others.
 - [pydantic-ome-ngff](https://github.com/janeliascicomp/pydantic-ome-ngff) is
   archived.
+
+Before starting yaozarrs, the idea of a zarr-optional model was raised with
+ome-zarr-models-py
+([#161](https://github.com/ome-zarr-py/ome-zarr-models-py/issues/161)), and
+PRs attempted to make zarr-python optional there
+([#280](https://github.com/ome-zarr-py/ome-zarr-models-py/pull/280)) and in
+pydantic-zarr, which it builds on
+([#112](https://github.com/zarr-developers/pydantic-zarr/pull/112), merged).
+yaozarrs started as a way to see what a metadata-first library would look like,
+and has since grown into its own library, with models that mirror the spec and
+layered I/O that leaves the choice of array library to you.
