@@ -14,11 +14,13 @@ README = Path(__file__).parent.parent / "README.md"
 @pytest.mark.skipif(
     sys.version_info < (3, 11) or sys.platform == "win32", reason="requires python3.11+"
 )
-def test_readme_python_blocks(tmp_path: Path) -> None:
+def test_readme_python_blocks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Extract and execute all Python code blocks from README.md."""
     pytest.importorskip("tensorstore")
     pytest.importorskip("zarr")
     pytest.importorskip("fsspec")
+    # the README writes stores to relative paths (e.g. "example.ome.zarr")
+    monkeypatch.chdir(tmp_path)
 
     readme_content = README.read_text(encoding="utf-8")
 

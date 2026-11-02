@@ -238,3 +238,12 @@ def test_coerced_input_is_never_output(obj: dict) -> None:
 def test_strict_accepts_valid_documents(obj: dict) -> None:
     yaozarrs.validate_ome_object(obj, strict=True)
     yaozarrs.validate_ome_json(json.dumps(obj), strict=True)
+
+
+@pytest.mark.parametrize("mod", [v04, v05, v06], ids=lambda m: m.__name__)
+def test_bf2raw_layout_defaults_to_3(mod: Any) -> None:
+    assert mod.Bf2Raw().model_dump(by_alias=True)["bioformats2raw.layout"] == 3
+    # the default doesn't make a document without the key a bioformats2raw one
+    doc = {} if mod is v04 else {"version": mod.Bf2Raw().version}
+    with pytest.raises(ValidationError):
+        yaozarrs.validate_ome_object(doc)
