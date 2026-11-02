@@ -179,3 +179,28 @@ def complex_ome_zarr_broken(complex_ome_zarr: Path) -> Path:
     )
 
     return complex_ome_zarr
+
+
+_METADATA_FILES = {"zarr.json", ".zgroup", ".zattrs", ".zarray"}
+
+
+def read_metadata_dict(root: Path) -> dict[str, bytes]:
+    """Read every zarr metadata document under `root` into a plain dict store."""
+    return {
+        p.relative_to(root).as_posix(): p.read_bytes()
+        for p in root.rglob("*")
+        if p.name in _METADATA_FILES
+    }
+
+
+@pytest.fixture(params=["path", "dict"])
+def as_store(request: pytest.FixtureRequest) -> Callable[[Path], Any]:
+    """Pass a store to validation as a path, or as a dict of its metadata."""
+    if request.param == "dict":
+        return read_metadata_dict
+    return lambda path: path
+
+
+@pytest.fixture
+def metadata_dict() -> Callable[[Path], dict[str, bytes]]:
+    return read_metadata_dict
