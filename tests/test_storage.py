@@ -238,6 +238,18 @@ def test_validate_unknown_version(write_demo_ome: Callable) -> None:
     assert exc_info.value.errors()[0]["type"] == "unsupported_version"
 
 
+@pytest.mark.parametrize("ome", [{"scene": {}}, {"plate": {}}])
+def test_validate_missing_version(tmp_path: Path, ome: dict) -> None:
+    """A zarr v3 group with OME metadata but no version is invalid, not 'not OME'."""
+    meta = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
+    (tmp_path / "zarr.json").write_text(json.dumps(meta))
+
+    with pytest.raises(StorageValidationError, match="must declare its 'version'") as e:
+        validate_zarr_store(tmp_path)
+    assert e.value.errors()[0]["type"] == "version_missing"
+    assert e.value.errors()[0]["loc"] == ("ome", "version")
+
+
 def _coerce_scale(zarr_json: Path) -> None:
     """Make a scale in this image a string, which is only accepted by coercion."""
     meta = json.loads(zarr_json.read_text())

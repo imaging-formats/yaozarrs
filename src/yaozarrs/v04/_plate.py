@@ -5,7 +5,7 @@ from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
-from yaozarrs._common._plate import check_unique_rows_columns_wells
+from yaozarrs._common._plate import check_plate_layout
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
 from yaozarrs._util import RelaxedFOVPathName
 
@@ -141,7 +141,7 @@ class PlateDef(_BaseModel):
     This is the core content of the `plate` metadata field.
     """
 
-    # (uniqueItems is implied by the unique names and paths, see `_validate_unique`)
+    # (uniqueItems is implied by the unique names and paths, see `check_plate_layout`)
     columns: Annotated[list[Column], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Column definitions for the plate grid"
     )
@@ -167,23 +167,9 @@ class PlateDef(_BaseModel):
     version: Literal["0.4"] = "0.4"
 
     @model_validator(mode="after")
-    def _validate_well_indices(self) -> Self:
-        for well in self.wells:
-            if well.rowIndex >= len(self.rows):
-                raise ValueError(
-                    f"Well {well.path} has rowIndex {well.rowIndex} "
-                    f"but only {len(self.rows)} rows exist"
-                )
-            if well.columnIndex >= len(self.columns):
-                raise ValueError(
-                    f"Well {well.path} has columnIndex {well.columnIndex} "
-                    f"but only {len(self.columns)} columns exist"
-                )
-        return self
-
-    @model_validator(mode="after")
-    def _validate_unique(self) -> Self:
-        check_unique_rows_columns_wells(self.rows, self.columns, self.wells)
+    def _validate_layout(self) -> Self:
+        # (the same rules as in v0.5)
+        check_plate_layout(self.rows, self.columns, self.wells, self.acquisitions)
         return self
 
 

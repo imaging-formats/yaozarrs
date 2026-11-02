@@ -16,7 +16,7 @@ test-conformance mode="":
     trap 'rm -rf "$results"' EXIT
     for kind in parse_attributes validate_zarr; do
         uv run -p 3.13 --no-dev --extra io --with "{{ oztest }}" oztest run "$kind" \
-            --include-profile core --no-progress --format json --out-file "$results/$kind.json" \
+            --no-progress --format json --out-file "$results/$kind.json" \
             -- python tests/conformance/dingus.py $flag
     done
     uv run -p 3.13 --no-dev --extra io --with "{{ oztest }}" \

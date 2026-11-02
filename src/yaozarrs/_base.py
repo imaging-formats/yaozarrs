@@ -16,7 +16,17 @@ from pydantic import (
 if TYPE_CHECKING:
     from pydantic import SerializerFunctionWrapHandler, ValidationInfo
 
-__all__ = ["_BaseModel", "_OMEDocument", "type_adapter"]
+__all__ = [
+    "MISSING_VERSION",
+    "REQUIRE_VERSION",
+    "_BaseModel",
+    "_OMEDocument",
+    "type_adapter",
+]
+
+# A validation context key: documents must declare their version (see `_OMEDocument`)
+REQUIRE_VERSION = "require_version"
+MISSING_VERSION = "OME metadata MUST contain a 'version' key."
 
 # populate_by_name is deprecated in pydantic v2.11+ (removed in v3).
 # For >=2.11 use validate_by_name + validate_by_alias instead.
@@ -77,15 +87,17 @@ class _OMEDocument(_BaseModel):
     """A top-level OME metadata document (the value of the "ome" key), with a version.
 
     Its `version` has a default, so documents can be created in Python without one,
-    but JSON being validated must declare it.
+    but JSON being validated must declare it, as must documents validated by the
+    version-independent `validate_ome_*` functions (which can't guess it).
     """
 
     @model_validator(mode="before")
     @classmethod
-    def _require_version_in_json(cls, data: Any, info: ValidationInfo) -> Any:
+    def _require_version(cls, data: Any, info: ValidationInfo) -> Any:
         # [The `ome` object] MUST contain a `version` key
-        if info.mode == "json" and isinstance(data, dict) and "version" not in data:
-            raise ValueError("OME metadata MUST contain a 'version' key.")
+        required = info.mode == "json" or (info.context or {}).get(REQUIRE_VERSION)
+        if required and isinstance(data, dict) and "version" not in data:
+            raise ValueError(MISSING_VERSION)
         return data
 
     @model_serializer(mode="wrap")

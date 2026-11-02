@@ -26,7 +26,7 @@ Full documentation at <https://imaging-formats.github.io/yaozarrs/>
 
 First, let me apologize. The last thing the world needs is yet another ome-zarr
 model. However, I was unable to find a *minimal* ome-zarr model that simply
-represents the spec, without introducing additional I/O features or
+represents the spec, without introducing additional *required* I/O features or
 dependencies.  Please read the [Existing Projects](#existing-projects) section
 for more context.
 

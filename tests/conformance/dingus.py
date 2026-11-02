@@ -19,7 +19,7 @@ try:
     if path.is_dir():
         yaozarrs.validate_zarr_store(path, strict=strict)
     else:
-        yaozarrs.validate_ome_object(json.loads(path.read_text()), strict=strict)
+        yaozarrs.validate_ome_json(path.read_text(), strict=strict)
 # anything else is a crash: oztest reports the nonzero exit as an `error`
 except (ValidationError, StorageValidationError) as e:
     print(json.dumps({"validity": "invalid", "message": str(e)}))
