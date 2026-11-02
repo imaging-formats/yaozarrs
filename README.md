@@ -12,11 +12,17 @@
 `yaozarrs` is a Python library for OME-Zarr metadata and stores, built in three
 layers. Take only the ones you need:
 
-| layer | what you get | what you install |
-| --- | --- | --- |
-| **1. metadata** | pydantic models for the [OME-NGFF spec](https://ngff.openmicroscopy.org/specifications/index.html) (v0.4, v0.5, v0.6): create, validate, and convert JSON documents. No I/O at all. | `pip install yaozarrs` (only depends on pydantic) |
-| **2. hierarchy** | open and validate entire OME-Zarr stores (metadata *and* structure); `yaozarrs validate` and `yaozarrs tree` CLI | nothing more, if you fetch the metadata documents yourself; `fsspec` to open local paths; `pip install "yaozarrs[io]"` for http(s) and s3 URLs |
-| **3. array data** | write complete stores, or open arrays for reading, with the zarr library of your choice | `zarr-python` or `tensorstore` (or neither, if you bring your own writer); reading needs a store opened from a path or URL |
+1. **Metadata.** Pydantic models for the [OME-NGFF
+   spec](https://ngff.openmicroscopy.org/specifications/index.html) (v0.4, v0.5,
+   v0.6), to create, validate, and convert JSON documents. No I/O at all.\
+   *Needs:* only `pydantic`.
+2. **Hierarchy.** Open and validate entire OME-Zarr stores (metadata *and*
+   structure), with the `yaozarrs validate` and `yaozarrs tree` CLI.\
+   *Needs:* nothing more if you fetch the documents yourself, `fsspec` for
+   local paths, or `yaozarrs[io]` for http(s) and s3 URLs.
+3. **Array data.** Write complete stores, or open arrays for reading, with the
+   zarr library of your choice.\
+   *Needs:* `zarr-python`, `tensorstore`, or your own writer.
 
 ## 📖 Documentation
 
