@@ -9,7 +9,6 @@ from typing import Any, Callable
 from unittest.mock import Mock
 
 import pytest
-from pydantic import ValidationError
 
 from yaozarrs._zarr import open_group
 
@@ -265,8 +264,24 @@ def test_validate_strict_rejects_coerced_root_metadata(
     _coerce_scale(path / "zarr.json")
 
     validate_zarr_store(path)
-    with pytest.raises(ValidationError):
+    with pytest.raises(StorageValidationError) as exc:
         validate_zarr_store(path, strict=True)
+    # one entry per pydantic error, located from the root
+    errors = exc.value.errors()
+    assert all(err["loc"][0] == "ome" for err in errors)
+    assert any("scale" in err["loc"] for err in errors)
+
+
+def test_invalid_root_metadata_keeps_warnings() -> None:
+    """Root metadata errors are StorageValidationErrors, and warnings still come out."""
+    axes = [{"name": n, "type": "space", "unit": "lightyear"} for n in "yx"]
+    ome = {"version": "0.5", "multiscales": [{"axes": axes, "datasets": []}]}
+    zarr_json = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
+    store = {"zarr.json": json.dumps(zarr_json).encode()}
+
+    with pytest.warns(StorageValidationWarning, match="lightyear"):
+        with pytest.raises(StorageValidationError, match="datasets"):
+            validate_zarr_store(store)
 
 
 def test_validate_strict_rejects_coerced_child_metadata(
