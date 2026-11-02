@@ -150,6 +150,7 @@ def test_unknown_version_is_rejected(obj: dict, loc: tuple) -> None:
 
 
 def test_unknown_version_from_uri(tmp_path: Path) -> None:
+    pytest.importorskip("fsspec")
     (tmp_path / "zarr.json").write_text(json.dumps(_zarr_json({"version": "0.3"})))
     with pytest.raises(ValidationError, match=r"Unsupported OME-Zarr version '0\.3'"):
         yaozarrs.validate_ome_uri(tmp_path)
