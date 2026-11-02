@@ -578,18 +578,16 @@ class ZarrNode:
 
         This URI can be used with TensorStore, fsspec, and other libraries.
 
-        Stores that aren't backed by a filesystem have no URI.  For those, this returns
-        a descriptive name for messages instead, such as `"<dict>/A/1"`.
-
         Returns
         -------
         str
             A URI string that follows standard protocol://path format.
-        """
-        if not self._has_uri():
-            store_name = type(self._store._mapper).__name__
-            return f"<{store_name}>/{self._path}".rstrip("/")
 
+        Raises
+        ------
+        TypeError
+            If the store isn't backed by a filesystem (e.g. a dict), so has no URI.
+        """
         mapper, full_path, protocol = self._full_path()
 
         # For local file systems, use Path.as_uri() for proper cross-platform
@@ -604,9 +602,15 @@ class ZarrNode:
         """Return the zarr format version (2 or 3)."""
         return self._metadata.zarr_format
 
+    def _display_name(self) -> str:
+        """Return the URI, or a name like `"<dict>/A/1"` for stores without one."""
+        if self._has_uri():
+            return self.store_path
+        return f"<{type(self._store._mapper).__name__}>/{self._path}".rstrip("/")
+
     def __repr__(self) -> str:
         cls_name = self.__class__.__name__
-        return f"<{cls_name} {self.store_path}>"
+        return f"<{cls_name} {self._display_name()}>"
 
 
 class ZarrGroup(ZarrNode):
@@ -966,6 +970,10 @@ def _open_group_at(mapper: Mapping[str, bytes], path: str = "") -> ZarrGroup:
     return ZarrGroup(node._store, node._path, node._metadata)
 
 
+def _is_zarr_python(obj: object) -> bool:
+    return type(obj).__module__.partition(".")[0] == "zarr"
+
+
 def open_group(
     uri: str | os.PathLike | Mapping[str, bytes] | Any,
     storage_options: dict | None = None,
@@ -1006,7 +1014,7 @@ def open_group(
         return uri
 
     # (zarr-python v2 Groups are mappings too, but of nodes, not bytes: handled below)
-    if isinstance(uri, Mapping) and not hasattr(uri, "store"):
+    if isinstance(uri, Mapping) and not _is_zarr_python(uri):
         return _open_group_at(uri)
 
     try:

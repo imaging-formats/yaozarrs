@@ -37,12 +37,12 @@ def validate_zarr_store(
 
     Parameters
     ----------
-    obj : OMEZarrGroupJSON | ZarrGroup | str | Path | Mapping[str, bytes] | Any
-        The zarr store to validate. Can be a URI string, a Path, a parsed
-        OMEZarrGroupJSON object, a ZarrGroup instance, a zarr.Group object
-        (for backwards compatibility), or a mapping of store keys to the bytes of the
-        metadata documents, if you want to do the IO yourself (see
-        [`yaozarrs.open_group`][]).
+    obj : ZarrGroup | str | Path | Mapping[str, bytes] | Any
+        The zarr store to validate. Can be a URI string, a Path, a ZarrGroup instance,
+        a zarr.Group object (for backwards compatibility), or a mapping of store keys
+        to the bytes of the metadata documents, if you want to do the IO yourself (see
+        [`yaozarrs.open_group`][]).  To validate a single document without a store,
+        use [`yaozarrs.validate_ome_object`][] or [`yaozarrs.validate_ome_json`][].
     strict : bool | None
         If `True`, reject metadata that would otherwise be coerced to the right type
         (e.g. `"1"` for an integer). By default, such metadata is accepted.

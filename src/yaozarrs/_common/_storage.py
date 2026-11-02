@@ -52,7 +52,7 @@ def _build_fs_path(zarr_group: ZarrGroup, relative_path: str = "") -> str:
         full_path = base
 
     # Try to get a readable store name (without protocol)
-    store_path = zarr_group.store_path
+    store_path = zarr_group._display_name()
     # Remove protocol prefix for readability (file://, https://, etc.)
     for prefix in ("file://", "https://", "http://", "s3://"):
         if store_path.startswith(prefix):

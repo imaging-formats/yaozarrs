@@ -19,12 +19,12 @@ class LazyStore(Mapping[str, bytes]):
     """A mapping that records every key it's asked for, with no `getitems`."""
 
     def __init__(self, data: Mapping[str, bytes]) -> None:
-        self._data = data
+        self.store = data  # (not to be confused with a zarr-python Group's `store`)
         self.requested: list[str] = []
 
     def __getitem__(self, key: str) -> bytes:
         self.requested.append(key)
-        return self._data[key]
+        return self.store[key]
 
     def __iter__(self) -> Iterator[str]:
         raise NotImplementedError
@@ -43,10 +43,9 @@ def test_mapping_store_without_fsspec(
     # only metadata documents are read, never chunks
     assert {key.rpartition("/")[-1] for key in store.requested} == {"zarr.json"}
 
-    assert group.store_path == "<LazyStore>"
-    assert group["s0"].store_path == "<LazyStore>/s0"
+    assert repr(group["s0"]) == "<ZarrArray <LazyStore>/s0>"
     with pytest.raises(TypeError, match="not backed by a filesystem"):
-        group.to_zarr_python()
+        group.store_path  # noqa: B018
     with pytest.raises(ImportError, match="fsspec package is required"):
         open_group("some/path.zarr")
 

@@ -323,8 +323,8 @@ yaozarrs.validate_zarr_store(store)
 ```
 
 > [!NOTE]
-> Methods that need a URI (`to_zarr_python()` and `to_tensorstore()`) raise a
-> `TypeError` for these stores.
+> Anything that needs a URI (`store_path`, `to_zarr_python()` and `to_tensorstore()`)
+> raises a `TypeError` for these stores.
 
 ### Open zarr arrays using zarr-python or tensorstore
 

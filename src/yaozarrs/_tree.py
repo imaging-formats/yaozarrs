@@ -351,7 +351,8 @@ def _build_tree(
 
     # Determine node name
     if name is None:
-        name = group.store_path.rsplit("/", 1)[-1] or group.store_path
+        display_name = group._display_name()
+        name = display_name.rsplit("/", 1)[-1] or display_name
 
     # Get icon and OME annotation
     icon = _get_node_icon(group)
