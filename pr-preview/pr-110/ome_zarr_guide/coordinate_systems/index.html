@@ -1,0 +1,1725 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Yet another ome-zarr model.">
+      
+      
+        <meta name="author" content="Talley Lambert">
+      
+      
+        <link rel="canonical" href="https://imaging-formats.github.io/yaozarrs/ome_zarr_guide/coordinate_systems/">
+      
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../../API_Reference/yaozarrs/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Coordinate Systems & Transformations - YAOZARRS ‼️</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CFira+Code:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/zensical.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="YAOZARRS ‼️" class="md-header__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            YAOZARRS ‼️
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Coordinate Systems & Transformations
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/imaging-formats/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    imaging-formats/yaozarrs
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="YAOZARRS ‼️" class="md-nav__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+
+    </a>
+    YAOZARRS ‼️
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/imaging-formats/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    imaging-formats/yaozarrs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Get Started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Installing yaozarrs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ome_zarr_explorer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 2H3a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2M11 17.5 9.5 19 5 14.5 9.5 10l1.5 1.5-3 3zm3.5 1.5L13 17.5l3-3-3-3 1.5-1.5 4.5 4.5zM21 7H3V4h18z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  OME-Zarr Explorer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5-1.65 0-3.35.3-4.75 1.05-.1.05-.15.05-.25.05-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1 1.11-.35 2.33-.5 3.5-.5 1.95 0 4.05.4 5.5 1.5 1.45-1.1 3.55-1.5 5.5-1.5 1.17 0 2.39.15 3.5.5.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5-.1 0-.15 0-.25-.05-1.4-.75-3.1-1.05-4.75-1.05-1.7 0-4.15.65-5.5 1.5M12 8v11.5c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5V7c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5m1 3.5c1.11-.68 2.6-1 4.5-1 .91 0 1.76.09 2.5.28V9.23c-.87-.15-1.71-.23-2.5-.23q-2.655 0-4.5.84zm4.5.17c-1.71 0-3.21.26-4.5.79v1.69c1.11-.65 2.6-.99 4.5-.99 1.04 0 1.88.08 2.5.24v-1.5c-.87-.16-1.71-.23-2.5-.23m2.5 2.9c-.87-.16-1.71-.24-2.5-.24-1.83 0-3.33.27-4.5.8v1.69c1.11-.66 2.6-.99 4.5-.99 1.04 0 1.88.08 2.5.24z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Guide to OME-Zarr
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Guide to OME-Zarr
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3v6h2.95l2 6H6v6h6v-4.59L17.41 11H22V5h-6v4.57L10.59 15H9.06l-2-6H8V3M4 5h2v2H4m14 0h2v2h-2M8 17h2v2H8Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate Systems & Transformations
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3v6h2.95l2 6H6v6h6v-4.59L17.41 11H22V5h-6v4.57L10.59 15H9.06l-2-6H8V3M4 5h2v2H4m14 0h2v2h-2M8 17h2v2H8Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate Systems & Transformations
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-does-this-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why does this exist?
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coordinate-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Coordinate systems
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Transformations
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transformations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#referring-to-coordinate-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Referring to coordinate systems
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-intrinsic-coordinate-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The intrinsic coordinate system
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The intrinsic coordinate system">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-is-a-pixel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where is a pixel?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-coordinate-systems-in-one-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        More coordinate systems in one image
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#between-images-scenes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Between images: scenes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-it-together-the-transformation-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Putting it together: the transformation graph
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformation-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Transformation types
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-yaozarrs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In yaozarrs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#further-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Further reading
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  API Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Reference/yaozarrs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Reference/yaozarrs.v04/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.v04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Reference/yaozarrs.v05/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.v05
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Reference/yaozarrs.v06/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.v06
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Reference/yaozarrs.write.v05/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.write.v05
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Reference/yaozarrs.write.v06/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.write.v06
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-does-this-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why does this exist?
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coordinate-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Coordinate systems
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Transformations
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transformations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#referring-to-coordinate-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Referring to coordinate systems
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-intrinsic-coordinate-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The intrinsic coordinate system
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The intrinsic coordinate system">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-is-a-pixel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where is a pixel?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-coordinate-systems-in-one-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        More coordinate systems in one image
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#between-images-scenes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Between images: scenes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-it-together-the-transformation-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Putting it together: the transformation graph
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformation-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Transformation types
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-yaozarrs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In yaozarrs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#further-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Further reading
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="coordinate-systems-transformations">Coordinate Systems &amp; Transformations<a class="headerlink" href="#coordinate-systems-transformations" title="Link to this section">#</a></h1>
+<div class="admonition tip">
+<p class="admonition-title">What you'll learn</p>
+<p>OME-Zarr v0.6 introduced a new (and much more expressive) way of describing
+<em>where your pixels are</em>: <strong>coordinate systems</strong> and <strong>transformations</strong>.
+This page explains these from scratch, with no prior knowledge assumed, and
+shows how they appear in the metadata.</p>
+<p>If you only need a single image with a pixel size, you can mostly skip
+this: <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> handles it
+for you.  Read on when you need to place images relative to each other,
+line up labels, register images, or just want to understand what you're
+looking at.</p>
+</div>
+<div class="admonition tip">
+<p>This page is based on the <a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">OME-Zarr v0.6
+specification</a>
+and <a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>.  In case of any
+discrepancies, the official spec takes precedence!</p>
+</div>
+<h2 id="why-does-this-exist">Why does this exist?<a class="headerlink" href="#why-does-this-exist" title="Link to this section">#</a></h2>
+<p>Up to v0.5, each image had a single list of <code>axes</code>, and each resolution level had
+a <code>scale</code> (and optionally a <code>translation</code>) that converted pixel indices into
+physical units: "<em>each pixel is 0.1 µm wide, and the image starts 20 µm from
+the origin</em>".  That's enough to describe one image on its own.</p>
+<p>But microscopy data often needs more than that:</p>
+<ul>
+<li><strong>Tiles of a mosaic</strong> need to be placed relative to each other.</li>
+<li><strong>Light sheet</strong> data acquired at an angle needs to be <em>deskewed</em> (sheared)
+  before it looks right.</li>
+<li>Two images of the same sample, <strong>from different microscopes</strong>, need to be
+  registered onto each other.</li>
+<li>A <strong>segmentation</strong> computed on a crop of an image needs to line up with the
+  original.</li>
+</ul>
+<p>v0.6 adopted <a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>, which
+describes all of these with just two concepts: <strong>coordinate systems</strong> (named
+spaces where points live) and <strong>transformations</strong> (arrows that take points from
+one coordinate system to another).</p>
+<hr />
+<h2 id="coordinate-systems">Coordinate systems<a class="headerlink" href="#coordinate-systems" title="Link to this section">#</a></h2>
+<p>A <strong>coordinate system</strong> is just a <code>name</code>, plus a list of <code>axes</code>:</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"z"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>A point in this coordinate system is a list of 3 numbers, <code>(z, y, x)</code>, in
+micrometers.  The number of axes is the coordinate system's <em>dimensionality</em> (3,
+here), and the order of the axes is the order of the numbers in each point.</p>
+<p>Coordinate systems are defined in two places:</p>
+<ul>
+<li><strong>In an image</strong> (required): each multiscale lists its coordinate systems under
+  <code>coordinateSystems</code>.  This replaces the <code>axes</code> field of v0.5.</li>
+<li><strong>In a scene</strong> (optional): a <a href="../#working-with-scenes">scene</a>
+  may define its own, e.g. a shared "stage" or "world" coordinate system that
+  several images are placed into.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Same axes ≠ same space</p>
+<p>Two coordinate systems with identical axes are <strong>not</strong> necessarily "the
+same".  An image of sample A and an image of sample B may both have
+<code>z, y, x</code> axes in micrometers, but a point at <code>(0, 0, 0)</code> in one has nothing
+to do with <code>(0, 0, 0)</code> in the other.</p>
+<p>A coordinate system is identified by its <code>name</code> <em>and where it is defined</em>
+(which <code>zarr.json</code>).  The spec says analyses that combine images, labels,
+ROIs etc. <strong>SHOULD</strong> make sure they are in the same coordinate system (or can
+be transformed into one) first.</p>
+</div>
+<hr />
+<h2 id="transformations">Transformations<a class="headerlink" href="#transformations" title="Link to this section">#</a></h2>
+<p>A <strong>transformation</strong> describes how to take a <em>point</em> in one coordinate system
+(its <code>input</code>) and find where it is in another (its <code>output</code>):</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pixels"</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>This one says: take a point <code>(z, y, x)</code> in <code>pixels</code>, multiply each coordinate by
+its scale factor, and you get the same point in <code>physical</code>:</p>
+<div class="language-text highlight"><pre><span></span><code>z_physical = 2.0 * z_pixels
+y_physical = 0.5 * y_pixels
+x_physical = 0.5 * x_pixels
+</code></pre></div>
+<p>Every transformation has a <code>type</code>, which says what it does and which other
+fields it needs (here: <code>scale</code>).  It may also have a <code>name</code>, to identify
+it.  The <a href="#transformation-types">Transformation types</a> section
+lists them all.</p>
+<div class="admonition warning">
+<p class="admonition-title">Transformations point from <code>input</code> to <code>output</code></p>
+<p>Transformations map <em>points</em> from the input space to the output space
+(the spec calls this the "forward" direction).  This sounds obvious, but
+it's an easy place to get things backwards:</p>
+<ul>
+<li>To <em>draw</em> image A into the coordinate system of image B, a viewer
+  usually needs the <strong>inverse</strong>: for each pixel of the output, where should
+  it sample A?  For simple transformations (scale, translation, rotation...)
+  the viewer can compute that inverse itself.</li>
+<li>Image <strong>registration</strong> tools often give you the transformation from the
+  <em>fixed</em> image to the <em>moving</em> image, for exactly that reason.  That's
+  fine: just make sure <code>input</code> and <code>output</code> say which is which (input =
+  fixed, output = moving), rather than assuming the direction.</li>
+</ul>
+<p>See also the <a href="#transformation-types"><code>bijection</code></a> type, which stores both
+directions explicitly.</p>
+</div>
+<h3 id="referring-to-coordinate-systems">Referring to coordinate systems<a class="headerlink" href="#referring-to-coordinate-systems" title="Link to this section">#</a></h3>
+<p>The <code>input</code> and <code>output</code> of a transformation are objects with (up to) two
+fields:</p>
+<ul>
+<li><strong><code>name</code></strong>: the name of a coordinate system.</li>
+<li><strong><code>path</code></strong>: where to find it, if it's defined in a <em>different</em> group (e.g.
+  <code>"labels/cells"</code>, or <code>"tile_0"</code>).  If the <code>path</code> is left out (or <code>null</code>), the
+  coordinate system is in the same <code>zarr.json</code>.</li>
+</ul>
+<p>Together, <code>name</code> and <code>path</code> always point at exactly one coordinate system.
+Which of them are required depends on where the transformation is stored:</p>
+<table>
+<thead>
+<tr>
+<th>Where it's stored</th>
+<th><code>input</code></th>
+<th><code>output</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>multiscales &gt; datasets</td>
+<td><code>{"path": "&lt;dataset path&gt;"}</code></td>
+<td><code>{"name": "physical"}</code></td>
+</tr>
+<tr>
+<td>multiscales &gt; coordinateTransformations</td>
+<td><code>{"name": "physical"}</code></td>
+<td><code>{"name": "other"}</code> <br> or <br> <code>{"name": "physical", "path": "labels/cells"}</code></td>
+</tr>
+<tr>
+<td>scene &gt; coordinateTransformations</td>
+<td><code>{"name": "physical", "path": "imageA"}</code></td>
+<td><code>{"name": "physical", "path": "imageB"}</code></td>
+</tr>
+</tbody>
+</table>
+<p>(This table is adapted from the spec.  The first row is special: a dataset's
+<code>input</code> is the dataset's <em>array</em> itself, referenced by its <code>path</code>.)</p>
+<hr />
+<h2 id="the-intrinsic-coordinate-system">The intrinsic coordinate system<a class="headerlink" href="#the-intrinsic-coordinate-system" title="Link to this section">#</a></h2>
+<p>Every multiscale image has one special coordinate system: the one that <strong>all of
+its datasets (resolution levels) map into</strong>.  The spec calls it the
+<strong>"intrinsic" coordinate system</strong> of the image.  It is "a representation of the
+image in its <strong>native physical coordinate system</strong>", and the one to use "for
+viewing and processing unless a use case dictates otherwise".</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"multiscales"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">"coordinateSystems"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">,</span><span class="w">  </span><span class="c1">// ← the intrinsic coordinate system</span>
+<span class="w">        </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"datasets"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
+<span class="w">          </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">},</span>
+<span class="w">          </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">}</span>
+<span class="w">        </span><span class="p">}]</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sequence"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">},</span>
+<span class="w">          </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">},</span>
+<span class="w">          </span><span class="nt">"transformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">]},</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"translation"</span><span class="p">,</span><span class="w"> </span><span class="nt">"translation"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.25</span><span class="p">,</span><span class="w"> </span><span class="mf">0.25</span><span class="p">]}</span>
+<span class="w">          </span><span class="p">]</span>
+<span class="w">        </span><span class="p">}]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Here, the intrinsic coordinate system is called <code>physical</code>, but the name is up
+to you.  (The spec's examples use <code>physical</code> or <code>intrinsic</code>;
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> uses <code>"intrinsic"</code>
+unless you pass <code>coordinate_system=...</code>).</p>
+<div class="admonition important">
+<p class="admonition-title">Rules for dataset transformations</p>
+<ul>
+<li>Each dataset has <strong>exactly one</strong> transformation: a <code>scale</code>, an
+  <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation.</li>
+<li>Its <code>input</code> is the dataset's array (<code>{"path": "&lt;dataset path&gt;"}</code>), and its
+  <code>output</code> is the intrinsic coordinate system (<code>{"name": "..."}</code>).</li>
+<li><strong>Every</strong> dataset outputs to the <strong>same</strong> coordinate system.  That's
+  what makes it <em>the</em> intrinsic one.</li>
+<li>The scale gives the pixel size in physical units (or the time step).  If
+  that isn't known (or doesn't apply) for an axis, the value <strong>MUST</strong> be
+  the downsampling factor relative to the first level instead (<code>1.0</code> if
+  that axis isn't downsampled).</li>
+</ul>
+</div>
+<h3 id="where-is-a-pixel">Where is a pixel?<a class="headerlink" href="#where-is-a-pixel" title="Link to this section">#</a></h3>
+<p>Why does level <code>1</code> above have a translation of <code>0.25</code>?  It comes down to a
+convention that v0.6 now spells out:</p>
+<div class="admonition info">
+<p class="admonition-title">The pixel center is the origin</p>
+<p>Pixel <code>(0, 0)</code> of an array is the point <code>(0.0, 0.0)</code> in its own (array)
+coordinates, and that point is the <strong>center</strong> of the pixel.  The pixel
+itself covers the area from <code>-0.5</code> to <code>0.5</code> along each axis (including
+<code>-0.5</code>, excluding <code>0.5</code>).</p>
+</div>
+<p>So when you downsample by 2 (e.g. by averaging 2×2 blocks), the center of the
+first big pixel is <em>not</em> at the center of the first small pixel: it's halfway
+between the first two small pixels.  To keep the levels aligned, each level needs
+a translation of:</p>
+<div class="language-text highlight"><pre><span></span><code>translation = (pixel size at this level - pixel size at level 0) / 2
+</code></pre></div>
+<p>(plus level 0's own translation, if it has one).  Here: <code>(1.0 - 0.5) / 2 = 0.25</code>.  Try it below: hover over a pixel to see where its
+center is, and toggle the translation to see what happens without it.</p>
+<p><ome-pixel-grid></ome-pixel-grid></p>
+<div class="admonition tip">
+<p class="admonition-title">yaozarrs does this for you</p>
+<p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> adds this
+translation to every downsampled level, using the <code>scale_factor</code> of each
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.DimSpec"><code>DimSpec</code></a>.  (The spec's wording is that the translation
+"should be" this for "the most common downsampling methods such as
+classical binning".  If your pyramid was made differently, adjust it.)</p>
+</div>
+<hr />
+<h2 id="more-coordinate-systems-in-one-image">More coordinate systems in one image<a class="headerlink" href="#more-coordinate-systems-in-one-image" title="Link to this section">#</a></h2>
+<p>A multiscale may define <strong>more than one</strong> coordinate system, linked to the
+intrinsic one with transformations in the multiscale's own
+<code>coordinateTransformations</code>.  These apply to all resolution levels at once.</p>
+<p>For example, raw light sheet data acquired at an angle (e.g. with an oblique
+plane microscope) might be stored as-is, with a second <code>deskewed</code> coordinate
+system for the corrected geometry:</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"multiscales"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">"coordinateSystems"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]},</span><span class="w">  </span><span class="c1">// z, y, x as acquired</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"deskewed"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]}</span><span class="w">    </span><span class="c1">// z, y, x after deskewing</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"datasets"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span><span class="w">  </span><span class="c1">// all map to "intrinsic"</span>
+<span class="w">    </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"affine"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"deskew"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"deskewed"</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"affine"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="w">   </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">],</span>
+<span class="w">          </span><span class="p">[</span><span class="mf">0.866</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">],</span>
+<span class="w">          </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w">   </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">]</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</code></pre></div>
+<div class="admonition important">
+<p class="admonition-title">Rules for multiscale transformations</p>
+<ul>
+<li>One side (<code>input</code> or <code>output</code>) <strong>MUST</strong> be the intrinsic coordinate
+  system (by <code>name</code>).</li>
+<li>The other side <strong>MUST</strong> be either another coordinate system of the same
+  multiscale (by <code>name</code>), or the coordinate system of a label image in the
+  image's <code>labels</code> group (by <code>name</code> and <code>path</code>, see <a href="../#lining-labels-up-with-the-image-v06">lining labels up with
+  the image</a>).</li>
+<li>A transformation to a label image <strong>MUST</strong> be an <code>identity</code>, <code>scale</code> or
+  <code>translation</code>.  (The "labels" section of the spec also allows a
+  <code>sequence</code> of a scale and a translation; yaozarrs accepts that too.)</li>
+</ul>
+<p>So within the image's own metadata, every transformation touches the
+intrinsic coordinate system: there are no chains like
+<code>intrinsic → a → b</code>.</p>
+</div>
+<details class="example">
+<summary>Working in pixel units</summary>
+<p>Sometimes it's handy to express things (ROIs, transformation parameters) in
+pixels rather than physical units.  One way the spec suggests: add a
+unitless coordinate system, and link it to the intrinsic one with a scale
+that converts physical units back into pixels:</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"coordinateSystems"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">}</span>
+<span class="w">    </span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">}</span>
+<span class="w">    </span><span class="p">]}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"datasets"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s0"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s0"</span><span class="p">},</span><span class="w"> </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">}</span>
+<span class="w">    </span><span class="p">}]</span>
+<span class="w">  </span><span class="p">}],</span>
+<span class="w">  </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">},</span><span class="w"> </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">}</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Other transformations (e.g. in a scene) can then use <code>array</code> as their
+<code>input</code> or <code>output</code>.</p>
+</details>
+<hr />
+<h2 id="between-images-scenes">Between images: scenes<a class="headerlink" href="#between-images-scenes" title="Link to this section">#</a></h2>
+<p>Transformations between <em>different</em> images live in a
+<a href="../#working-with-scenes">scene</a>: a group whose <code>zarr.json</code> has a
+<code>scene</code> object, with the images as subgroups.  Scene transformations refer to
+each image's coordinate systems by <code>name</code> <em>and</em> <code>path</code> (the image's path within
+the scene), and to the scene's own coordinate systems by <code>name</code> alone:</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"scene"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"coordinateSystems"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stage"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]}],</span>
+<span class="w">    </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"translation"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"translation"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">270.0</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tile_1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stage"</span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>See <a href="../#working-with-scenes">Working with Scenes</a> for the
+details.</p>
+<hr />
+<h2 id="putting-it-together-the-transformation-graph">Putting it together: the transformation graph<a class="headerlink" href="#putting-it-together-the-transformation-graph" title="Link to this section">#</a></h2>
+<p>If you draw every coordinate system as a dot, and every transformation as an
+arrow between two dots, you get a <strong>graph</strong>.  The spec has one firm rule about
+it:</p>
+<div class="admonition important">
+<p class="admonition-title">The graph MUST be connected</p>
+<p>Any two coordinate systems (in the multiscales and scene metadata) <strong>MUST</strong>
+be linked by a path of one or more transformations: either directly, or
+through other coordinate systems.  They don't <em>all</em> need to link to each
+other directly.  (A path through a transformation that can't be inverted
+still counts.)</p>
+</div>
+<p>To get from any coordinate system to any other, follow the arrows (or walk them
+backwards, inverting the transformations as you go), composing the
+transformations along the way.</p>
+<p>Pick an example below, then click on an arrow (or a coordinate system) to see
+its metadata, and which <code>zarr.json</code> it's stored in:</p>
+<p><ome-transform-graph></ome-transform-graph></p>
+<hr />
+<h2 id="transformation-types">Transformation types<a class="headerlink" href="#transformation-types" title="Link to this section">#</a></h2>
+<p>v0.6 defines 12 types of transformations.  Readers <strong>MUST</strong> parse the first
+four, and <strong>SHOULD</strong> understand <code>mapAxis</code>, <code>affine</code>, <code>rotation</code> and
+<code>byDimension</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>What it does</th>
+<th>Parameters</th>
+<th style="text-align: center;">Invertible?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>identity</code></td>
+<td>Nothing: every coordinate stays the same</td>
+<td></td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td>Multiplies each coordinate by a factor</td>
+<td><code>scale</code>: one number per axis</td>
+<td style="text-align: center;">if no factor is <code>0</code></td>
+</tr>
+<tr>
+<td><code>translation</code></td>
+<td>Adds an offset to each coordinate</td>
+<td><code>translation</code>: one number per axis</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>sequence</code></td>
+<td>Applies a list of transformations, in order</td>
+<td><code>transformations</code>: a non-empty list</td>
+<td style="text-align: center;">if each one is</td>
+</tr>
+<tr>
+<td><code>mapAxis</code></td>
+<td>Reorders (permutes) the axes</td>
+<td><code>mapAxis</code>: for each output axis, the index of the input axis it comes from</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>affine</code></td>
+<td>Any linear transformation plus a translation (rotate, scale, shear, ...)</td>
+<td><code>affine</code>: an <code>M x (N+1)</code> matrix (or a <code>path</code> to one)</td>
+<td style="text-align: center;">sometimes</td>
+</tr>
+<tr>
+<td><code>rotation</code></td>
+<td>Rotates</td>
+<td><code>rotation</code>: an <code>N x N</code> matrix (or a <code>path</code> to one)</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>byDimension</code></td>
+<td>Combines lower-dimensional transformations, each acting on some of the axes</td>
+<td><code>transformations</code>: items with <code>transformation</code>, <code>inputAxes</code> and <code>outputAxes</code></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td><code>projectAxis</code></td>
+<td>Adds and/or drops axes</td>
+<td><code>droppedInputs</code> and/or <code>createdOutputs</code>: axis indices</td>
+<td style="text-align: center;">not in general, if it drops an axis</td>
+</tr>
+<tr>
+<td><code>bijection</code></td>
+<td>Gives both directions explicitly</td>
+<td><code>forward</code> and <code>inverse</code> transformations</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>displacements</code></td>
+<td>Moves each point by a vector, looked up in a vector field (e.g. non-rigid registration)</td>
+<td><code>path</code> to the field, optional <code>interpolation</code></td>
+<td style="text-align: center;">not in general</td>
+</tr>
+<tr>
+<td><code>coordinates</code></td>
+<td>Replaces each point with a position, looked up in a vector field</td>
+<td><code>path</code> to the field, optional <code>interpolation</code></td>
+<td style="text-align: center;">not in general</td>
+</tr>
+</tbody>
+</table>
+<p>(The <code>identity</code>, <code>scale</code>, <code>translation</code> and <code>sequence</code> rows are the ones readers
+<strong>MUST</strong> parse; for <code>sequence</code>, it's sequences of those.  Actually <em>applying</em>
+transformations to points or images is a <strong>SHOULD</strong>.)</p>
+<div class="admonition warning">
+<p class="admonition-title">Gotchas</p>
+<ul>
+<li><strong>Parameters follow the axis order.</strong>  The first number of a <code>scale</code> or
+  <code>translation</code> is for the first axis of the coordinate system, and so on.
+  With axes <code>c, z, y, x</code>, a scale is <code>[c, z, y, x]</code>.</li>
+<li><strong>Discrete axes still count.</strong>  If a coordinate system has a channel
+  axis, it needs a parameter too (usually <code>1.0</code> for a scale, <code>0.0</code> for a
+  translation), even though channels aren't "transformed".</li>
+<li><strong>Sequences apply in order</strong>: for <code>[f0, f1, f2]</code>, <code>f0</code> is applied first,
+  and <code>f2</code> last (i.e. <code>f2(f1(f0(x)))</code>).</li>
+<li><strong>Matrices are lists of rows</strong>, applied to points as column vectors.  An
+  <code>affine</code> from <code>N</code> to <code>M</code> dimensions has <code>M</code> rows of <code>N+1</code> numbers: the
+  last number of each row is the translation (the <code>[0, ..., 0, 1]</code> row of
+  the full homogeneous matrix is left out).  A <code>rotation</code> is <code>N x N</code>, with
+  determinant 1 and orthonormal rows and columns.</li>
+<li><strong>Prefer simple transformations.</strong>  The spec says implementations
+  <strong>SHOULD</strong> prefer a sequence of less expressive transformations (e.g.
+  <code>sequence[translation, rotation]</code>) over an equivalent <code>affine</code>.</li>
+<li><strong>Fields are multiscale images.</strong>  The vector field of a <code>displacements</code>
+  or <code>coordinates</code> transformation is stored as a normal multiscale image
+  group, with one extra (discrete) axis of <code>type</code> <code>"displacement"</code> or
+  <code>"coordinate"</code> for the vector's components.</li>
+</ul>
+</div>
+<hr />
+<h2 id="in-yaozarrs">In yaozarrs<a class="headerlink" href="#in-yaozarrs" title="Link to this section">#</a></h2>
+<p>Every transformation type has a model in
+<a href="../../API_Reference/yaozarrs.v06/"><code>yaozarrs.v06</code></a>, and they validate
+what can be checked from the metadata alone (e.g. that a scale has one value per
+axis, a rotation matrix is orthonormal, or that every dataset outputs to the
+same coordinate system):</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">v06</span>
+
+<span class="c1"># an image, with its intrinsic coordinate system ("intrinsic")</span>
+<span class="n">ms</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">from_dims</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+        <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">n_levels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">intrinsic_coordinate_system</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># "intrinsic"</span>
+
+<span class="c1"># add a second coordinate system, rotated 90 degrees in the yx plane</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">"coordinateSystems"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">data</span><span class="p">[</span><span class="s2">"coordinateSystems"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"rotated"</span><span class="p">})</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">"coordinateTransformations"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">v06</span><span class="o">.</span><span class="n">RotationTransformation</span><span class="p">(</span>
+        <span class="n">rotation</span><span class="o">=</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span>
+        <span class="nb">input</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"intrinsic"</span><span class="p">},</span>
+        <span class="n">output</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"rotated"</span><span class="p">},</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="n">v06</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)])</span>
+</code></pre></div>
+<p>Things that need the rest of the hierarchy (that a <code>path</code> points to a real
+image, that the graph is connected across a scene, that an <code>affine</code> stored in a
+Zarr array has the right shape...) are checked by
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store"><code>yaozarrs.validate_zarr_store</code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Disconnected coordinate systems in a single image</p>
+<p>The "connected graph" rule is about the multiscales and the scene metadata
+<em>combined</em>, so a scene could link two coordinate systems of an image that
+the image itself doesn't.  For that reason, when
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store"><code>validate_zarr_store</code></a> checks an image on
+its own (not as part of a scene), it only <em>warns</em> about coordinate
+systems that aren't linked to anything; inside a scene, it's an error.</p>
+</div>
+<hr />
+<h2 id="further-reading">Further reading<a class="headerlink" href="#further-reading" title="Link to this section">#</a></h2>
+<ul>
+<li>The coordinate systems, transformations and scene sections of the <a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">v0.6
+  specification</a></li>
+<li><a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5: Coordinate Systems and
+  Transformations</a>, with its
+  <a href="https://ngff.openmicroscopy.org/rfc/5/reviews/index.html">reviews</a> and
+  <a href="https://ngff.openmicroscopy.org/rfc/5/responses/index.html">responses</a></li>
+<li>The <a href="https://itk.org/ItkSoftwareGuide.pdf">ITK Software Guide</a> (chapter 4),
+  which the spec points to for a more formal definition of the pixel
+  convention</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Guide to OME-Zarr">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Guide to OME-Zarr
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../API_Reference/yaozarrs/" class="md-footer__link md-footer__link--next" aria-label="Next: yaozarrs">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                yaozarrs
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      2026, Talley Lambert
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["search.highlight","search.suggest","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../javascripts/yaozarrs-animation.js"></script>
+      
+        <script src="../../javascripts/ome_explorer.js" type="module"></script>
+      
+        <script src="../../javascripts/ome_transforms.js" type="module"></script>
+      
+    
+  </body>
+</html>
