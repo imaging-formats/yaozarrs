@@ -466,14 +466,14 @@ ms = v06.Multiscale.from_dims(
 print(ms.intrinsic_coordinate_system.name)  # "intrinsic"
 
 # add a second coordinate system, rotated 90 degrees in the yx plane
-data = ms.model_dump(exclude_unset=True, by_alias=True)
+data = ms.model_dump(by_alias=True)
 data["coordinateSystems"].append({**data["coordinateSystems"][0], "name": "rotated"})
 data["coordinateTransformations"] = [
     v06.RotationTransformation(
         rotation=[[1, 0, 0], [0, 0, -1], [0, 1, 0]],
         input={"name": "intrinsic"},
         output={"name": "rotated"},
-    ).model_dump(exclude_unset=True, by_alias=True)
+    ).model_dump(by_alias=True)
 ]
 image = v06.Image(multiscales=[v06.Multiscale.model_validate(data)])
 ```

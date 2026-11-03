@@ -647,11 +647,12 @@ They are represented as a special group named "labels/" within an image group.
 
         **yaozarrs Code:**
         ```python
-        from yaozarrs import v06
+        from yaozarrs import DimSpec, v06
 
         # Label metadata stored at labels/nuclei/zarr.json
         label_image = v06.LabelImage(
-            multiscales=[...],  # Same structure as regular image
+            # same structure as a regular image
+            multiscales=[v06.Multiscale.from_dims([DimSpec(name="y"), DimSpec(name="x")])],
             image_label=v06.ImageLabel(
                 colors=[
                     v06.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
@@ -674,7 +675,7 @@ They are represented as a special group named "labels/" within an image group.
         └── labels/
             ├── zarr.json        # Labels group metadata ("attributes.ome.labels")
             ├── nuclei/          # Label image (integer dtype)
-            │   ├── zarr.json    # Label metadata ("attributes.ome.multiscales", "attributes.ome.image_label")
+            │   ├── zarr.json    # Label metadata ("attributes.ome.multiscales", "attributes.ome.image-label")
             │   ├── 0/           # Full resolution labels
             │   └── 1/           # Downsampled labels
             └── cells/
@@ -1314,9 +1315,7 @@ This bioformats2raw layout described in the NGFF spec, is described below:
     from yaozarrs import v06
 
     # Root zarr.json
-    root_zarr_json = v06.OMEZarrGroupJSON(
-        attributes={"ome": v06.Bf2Raw(bioformats2raw_layout=3)}
-    )
+    root_zarr_json = v06.OMEZarrGroupJSON(attributes={"ome": v06.Bf2Raw()})
 
     # OME/zarr.json
     ome_zarr_json = v06.OMEZarrGroupJSON(
@@ -1623,9 +1622,10 @@ Here's what changed, roughly in order of how likely it is to affect you:
    same rules).  In v0.6, they link the intrinsic coordinate system to *other*
    named coordinate systems (of the same multiscale, or of a label image).  If
    you used them in v0.5, you'll need to rethink them (e.g. fold them into each
-   dataset's transformation).  Also, all coordinate systems **MUST** now be
-   connected by transformations (an unlinked extra coordinate system is
-   invalid).  See [Coordinate Systems &
+   dataset's transformation, which is what
+   [`convert_version`][yaozarrs.convert_version] does).  Also, all coordinate
+   systems **MUST** now be connected by transformations (an unlinked extra
+   coordinate system is invalid).  See [Coordinate Systems &
    Transformations](coordinate_systems.md#more-coordinate-systems-in-one-image).
 4. **Many more transformation types.**  `identity`, `scale` and `translation`
    are joined by `mapAxis`, `projectAxis`, `affine`, `rotation`, `sequence`,
@@ -1661,6 +1661,22 @@ Here's what changed, roughly in order of how likely it is to affect you:
 13. **No more nested `version` keys.**  The v0.5 text still required a
     `version` key inside `plate` (and recommended one in `well` and
     `image-label`), although its schemas didn't; v0.6 only has `ome.version`.
+
+!!! tip "Converting existing metadata"
+    [`yaozarrs.convert_version`][] converts metadata models between v0.4, v0.5
+    and v0.6, keeping their kind (an `Image` stays an `Image`):
+
+    ```python
+    from yaozarrs import DimSpec, convert_version, v05
+
+    image = v05.Image(
+        multiscales=[v05.Multiscale.from_dims([DimSpec(name="y"), DimSpec(name="x")])]
+    )
+    v06_image = convert_version(image, "0.6")
+    ```
+
+    It only converts metadata: no store is read or written.  Anything the target
+    version can't express is dropped with a `ConversionWarning`.
 
 **What *didn't* change:** the storage format (still Zarr v3, with metadata under
 `attributes.ome`), the 2-5 dimension limit for images, the layout of plates and
