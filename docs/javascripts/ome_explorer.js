@@ -647,9 +647,11 @@ class OmeExplorer extends LitElement {
   updated(changedProperties) {
     if (changedProperties.has('version')) {
       // When version changes, validate that selected node still exists
-      if (this.selectedNode === 'root-zgroup' && this.version !== 'v0.4') {
-        // .zgroup doesn't exist in v0.5+, switch to root-meta
-        this.selectedNode = 'root-meta';
+      if (this.selectedNode?.endsWith('zgroup') && this.version !== 'v0.4') {
+        // .zgroup doesn't exist in v0.5+: select the group's zarr.json instead
+        // (rows have no metadata of their own, so select the row's folder)
+        const group = this.selectedNode.slice(0, -'zgroup'.length);
+        this.selectedNode = group.startsWith('row-') ? group.slice(0, -1) : `${group}meta`;
       }
     }
 
@@ -2702,6 +2704,18 @@ class OmeExplorer extends LitElement {
     this.validateDimensions();
   }
 
+  // scales and downscale factors must be positive, so ignore anything else
+  // (e.g. a cleared field) and keep the last valid value
+  updatePositive(index, field, raw) {
+    const value = parseFloat(raw);
+    if (value > 0) this.updateDimension(index, field, value);
+  }
+
+  multiscalesDesc() {
+    const axes = this.version === 'v0.6' ? 'coordinate systems' : 'axes';
+    return `Contains multiscales with ${axes} and transformations.`;
+  }
+
   // Drag and drop methods for reordering dimensions
   handleDragStart(e, index) {
     this.draggedIndex = index;
@@ -3039,7 +3053,7 @@ class OmeExplorer extends LitElement {
 
           contents[`${fovPrefix}meta`] = {
             title: metaFile,
-            description: `Image metadata for FOV ${f}. Contains multiscales with axes and transformations.`,
+            description: `Image metadata for FOV ${f}. ${this.multiscalesDesc()}`,
             content: JSON.parse(this.generateJSON()),
           };
 
@@ -3379,7 +3393,7 @@ class OmeExplorer extends LitElement {
           } else if (nodeId === `${prefix}meta`) {
             return {
               title: metaFile,
-              desc: `Image metadata for FOV ${fovNum}. Contains multiscales with axes and transformations.`
+              desc: `Image metadata for FOV ${fovNum}. ${this.multiscalesDesc()}`
             };
           } else if (nodeId.includes('-level-')) {
             // Handle level nodes
@@ -3602,7 +3616,7 @@ class OmeExplorer extends LitElement {
               min="1"
               max="10"
               .value=${this.numLevels}
-              @input=${(e) => this.numLevels = parseInt(e.target.value)}
+              @input=${(e) => this.numLevels = Math.min(10, Math.max(1, parseInt(e.target.value) || 1))}
             />
           </div>
         </div>
@@ -3670,7 +3684,7 @@ class OmeExplorer extends LitElement {
                           type="number"
                           step="any"
                           .value=${dim.scale}
-                          @input=${(e) => this.updateDimension(i, 'scale', parseFloat(e.target.value) || 0)}
+                          @input=${(e) => this.updatePositive(i, 'scale', e.target.value)}
                         />
                       </td>
                       <td>
@@ -3686,7 +3700,7 @@ class OmeExplorer extends LitElement {
                           type="number"
                           step="any"
                           .value=${dim.scaleFactor}
-                          @input=${(e) => this.updateDimension(i, 'scaleFactor', parseFloat(e.target.value) || 1)}
+                          @input=${(e) => this.updatePositive(i, 'scaleFactor', e.target.value)}
                         />
                       </td>
                       <td>

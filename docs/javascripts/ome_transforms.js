@@ -90,6 +90,7 @@ const sharedStyles = css`
   }
 `;
 
+const FACTORS = [2, 4]; // the level 1 downsampling factors to choose from
 const fmt = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(+v.toFixed(3)));
 
 // ---------------------------------------------------------------------------
@@ -260,24 +261,28 @@ class OmePixelGrid extends LitElement {
   render() {
     const ppu = 60; // svg units per micrometer
     const extent = this.n0 * this.s0; // 4 µm
-    const ox = 48; // room for the axes and for overhanging pixels
+    // the most that level 1 can stick out past the image (half of its biggest
+    // pixel, when the translation is left out), so the axes go outside of that
+    const overhang = ((this.s0 * Math.max(...FACTORS)) / 2) * ppu;
+    const ax = 48; // where the axes are
+    const ox = ax + overhang; // where the image starts
     const size = ox * 2 + extent * ppu;
     this._ppu = ppu;
     this._ox = ox;
     const ticks = [];
     for (let v = 0; v <= extent; v += 1) {
       ticks.push(svg`<g class="axis">
-        <line x1=${ox + v * ppu} x2=${ox + v * ppu} y1=${ox - 26} y2=${ox - 20} />
-        <text x=${ox + v * ppu} y=${ox - 29} text-anchor="middle">${v}</text>
-        <line y1=${ox + v * ppu} y2=${ox + v * ppu} x1=${ox - 26} x2=${ox - 20} />
-        <text y=${ox + v * ppu + 3} x=${ox - 29} text-anchor="end">${v}</text>
+        <line x1=${ox + v * ppu} x2=${ox + v * ppu} y1=${ax - 26} y2=${ax - 20} />
+        <text x=${ox + v * ppu} y=${ax - 29} text-anchor="middle">${v}</text>
+        <line y1=${ox + v * ppu} y2=${ox + v * ppu} x1=${ax - 26} x2=${ax - 20} />
+        <text y=${ox + v * ppu + 3} x=${ax - 29} text-anchor="end">${v}</text>
       </g>`);
     }
     return html`<div class="panel">
       <div class="controls">
         <span>Level 1 is downsampled by</span>
         <span class="seg">
-          ${[2, 4].map(
+          ${FACTORS.map(
             (f) => html`<button class=${this.factor === f ? 'active' : ''}
               @click=${() => (this.factor = f)}>×${f}</button>`,
           )}
@@ -294,8 +299,8 @@ class OmePixelGrid extends LitElement {
             aria-label="Pixel grids of two resolution levels in physical space"
             @mousemove=${this._onMove} @mouseleave=${() => (this.hovered = null)}>
             ${ticks}
-            <text class="note" x=${ox + extent * ppu + 14} y=${ox - 29}>x (µm)</text>
-            <text class="note" x=${ox - 29} y=${ox + extent * ppu + 20} text-anchor="middle">y (µm)</text>
+            <text class="note" x=${ox + extent * ppu + 14} y=${ax - 29}>x (µm)</text>
+            <text class="note" x=${ax - 29} y=${ox + extent * ppu + 20} text-anchor="middle">y (µm)</text>
             <g class="px0">${this._pixels(0, ppu, ox)}</g>
             <g class="px1">${this._pixels(1, ppu, ox)}</g>
             <g class="origin">
