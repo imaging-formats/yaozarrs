@@ -1064,6 +1064,8 @@ exporting metadata back to JSON format.</li>
 <h3 id="validation-of-existing-objects">Validation of existing objects<a class="headerlink" href="#validation-of-existing-objects" title="Link to this section">#</a></h3>
 <p>If you have an existing JSON file, string, or python object, you can
 validate it and cast it to the appropriate typed <code>yaozarrs</code> model:</p>
+<!-- no-test -->
+
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">yaozarrs</span>
 
 <span class="c1"># validate a JSON string/bytes literal</span>
@@ -1228,6 +1230,8 @@ can fetch them lazily in <code>__getitem__</code>, or you can fetch them up fron
 <p>See <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-module&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-module-name&quot;&gt;yaozarrs.write.v05&lt;/span&gt;" href="API_Reference/yaozarrs.write.v05/#yaozarrs.write.v05"><code>yaozarrs.write.v05</code></a> for convenience functions to write OME-Zarr v0.5
 stores using your metadata objects, with either <code>zarr-python</code>, <code>tensorstore</code>,
 or custom backends.</p>
+<!-- no-test -->
+
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">write</span>
@@ -1305,6 +1309,8 @@ minimal functionality: <a class="autorefs autorefs-internal" title="&lt;code cla
 extra</a> to support remote URIs.  This
 class is used behind the scenes for structural validation, but can also be used
 directly.</p>
+<!-- no-test -->
+
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">yaozarrs</span>
 
 <span class="c1"># Open a Zarr group at any URI</span>
@@ -1321,6 +1327,8 @@ directly.</p>
 </ol>
 <p>You can also get a tree view of the hierarchy programmatically with
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;tree&lt;/span&gt;" href="API_Reference/yaozarrs/#yaozarrs.ZarrGroup.tree"><code>ZarrGroup.tree()</code></a>:</p>
+<!-- no-test -->
+
 <div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">tree</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
 <h4 id="access-array-data">Access array data<a class="headerlink" href="#access-array-data" title="Link to this section">#</a></h4>
