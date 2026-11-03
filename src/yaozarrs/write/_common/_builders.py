@@ -372,16 +372,20 @@ class _BuilderBase:
         datasets: Any,
         *path: str,
         progress: bool,
+        labels: Mapping[str, tuple[Any, ArrayOrPyramid]] | None = None,
+        labels_builder_type: type[LabelsBuilderBase] | None = None,
         chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
         shards: ShapeLike | _Default | None = _Default.BUILDER,
         compression: CompressionName | _Default = _Default.BUILDER,
     ) -> None:
-        """Write `image` and its data at `path`, below the root."""
+        """Write `image` and its data (and `labels`) at `path`, below the root."""
         _write_image(
             self._dest.joinpath(*path),
             image,
             datasets,
             image_type=self._image_type,
+            labels=labels,
+            labels_builder_type=labels_builder_type,
             writer=self._writer,
             overwrite=self._overwrite,
             progress=progress,

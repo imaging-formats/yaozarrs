@@ -131,39 +131,124 @@ def test_scene_wrong_chunks_ndim(tmp_path: Path) -> None:
     assert (dest / "a" / "0" / "zarr.json").exists()
 
 
-def test_scene_with_label_image(tmp_path: Path) -> None:
-    # a reference to a multiscale image *inside* one of the images (here one of its
-    # labels) isn't checked when writing: the label image is written separately
-    labels_cs = {**WORLD, "name": "labels"}
-    scene = _scene(
-        _to_world("a"),
-        {
-            "type": "identity",
-            "input": {"path": "a/labels/cells", "name": "intrinsic"},
-            "output": {"name": "labels"},
-        },
-        systems=[WORLD, labels_cs],
+def _label() -> v06.LabelImage:
+    dims = [DimSpec(name="y"), DimSpec(name="x")]
+    return v06.LabelImage(
+        multiscales=[v06.Multiscale.from_dims(dims)], image_label=v06.ImageLabel()
     )
-    # (the image links its intrinsic system to the label image's, which connects the
-    # "labels" scene system to the rest)
+
+
+def _image_linked_to_label(name: str = "cells") -> v06.Image:
+    # (an image that links its intrinsic system to its label image's)
     dims = [DimSpec(name="y"), DimSpec(name="x")]
     ms = v06.Multiscale.from_dims(dims).model_dump(exclude_unset=True, by_alias=True)
     ms["coordinateTransformations"] = [
         {
             "type": "identity",
             "input": {"name": "intrinsic"},
-            "output": {"name": "intrinsic", "path": "labels/cells"},
+            "output": {"name": "intrinsic", "path": f"labels/{name}"},
         }
     ]
-    image = v06.Image(multiscales=[v06.Multiscale.model_validate(ms)])
-    label = v06.LabelImage(
-        multiscales=[v06.Multiscale.from_dims(dims)], image_label=v06.ImageLabel()
+    return v06.Image(multiscales=[v06.Multiscale.model_validate(ms)])
+
+
+def _label_scene() -> v06.Scene:
+    # the label image of "a" goes to its own "labels" scene system, which is only
+    # connected to the rest through the image's own transformation into its labels
+    return _scene(
+        _to_world("a"),
+        {
+            "type": "identity",
+            "input": {"path": "a/labels/cells", "name": "intrinsic"},
+            "output": {"name": "labels"},
+        },
+        systems=[WORLD, {**WORLD, "name": "labels"}],
     )
-    dest = write_scene(tmp_path / "s.zarr", scene, {"a": (image, DATA)})
-    LabelsBuilder(dest / "a" / "labels").write_label(
-        "cells", label, DATA.astype("uint8")
+
+
+LABEL_DATA = DATA.astype("uint8")
+LABEL_SPEC = ((16, 16), "uint8")
+
+
+def test_write_scene_with_labels(tmp_path: Path) -> None:
+    image = _image_linked_to_label()
+    dest = write_scene(
+        tmp_path / "s.zarr",
+        _label_scene(),
+        {"a": (image, DATA)},
+        labels={"a": {"cells": (_label(), LABEL_DATA)}},
     )
+    assert _ome(dest / "a" / "labels") == {"version": "0.6", "labels": ["cells"]}
     yaozarrs.validate_zarr_store(dest)
+
+
+def test_scene_builder_with_labels(tmp_path: Path) -> None:
+    image = _image_linked_to_label()
+    builder = SceneBuilder(tmp_path / "s.zarr", _label_scene())
+    builder.write_image("a", image, DATA, labels={"cells": (_label(), LABEL_DATA)})
+    yaozarrs.validate_zarr_store(builder.root_path)
+
+    builder2 = SceneBuilder(tmp_path / "s2.zarr", _label_scene())
+    builder2.add_image("a", image, SPEC, labels={"cells": (_label(), LABEL_SPEC)})
+    dest, arrays = builder2.prepare()
+    assert set(arrays) == {"a/0", "a/labels/cells/0"}
+    arrays["a/0"][:] = DATA
+    arrays["a/labels/cells/0"][:] = LABEL_DATA
+    yaozarrs.validate_zarr_store(dest)
+
+
+def test_scene_labels_disconnected(tmp_path: Path) -> None:
+    # without the image's transformation into its labels, the "labels" scene system
+    # is linked to nothing else: now that the label image is given, that's caught
+    dest = tmp_path / "s.zarr"
+    labels = {"cells": (_label(), LABEL_DATA)}
+    with pytest.raises(ValueError, match="not all linked"):
+        write_scene(dest, _label_scene(), {"a": (_image(), DATA)}, labels={"a": labels})
+    builder = SceneBuilder(dest, _label_scene())
+    with pytest.raises(ValueError, match="not all linked"):
+        builder.add_image("a", _image(), SPEC, labels={"cells": (_label(), LABEL_SPEC)})
+        builder.prepare()
+    assert not dest.exists()
+
+
+def test_scene_label_written_afterwards(tmp_path: Path) -> None:
+    # a reference to a label image that isn't given (here, written afterwards with a
+    # LabelsBuilder) is still allowed, and isn't checked
+    dest = write_scene(
+        tmp_path / "s.zarr", _label_scene(), {"a": (_image_linked_to_label(), DATA)}
+    )
+    LabelsBuilder(dest / "a" / "labels").write_label("cells", _label(), LABEL_DATA)
+    yaozarrs.validate_zarr_store(dest)
+
+
+def test_scene_label_errors(tmp_path: Path) -> None:
+    dest = tmp_path / "s.zarr"
+    scene = _scene(_to_world("a"))
+    images = {"a": (_image(), DATA)}
+    with pytest.raises(ValueError, match=r"labels: \['b'\] are not among"):
+        write_scene(
+            dest, scene, images, labels={"b": {"cells": (_label(), LABEL_DATA)}}
+        )
+    with pytest.raises(
+        ValueError, match="label 'cells': label images MUST have an int"
+    ):
+        write_scene(
+            dest, scene, images, labels={"a": {"cells": (_label(), DATA * 1.0)}}
+        )
+    with pytest.raises(TypeError, match=r"expected a v06\.LabelImage"):
+        not_a_label: Any = _image()
+        write_scene(dest, scene, images, labels={"a": {"cells": (not_a_label, DATA)}})
+    with pytest.raises(ValueError, match="Invalid image path"):
+        write_scene(dest, scene, images, labels={"a": {"__x": (_label(), LABEL_DATA)}})
+    # (the label image's coordinate system must exist, like an image's)
+    with pytest.raises(ValueError, match="has no coordinate system 'physical'"):
+        write_scene(
+            dest,
+            _scene(_to_world("a"), _to_world("a/labels/cells", name="physical")),
+            images,
+            labels={"a": {"cells": (_label(), LABEL_DATA)}},
+        )
+    assert not dest.exists()
 
 
 @pytest.mark.parametrize(
