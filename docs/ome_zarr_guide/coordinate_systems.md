@@ -118,16 +118,11 @@ lists them all.
 !!! warning "Transformations point from `input` to `output`"
     Transformations map *points* from the input space to the output space
     (the spec calls this the "forward" direction).  This sounds obvious, but
-    it's an easy place to get things backwards:
-
-    - To *draw* image A into the coordinate system of image B, a viewer
-      usually needs the **inverse**: for each pixel of the output, where should
-      it sample A?  For simple transformations (scale, translation, rotation...)
-      the viewer can compute that inverse itself.
-    - Image **registration** tools often give you the transformation from the
-      *fixed* image to the *moving* image, for exactly that reason.  That's
-      fine: just make sure `input` and `output` say which is which (input =
-      fixed, output = moving), rather than assuming the direction.
+    it's an easy place to get things backwards.  To *draw* image A into the
+    coordinate system of image B, a viewer usually needs the **inverse**: for
+    each pixel of the output, where should it sample A?  For simple
+    transformations (scale, translation, rotation...) the viewer can compute
+    that inverse itself.
 
     See also the [`bijection`](#transformation-types) type, which stores both
     directions explicitly.
@@ -304,41 +299,6 @@ system for the corrected geometry:
     intrinsic coordinate system: there are no chains like
     `intrinsic → a → b`.
 
-??? example "Working in pixel units"
-    Sometimes it's handy to express things (ROIs, transformation parameters) in
-    pixels rather than physical units.  One way the spec suggests: add a
-    unitless coordinate system, and link it to the intrinsic one with a scale
-    that converts physical units back into pixels:
-
-    ```json
-    {
-      "coordinateSystems": [
-        {"name": "intrinsic", "axes": [
-          {"name": "y", "type": "space", "unit": "micrometer"},
-          {"name": "x", "type": "space", "unit": "micrometer"}
-        ]},
-        {"name": "array", "axes": [
-          {"name": "y", "type": "space"},
-          {"name": "x", "type": "space"}
-        ]}
-      ],
-      "datasets": [{
-        "path": "s0",
-        "coordinateTransformations": [{
-          "type": "scale", "scale": [0.5, 0.5],
-          "input": {"path": "s0"}, "output": {"name": "intrinsic"}
-        }]
-      }],
-      "coordinateTransformations": [{
-        "type": "scale", "scale": [2.0, 2.0],
-        "input": {"name": "intrinsic"}, "output": {"name": "array"}
-      }]
-    }
-    ```
-
-    Other transformations (e.g. in a scene) can then use `array` as their
-    `input` or `output`.
-
 ---
 
 ## Between images: scenes
@@ -396,28 +356,14 @@ its metadata, and which `zarr.json` it's stored in:
 
 ## Transformation types
 
-v0.6 defines 12 types of transformations.  Readers **MUST** parse the first
-four, and **SHOULD** understand `mapAxis`, `affine`, `rotation` and
-`byDimension`.
-
-| Type | What it does | Parameters | Invertible? |
-|------|--------------|------------|:-----------:|
-| `identity` | Nothing: every coordinate stays the same | | yes |
-| `scale` | Multiplies each coordinate by a factor | `scale`: one number per axis | if no factor is `0` |
-| `translation` | Adds an offset to each coordinate | `translation`: one number per axis | yes |
-| `sequence` | Applies a list of transformations, in order | `transformations`: a non-empty list | if each one is |
-| `mapAxis` | Reorders (permutes) the axes | `mapAxis`: for each output axis, the index of the input axis it comes from | yes |
-| `affine` | Any linear transformation plus a translation (rotate, scale, shear, ...) | `affine`: an `M x (N+1)` matrix (or a `path` to one) | sometimes |
-| `rotation` | Rotates | `rotation`: an `N x N` matrix (or a `path` to one) | yes |
-| `byDimension` | Combines lower-dimensional transformations, each acting on some of the axes | `transformations`: items with `transformation`, `inputAxes` and `outputAxes` | |
-| `projectAxis` | Adds and/or drops axes | `droppedInputs` and/or `createdOutputs`: axis indices | not in general, if it drops an axis |
-| `bijection` | Gives both directions explicitly | `forward` and `inverse` transformations | yes |
-| `displacements` | Moves each point by a vector, looked up in a vector field (e.g. non-rigid registration) | `path` to the field, optional `interpolation` | not in general |
-| `coordinates` | Replaces each point with a position, looked up in a vector field | `path` to the field, optional `interpolation` | not in general |
-
-(The `identity`, `scale`, `translation` and `sequence` rows are the ones readers
-**MUST** parse; for `sequence`, it's sequences of those.  Actually *applying*
-transformations to points or images is a **SHOULD**.)
+v0.6 defines 12 types of transformations: `identity`, `scale`, `translation`,
+`sequence`, `mapAxis`, `affine`, `rotation`, `byDimension`, `projectAxis`,
+`bijection`, `displacements` and `coordinates`.  Readers **MUST** parse the
+first four (for `sequence`, sequences of those), and **SHOULD** understand
+`mapAxis`, `affine`, `rotation` and `byDimension`.  Actually *applying*
+transformations to points or images is a **SHOULD**.  See the
+[spec](https://ngff.openmicroscopy.org/specifications/0.6/index.html) for
+what each one does and its parameters.
 
 !!! warning "Gotchas"
     - **Parameters follow the axis order.**  The first number of a `scale` or
@@ -436,10 +382,6 @@ transformations to points or images is a **SHOULD**.)
     - **Prefer simple transformations.**  The spec says implementations
       **SHOULD** prefer a sequence of less expressive transformations (e.g.
       `sequence[translation, rotation]`) over an equivalent `affine`.
-    - **Fields are multiscale images.**  The vector field of a `displacements`
-      or `coordinates` transformation is stored as a normal multiscale image
-      group, with one extra (discrete) axis of `type` `"displacement"` or
-      `"coordinate"` for the vector's components.
 
 ---
 
