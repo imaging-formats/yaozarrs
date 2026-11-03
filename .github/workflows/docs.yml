@@ -6,8 +6,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build:
@@ -22,18 +20,30 @@ jobs:
       # TODO: re-enable --strict once https://github.com/zensical/zensical/issues/700
       # (and the related autorefs over-flagging) is fixed.
       - run: uv run --group docs zensical build --clean
-      - uses: actions/upload-pages-artifact@v5
+      - run: touch site/.nojekyll
+      # for docs-preview.yml, which deploys PR builds (it can't see the PR number)
+      - if: github.event_name == 'pull_request'
+        run: echo "${{ github.event.number }}" > pr-number
+      - uses: actions/upload-artifact@v7
         with:
-          path: site
+          name: site
+          path: |
+            site
+            pr-number
+          include-hidden-files: true
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push'
     needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/configure-pages@v6
-      - uses: actions/deploy-pages@v5
-        id: deployment
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: site
+          clean-exclude: pr-preview/
