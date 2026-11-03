@@ -732,8 +732,8 @@ class ZarrGroup(ZarrNode):
 
         Examples
         --------
-        >>> group = open_group("https://example.com/data.zarr")
-        >>> print(group.tree(depth=2, max_per_level=5))
+        >>> group = open_group("https://example.com/data.zarr")  # doctest: +SKIP
+        >>> print(group.tree(depth=2, max_per_level=5))  # doctest: +SKIP
         🖼️ data.zarr
         ├── 📁 A
         │   ├── 🖼️ 1

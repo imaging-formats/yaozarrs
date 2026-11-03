@@ -291,7 +291,9 @@ class Multiscale(_BaseModel):
         ...     DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),
         ...     DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),
         ... ]
-        >>> v04.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)
+        >>> ms = v04.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)
+        >>> [ds.path for ds in ms.datasets]
+        ['0', '1', '2']
         """
         from yaozarrs._dim_spec import _axes_datasets
 
