@@ -865,6 +865,8 @@ class PlateBuilder(PlateBuilderBase[Image]):
         When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
         If True, overwrite existing groups. Default is False.
+        If False and `dest` already holds a plate, the wells written are added
+        to it.
         Note: existing directories that don't look like zarr groups will NOT be removed,
         an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
