@@ -419,8 +419,6 @@ with either `zarr-python`, `tensorstore`, or custom backends.
 
 <!-- no-test -->
 
-<!-- no-test -->
-
 ```python
 import numpy as np
 
