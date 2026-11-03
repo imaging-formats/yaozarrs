@@ -69,10 +69,12 @@ class StorageValidatorV06(StorageValidator):
     Series = Series
 
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
-        return validate_ome_object(attrs, OMEAttributes).ome
+        return validate_ome_object(dict(attrs), OMEAttributes, strict=self.strict).ome
 
     def _parse_ome_uri(self, uri: str) -> Any:
-        return validate_ome_uri(uri, OMEZarrGroupJSON).attributes.ome
+        return validate_ome_uri(
+            uri, OMEZarrGroupJSON, strict=self.strict
+        ).attributes.ome
 
     # NOTE: 0.6 has no rule about the arrays' `dimension_names` (0.5.2 required them
     # to be present and match the axes names), so there's no `_validate_dataset_array`.
@@ -101,18 +103,11 @@ class StorageValidatorV06(StorageValidator):
     def visit_label_image(
         self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
     ) -> ValidationResult:
-        # The `zarr.json` file for the label image MUST implement the multiscales
-        # specification.
-        # (so it gets the image checks too; the base class only checks what is
-        # specific to label images)
         key = f"label:{_norm(zarr_group.path)}"
         if key in self._visited:
             return ValidationResult()
         self._visited.add(key)
-        result = self.visit_image(zarr_group, label_image_model, loc_prefix)
-        return result.merge(
-            super().visit_label_image(zarr_group, label_image_model, loc_prefix)
-        )
+        return super().visit_label_image(zarr_group, label_image_model, loc_prefix)
 
     def _visit_image(
         self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
@@ -230,7 +225,7 @@ class StorageValidatorV06(StorageValidator):
         if not isinstance(group := zarr_group.get(name), ZarrGroup):
             return None
         try:
-            model = group.ome_metadata(version=self.VERSION)
+            model = group.ome_metadata(version=self.VERSION, strict=self.strict)
         except ValueError:
             return None
         return model if isinstance(model, LabelsGroup) else None
@@ -283,7 +278,7 @@ class StorageValidatorV06(StorageValidator):
         model: Any = None
         if isinstance(group, ZarrGroup):
             try:
-                model = group.ome_metadata(version=self.VERSION)
+                model = group.ome_metadata(version=self.VERSION, strict=self.strict)
             except ValueError as e:
                 model = e
         if isinstance(model, Image):
@@ -632,7 +627,7 @@ class StorageValidatorV06(StorageValidator):
             _error("is a Zarr array, but must be a multiscale image group")
             return result
         try:
-            model: Any = node.ome_metadata(version=self.VERSION)
+            model: Any = node.ome_metadata(version=self.VERSION, strict=self.strict)
         except ValueError as e:
             model = e
         if not isinstance(model, Image):

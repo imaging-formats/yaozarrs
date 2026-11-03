@@ -75,7 +75,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
         )
 
         # Export
-        image.model_dump_json(exclude_unset=True, indent=2)  # (3)!
+        image.model_dump_json(indent=2)  # (3)!
         ```
 
         1. In v0.6, axes belong to a named *coordinate system*.  See
@@ -115,7 +115,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
         )
 
         # Export
-        image.model_dump_json(exclude_unset=True, indent=2)  # (1)!
+        image.model_dump_json(indent=2)  # (1)!
         ```
 
         1. [`model_dump_json`][pydantic.BaseModel.model_dump_json] is part of the
@@ -167,7 +167,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
         )
 
         # Export
-        image.model_dump_json(exclude_unset=True, indent=2)  # (2)!
+        image.model_dump_json(indent=2)  # (2)!
         ```
 
         1. [`model_validate`][pydantic.BaseModel.model_validate] is part of the
@@ -206,7 +206,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
         )
 
         # Export
-        image.model_dump_json(exclude_unset=True, indent=2)  # (2)!
+        image.model_dump_json(indent=2)  # (2)!
         ```
 
         1. [`model_validate`][pydantic.BaseModel.model_validate] is part of the
@@ -240,7 +240,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
     )
 
     # Export
-    image.model_dump_json(exclude_unset=True, indent=2)  # (2)!
+    image.model_dump_json(indent=2)  # (2)!
     ```
 
     1. :eyes: [`yaozarrs.DimSpec`][] is a convenience class for use with
@@ -346,6 +346,68 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
         Unable to extract tag using discriminator _discriminate_ome_v05_metadata() [type=union_tag_not_found, input_value={}, input_type=dict]
         For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found
     ```
+
+### Doing the IO yourself
+
+Validation never reads array data, and only the parts that compare documents need to
+read anything at all:
+
+| What is validated | How | IO |
+| --- | --- | --- |
+| Fields, and the consistency of one document | `validate_ome_json`, `validate_ome_object`, or the models directly | None: you pass in the document |
+| Consistency across a hierarchy of documents | `validate_zarr_store` | Metadata only: `fsspec`, or a mapping that you provide |
+| Values stored in arrays (e.g. the orthonormality of a `rotation` stored at a `path`) | Not validated | |
+
+`validate_zarr_store` and `open_group` accept any `Mapping[str, bytes]` of store keys to
+metadata documents, so you decide how those documents are fetched.  A custom mapping
+can fetch them lazily in `__getitem__`, or you can fetch them up front and pass a dict:
+
+```python
+import json
+import yaozarrs
+
+image_meta = {
+    "version": "0.5",
+    "multiscales": [
+        {
+            "axes": [
+                {"name": "y", "type": "space", "unit": "micrometer"},
+                {"name": "x", "type": "space", "unit": "micrometer"},
+            ],
+            "datasets": [
+                {
+                    "path": "0",
+                    "coordinateTransformations": [
+                        {"type": "scale", "scale": [1.0, 1.0]}
+                    ],
+                }
+            ],
+        }
+    ],
+}
+group = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": image_meta}}
+array = {
+    "zarr_format": 3,
+    "node_type": "array",
+    "shape": [64, 64],
+    "data_type": "uint8",
+    "chunk_grid": {"name": "regular", "configuration": {"chunk_shape": [64, 64]}},
+    "chunk_key_encoding": {"name": "default"},
+    "fill_value": 0,
+    "codecs": [{"name": "bytes"}],
+    "dimension_names": ["y", "x"],
+}
+
+store = {
+    f"{path}zarr.json": json.dumps(doc).encode()
+    for path, doc in [("", group), ("0/", array)]
+}
+yaozarrs.validate_zarr_store(store)
+```
+
+!!! note
+    Anything that needs a URI (`store_path`, `to_zarr_python()` and
+    `to_tensorstore()`) raises a `TypeError` for these stores.
 
 ### Writing OME-Zarr Stores
 

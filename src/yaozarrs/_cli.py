@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+from pydantic import ValidationError
+
 from yaozarrs import __version__
 from yaozarrs._storage import StorageValidationError, validate_zarr_store
 from yaozarrs._zarr import open_group
@@ -47,13 +49,13 @@ def validate_command(args: argparse.Namespace) -> int:
         Exit code (0 for success, 1 for validation failure, 2 for other errors)
     """
     try:
-        validate_zarr_store(args.path)
+        validate_zarr_store(args.path, strict=args.strict)
         print_zarr_info(args.path)
         return 0
     except ImportError as e:  # pragma: no cover
         print(f"ImportError: {e}", file=sys.stderr)
         return 2
-    except StorageValidationError as e:
+    except (StorageValidationError, ValidationError) as e:
         print(f"✗ Validation failed for: {args.path}\n", file=sys.stderr)
         print(str(e), file=sys.stderr)
         return 1
@@ -122,6 +124,11 @@ def main(argv: list[str] | None = None) -> int:
     validate_parser.add_argument(
         "path",
         help="Path or URI to the OME-Zarr store",
+    )
+    validate_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Reject metadata that would otherwise be coerced (e.g. '1' for an int)",
     )
     validate_parser.set_defaults(func=validate_command)
 

@@ -1,14 +1,15 @@
 """Plate building blocks (identical in v0.5 and v0.6)."""
 
 import warnings
-from typing import Annotated
+from collections.abc import Sequence
+from typing import Annotated, Any
 
 from annotated_types import MinLen
 from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._types import UniqueList
+from yaozarrs._types import UNIQUE_ITEMS, duplicates
 from yaozarrs._validation_warning import ValidationWarning
 
 # ------------------------------------------------------------------------------
@@ -123,6 +124,55 @@ class PlateWell(_BaseModel):
 # ------------------------------------------------------------------------------
 
 
+def check_plate_layout(
+    rows: Sequence[Any],
+    columns: Sequence[Any],
+    wells: Sequence[Any],
+    acquisitions: Sequence[Any] | None,
+) -> None:
+    """The MUSTs relating rows, columns, wells and acquisitions (also used by v04)."""
+    for well in wells:
+        if well.rowIndex >= len(rows):
+            raise ValueError(
+                f"Well {well.path} has rowIndex {well.rowIndex} "
+                f"but only {len(rows)} rows exist"
+            )
+        if well.columnIndex >= len(columns):
+            raise ValueError(
+                f"Well {well.path} has columnIndex {well.columnIndex} "
+                f"but only {len(columns)} columns exist"
+            )
+        # The `rowIndex`, `columnIndex`, and `path` MUST all refer to the same
+        # row/column pair.
+        row = rows[well.rowIndex].name
+        col = columns[well.columnIndex].name
+        if well.path != f"{row}/{col}":
+            raise ValueError(
+                f"Well path {well.path!r} does not match its rowIndex "
+                f"({well.rowIndex}) and columnIndex ({well.columnIndex}), "
+                f"which refer to '{row}/{col}'"
+            )
+
+    # [Each column/row name] MUST NOT be a duplicate of any other `name` in the
+    # `columns`/`rows` array.
+    for kind, items in (("column", columns), ("row", rows)):
+        if dupes := duplicates([x.name for x in items]):
+            raise ValueError(f"Plate {kind} names must be unique. Duplicates: {dupes}")
+    # (no two wells may be equal (uniqueItems).  Ignoring unknown keys, which the
+    # models drop, a well's path and indices must refer to the same row/column pair,
+    # so equal paths mean equal wells)
+    if dupes := duplicates([well.path for well in wells]):
+        raise ValueError(f"Well paths must be unique. Duplicates: {dupes}")
+
+    # Each acquisition object MUST contain an `id` key whose value MUST be an
+    # unique integer identifier greater than or equal to 0 within the context
+    # of the plate
+    if dupes := duplicates([acq.id for acq in acquisitions or ()]):
+        raise ValueError(
+            f"Acquisition ids must be unique within a plate. Duplicates: {dupes}"
+        )
+
+
 class PlateDef(_BaseModel):
     """Plate layout and well organization.
 
@@ -130,13 +180,14 @@ class PlateDef(_BaseModel):
     This is the core content of the `plate` metadata field.
     """
 
-    columns: Annotated[UniqueList[Column], MinLen(1)] = Field(
+    # (uniqueItems is implied by the unique names and paths, see `check_plate_layout`)
+    columns: Annotated[list[Column], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Column definitions for the plate grid"
     )
-    rows: Annotated[UniqueList[Row], MinLen(1)] = Field(
+    rows: Annotated[list[Row], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Row definitions for the plate grid"
     )
-    wells: Annotated[UniqueList[PlateWell], MinLen(1)] = Field(
+    wells: Annotated[list[PlateWell], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="List of all wells present in this plate with their grid positions"
     )
 
@@ -154,28 +205,8 @@ class PlateDef(_BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_well_indices(self) -> Self:
-        for well in self.wells:
-            if well.rowIndex >= len(self.rows):
-                raise ValueError(
-                    f"Well {well.path} has rowIndex {well.rowIndex} "
-                    f"but only {len(self.rows)} rows exist"
-                )
-            if well.columnIndex >= len(self.columns):
-                raise ValueError(
-                    f"Well {well.path} has columnIndex {well.columnIndex} "
-                    f"but only {len(self.columns)} columns exist"
-                )
-            # The `rowIndex`, `columnIndex`, and `path` MUST all refer to the same
-            # row/column pair.
-            row = self.rows[well.rowIndex].name
-            col = self.columns[well.columnIndex].name
-            if well.path != f"{row}/{col}":
-                raise ValueError(
-                    f"Well path {well.path!r} does not match its rowIndex "
-                    f"({well.rowIndex}) and columnIndex ({well.columnIndex}), "
-                    f"which refer to '{row}/{col}'"
-                )
+    def _validate_layout(self) -> Self:
+        check_plate_layout(self.rows, self.columns, self.wells, self.acquisitions)
         return self
 
     @model_validator(mode="after")
@@ -191,16 +222,4 @@ class PlateDef(_BaseModel):
                     ValidationWarning,
                     stacklevel=2,
                 )
-        return self
-
-    @model_validator(mode="after")
-    def _validate_acquisition_ids(self) -> Self:
-        # Each acquisition object MUST contain an `id` key whose value MUST be an
-        # unique integer identifier greater than or equal to 0 within the context
-        # of the plate
-        ids = [acq.id for acq in self.acquisitions or ()]
-        if dupes := sorted({i for i in ids if ids.count(i) > 1}):
-            raise ValueError(
-                f"Acquisition ids must be unique within a plate. Duplicates: {dupes}"
-            )
         return self

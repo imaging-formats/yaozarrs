@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Callable
+from unittest.mock import Mock
 
 import pytest
 
@@ -34,6 +35,7 @@ from yaozarrs._storage import (
     StorageValidationError,
     StorageValidationWarning,
 )
+from yaozarrs.v05._storage import StorageValidatorV05
 
 
 @contextmanager
@@ -165,20 +167,22 @@ def test_validate_storage(uri: str) -> None:
     "type",
     ["image", "labels", "plate", "image-with-labels", "bioformats2raw"],
 )
-def test_validate_valid_demo_storage(type: str, write_demo_ome: Callable) -> None:
+def test_validate_valid_demo_storage(
+    type: str, write_demo_ome: Callable, as_store: Callable
+) -> None:
     """Test validation on demo OME-Zarr files."""
 
     path = write_demo_ome(type, version="0.5")
     with xfail_internet_error():
-        validate_zarr_store(path)
+        validate_zarr_store(as_store(path))
 
     if type == "image-with-labels":
         # Also validate with labels only
-        validate_zarr_store(path / "labels")
-        validate_zarr_store(path / "labels" / "annotations")
+        validate_zarr_store(as_store(path / "labels"))
+        validate_zarr_store(as_store(path / "labels" / "annotations"))
     elif type == "plate":
         # Validate a well only
-        validate_zarr_store(path / "A" / "1")
+        validate_zarr_store(as_store(path / "A" / "1"))
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
@@ -219,6 +223,86 @@ def test_ome_version_ignores_top_level_keys_in_zarr_v3(tmp_path: Path) -> None:
     meta = {"zarr_format": 3, "node_type": "group", "attributes": {"plate": {}}}
     (tmp_path / "zarr.json").write_text(json.dumps(meta))
     assert open_group(tmp_path).ome_version() is None
+
+
+def test_validate_unknown_version(write_demo_ome: Callable) -> None:
+    path = write_demo_ome("image", version="0.4")
+    zattrs = path / ".zattrs"
+    attrs = json.loads(zattrs.read_text())
+    attrs["multiscales"][0]["version"] = "0.3"
+    zattrs.write_text(json.dumps(attrs))
+
+    with pytest.raises(StorageValidationError, match=r"version '0\.3'") as exc_info:
+        validate_zarr_store(path)
+    assert exc_info.value.errors()[0]["type"] == "unsupported_version"
+
+
+@pytest.mark.parametrize("ome", [{"scene": {}}, {"plate": {}}])
+def test_validate_missing_version(tmp_path: Path, ome: dict) -> None:
+    """A zarr v3 group with OME metadata but no version is invalid, not 'not OME'."""
+    meta = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
+    (tmp_path / "zarr.json").write_text(json.dumps(meta))
+
+    with pytest.raises(StorageValidationError, match="must declare its 'version'") as e:
+        validate_zarr_store(tmp_path)
+    assert e.value.errors()[0]["type"] == "version_missing"
+    assert e.value.errors()[0]["loc"] == ("ome", "version")
+
+
+def _coerce_scale(zarr_json: Path) -> None:
+    """Make a scale in this image a string, which is only accepted by coercion."""
+    meta = json.loads(zarr_json.read_text())
+    dataset = meta["attributes"]["ome"]["multiscales"][0]["datasets"][0]
+    dataset["coordinateTransformations"][0]["scale"][0] = "1"
+    zarr_json.write_text(json.dumps(meta))
+
+
+def test_validate_strict_rejects_coerced_root_metadata(
+    write_demo_ome: Callable,
+) -> None:
+    path = write_demo_ome("image", version="0.5")
+    _coerce_scale(path / "zarr.json")
+
+    validate_zarr_store(path)
+    with pytest.raises(StorageValidationError) as exc:
+        validate_zarr_store(path, strict=True)
+    # one entry per pydantic error, located from the root
+    errors = exc.value.errors()
+    assert all(err["loc"][0] == "ome" for err in errors)
+    assert any("scale" in err["loc"] for err in errors)
+
+
+def test_invalid_root_metadata_keeps_warnings() -> None:
+    """Root metadata errors are StorageValidationErrors, and warnings still come out."""
+    axes = [{"name": n, "type": "space", "unit": "lightyear"} for n in "yx"]
+    ome = {"version": "0.5", "multiscales": [{"axes": axes, "datasets": []}]}
+    zarr_json = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
+    store = {"zarr.json": json.dumps(zarr_json).encode()}
+
+    with pytest.warns(StorageValidationWarning, match="lightyear"):
+        with pytest.raises(StorageValidationError, match="datasets"):
+            validate_zarr_store(store)
+
+
+def test_validate_strict_rejects_coerced_child_metadata(
+    write_demo_ome: Callable,
+) -> None:
+    path = write_demo_ome("plate", version="0.5")
+    _coerce_scale(path / "A" / "1" / "0" / "zarr.json")
+
+    # (the same group, to check that the cached result isn't reused)
+    group = open_group(path)
+    group.validate()
+    with pytest.raises(StorageValidationError):
+        group.validate(strict=True)
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+@pytest.mark.parametrize("type", ["image", "labels", "plate", "image-with-labels"])
+def test_validate_strict_accepts_valid_stores(
+    type: str, version: str, write_demo_ome: Callable
+) -> None:
+    validate_zarr_store(write_demo_ome(type, version=version), strict=True)
 
 
 def test_validate_null_storage(tmp_path: Path) -> None:
@@ -470,18 +554,22 @@ IMAGE_META = {"version": "0.5", "multiscales": [MULTI_SCALE]}
     ids=lambda x: x.err_type,
 )
 def test_validate_invalid_storage(
-    case: StorageTestCase, write_demo_ome: Callable
+    case: StorageTestCase, write_demo_ome: Callable, as_store: Callable
 ) -> None:
     path = write_demo_ome(**case.kwargs)
     case.mutator(path)
     with xfail_internet_error():
         with pytest.raises(StorageValidationError, match=str(case.err_type)):
-            validate_zarr_store(path)
+            validate_zarr_store(as_store(path))
 
 
-def _drop_key(zarr_json: Path, key: str) -> None:
+def _drop_key(zarr_json: Path, *keys: str) -> None:
     data = json.loads(zarr_json.read_text())
-    del data[key]
+    *parents, last = keys
+    d = data
+    for k in parents:
+        d = d[k]
+    del d[last]
     zarr_json.write_text(json.dumps(data))
 
 
@@ -491,7 +579,15 @@ def _drop_key(zarr_json: Path, key: str) -> None:
         StorageTestCase(
             StorageErrorType.label_image_invalid,
             {"type": "labels"},
-            update_meta("annotations", ("attributes", "ome"), IMAGE_META),
+            lambda p: _drop_key(
+                p / "annotations" / "zarr.json", "attributes", "ome", "image-label"
+            ),
+        ),
+        StorageTestCase(
+            # valid OME metadata, but not a labels group
+            StorageErrorType.labels_metadata_invalid,
+            {"type": "image-with-labels"},
+            update_meta("labels", ("attributes", "ome"), IMAGE_META),
         ),
         StorageTestCase(
             # zarr-python omits dimension_names unless explicitly passed
@@ -503,13 +599,69 @@ def _drop_key(zarr_json: Path, key: str) -> None:
     ids=lambda x: x.err_type,
 )
 def test_validate_invalid_storage_warns(
-    case: StorageTestCase, write_demo_ome: Callable
+    case: StorageTestCase, write_demo_ome: Callable, as_store: Callable
 ) -> None:
     path = write_demo_ome(**case.kwargs)
     case.mutator(path)
     with xfail_internet_error():
         with pytest.warns(StorageValidationWarning, match=str(case.err_type)):
-            validate_zarr_store(path)
+            validate_zarr_store(as_store(path))
+
+
+def _write_bf2raw_v04(root: Path, image: Path) -> Path:
+    shutil.copytree(image, root / "0")
+    for sub, attrs in (("", {"bioformats2raw.layout": 3}), ("OME", {"series": ["0"]})):
+        (root / sub).mkdir(exist_ok=True)
+        (root / sub / ".zgroup").write_text('{"zarr_format": 2}')
+        (root / sub / ".zattrs").write_text(json.dumps(attrs))
+    return root
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+def test_validate_ome_group_directly(
+    version: str, write_demo_ome: Callable, tmp_path: Path
+) -> None:
+    """Series paths are relative to the parent of the OME group."""
+    if version == "0.4":
+        # (the demo writer can't write a v0.4 bioformats2raw store)
+        image = write_demo_ome("image", version="0.4")
+        path = _write_bf2raw_v04(tmp_path / "bf2raw.zarr", image)
+    else:
+        path = write_demo_ome("bioformats2raw", write_ome_group=True)
+    validate_zarr_store(path / "OME")
+    validate_zarr_store(open_group(path)["OME"])
+
+    shutil.rmtree(path / "0")
+    with pytest.raises(StorageValidationError, match="series_path_not_found"):
+        validate_zarr_store(path / "OME")
+
+
+def test_bf2raw_series_errors_propagate(
+    write_demo_ome: Callable, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = write_demo_ome("bioformats2raw", write_ome_group=True)
+    monkeypatch.setattr(
+        StorageValidatorV05, "visit_series", Mock(side_effect=RuntimeError("boom"))
+    )
+    with pytest.raises(RuntimeError, match="boom"):
+        validate_zarr_store(path)
+
+
+def test_bf2raw_invalid_ome_group_uses_numbered_paths(write_demo_ome: Callable) -> None:
+    path = write_demo_ome("bioformats2raw", write_ome_group=True)
+    update_meta("OME", ("attributes",), {})(path)
+    validate_zarr_store(path)
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+@pytest.mark.parametrize("root", [".", "labels", "labels/annotations"])
+def test_validate_label_image_arrays(
+    version: str, root: str, write_demo_ome: Callable, as_store: Callable
+) -> None:
+    path = write_demo_ome("image-with-labels", version=version)
+    shutil.rmtree(path / "labels" / "annotations" / "s0")
+    with pytest.raises(StorageValidationError, match="dataset_path_not_found"):
+        validate_zarr_store(as_store(path / root))
 
 
 def test_validate_complex_ome_zarr(complex_ome_zarr: Path) -> None:
@@ -519,11 +671,13 @@ def test_validate_complex_ome_zarr(complex_ome_zarr: Path) -> None:
         validate_zarr_store(complex_ome_zarr)
 
 
-def test_validate_complex_ome_zarr_broken(complex_ome_zarr_broken: Path) -> None:
+def test_validate_complex_ome_zarr_broken(
+    complex_ome_zarr_broken: Path, as_store: Callable
+) -> None:
     """Test validation on demo OME-Zarr files."""
 
     with pytest.raises(StorageValidationError) as err:
-        validate_zarr_store(complex_ome_zarr_broken)
+        validate_zarr_store(as_store(complex_ome_zarr_broken))
 
     err_types = {e["type"] for e in err.value.errors()}
     assert err_types == {

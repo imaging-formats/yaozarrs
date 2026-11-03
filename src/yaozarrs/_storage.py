@@ -14,14 +14,20 @@ from yaozarrs._zarr import ZarrGroup, open_group
 from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
 
-def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
+def validate_zarr_store(
+    obj: ZarrGroup | str | Path | Mapping[str, bytes] | Any,
+    *,
+    strict: bool | None = None,
+) -> ZarrGroup:
     """Validate both structure and metadata of an OME-Zarr hierarchy.
 
     !!!important
-        Requires `yaozarrs[io]` or `fsspec` to be installed.
+        Requires `yaozarrs[io]` or `fsspec` to be installed, unless `obj` is a mapping
+        or a [`yaozarrs.ZarrGroup`][] opened from one.
 
     This is a high-level function to validate both the metadata and the structure
     of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
@@ -31,10 +37,15 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
 
     Parameters
     ----------
-    obj : OMEZarrGroupJSON | ZarrGroup | str | Path | Any
-        The zarr store to validate. Can be a URI string, a Path, a parsed
-        OMEZarrGroupJSON object, a ZarrGroup instance, or a zarr.Group object
-        (for backwards compatibility).
+    obj : ZarrGroup | str | Path | Mapping[str, bytes] | Any
+        The zarr store to validate. Can be a URI string, a Path, a ZarrGroup instance,
+        a zarr.Group object (for backwards compatibility), or a mapping of store keys
+        to the bytes of the metadata documents, if you want to do the IO yourself (see
+        [`yaozarrs.open_group`][]).  To validate a single document without a store,
+        use [`yaozarrs.validate_ome_object`][] or [`yaozarrs.validate_ome_json`][].
+    strict : bool | None
+        If `True`, reject metadata that would otherwise be coerced to the right type
+        (e.g. `"1"` for an integer). By default, such metadata is accepted.
 
     Returns
     -------
@@ -48,6 +59,14 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
     """
     zarr_group = open_group(obj)
     ome_version = zarr_group.ome_version()
+    if not ome_version and "ome" in zarr_group.attrs:
+        # (OME metadata, so an invalid OME-Zarr group rather than not one at all)
+        error = ValidationResult().add_error(
+            StorageErrorType.version_missing,
+            ("ome", "version"),
+            "The OME metadata must declare its 'version'",
+        )
+        raise StorageValidationError(error.errors)
     if not ome_version:
         raise ValueError(
             f"Unable to determine OME-Zarr version for {zarr_group}. "
@@ -68,16 +87,18 @@ def validate_zarr_store(obj: ZarrGroup | str | Path | Any) -> ZarrGroup:
         Validator = StorageValidatorV06
 
     else:
-        raise NotImplementedError(
-            f"Structural validation for OME-Zarr version {ome_version} is "
-            "not implemented."
+        error = ValidationResult().add_error(
+            StorageErrorType.unsupported_version,
+            ("version",),
+            f"Unsupported OME-Zarr version {ome_version!r}",
         )
+        raise StorageValidationError(error.errors)
 
     # Capture RuntimeWarnings from pydantic validators during validation
     # and convert them to StorageValidationWarning
     with warnings.catch_warnings(record=True) as captured_warnings:
         warnings.filterwarnings("always", category=ValidationWarning)
-        result = Validator.validate_group(zarr_group)
+        result = Validator.validate_group(zarr_group, strict=strict)
 
     # prepend captured warnings to the result
     for w in captured_warnings:
@@ -359,6 +380,8 @@ class StorageErrorType(Enum):
     transform_parameters_invalid = auto()
     transform_parameters_location = auto()
     transform_parameters_not_found = auto()
+    unsupported_version = auto()
+    version_missing = auto()
     well_invalid = auto()
     well_path_not_found = auto()
     well_path_not_group = auto()

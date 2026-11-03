@@ -40,13 +40,30 @@ def _column_name_to_index(col_name: str) -> int:
         ) from None
 
 
+def _column_name_width(col_names: Iterable[str]) -> int:
+    """Return the zero-padded width of numeric column names (0 if unpadded)."""
+    names = sorted(col_names)
+    padded = [c for c in names if len(c) > 1 and c.startswith("0")]
+    if not padded:
+        return 0
+    if len({len(c) for c in names}) > 1:
+        raise ValueError(
+            "Column names mix zero-padded and other widths "
+            f"({', '.join(map(repr, names))}), so the names of the columns in "
+            "between can't be inferred.  Use the same width for all of them, or "
+            "pass `plate=` with explicit columns."
+        )
+    return len(padded[0])
+
+
 def _autogenerate_plate_metadata(
     fov_paths: Iterable[tuple[str, str, str]],
 ) -> dict[str, Any]:
     """Auto-generate plate metadata from images dict keys.
 
     Row indices follow the convention: A=0, B=1, ..., Z=25, AA=26, etc.
-    Column indices follow: 1=0, 2=1, ..., 10=9, etc.
+    Column indices follow: 1=0, 2=1, ..., 10=9, etc.  Zero-padded column names
+    (e.g. "01", "02") are kept, and the generated columns use the same width.
 
     All intermediate rows/columns are created (e.g., if you have rows A and D,
     rows B and C are also created, even if they have no wells).
@@ -63,16 +80,17 @@ def _autogenerate_plate_metadata(
     """
     # Extract unique row and column names
     rows_set: set[str] = set()
-    cols_set: set[int] = set()
+    col_names: set[str] = set()
     wells_set: set[tuple[str, str]] = set()
     for row, col, _fov in fov_paths:
         rows_set.add(row)
-        cols_set.add(int(col))
+        col_names.add(col)
         wells_set.add((row, col))
 
     # Find the maximum row and column to fill in all intermediates
     max_row_idx = max(_row_name_to_index(r) for r in rows_set)
-    max_col_idx = max(cols_set) - 1  # Convert to 0-indexed
+    max_col_idx = max(_column_name_to_index(c) for c in col_names)
+    width = _column_name_width(col_names)
 
     # Create all rows from A to max_row (e.g., A, B, C, D if max is D)
     rows = []
@@ -87,8 +105,9 @@ def _autogenerate_plate_metadata(
             row_name = first + second
         rows.append({"name": row_name})
 
-    # Create all columns from 1 to max_col (e.g., 1, 2, 3, 4, 5 if max is 5)
-    columns = [{"name": str(i + 1)} for i in range(max_col_idx + 1)]
+    # Create all columns from 1 to max_col (e.g., 1, 2, 3, 4, 5 if max is 5),
+    # zero-padded like the given names (e.g. 01, 02, ... 12)
+    columns = [{"name": str(i + 1).zfill(width)} for i in range(max_col_idx + 1)]
 
     # Create well objects only for wells that have images
     wells = [

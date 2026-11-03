@@ -41,10 +41,12 @@ class StorageValidatorV05(StorageValidator):
     Series = Series
 
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
-        return validate_ome_object(attrs, OMEAttributes).ome
+        return validate_ome_object(dict(attrs), OMEAttributes, strict=self.strict).ome
 
     def _parse_ome_uri(self, uri: str) -> Any:
-        return validate_ome_uri(uri, OMEZarrGroupJSON).attributes.ome
+        return validate_ome_uri(
+            uri, OMEZarrGroupJSON, strict=self.strict
+        ).attributes.ome
 
     def _validate_dataset_array(
         self, arr: ZarrArray, dataset: Dataset, multiscale: Multiscale, ds_loc: Loc

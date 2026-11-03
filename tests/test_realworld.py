@@ -142,8 +142,5 @@ def test_unsupported_version():
     """Test opening a non-OME-Zarr store with bioformats2raw layout."""
     url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr"
     group = yaozarrs.open_group(url)
-    with pytest.raises(
-        NotImplementedError,
-        match=r"Structural validation for OME-Zarr version 0.3 is not implemented",
-    ):
+    with pytest.raises(ValueError, match=r"Unsupported OME-Zarr version '0.3'"):
         assert group.validate()

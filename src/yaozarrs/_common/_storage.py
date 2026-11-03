@@ -14,11 +14,15 @@ from dataclasses import dataclass
 from itertools import chain, product
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
+from pydantic import ValidationError
+
 from yaozarrs._storage import StorageErrorType, ValidationResult
-from yaozarrs._zarr import ZarrArray, ZarrGroup
+from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+    from yaozarrs._storage import ErrorDetails
 
 # ----------------------------------------------------------
 # VALIDATORS
@@ -52,7 +56,7 @@ def _build_fs_path(zarr_group: ZarrGroup, relative_path: str = "") -> str:
         full_path = base
 
     # Try to get a readable store name (without protocol)
-    store_path = zarr_group.store_path
+    store_path = zarr_group._display_name()
     # Remove protocol prefix for readability (file://, https://, etc.)
     for prefix in ("file://", "https://", "http://", "s3://"):
         if store_path.startswith(prefix):
@@ -84,7 +88,9 @@ class LabelsCheckResult:
 class StorageValidator:
     """Storage validator for one OME-Zarr version (see subclasses)."""
 
-    __slots__ = ()
+    __slots__ = ("strict",)
+
+    strict: bool | None
 
     # set by each version's subclass
     VERSION: ClassVar[str]
@@ -113,13 +119,18 @@ class StorageValidator:
         return ValidationResult()
 
     @classmethod
-    def validate_group(cls, zarr_group: ZarrGroup) -> ValidationResult:
+    def validate_group(
+        cls, zarr_group: ZarrGroup, *, strict: bool | None = None
+    ) -> ValidationResult:
         """Entry point that dispatches to appropriate visitor method.
 
         Parameters
         ----------
         zarr_group : ZarrGroup
             The zarr group to validate.
+        strict : bool | None
+            If `True`, reject metadata that would otherwise be coerced to the right
+            type (e.g. `"1"` for an integer).
 
         Returns
         -------
@@ -127,7 +138,23 @@ class StorageValidator:
             The validation result containing any errors found.
         """
         validator = cls()
-        ome_metadata = validator._parse_ome(zarr_group.attrs)
+        validator.strict = strict
+        try:
+            ome_metadata = validator._parse_ome(zarr_group.attrs)
+        except ValidationError as e:
+            # report invalid root metadata like the rest of the hierarchy, one entry
+            # per pydantic error (the locs already start at the root, e.g. "ome")
+            result = ValidationResult()
+            for err in e.errors():
+                details: ErrorDetails = {
+                    "type": err["type"],
+                    "loc": err["loc"],
+                    "msg": err["msg"],
+                }
+                if "ctx" in err:
+                    details["ctx"] = err["ctx"]
+                result.errors.append(details)
+            return result
         return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
     def visit_root(
@@ -146,8 +173,16 @@ class StorageValidator:
             return self.visit_well(zarr_group, ome_metadata, loc_prefix)
         elif isinstance(ome_metadata, self.Bf2Raw):
             return self.visit_bioformats2raw(zarr_group, ome_metadata, loc_prefix)
-        elif isinstance(ome_metadata, self.Series):  # pragma: no cover
-            return self.visit_series(zarr_group, ome_metadata, loc_prefix)
+        elif isinstance(ome_metadata, self.Series):
+            if (parent := _parent_group(zarr_group)) is None:
+                warnings.warn(
+                    "Cannot validate series paths: they are relative to the parent of "
+                    "the OME group, which is outside of the store",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return ValidationResult()
+            return self.visit_series(parent, ome_metadata, loc_prefix)
         else:
             raise NotImplementedError(
                 f"Unknown OME metadata type: {type(ome_metadata).__name__}"
@@ -157,7 +192,9 @@ class StorageValidator:
         self, zarr_group: ZarrGroup, label_image_model: Any, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a LabelImage group."""
-        result = ValidationResult()
+        # The `zarr.json` file for the label image MUST implement the multiscales
+        # specification.
+        result = self.visit_image(zarr_group, label_image_model, loc_prefix)
 
         # The value of the source key MUST be a JSON object containing information
         # about the original image from which the label image derives. This object
@@ -260,7 +297,9 @@ class StorageValidator:
 
             # Validate as LabelImage
             try:
-                label_image_model = label_group.ome_metadata(version=self.VERSION)
+                label_image_model = label_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 label_image_model = e
             if not isinstance(label_image_model, self.Image):
@@ -330,6 +369,9 @@ class StorageValidator:
                     f"Label path '{label_path}' contains Image metadata, "
                     "but is not a LabelImage (SHOULD contain 'image-label' metadata)",
                     ctx={"path": label_path, "type": type(label_image_model).__name__},
+                )
+                result = result.merge(
+                    self.visit_image(label_group, label_image_model, label_loc)
                 )
 
         return result
@@ -433,7 +475,9 @@ class StorageValidator:
 
             # Validate well metadata
             try:
-                well_model = well_group.ome_metadata(version=self.VERSION)
+                well_model = well_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 well_model = e
             if isinstance(well_model, self.Well):
@@ -535,7 +579,9 @@ class StorageValidator:
 
             # Validate field as image group
             try:
-                field_group_model = field_group.ome_metadata(version=self.VERSION)
+                field_group_model = field_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 field_group_model = e
             if isinstance(field_group_model, self.Image):
@@ -578,18 +624,14 @@ class StorageValidator:
         if ome_group is not None and isinstance(ome_group, ZarrGroup):
             try:
                 ome_model = self._parse_ome(ome_group.attrs)
-
-                # If OME group has series metadata, use that to find images
-                if isinstance(ome_model, self.Series):
-                    # Validate using the series paths
-                    result = result.merge(
-                        self.visit_series(zarr_group, ome_model, (*loc_prefix, "OME"))
-                    )
-                    return result
-            except Exception:
+            except ValueError:
                 # OME group exists but doesn't have valid OME metadata
                 # Fall through to numbered directory validation
-                pass  # pragma: no cover
+                ome_model = None
+
+            # If OME group has series metadata, use that to find images
+            if isinstance(ome_model, self.Series):
+                return self.visit_series(zarr_group, ome_model, (*loc_prefix, "OME"))
 
         # No OME group with series, so validate numbered directories
         # Discover consecutively numbered directories (0, 1, 2, etc.)
@@ -627,7 +669,9 @@ class StorageValidator:
 
             # Validate as image group
             try:
-                image_group_meta = image_group.ome_metadata(version=self.VERSION)
+                image_group_meta = image_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 image_group_meta = e
             if isinstance(image_group_meta, self.Image):
@@ -700,7 +744,9 @@ class StorageValidator:
 
             # Validate series as image group
             try:
-                series_group_meta = series_group.ome_metadata(version=self.VERSION)
+                series_group_meta = series_group.ome_metadata(
+                    version=self.VERSION, strict=self.strict
+                )
             except ValueError as e:
                 series_group_meta = e
             if isinstance(series_group_meta, self.Image):
@@ -832,6 +878,17 @@ class StorageValidator:
                 return LabelsCheckResult(
                     result=result, labels_info=(labels_group, labels_model)
                 )
+            # The OME-Zarr Metadata in the zarr.json file associated with the "labels"
+            # group MUST contain a JSON object with the key labels ...
+            # (but it's valid OME metadata, and the image is fine: so warn and skip)
+            found = type(labels_model).__name__
+            result.add_warning(
+                StorageErrorType.labels_metadata_invalid,
+                labels_loc,
+                f"Skipping 'labels' sub-group inside of ome-zarr group {zarr_group}: "
+                f"it has {found} metadata, not LabelsGroup metadata",
+                ctx={"type": found},
+            )
         except Exception as e:
             result.add_error(
                 StorageErrorType.labels_metadata_invalid,
@@ -858,8 +915,22 @@ class StorageValidator:
             )
             return result
 
+        store_key = _source_store_key(zarr_group, src_img_rel_path)
+        if store_key is None and not zarr_group._has_uri():
+            warnings.warn(
+                f"Cannot validate label image source {src_img_rel_path!r}: "
+                "it is outside of the store",
+                UserWarning,
+                stacklevel=3,
+            )
+            return result
+
         try:
-            img = self._parse_ome_uri(image_source)
+            if store_key is not None:
+                source_group = _open_group_at(zarr_group._store, store_key)
+                img = self._parse_ome(source_group.attrs)
+            else:
+                img = self._parse_ome_uri(image_source)
             if not isinstance(img, self.Image):
                 result.add_error(
                     StorageErrorType.label_image_source_invalid,
@@ -894,7 +965,7 @@ class StorageValidator:
                 ds_loc = (*ms_loc, "datasets", ds_idx, "path")
                 if (arr := zarr_group.get(dataset.path)) is None:
                     # Path validation will catch this separately
-                    continue  # pragma: no cover
+                    continue
 
                 # check if integer dtype
                 if isinstance(arr, ZarrArray):
@@ -919,6 +990,30 @@ class StorageValidator:
 # ----------------------------------------------------------
 # HELPER FUNCTIONS
 # ----------------------------------------------------------
+
+
+def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup | None:
+    """Return the parent of `zarr_group`, or None if it can't be reached.
+
+    The parent of a store's root can only be reached through a filesystem.
+    """
+    if zarr_group.path:
+        return _open_group_at(zarr_group._store, posixpath.dirname(zarr_group.path))
+    if not zarr_group._has_uri():
+        return None
+    mapper, full_path, _ = zarr_group._full_path()
+    parent_root = full_path.rstrip("/").rpartition("/")[0]
+    return ZarrGroup(mapper.fs.get_mapper(parent_root))
+
+
+def _source_store_key(zarr_group: ZarrGroup, src_rel_path: str) -> str | None:
+    """Return the path of a source within the store, or None if it's outside of it."""
+    if "://" in src_rel_path or src_rel_path.startswith("/"):
+        return None
+    key = posixpath.normpath(posixpath.join(zarr_group.path, src_rel_path))
+    if key == ".." or key.startswith("../"):
+        return None
+    return "" if key == "." else key
 
 
 def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:

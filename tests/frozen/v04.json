@@ -1,5 +1,5 @@
 {
-  "pydantic": "2.13",
+  "pydantic": "2.14",
   "public": {
     "Acquisition": {
       "$ref": "#/$defs/Acquisition"
@@ -219,12 +219,10 @@
         },
         "bioformats2raw.layout": {
           "const": 3,
+          "default": 3,
           "type": "integer"
         }
       },
-      "required": [
-        "bioformats2raw.layout"
-      ],
       "type": "object"
     },
     "ChannelAxis": {
@@ -441,7 +439,14 @@
     "LabelColor": {
       "properties": {
         "label-value": {
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ]
         },
         "rgba": {
           "anyOf": [
@@ -510,6 +515,7 @@
       "type": "object"
     },
     "LabelProperty": {
+      "additionalProperties": true,
       "properties": {
         "label-value": {
           "type": "integer"
@@ -590,8 +596,7 @@
             "$ref": "#/$defs/Dataset"
           },
           "minItems": 1,
-          "type": "array",
-          "uniqueItems": true
+          "type": "array"
         },
         "coordinateTransformations": {
           "anyOf": [
@@ -874,6 +879,18 @@
         },
         "plate": {
           "$ref": "#/$defs/PlateDef"
+        },
+        "bioformats2raw.layout": {
+          "anyOf": [
+            {
+              "const": 3,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

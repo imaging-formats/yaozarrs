@@ -5,7 +5,8 @@ from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
-from yaozarrs._types import UniqueList
+from yaozarrs._common._plate import check_plate_layout
+from yaozarrs._types import UNIQUE_ITEMS, duplicates
 from yaozarrs._util import RelaxedFOVPathName
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
@@ -140,13 +141,14 @@ class PlateDef(_BaseModel):
     This is the core content of the `plate` metadata field.
     """
 
-    columns: Annotated[UniqueList[Column], MinLen(1)] = Field(
+    # (uniqueItems is implied by the unique names and paths, see `check_plate_layout`)
+    columns: Annotated[list[Column], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Column definitions for the plate grid"
     )
-    rows: Annotated[UniqueList[Row], MinLen(1)] = Field(
+    rows: Annotated[list[Row], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="Row definitions for the plate grid"
     )
-    wells: Annotated[UniqueList[PlateWell], MinLen(1)] = Field(
+    wells: Annotated[list[PlateWell], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="List of all wells present in this plate with their grid positions"
     )
 
@@ -165,18 +167,9 @@ class PlateDef(_BaseModel):
     version: Literal["0.4"] = "0.4"
 
     @model_validator(mode="after")
-    def _validate_well_indices(self) -> Self:
-        for well in self.wells:
-            if well.rowIndex >= len(self.rows):
-                raise ValueError(
-                    f"Well {well.path} has rowIndex {well.rowIndex} "
-                    f"but only {len(self.rows)} rows exist"
-                )
-            if well.columnIndex >= len(self.columns):
-                raise ValueError(
-                    f"Well {well.path} has columnIndex {well.columnIndex} "
-                    f"but only {len(self.columns)} columns exist"
-                )
+    def _validate_layout(self) -> Self:
+        # (the same rules as in v0.5)
+        check_plate_layout(self.rows, self.columns, self.wells, self.acquisitions)
         return self
 
 
@@ -212,10 +205,18 @@ class WellDef(_BaseModel):
     imaging positions captured for this well.
     """
 
-    images: Annotated[UniqueList[FieldOfView], MinLen(1)] = Field(
+    images: Annotated[list[FieldOfView], UNIQUE_ITEMS, MinLen(1)] = Field(
         description="List of all fields-of-view imaged in this well",
     )
     version: Literal["0.4"] = "0.4"
+
+    @model_validator(mode="after")
+    def _validate_unique_paths(self) -> Self:
+        # The `path` ... MUST NOT be a duplicate of any other `path` in the `images`
+        # list.  (This implies the schema's uniqueItems.)
+        if dupes := duplicates([img.path for img in self.images]):
+            raise ValueError(f"Field of view paths must be unique. Duplicates: {dupes}")
+        return self
 
 
 # ------------------------------------------------------------------------------
@@ -284,4 +285,14 @@ class Plate(ZarrGroupModel):
 
     plate: PlateDef = Field(
         description="Plate layout and well organization",
+    )
+
+    # If the top-level group represents a plate, the "bioformats2raw.layout" metadata
+    # will be present but the "plate" key MUST also be present
+    bioformats2raw_layout: Literal[3] | None = Field(
+        default=None,
+        alias="bioformats2raw.layout",
+        description=(
+            "Marker indicating this plate was created by bioformats2raw version 3"
+        ),
     )

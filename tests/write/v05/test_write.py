@@ -15,6 +15,7 @@ import pytest
 
 import yaozarrs
 from yaozarrs import DimSpec, v05
+from yaozarrs.write._common._plate import _autogenerate_plate_metadata
 from yaozarrs.write.v05 import (
     Bf2RawBuilder,
     LabelsBuilder,
@@ -196,6 +197,125 @@ def test_write_image_chunks(
     yaozarrs.validate_zarr_store(dest)
 
 
+YX_SPEC = ((64, 64), "uint16")
+
+
+@pytest.mark.parametrize(
+    "write",
+    [
+        pytest.param(
+            lambda dest, kw: write_image(
+                dest, _make_yx_image(), np.zeros((64, 64)), **kw
+            ),
+            id="write_image",
+        ),
+        pytest.param(
+            lambda dest, kw: prepare_image(dest, _make_yx_image(), YX_SPEC, **kw),
+            id="prepare_image",
+        ),
+        pytest.param(
+            lambda dest, kw: write_bioformats2raw(
+                dest, {"0": (_make_yx_image(), np.zeros((64, 64)))}, **kw
+            ),
+            id="write_bioformats2raw",
+        ),
+        pytest.param(
+            lambda dest, kw: write_plate(
+                dest, {("A", "1", "0"): (_make_yx_image(), np.zeros((64, 64)))}, **kw
+            ),
+            id="write_plate",
+        ),
+        pytest.param(
+            lambda dest, kw: Bf2RawBuilder(dest, **kw).write_image(
+                "0", _make_yx_image(), np.zeros((64, 64))
+            ),
+            id="Bf2RawBuilder.write_image",
+        ),
+        pytest.param(
+            lambda dest, kw: Bf2RawBuilder(dest, **kw).add_series(
+                "0", _make_yx_image(), YX_SPEC
+            ),
+            id="Bf2RawBuilder.add_series",
+        ),
+        pytest.param(
+            lambda dest, kw: PlateBuilder(
+                dest, plate=_make_plate(1, 1)[0], **kw
+            ).write_well("A", "01", {"0": (_make_yx_image(), np.zeros((64, 64)))}),
+            id="PlateBuilder.write_well",
+        ),
+        pytest.param(
+            lambda dest, kw: PlateBuilder(
+                dest, plate=_make_plate(1, 1)[0], **kw
+            ).add_well(row="A", col="01", images={"0": (_make_yx_image(), YX_SPEC)}),
+            id="PlateBuilder.add_well",
+        ),
+        pytest.param(
+            lambda dest, kw: LabelsBuilder(dest, **kw).write_label(
+                "cells", _make_label_image(), np.zeros((64, 64))
+            ),
+            id="LabelsBuilder.write_label",
+        ),
+        pytest.param(
+            lambda dest, kw: LabelsBuilder(dest, **kw).add_label(
+                "cells", _make_label_image(), YX_SPEC
+            ),
+            id="LabelsBuilder.add_label",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"chunks": (16, 32, 32)},
+        {"chunks": (32,)},
+        {"chunks": (16, 16), "shards": (32, 32, 32)},
+        {"chunks": (16, 16), "shards": (32,)},
+    ],
+    ids=["chunks-long", "chunks-short", "shards-long", "shards-short"],
+)
+def test_wrong_chunks_or_shards_ndim(tmp_path: Path, write: Any, kwargs: dict) -> None:
+    """Too many or too few entries are rejected before anything is written (#84)."""
+    dest = tmp_path / "bad.zarr"
+    with pytest.raises(ValueError, match=r"(chunks|shards)=.* but dataset '0' has 2"):
+        write(dest, kwargs)
+    assert not dest.exists()
+
+
+def test_wrong_chunks_ndim_keeps_existing_store(tmp_path: Path) -> None:
+    dest = tmp_path / "keep.zarr"
+    data = np.zeros((64, 64), "uint16")
+    write_image(dest, _make_yx_image(), data)
+    with pytest.raises(ValueError, match="chunks="):
+        write_image(dest, _make_yx_image(), data, chunks=(16,), overwrite=True)
+    yaozarrs.validate_zarr_store(dest)
+
+
+def test_wrong_chunks_ndim_in_labels_writes_nothing(tmp_path: Path) -> None:
+    """`chunks` also applies to the labels, which can have fewer dimensions."""
+    dest = tmp_path / "labels.zarr"
+    with pytest.raises(ValueError, match="Label 'cells': chunks="):
+        write_image(
+            dest,
+            _make_image("zyx", {"z": 1.0, "y": 1.0, "x": 1.0}),
+            np.zeros((4, 64, 64), "uint16"),
+            labels={"cells": (_make_label_image(), np.zeros((64, 64), "uint8"))},
+            chunks=(1, 32, 32),
+        )
+    assert not dest.exists()
+
+
+def test_wrong_chunks_ndim_in_later_image_writes_nothing(tmp_path: Path) -> None:
+    dest = tmp_path / "mixed.zarr"
+    zyx = (_make_image("zyx", {"z": 1.0, "y": 1.0, "x": 1.0}), np.zeros((4, 64, 64)))
+    yx = (_make_yx_image(), np.zeros((64, 64)))
+    with pytest.raises(ValueError, match="Series '1': chunks="):
+        write_bioformats2raw(dest, {"0": yx, "1": zyx}, chunks=(32, 32))
+    assert not dest.exists()
+    with pytest.raises(ValueError, match="Well 'A/1', field '1': chunks="):
+        write_plate(dest, {("A", "1", "0"): yx, ("A", "1", "1"): zyx}, chunks=(32, 32))
+    assert not dest.exists()
+
+
 @pytest.mark.parametrize("writer", WRITERS)
 @pytest.mark.parametrize(
     ("chunks", "shards"),
@@ -223,18 +343,42 @@ def test_write_image_dask_misaligned_chunks(
     np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
 
 
+@pytest.mark.skipif("tensorstore" not in WRITERS, reason="needs tensorstore")
+def test_write_dask_tensorstore_streams(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A dask array is written to tensorstore block by block, not computed whole."""
+    da = pytest.importorskip("dask.array")
+    ref = np.random.randint(1, 1000, size=(16, 64, 64)).astype("uint16")
+    data = da.from_array(ref, chunks=(4, 64, 64))
+
+    def _no_compute(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("the whole dask array was computed")
+
+    monkeypatch.setattr(da.Array, "compute", _no_compute)
+    dest = write_image(
+        tmp_path / "dask.zarr",
+        _make_image("dask_test", {"z": 1.0, "y": 0.5, "x": 0.5}),
+        datasets=[data],
+        chunks=(4, 32, 32),
+        writer="tensorstore",
+    )
+    zarr = pytest.importorskip("zarr")
+    np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
+
+
 @pytest.mark.parametrize("writer", WRITERS)
-def test_write_image_dask_streams_only_to_zarr(
+def test_write_image_dask_streams_to_backends(
     tmp_path: Path, writer: ZarrWriter, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Real zarr arrays keep writing dask chunks lazily, without computing it all."""
+    """zarr and tensorstore arrays get dask chunks lazily, without computing it all."""
     da = pytest.importorskip("dask.array")
     store = Mock(wraps=da.store)
     monkeypatch.setattr(da, "store", store)
     dest = tmp_path / "dask.zarr"
     ref = np.random.randint(1, 1000, size=(8, 16)).astype("uint16")
     write_image(dest, _make_yx_image(), _as_input("dask", ref), writer=writer)
-    assert store.called == (writer == "zarr")
+    assert store.called
     zarr = pytest.importorskip("zarr")
     np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
 
@@ -687,6 +831,44 @@ def test_write_plate_grid_sizes(
     plate_meta = json.loads((dest / "zarr.json").read_bytes())
     assert len(plate_meta["attributes"]["ome"]["plate"]["wells"]) == n_rows * n_cols
     yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_plate_zero_padded_columns(tmp_path: Path, writer: ZarrWriter) -> None:
+    """Auto-generated columns keep the zero-padding of the given column names."""
+    dest = tmp_path / "plate_padded.zarr"
+    image = _make_image("img", {"y": 0.5, "x": 0.5})
+    data = np.zeros((16, 16), dtype="uint16")
+    images = {("A", "01", "0"): (image, [data]), ("B", "03", "0"): (image, [data])}
+
+    write_plate(dest, images, writer=writer)
+    plate = json.loads((dest / "zarr.json").read_bytes())["attributes"]["ome"]["plate"]
+    assert [c["name"] for c in plate["columns"]] == ["01", "02", "03"]
+    assert [w["path"] for w in plate["wells"]] == ["A/01", "B/03"]
+    assert (dest / "B" / "03" / "0").exists()
+    yaozarrs.validate_zarr_store(dest)
+
+
+@pytest.mark.parametrize(
+    ("cols", "expected"),
+    [
+        (["1", "3"], ["1", "2", "3"]),
+        (["2", "10"], [str(i) for i in range(1, 11)]),
+        (["10", "11"], [str(i) for i in range(1, 12)]),
+        (["01", "12"], [f"{i:02d}" for i in range(1, 13)]),
+        (["003"], ["001", "002", "003"]),
+    ],
+)
+def test_autogenerated_column_names(cols: list[str], expected: list[str]) -> None:
+    meta = _autogenerate_plate_metadata([("A", c, "0") for c in cols])
+    assert [c["name"] for c in meta["columns"]] == expected
+    assert [w["path"] for w in meta["wells"]] == [f"A/{c}" for c in sorted(cols)]
+
+
+@pytest.mark.parametrize("cols", [["1", "02"], ["01", "100"], ["1", "01"]])
+def test_autogenerated_columns_mixed_padding(cols: list[str]) -> None:
+    with pytest.raises(ValueError, match="mix zero-padded"):
+        _autogenerate_plate_metadata([("A", c, "0") for c in cols])
 
 
 @pytest.mark.parametrize("writer", WRITERS)

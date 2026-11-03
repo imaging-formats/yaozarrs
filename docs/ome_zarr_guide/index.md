@@ -688,6 +688,7 @@ They are represented as a special group named "labels/" within an image group.
           "node_type": "group",
           "attributes": {
             "ome": {
+              "version": "0.5",
               "labels": ["nuclei", "cells"]
             }
           }
@@ -701,12 +702,12 @@ They are represented as a special group named "labels/" within an image group.
           "node_type": "group",
           "attributes": {
             "ome": {
+              "version": "0.5",
               "multiscales": [...],
-              "image_label": {
-                "version": "0.5",
+              "image-label": {
                 "colors": [
-                  {"label_value": 1, "rgba": [255, 0, 0, 255]},
-                  {"label_value": 2, "rgba": [0, 255, 0, 255]}
+                  {"label-value": 1, "rgba": [255, 0, 0, 255]},
+                  {"label-value": 2, "rgba": [0, 255, 0, 255]}
                 ],
                 "source": {
                   "image": "../../"
@@ -719,11 +720,12 @@ They are represented as a special group named "labels/" within an image group.
 
         **yaozarrs Code:**
         ```python
-        from yaozarrs import v05
+        from yaozarrs import DimSpec, v05
 
         # Label metadata stored at labels/nuclei/zarr.json
         label_image = v05.LabelImage(
-            multiscales=[...],  # Same structure as regular image
+            # same structure as a regular image
+            multiscales=[v05.Multiscale.from_dims([DimSpec(name="y"), DimSpec(name="x")])],
             image_label=v05.ImageLabel(
                 colors=[
                     v05.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
@@ -782,11 +784,12 @@ They are represented as a special group named "labels/" within an image group.
 
         **yaozarrs Code:**
         ```python
-        from yaozarrs import v04
+        from yaozarrs import DimSpec, v04
 
         # Label metadata stored at labels/nuclei/.zattrs
         label_image = v04.LabelImage(
-            multiscales=[...],  # Same structure as regular image
+            # same structure as a regular image
+            multiscales=[v04.Multiscale.from_dims([DimSpec(name="y"), DimSpec(name="x")])],
             image_label=v04.ImageLabel(
                 colors=[
                     v04.LabelColor(label_value=1, rgba=[255, 0, 0, 255]),
@@ -961,8 +964,11 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
 
     ```json
     {
+      "zarr_format": 3,
+      "node_type": "group",
       "attributes": {
         "ome": {
+          "version": "0.5",
           "plate": {
             "columns": [
               { "name": "1" },
@@ -1021,7 +1027,7 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
 
     # Create full zarr.json
     zarr_json = v05.OMEZarrGroupJSON(attributes={"ome": plate})
-    json_str = zarr_json.model_dump_json(indent=2, exclude_unset=True)
+    json_str = zarr_json.model_dump_json(indent=2)
     ```
 
 === "v0.4"
@@ -1050,7 +1056,7 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
         "acquisitions": [
           {"id": 0, "name": "Initial", "maximumfieldcount": 4},
           {"id": 1, "name": "24h", "maximumfieldcount": 4}
-        ],
+        ]
       }
     }
     ```

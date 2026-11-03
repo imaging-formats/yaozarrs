@@ -6,7 +6,6 @@ from pydantic import (
     AfterValidator,
     Field,
     SerializerFunctionWrapHandler,
-    WrapValidator,
     model_serializer,
     model_validator,
 )
@@ -174,9 +173,9 @@ def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
 
 
 DatasetsList: TypeAlias = Annotated[
-    UniqueList[Dataset],
+    list[Dataset],
     MinLen(1),
-    WrapValidator(lambda v, h: _validate_datasets_list(h(v))),
+    AfterValidator(_validate_datasets_list),
 ]
 
 # ------------------------------------------------------------------------------

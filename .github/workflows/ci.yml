@@ -145,6 +145,10 @@ jobs:
       - name: 🧪 Run oztest
         run: uvx --from rust-just just test-conformance
 
+      - name: 🧪 Run oztest (strict)
+        if: ${{ !cancelled() }}
+        run: uvx --from rust-just just test-conformance strict
+
   upload_coverage:
     if: always()
     needs: [test, test-realworld]
