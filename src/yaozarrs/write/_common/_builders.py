@@ -13,7 +13,11 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeGuard, TypeVar, ca
 from ._arrays import _get_create_func, _resolve_chunks, _write_to_array
 from ._groups import _create_zarr3_group, _update_zarr3_group
 from ._models import _check_model
-from ._plate import _merge_plate_metadata
+from ._plate import (
+    _autogenerate_plate_metadata,
+    _extend_plate_metadata,
+    _merge_plate_metadata,
+)
 
 # The builders are generic over each version's Image/LabelImage models.  (Named like
 # the models, so the rendered docs read the same as a version's own signatures.)
@@ -644,6 +648,8 @@ class PlateBuilderBase(Generic[Image]):
         self._shards = shards
         self._overwrite = overwrite
         self._compression: CompressionName = compression
+        # (a plate already at `dest` is added to, not replaced)
+        self._existing_plate = self._load_existing_plate()
 
         # For prepare-only workflow: {well_path: {fov: (Image, specs)}}
         self._wells: dict[str, dict[str, ImageWithShapeSpecs]] = {}
@@ -901,6 +907,12 @@ class PlateBuilderBase(Generic[Image]):
         well_path = f"{row}/{col}"
         if well_path in self._wells:
             raise ValueError(f"Well ({row}, {col}) already added via add_well().")
+        if self._existing_plate is not None and well_path in {
+            well.path for well in self._existing_plate.plate.wells
+        }:
+            raise FileExistsError(
+                f"Well ({row}, {col}) already exists in {self._dest}."
+            )
 
         # If user provided a plate, validate against it
         if self._user_plate is not None:
@@ -923,6 +935,14 @@ class PlateBuilderBase(Generic[Image]):
         # Create root directory
         self._dest.mkdir(parents=True, exist_ok=True)
         self._initialized = True
+
+    def _load_existing_plate(self) -> Any:
+        """Return the Plate already at `dest`, if there is one (and no `overwrite`)."""
+        zarr_json = self._dest / "zarr.json"
+        if self._overwrite or not zarr_json.exists():
+            return None
+        ome = json.loads(zarr_json.read_bytes()).get("attributes", {}).get("ome", {})
+        return self._plate_type.model_validate(ome) if "plate" in ome else None
 
     def _get_images_dict(self) -> dict[tuple[str, str, str], ImageWithAny]:
         """Convert internal well storage to images dict format.
@@ -950,6 +970,9 @@ class PlateBuilderBase(Generic[Image]):
         """
         if self._user_plate is not None:
             return self._user_plate
+        if self._existing_plate is not None:
+            new = _autogenerate_plate_metadata(self._get_images_dict())
+            return _extend_plate_metadata(self._existing_plate, new)
         return _merge_plate_metadata(
             self._get_images_dict(), self._user_plate, self._plate_type
         )

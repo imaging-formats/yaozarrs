@@ -1012,6 +1012,34 @@ def test_plate_builder_well_metadata_generation(
     assert [img["path"] for img in images_meta] == ["0", "1", "2"]
 
 
+def test_plate_builder_extends_existing_plate(tmp_path: Path) -> None:
+    dest = tmp_path / "plate.zarr"
+    image = _make_image("field", {"y": 1.0, "x": 1.0})
+    fov = {"0": (image, np.zeros((8, 8), "uint8"))}
+    names = ["1", "2", "3"]
+    plate = v05.Plate(
+        plate=v05.PlateDef(
+            name="my plate",
+            rows=[v05.Row(name=n) for n in "ABC"],
+            columns=[v05.Column(name=n) for n in names],
+            wells=[v05.PlateWell(path="A/1", rowIndex=0, columnIndex=0)],
+        )
+    )
+    PlateBuilder(dest, plate=plate).write_well(row="A", col="1", images=fov)
+
+    # a later session adds wells to the plate, keeping what's there
+    builder = PlateBuilder(dest)
+    builder.write_well(row="B", col="2", images=fov)
+    meta = json.loads((dest / "zarr.json").read_bytes())["attributes"]["ome"]["plate"]
+    assert meta["name"] == "my plate"
+    assert [r["name"] for r in meta["rows"]] == ["A", "B", "C"]
+    assert [c["name"] for c in meta["columns"]] == names
+    assert [w["path"] for w in meta["wells"]] == ["A/1", "B/2"]
+    yaozarrs.validate_zarr_store(dest)
+    with pytest.raises(FileExistsError, match="already exists"):
+        builder.write_well(row="A", col="1", images=fov)
+
+
 @pytest.mark.parametrize(
     ("setup", "action", "error_match"),
     [
