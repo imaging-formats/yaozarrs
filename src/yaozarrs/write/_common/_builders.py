@@ -936,7 +936,7 @@ class PlateBuilderBase(Generic[Image]):
         self._dest.mkdir(parents=True, exist_ok=True)
         self._initialized = True
 
-    def _load_existing_plate(self) -> Any:
+    def _load_existing_plate(self) -> BaseModel | None:
         """Return the Plate already at `dest`, if there is one (and no `overwrite`)."""
         zarr_json = self._dest / "zarr.json"
         if self._overwrite or not zarr_json.exists():
