@@ -1154,17 +1154,11 @@ lists them all.</p>
 <p class="admonition-title">Transformations point from <code>input</code> to <code>output</code></p>
 <p>Transformations map <em>points</em> from the input space to the output space
 (the spec calls this the "forward" direction).  This sounds obvious, but
-it's an easy place to get things backwards:</p>
-<ul>
-<li>To <em>draw</em> image A into the coordinate system of image B, a viewer
-  usually needs the <strong>inverse</strong>: for each pixel of the output, where should
-  it sample A?  For simple transformations (scale, translation, rotation...)
-  the viewer can compute that inverse itself.</li>
-<li>Image <strong>registration</strong> tools often give you the transformation from the
-  <em>fixed</em> image to the <em>moving</em> image, for exactly that reason.  That's
-  fine: just make sure <code>input</code> and <code>output</code> say which is which (input =
-  fixed, output = moving), rather than assuming the direction.</li>
-</ul>
+it's an easy place to get things backwards.  To <em>draw</em> image A into the
+coordinate system of image B, a viewer usually needs the <strong>inverse</strong>: for
+each pixel of the output, where should it sample A?  For simple
+transformations (scale, translation, rotation...) the viewer can compute
+that inverse itself.</p>
 <p>See also the <a href="#transformation-types"><code>bijection</code></a> type, which stores both
 directions explicitly.</p>
 </div>
@@ -1355,39 +1349,6 @@ system for the corrected geometry:</p>
 intrinsic coordinate system: there are no chains like
 <code>intrinsic → a → b</code>.</p>
 </div>
-<details class="example">
-<summary>Working in pixel units</summary>
-<p>Sometimes it's handy to express things (ROIs, transformation parameters) in
-pixels rather than physical units.  One way the spec suggests: add a
-unitless coordinate system, and link it to the intrinsic one with a scale
-that converts physical units back into pixels:</p>
-<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">"coordinateSystems"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">}</span>
-<span class="w">    </span><span class="p">]},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">}</span>
-<span class="w">    </span><span class="p">]}</span>
-<span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">"datasets"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
-<span class="w">    </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s0"</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
-<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s0"</span><span class="p">},</span><span class="w"> </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">}</span>
-<span class="w">    </span><span class="p">}]</span>
-<span class="w">  </span><span class="p">}],</span>
-<span class="w">  </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
-<span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0</span><span class="p">],</span>
-<span class="w">    </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"intrinsic"</span><span class="p">},</span><span class="w"> </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">}</span>
-<span class="w">  </span><span class="p">}]</span>
-<span class="p">}</span>
-</code></pre></div>
-<p>Other transformations (e.g. in a scene) can then use <code>array</code> as their
-<code>input</code> or <code>output</code>.</p>
-</details>
 <hr />
 <h2 id="between-images-scenes">Between images: scenes<a class="headerlink" href="#between-images-scenes" title="Link to this section">#</a></h2>
 <p>Transformations between <em>different</em> images live in a
@@ -1432,96 +1393,14 @@ its metadata, and which <code>zarr.json</code> it's stored in:</p>
 <p><ome-transform-graph></ome-transform-graph></p>
 <hr />
 <h2 id="transformation-types">Transformation types<a class="headerlink" href="#transformation-types" title="Link to this section">#</a></h2>
-<p>v0.6 defines 12 types of transformations.  Readers <strong>MUST</strong> parse the first
-four, and <strong>SHOULD</strong> understand <code>mapAxis</code>, <code>affine</code>, <code>rotation</code> and
-<code>byDimension</code>.</p>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>What it does</th>
-<th>Parameters</th>
-<th style="text-align: center;">Invertible?</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>identity</code></td>
-<td>Nothing: every coordinate stays the same</td>
-<td></td>
-<td style="text-align: center;">yes</td>
-</tr>
-<tr>
-<td><code>scale</code></td>
-<td>Multiplies each coordinate by a factor</td>
-<td><code>scale</code>: one number per axis</td>
-<td style="text-align: center;">if no factor is <code>0</code></td>
-</tr>
-<tr>
-<td><code>translation</code></td>
-<td>Adds an offset to each coordinate</td>
-<td><code>translation</code>: one number per axis</td>
-<td style="text-align: center;">yes</td>
-</tr>
-<tr>
-<td><code>sequence</code></td>
-<td>Applies a list of transformations, in order</td>
-<td><code>transformations</code>: a non-empty list</td>
-<td style="text-align: center;">if each one is</td>
-</tr>
-<tr>
-<td><code>mapAxis</code></td>
-<td>Reorders (permutes) the axes</td>
-<td><code>mapAxis</code>: for each output axis, the index of the input axis it comes from</td>
-<td style="text-align: center;">yes</td>
-</tr>
-<tr>
-<td><code>affine</code></td>
-<td>Any linear transformation plus a translation (rotate, scale, shear, ...)</td>
-<td><code>affine</code>: an <code>M x (N+1)</code> matrix (or a <code>path</code> to one)</td>
-<td style="text-align: center;">sometimes</td>
-</tr>
-<tr>
-<td><code>rotation</code></td>
-<td>Rotates</td>
-<td><code>rotation</code>: an <code>N x N</code> matrix (or a <code>path</code> to one)</td>
-<td style="text-align: center;">yes</td>
-</tr>
-<tr>
-<td><code>byDimension</code></td>
-<td>Combines lower-dimensional transformations, each acting on some of the axes</td>
-<td><code>transformations</code>: items with <code>transformation</code>, <code>inputAxes</code> and <code>outputAxes</code></td>
-<td style="text-align: center;"></td>
-</tr>
-<tr>
-<td><code>projectAxis</code></td>
-<td>Adds and/or drops axes</td>
-<td><code>droppedInputs</code> and/or <code>createdOutputs</code>: axis indices</td>
-<td style="text-align: center;">not in general, if it drops an axis</td>
-</tr>
-<tr>
-<td><code>bijection</code></td>
-<td>Gives both directions explicitly</td>
-<td><code>forward</code> and <code>inverse</code> transformations</td>
-<td style="text-align: center;">yes</td>
-</tr>
-<tr>
-<td><code>displacements</code></td>
-<td>Moves each point by a vector, looked up in a vector field (e.g. non-rigid registration)</td>
-<td><code>path</code> to the field, optional <code>interpolation</code></td>
-<td style="text-align: center;">not in general</td>
-</tr>
-<tr>
-<td><code>coordinates</code></td>
-<td>Replaces each point with a position, looked up in a vector field</td>
-<td><code>path</code> to the field, optional <code>interpolation</code></td>
-<td style="text-align: center;">not in general</td>
-</tr>
-</tbody>
-</table>
-<p>(The <code>identity</code>, <code>scale</code>, <code>translation</code> and <code>sequence</code> rows are the ones readers
-<strong>MUST</strong> parse; for <code>sequence</code>, it's sequences of those.  Actually <em>applying</em>
-transformations to points or images is a <strong>SHOULD</strong>.)</p>
+<p>v0.6 defines 12 types of transformations: <code>identity</code>, <code>scale</code>, <code>translation</code>,
+<code>sequence</code>, <code>mapAxis</code>, <code>affine</code>, <code>rotation</code>, <code>byDimension</code>, <code>projectAxis</code>,
+<code>bijection</code>, <code>displacements</code> and <code>coordinates</code>.  Readers <strong>MUST</strong> parse the
+first four (for <code>sequence</code>, sequences of those), and <strong>SHOULD</strong> understand
+<code>mapAxis</code>, <code>affine</code>, <code>rotation</code> and <code>byDimension</code>.  Actually <em>applying</em>
+transformations to points or images is a <strong>SHOULD</strong>.  See the
+<a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">spec</a> for
+what each one does and its parameters.</p>
 <div class="admonition warning">
 <p class="admonition-title">Gotchas</p>
 <ul>
@@ -1541,10 +1420,6 @@ transformations to points or images is a <strong>SHOULD</strong>.)</p>
 <li><strong>Prefer simple transformations.</strong>  The spec says implementations
   <strong>SHOULD</strong> prefer a sequence of less expressive transformations (e.g.
   <code>sequence[translation, rotation]</code>) over an equivalent <code>affine</code>.</li>
-<li><strong>Fields are multiscale images.</strong>  The vector field of a <code>displacements</code>
-  or <code>coordinates</code> transformation is stored as a normal multiscale image
-  group, with one extra (discrete) axis of <code>type</code> <code>"displacement"</code> or
-  <code>"coordinate"</code> for the vector's components.</li>
 </ul>
 </div>
 <hr />
