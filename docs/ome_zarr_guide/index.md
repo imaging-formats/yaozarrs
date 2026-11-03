@@ -1368,26 +1368,6 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 
 ---
 
-### When to Use Collections vs. Plates
-
-| Scenario | Use Collection | Use Plate | Use Scene (v0.6) |
-|----------|:--------------:|:---------:|:----------------:|
-| Multiple FOVs on coverslip | :white_check_mark: | :x: | :white_check_mark: |
-| Irregular stage positions | :white_check_mark: | :x: | :white_check_mark: |
-| Tiles of a mosaic | :white_check_mark: | :x: | :white_check_mark: |
-| Multiple views of the same sample | :white_check_mark: | :x: | :white_check_mark: |
-| Time-lapse split across files | :white_check_mark: | :x: | :x: |
-| Multi-well HCS experiment | :x: | :white_check_mark: | :x: |
-| Regular grid with well labels | :x: | :white_check_mark: | :x: |
-
-!!! tip "Rule of thumb"
-    If your data has **rows and columns** (like A1, B2, etc.), use a **Plate**.
-    If it's **multiple images related in space** (and you know how they relate),
-    and you can use v0.6, use a **Scene**.
-    If it's just **multiple related images**, use a **Collection**.
-
----
-
 ## Working with Scenes
 
 !!! info "New in v0.6"
