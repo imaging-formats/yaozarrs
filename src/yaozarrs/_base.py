@@ -103,8 +103,10 @@ class _OMEDocument(_BaseModel):
     @model_serializer(mode="wrap")
     def _always_dump_version(
         self, handler: SerializerFunctionWrapHandler
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         # (so that documents dumped with `exclude_unset` still declare their version)
+        # NOTE: `object`, not `Any`: pydantic 2.10.0 resolves this (string) annotation
+        # in the *subclass's* module namespace (pydantic/pydantic#10929)
         return {"version": self.version, **handler(self)}
 
 
