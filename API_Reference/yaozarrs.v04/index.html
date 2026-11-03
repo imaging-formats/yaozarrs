@@ -1783,7 +1783,9 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="gp">... </span>    <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="gp">... </span>    <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="gp">... </span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">v04</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">from_dims</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"my_multiscale"</span><span class="p">,</span> <span class="n">n_levels</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ms</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">from_dims</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"my_multiscale"</span><span class="p">,</span> <span class="n">n_levels</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">path</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ms</span><span class="o">.</span><span class="n">datasets</span><span class="p">]</span>
+<span class="go">['0', '1', '2']</span>
 </code></pre></div>
 
 
@@ -1828,7 +1830,9 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
-<span class="normal">298</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dims</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DimSpec</span><span class="p">],</span>
@@ -1863,7 +1867,9 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="sd">    ...     DimSpec(name="y", size=512, scale=0.5, unit="micrometer"),</span>
 <span class="sd">    ...     DimSpec(name="x", size=512, scale=0.5, unit="micrometer"),</span>
 <span class="sd">    ... ]</span>
-<span class="sd">    &gt;&gt;&gt; v04.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)</span>
+<span class="sd">    &gt;&gt;&gt; ms = v04.Multiscale.from_dims(dims, name="my_multiscale", n_levels=3)</span>
+<span class="sd">    &gt;&gt;&gt; [ds.path for ds in ms.datasets]</span>
+<span class="sd">    ['0', '1', '2']</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs._dim_spec</span><span class="w"> </span><span class="kn">import</span> <span class="n">_axes_datasets</span>
 
