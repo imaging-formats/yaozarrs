@@ -113,10 +113,11 @@ export function generateJSON({ dimensions, version, numLevels }) {
     const scale = dimensions.map(d =>
       d.scale * Math.pow(d.scaleFactor || 1, level)
     );
-    const transforms = [{ scale }];
+    const transforms = [{ type: 'scale', scale }];
 
     if (dimensions.some(d => d.translation !== 0)) {
       transforms.push({
+        type: 'translation',
         translation: dimensions.map(d => d.translation || 0)
       });
     }
@@ -311,15 +312,7 @@ export function generatePython({ dimensions, version, numLevels }) {
     return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
   }).join(',\n');
 
-  const dimsCode = dimensions.map(d => {
-    const parts = [`name="${d.name}"`];
-    if (d.type) parts.push(`type="${d.type}"`);
-    if (d.unit) parts.push(`unit="${d.unit}"`);
-    if (d.scale !== 1) parts.push(`scale=${d.scale}`);
-    if (d.translation !== 0) parts.push(`translation=${d.translation}`);
-    if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
-    return `    DimSpec(${parts.join(', ')})`;
-  }).join(',\n');
+  const dimsCode = dimSpecCode(dimensions);
 
   return `from yaozarrs import ${ver}, DimSpec
 
@@ -393,7 +386,12 @@ function dimSpecCode(dimensions) {
     if (d.unit) parts.push(`unit="${d.unit}"`);
     if (d.scale !== 1) parts.push(`scale=${d.scale}`);
     if (d.translation !== 0) parts.push(`translation=${d.translation}`);
-    if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
+    // DimSpec downsamples space axes by 2 (and others by 1) unless told otherwise,
+    // and infers the type from the name when it isn't given
+    const factor = d.scaleFactor || 1;
+    if (!d.type || factor !== (d.type === 'space' ? 2 : 1)) {
+      parts.push(`scale_factor=${factor}`);
+    }
     return `    DimSpec(${parts.join(', ')})`;
   }).join(',\n');
 }
@@ -692,15 +690,7 @@ export function generatePlatePython({ dimensions, version, numLevels, plateType,
     return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
   }).join(',\n');
 
-  const dimsCode = dimensions.map(d => {
-    const parts = [`name="${d.name}"`];
-    if (d.type) parts.push(`type="${d.type}"`);
-    if (d.unit) parts.push(`unit="${d.unit}"`);
-    if (d.scale !== 1) parts.push(`scale=${d.scale}`);
-    if (d.translation !== 0) parts.push(`translation=${d.translation}`);
-    if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
-    return `    DimSpec(${parts.join(', ')})`;
-  }).join(',\n');
+  const dimsCode = dimSpecCode(dimensions);
 
   // Generate rows and columns
   const rowsCode = layout.rowNames.map(name => `${ver}.Row(name="${name}")`).join(', ');

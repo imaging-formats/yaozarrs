@@ -100,6 +100,13 @@ for versions in ["v0.4", "v0.5", "v0.6"]:
                 ),
                 _config(versions, "czyx", levels),
                 _config(versions, "tczyx", levels),
+                # space axes that aren't downsampled (DimSpec's default is 2)
+                _config(versions, [_dim("z", scaleFactor=1), *map(_dim, "yx")], levels),
+                _config(
+                    versions,
+                    [_dim("w", type_="space", scaleFactor=1), *map(_dim, "yx")],
+                    levels,
+                ),
             ]
         )
 
@@ -248,7 +255,7 @@ def test_json_validates_against_pydantic(config: dict) -> None:
 
     # test the python code generates the same json as the js code
     json_dict = json.loads(output["json"])
-    python_dict = namespace["image"].model_dump(exclude_unset=True, exclude_none=True)
+    python_dict = json.loads(namespace["image"].model_dump_json())
     if ngff_version != "v0.4":
         json_dict = json_dict["attributes"]["ome"]
     assert json_dict == python_dict
@@ -322,8 +329,8 @@ def test_plate_validates_against_pydantic(plate_config: dict) -> None:
     # Verify the Python-generated plate_def matches the JS-generated plate
     plate_json_dict = json.loads(output["plateJson"])
     well_json_dict = json.loads(output["wellJson"])
-    plate_python_dict = plate_def.model_dump(exclude_unset=True)
-    well_python_dict = well_def.model_dump(exclude_unset=True)
+    plate_python_dict = json.loads(plate_def.model_dump_json())
+    well_python_dict = json.loads(well_def.model_dump_json())
 
     if ngff_version != "v0.4":
         plate_json_dict = plate_json_dict["attributes"]["ome"]["plate"]
