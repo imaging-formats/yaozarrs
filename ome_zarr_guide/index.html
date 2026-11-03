@@ -9,8 +9,11 @@
         <meta name="description" content="Yet another ome-zarr model.">
       
       
+        <meta name="author" content="Talley Lambert">
       
-        <link rel="canonical" href="https://tlambert03.github.io/yaozarrs/ome_zarr_guide/">
+      
+        <link rel="canonical" href="https://imaging-formats.github.io/yaozarrs/ome_zarr_guide/">
+      
       
       
         <link rel="prev" href="../ome_zarr_explorer/">
@@ -23,7 +26,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="zensical-0.0.74">
     
     
       
@@ -31,10 +34,15 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -48,27 +56,21 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Inter";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CFira+Code:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Fira Code"}</style>
       
     
-    
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
       <link rel="stylesheet" href="../stylesheets/zensical.css">
     
       <link rel="stylesheet" href="../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
 
     
     
-  
-  <!-- Load ome-explorer web component as ES module -->
-  <script type="module" src="../javascripts/ome_explorer.js"></script>
-
   </head>
   
   
@@ -79,19 +81,16 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#yaozzars-guide-to-ome-zarr" class="md-skip">
-          Skip to content
-        </a>
-      
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
     </div>
     <div data-md-component="announce">
       
@@ -104,15 +103,16 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="YAOZARRS ‼️" class="md-header__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
+    <a href="./.." title="YAOZARRS ‼️" class="md-header__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -137,20 +137,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
@@ -166,57 +166,29 @@
       
         <label class="md-header__button md-icon" for="__search">
           
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
-      <label class="md-search__icon md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-      </label>
-      <nav class="md-search__options" aria-label="Search">
-        
-        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-      </nav>
-      
-        <div class="md-search__suggest" data-md-component="search-suggest"></div>
-      
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="search-result">
-          <div class="md-search-result__meta">
-            Initializing search
-          </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
 </div>
       
     
-    
-      <div class="md-header__source">
-        <a href="https://github.com/tlambert03/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
+    <div class="md-header__source">
+      
+        <a href="https://github.com/imaging-formats/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
-    tlambert03/yaozarrs
+    imaging-formats/yaozarrs
   </div>
 </a>
-      </div>
-    
+      
+    </div>
   </nav>
   
 </header>
@@ -242,23 +214,23 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="YAOZARRS ‼️" class="md-nav__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
+    <a href="./.." title="YAOZARRS ‼️" class="md-nav__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
 
     </a>
     YAOZARRS ‼️
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/tlambert03/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/imaging-formats/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
-    tlambert03/yaozarrs
+    imaging-formats/yaozarrs
   </div>
 </a>
     </div>
@@ -272,7 +244,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="./.." class="md-nav__link">
         
   
   
@@ -281,8 +253,7 @@
   <span class="md-ellipsis">
     
   
-    Get Started
-  
+  Get Started
 
     
   </span>
@@ -310,8 +281,7 @@
   <span class="md-ellipsis">
     
   
-    Installing yaozarrs
-  
+  Installing yaozarrs
 
     
   </span>
@@ -339,8 +309,7 @@
   <span class="md-ellipsis">
     
   
-    OME-Zarr Explorer
-  
+  OME-Zarr Explorer
 
     
   </span>
@@ -362,7 +331,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
       
       
         
@@ -377,8 +346,7 @@
   <span class="md-ellipsis">
     
   
-    Guide to OME-Zarr
-  
+  Guide to OME-Zarr
 
     
   </span>
@@ -388,7 +356,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="./" class="md-nav__link md-nav__link--active">
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -397,8 +365,7 @@
   <span class="md-ellipsis">
     
   
-    Guide to OME-Zarr
-  
+  Guide to OME-Zarr
 
     
   </span>
@@ -409,7 +376,8 @@
       
         
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -418,16 +386,16 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table of contents
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#quicklinks" class="md-nav__link">
     <span class="md-ellipsis">
-      
-        Quicklinks
-      
+      <span class="md-typeset">
+        <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"/></svg></span> Quicklinks
+      </span>
     </span>
   </a>
   
@@ -436,9 +404,9 @@
         <li class="md-nav__item">
   <a href="#what-is-ome-zarr" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         What is OME-Zarr?
-      
+      </span>
     </span>
   </a>
   
@@ -447,9 +415,9 @@
         <li class="md-nav__item">
   <a href="#working-with-images" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Working with Images
-      
+      </span>
     </span>
   </a>
   
@@ -459,9 +427,9 @@
           <li class="md-nav__item">
   <a href="#directory-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Directory Structure
-      
+      </span>
     </span>
   </a>
   
@@ -470,9 +438,9 @@
           <li class="md-nav__item">
   <a href="#axes" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Axes
-      
+      </span>
     </span>
   </a>
   
@@ -481,9 +449,9 @@
           <li class="md-nav__item">
   <a href="#coordinate-transformations" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Coordinate Transformations
-      
+      </span>
     </span>
   </a>
   
@@ -492,9 +460,9 @@
           <li class="md-nav__item">
   <a href="#interactive-example" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Interactive Example
-      
+      </span>
     </span>
   </a>
   
@@ -508,9 +476,9 @@
         <li class="md-nav__item">
   <a href="#labels-segmentation-masks" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Labels (Segmentation Masks)
-      
+      </span>
     </span>
   </a>
   
@@ -519,9 +487,9 @@
         <li class="md-nav__item">
   <a href="#working-with-plates" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Working with Plates
-      
+      </span>
     </span>
   </a>
   
@@ -531,9 +499,9 @@
           <li class="md-nav__item">
   <a href="#directory-structure_1" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Directory Structure
-      
+      </span>
     </span>
   </a>
   
@@ -542,9 +510,9 @@
           <li class="md-nav__item">
   <a href="#plate-metadata" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Plate Metadata
-      
+      </span>
     </span>
   </a>
   
@@ -553,9 +521,9 @@
           <li class="md-nav__item">
   <a href="#well-metadata" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Well Metadata
-      
+      </span>
     </span>
   </a>
   
@@ -564,9 +532,9 @@
           <li class="md-nav__item">
   <a href="#interactive-example_1" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Interactive Example
-      
+      </span>
     </span>
   </a>
   
@@ -580,9 +548,9 @@
         <li class="md-nav__item">
   <a href="#working-with-collections" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Working with Collections
-      
+      </span>
     </span>
   </a>
   
@@ -592,9 +560,9 @@
           <li class="md-nav__item">
   <a href="#directory-structure_2" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Directory Structure
-      
+      </span>
     </span>
   </a>
   
@@ -603,9 +571,9 @@
           <li class="md-nav__item">
   <a href="#metadata" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Metadata
-      
+      </span>
     </span>
   </a>
   
@@ -614,9 +582,9 @@
           <li class="md-nav__item">
   <a href="#when-to-use-collections-vs-plates" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         When to Use Collections vs. Plates
-      
+      </span>
     </span>
   </a>
   
@@ -630,9 +598,9 @@
         <li class="md-nav__item">
   <a href="#reference" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Reference
-      
+      </span>
     </span>
   </a>
   
@@ -642,9 +610,9 @@
           <li class="md-nav__item">
   <a href="#version-comparison-matrix" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Version Comparison Matrix
-      
+      </span>
     </span>
   </a>
   
@@ -653,9 +621,9 @@
           <li class="md-nav__item">
   <a href="#breaking-changes-quick-reference" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Breaking Changes Quick Reference
-      
+      </span>
     </span>
   </a>
   
@@ -669,9 +637,9 @@
         <li class="md-nav__item">
   <a href="#additional-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Additional Resources
-      
+      </span>
     </span>
   </a>
   
@@ -720,8 +688,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
-  
+  API Reference
 
     
   </span>
@@ -731,19 +698,19 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
   
-    API Reference
-  
+  API Reference
 
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+                  
   
   
   
@@ -756,8 +723,7 @@
   <span class="md-ellipsis">
     
   
-    yaozarrs
-  
+  yaozarrs
 
     
   </span>
@@ -768,10 +734,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -784,8 +750,7 @@
   <span class="md-ellipsis">
     
   
-    yaozarrs.v04
-  
+  yaozarrs.v04
 
     
   </span>
@@ -796,10 +761,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -812,8 +777,7 @@
   <span class="md-ellipsis">
     
   
-    yaozarrs.v05
-  
+  yaozarrs.v05
 
     
   </span>
@@ -824,10 +788,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -840,8 +804,7 @@
   <span class="md-ellipsis">
     
   
-    yaozarrs.write.v05
-  
+  yaozarrs.write.v05
 
     
   </span>
@@ -852,10 +815,11 @@
     </li>
   
 
+                
               
-            
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        
       
     </li>
   
@@ -871,10 +835,24 @@
               
               <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -883,16 +861,16 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table of contents
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#quicklinks" class="md-nav__link">
     <span class="md-ellipsis">
-      
-        Quicklinks
-      
+      <span class="md-typeset">
+        <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"/></svg></span> Quicklinks
+      </span>
     </span>
   </a>
   
@@ -901,9 +879,9 @@
         <li class="md-nav__item">
   <a href="#what-is-ome-zarr" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         What is OME-Zarr?
-      
+      </span>
     </span>
   </a>
   
@@ -912,9 +890,9 @@
         <li class="md-nav__item">
   <a href="#working-with-images" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Working with Images
-      
+      </span>
     </span>
   </a>
   
@@ -924,9 +902,9 @@
           <li class="md-nav__item">
   <a href="#directory-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Directory Structure
-      
+      </span>
     </span>
   </a>
   
@@ -935,9 +913,9 @@
           <li class="md-nav__item">
   <a href="#axes" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Axes
-      
+      </span>
     </span>
   </a>
   
@@ -946,9 +924,9 @@
           <li class="md-nav__item">
   <a href="#coordinate-transformations" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Coordinate Transformations
-      
+      </span>
     </span>
   </a>
   
@@ -957,9 +935,9 @@
           <li class="md-nav__item">
   <a href="#interactive-example" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Interactive Example
-      
+      </span>
     </span>
   </a>
   
@@ -973,9 +951,9 @@
         <li class="md-nav__item">
   <a href="#labels-segmentation-masks" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Labels (Segmentation Masks)
-      
+      </span>
     </span>
   </a>
   
@@ -984,9 +962,9 @@
         <li class="md-nav__item">
   <a href="#working-with-plates" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Working with Plates
-      
+      </span>
     </span>
   </a>
   
@@ -996,9 +974,9 @@
           <li class="md-nav__item">
   <a href="#directory-structure_1" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Directory Structure
-      
+      </span>
     </span>
   </a>
   
@@ -1007,9 +985,9 @@
           <li class="md-nav__item">
   <a href="#plate-metadata" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Plate Metadata
-      
+      </span>
     </span>
   </a>
   
@@ -1018,9 +996,9 @@
           <li class="md-nav__item">
   <a href="#well-metadata" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Well Metadata
-      
+      </span>
     </span>
   </a>
   
@@ -1029,9 +1007,9 @@
           <li class="md-nav__item">
   <a href="#interactive-example_1" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Interactive Example
-      
+      </span>
     </span>
   </a>
   
@@ -1045,9 +1023,9 @@
         <li class="md-nav__item">
   <a href="#working-with-collections" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Working with Collections
-      
+      </span>
     </span>
   </a>
   
@@ -1057,9 +1035,9 @@
           <li class="md-nav__item">
   <a href="#directory-structure_2" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Directory Structure
-      
+      </span>
     </span>
   </a>
   
@@ -1068,9 +1046,9 @@
           <li class="md-nav__item">
   <a href="#metadata" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Metadata
-      
+      </span>
     </span>
   </a>
   
@@ -1079,9 +1057,9 @@
           <li class="md-nav__item">
   <a href="#when-to-use-collections-vs-plates" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         When to Use Collections vs. Plates
-      
+      </span>
     </span>
   </a>
   
@@ -1095,9 +1073,9 @@
         <li class="md-nav__item">
   <a href="#reference" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Reference
-      
+      </span>
     </span>
   </a>
   
@@ -1107,9 +1085,9 @@
           <li class="md-nav__item">
   <a href="#version-comparison-matrix" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Version Comparison Matrix
-      
+      </span>
     </span>
   </a>
   
@@ -1118,9 +1096,9 @@
           <li class="md-nav__item">
   <a href="#breaking-changes-quick-reference" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Breaking Changes Quick Reference
-      
+      </span>
     </span>
   </a>
   
@@ -1134,9 +1112,9 @@
         <li class="md-nav__item">
   <a href="#additional-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Additional Resources
-      
+      </span>
     </span>
   </a>
   
@@ -1154,15 +1132,15 @@
             <div class="md-content" data-md-component="content">
               
               <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
                 
                   
 
-
   
   
 
 
-<h1 id="yaozzars-guide-to-ome-zarr">Yaozzars Guide to OME-Zarr<a class="headerlink" href="#yaozzars-guide-to-ome-zarr" title="Link to this section">#</a></h1>
+<h1 id="yaozarrs-guide-to-ome-zarr">Yaozarrs Guide to OME-Zarr<a class="headerlink" href="#yaozarrs-guide-to-ome-zarr" title="Link to this section">#</a></h1>
 <script type="module" src="/javascripts/ome_explorer.js"></script>
 
 <div class="admonition tip">
@@ -1208,7 +1186,7 @@ any discrepancies between this guide and the official spec, the official
 spec takes precedence!</p>
 </div>
 <p>OME-Zarr is a file format specification used by the bioimaging community for
-storing multi-dimensional data. It is a "meta-specication", based on the
+storing multi-dimensional data. It is a "meta-specification", based on the
 pre-existing Zarr format, which is designed for the storage of chunked,
 compressed, N-dimensional arrays. OME-Zarr <strong>extends</strong> Zarr by adding metadata
 conventions specific to bioimaging, making it easier to store and share complex
@@ -1268,8 +1246,8 @@ or flatten them all into a single channel dimension.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">OME-Zarr v0.5 (Zarr v3)</label><label for="__tabbed_1_2">OME-Zarr v0.4 (Zarr v2)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>image.zarr/
-├── zarr.json            # {&quot;zarr_format&quot;: 3} group, with attributes.ome.multiscales
+<div class="language-text highlight"><pre><span></span><code>image.zarr/
+├── zarr.json            # {"zarr_format": 3} group, with attributes.ome.multiscales
 ├── 0/                   # Full resolution array  
 │   ├── zarr.json        # Array metadata (standard zarr schema)
 │   └── c/0/1/2/3        # Chunk files
@@ -1280,12 +1258,12 @@ or flatten them all into a single channel dimension.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>image.zarr/
-├── .zgroup              # {&quot;zarr_format&quot;: 2} group
-├── .zattrs              # Contains &quot;multiscales&quot;
+<div class="language-text highlight"><pre><span></span><code>image.zarr/
+├── .zgroup              # {"zarr_format": 2} group
+├── .zattrs              # Contains "multiscales"
 ├── 0/                   # Full resolution array
 │   ├── .zarray          # Array metadata (standard zarr schema)
-│   └── t/c/z/y/x        # Chunk files with &quot;/&quot; separator
+│   └── t/c/z/y/x        # Chunk files with "/" separator
 ├── 1/                   # downsampled level 1
 │   └── ...
 └── 2/                   # downsampled level 2 
@@ -1325,24 +1303,24 @@ with <code>name</code>, and optional <code>type</code> and/or <code>unit</code>:
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p><strong>Spec JSON:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="c1">// found in a &quot;multiscales&quot; object</span>
-<span class="w">  </span><span class="nt">&quot;axes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;c&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;channel&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;space&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;micrometer&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;y&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;space&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;micrometer&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;x&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;space&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;micrometer&quot;</span><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="c1">// found in a "multiscales" object</span>
+<span class="w">  </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"channel"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"z"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
 
 <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">),</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;micrometer&quot;</span><span class="p">),</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;micrometer&quot;</span><span class="p">),</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;micrometer&quot;</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="p">]</span>
 </code></pre></div>
 <div class="admonition warning">
@@ -1352,24 +1330,24 @@ with <code>name</code>, and optional <code>type</code> and/or <code>unit</code>:
 </div>
 <div class="tabbed-block">
 <p><strong>Spec JSON:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="c1">// found in a &quot;multiscales&quot; object</span>
-<span class="w">  </span><span class="nt">&quot;axes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;c&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;channel&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;space&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;micrometer&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;y&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;space&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;micrometer&quot;</span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;x&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;space&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;micrometer&quot;</span><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="c1">// found in a "multiscales" object</span>
+<span class="w">  </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"channel"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"z"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"space"</span><span class="p">,</span><span class="w"> </span><span class="nt">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"micrometer"</span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
 
 <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;c&quot;</span><span class="p">),</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;micrometer&quot;</span><span class="p">),</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;micrometer&quot;</span><span class="p">),</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;micrometer&quot;</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="p">]</span>
 </code></pre></div>
 </div>
@@ -1387,42 +1365,40 @@ as well as stage positions and spatial offsets for registration.</p>
 <p><strong>Scale Transformation (REQUIRED):</strong></p>
 <p>Maps array indices to physical coordinates. Scale values represent the physical size per pixel for each dimension.</p>
 <p><strong>Spec JSON:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;datasets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
-<span class="w">    </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;coordinateTransformations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;scale&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;scale&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">]}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"datasets"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">]}</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="w">  </span><span class="p">}]</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
 
 <span class="n">dataset</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
-    <span class="n">path</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
-    <span class="n">coordinateTransformations</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">ScaleTransformation</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
-    <span class="p">]</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">"0"</span><span class="p">,</span>
+    <span class="n">coordinateTransformations</span><span class="o">=</span><span class="p">[</span><span class="n">v04</span><span class="o">.</span><span class="n">ScaleTransformation</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])],</span>
 <span class="p">)</span>
 </code></pre></div>
 <p><strong>Translation Transformation (OPTIONAL):</strong></p>
 <p>Adds a spatial offset. Must come after scale.</p>
 <p><strong>Spec JSON:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;coordinateTransformations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;scale&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;scale&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">]},</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;translation&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;translation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w"> </span><span class="mf">200.0</span><span class="p">]}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"scale"</span><span class="p">,</span><span class="w"> </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"translation"</span><span class="p">,</span><span class="w"> </span><span class="nt">"translation"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w"> </span><span class="mf">200.0</span><span class="p">]}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="n">dataset</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
-    <span class="n">path</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">dataset</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">"0"</span><span class="p">,</span>
     <span class="n">coordinateTransformations</span><span class="o">=</span><span class="p">[</span>
         <span class="n">v04</span><span class="o">.</span><span class="n">ScaleTransformation</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">TranslationTransformation</span><span class="p">(</span><span class="n">translation</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">])</span>
-    <span class="p">]</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">TranslationTransformation</span><span class="p">(</span><span class="n">translation</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">]),</span>
+    <span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
 <div class="admonition warning">
@@ -1438,21 +1414,21 @@ as well as stage positions and spatial offsets for registration.</p>
 <div class="tabbed-block">
 <p>Identical to v0.4, just stored under <code>attributes.ome</code> namespace.</p>
 <p><strong>yaozarrs Code (same as v0.4):</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
 
 <span class="n">dataset</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
-    <span class="n">path</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">"0"</span><span class="p">,</span>
     <span class="n">coordinateTransformations</span><span class="o">=</span><span class="p">[</span>
         <span class="n">v05</span><span class="o">.</span><span class="n">ScaleTransformation</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">TranslationTransformation</span><span class="p">(</span><span class="n">translation</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">])</span>
-    <span class="p">]</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">TranslationTransformation</span><span class="p">(</span><span class="n">translation</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">]),</span>
+    <span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">v0.5 Additional Requirement</p>
 <p>In v0.5, each array's <code>zarr.json</code> <strong>MUST</strong> include <code>dimension_names</code> matching the axes:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;dimension_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;z&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;y&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"dimension_names"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"c"</span><span class="p">,</span><span class="w"> </span><span class="s2">"z"</span><span class="p">,</span><span class="w"> </span><span class="s2">"y"</span><span class="p">,</span><span class="w"> </span><span class="s2">"x"</span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
 </div>
@@ -1482,46 +1458,47 @@ metadata.</p>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p><strong>Directory Structure:</strong></p>
-<div class="highlight"><pre><span></span><code>image.zarr/
-├── zarr.json            # Image metadata (&quot;attributes.ome.multiscales&quot;)
+<div class="language-text highlight"><pre><span></span><code>image.zarr/
+├── zarr.json            # Image metadata ("attributes.ome.multiscales")
 ├── 0/                   # Full resolution image
 ├── 1/                   # Downsampled level 1
 ├── ...                  # Downsampled level 2
 └── labels/
-    ├── zarr.json        # Labels group metadata (&quot;attributes.ome.labels&quot;)
+    ├── zarr.json        # Labels group metadata ("attributes.ome.labels")
     ├── nuclei/          # Label image (integer dtype)
-    │   ├── zarr.json    # Label metadata (&quot;attributes.ome.multiscales&quot;, &quot;attributes.ome.image_label&quot;)
+    │   ├── zarr.json    # Label metadata ("attributes.ome.multiscales", "attributes.ome.image_label")
     │   ├── 0/           # Full resolution labels
     │   └── 1/           # Downsampled labels
     └── cells/
         └── ...
 </code></pre></div>
 <p><strong>Labels Group Metadata (<code>labels/zarr.json</code>):</strong>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;zarr_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;node_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;ome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;labels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;nuclei&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cells&quot;</span><span class="p">]</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"zarr_format"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"node_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"group"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"ome"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.5"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"labels"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"nuclei"</span><span class="p">,</span><span class="w"> </span><span class="s2">"cells"</span><span class="p">]</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></p>
 <p><strong>Label Image Metadata (<code>labels/nuclei/zarr.json</code>):</strong>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;zarr_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;node_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;ome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;multiscales&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;image_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.5&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;colors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">          </span><span class="p">{</span><span class="nt">&quot;label_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rgba&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]},</span>
-<span class="w">          </span><span class="p">{</span><span class="nt">&quot;label_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rgba&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"zarr_format"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"node_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"group"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"ome"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.5"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"multiscales"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">"image-label"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"colors"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">"label-value"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"rgba"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]},</span>
+<span class="w">          </span><span class="p">{</span><span class="nt">"label-value"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"rgba"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]}</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;../../&quot;</span>
+<span class="w">        </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"../../"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
@@ -1529,73 +1506,75 @@ metadata.</p>
 <span class="p">}</span>
 </code></pre></div></p>
 <p><strong>yaozarrs Code:</strong>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">v05</span>
 
 <span class="c1"># Label metadata stored at labels/nuclei/zarr.json</span>
 <span class="n">label_image</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">LabelImage</span><span class="p">(</span>
-    <span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>  <span class="c1"># Same structure as regular image</span>
+    <span class="c1"># same structure as a regular image</span>
+    <span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="n">v05</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">from_dims</span><span class="p">([</span><span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">),</span> <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)])],</span>
     <span class="n">image_label</span><span class="o">=</span><span class="n">v05</span><span class="o">.</span><span class="n">ImageLabel</span><span class="p">(</span>
         <span class="n">colors</span><span class="o">=</span><span class="p">[</span>
             <span class="n">v05</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">]),</span>
-            <span class="n">v05</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">])</span>
+            <span class="n">v05</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">]),</span>
         <span class="p">],</span>
-        <span class="n">source</span><span class="o">=</span><span class="n">v05</span><span class="o">.</span><span class="n">LabelSource</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s2">&quot;../../&quot;</span><span class="p">)</span>
-    <span class="p">)</span>
+        <span class="n">source</span><span class="o">=</span><span class="n">v05</span><span class="o">.</span><span class="n">LabelSource</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s2">"../../"</span><span class="p">),</span>
+    <span class="p">),</span>
 <span class="p">)</span>
 </code></pre></div></p>
 </div>
 <div class="tabbed-block">
 <p><strong>Directory Structure:</strong>
-<div class="highlight"><pre><span></span><code>image.zarr/
+<div class="language-text highlight"><pre><span></span><code>image.zarr/
 ├── .zgroup
-├── .zattrs              # Image metadata (&quot;multiscales&quot;)
+├── .zattrs              # Image metadata ("multiscales")
 ├── 0/                   # Full resolution image
 ├── 1/                   # Downsampled level 1
 ├── ...                  # Downsampled level 2
 └── labels/
     ├── .zgroup
-    ├── .zattrs          # Labels group metadata (&quot;labels&quot;)
+    ├── .zattrs          # Labels group metadata ("labels")
     ├── nuclei/          # Label image (integer dtype)
     │   ├── .zgroup
-    │   ├── .zattrs      # Label metadata (&quot;multiscales&quot;, &quot;image-label&quot;)
+    │   ├── .zattrs      # Label metadata ("multiscales", "image-label")
     │   ├── 0/           # Full resolution labels
     │   └── 1/           # Downsampled labels
     └── cells/
         └── ...
 </code></pre></div></p>
 <p><strong>Labels Group Metadata (<code>labels/.zattrs</code>):</strong>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;labels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;nuclei&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cells&quot;</span><span class="p">]</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"labels"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"nuclei"</span><span class="p">,</span><span class="w"> </span><span class="s2">"cells"</span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div></p>
 <p><strong>Label Image Metadata (<code>labels/nuclei/.zattrs</code>):</strong>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;multiscales&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;image-label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.4&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;colors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;label-value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rgba&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;label-value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rgba&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"multiscales"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"image-label"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.4"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"colors"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"label-value"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"rgba"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"label-value"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"rgba"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">]}</span>
 <span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;../../&quot;</span>
+<span class="w">    </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"../../"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></p>
 <p><strong>yaozarrs Code:</strong>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">v04</span>
 
 <span class="c1"># Label metadata stored at labels/nuclei/.zattrs</span>
 <span class="n">label_image</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">LabelImage</span><span class="p">(</span>
-    <span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>  <span class="c1"># Same structure as regular image</span>
+    <span class="c1"># same structure as a regular image</span>
+    <span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="n">v04</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">from_dims</span><span class="p">([</span><span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">),</span> <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)])],</span>
     <span class="n">image_label</span><span class="o">=</span><span class="n">v04</span><span class="o">.</span><span class="n">ImageLabel</span><span class="p">(</span>
         <span class="n">colors</span><span class="o">=</span><span class="p">[</span>
             <span class="n">v04</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">]),</span>
-            <span class="n">v04</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">])</span>
+            <span class="n">v04</span><span class="o">.</span><span class="n">LabelColor</span><span class="p">(</span><span class="n">label_value</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgba</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">]),</span>
         <span class="p">],</span>
-        <span class="n">source</span><span class="o">=</span><span class="n">v04</span><span class="o">.</span><span class="n">LabelSource</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s2">&quot;../../&quot;</span><span class="p">)</span>
-    <span class="p">)</span>
+        <span class="n">source</span><span class="o">=</span><span class="n">v04</span><span class="o">.</span><span class="n">LabelSource</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s2">"../../"</span><span class="p">),</span>
+    <span class="p">),</span>
 <span class="p">)</span>
 </code></pre></div></p>
 </div>
@@ -1615,13 +1594,13 @@ metadata.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">OME-Zarr v0.5 (Zarr v3)</label><label for="__tabbed_5_2">OME-Zarr v0.4 (Zarr v2)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>plate.zarr/
-├── zarr.json              # contains Plate metadata (&quot;attributes.ome.plate&quot;)
+<div class="language-text highlight"><pre><span></span><code>plate.zarr/
+├── zarr.json              # contains Plate metadata ("attributes.ome.plate")
 ├── A/                     # Row A
 │   ├── 1/                 # Well A1
-│   │   ├── zarr.json      # contains Well metadata (&quot;attributes.ome.well&quot;)
+│   │   ├── zarr.json      # contains Well metadata ("attributes.ome.well")
 │   │   ├── 0/             # Field 0 (Standard multiscales image)
-│   │   │   ├── zarr.json  # contains Image metadata (&quot;attributes.ome.multiscales&quot;)
+│   │   │   ├── zarr.json  # contains Image metadata ("attributes.ome.multiscales")
 │   │   │   ├── 0/         # Full resolution
 │   │   │   ├── 1/         # Downsampled
 │   │   │   └── labels/    # Optional labels group (see above)
@@ -1632,16 +1611,16 @@ metadata.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>plate.zarr/
+<div class="language-text highlight"><pre><span></span><code>plate.zarr/
 ├── .zgroup
-├── .zattrs              # contains Plate metadata (&quot;plate&quot;)
+├── .zattrs              # contains Plate metadata ("plate")
 ├── A/                   # Row A
 │   ├── 1/               # Well A1
 │   │   ├── .zgroup
-│   │   ├── .zattrs      # contains Well metadata (&quot;well&quot;)
+│   │   ├── .zattrs      # contains Well metadata ("well")
 │   │   ├── 0/           # Field 0 (Standard multiscales image)
 │   │   │   ├── .zgroup
-│   │   │   ├── .zattrs  # contains Image metadata (&quot;multiscales&quot;)
+│   │   │   ├── .zattrs  # contains Image metadata ("multiscales")
 │   │   │   ├── 0/       # Full resolution
 │   │   │   ├── 1/       # Downsampled
 │   │   │   └── labels/  # Optional labels group (see above)
@@ -1663,54 +1642,47 @@ metadata.</p>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p><strong>Spec JSON (<code>.zattrs</code> at plate root):</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;plate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.4&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HCS Experiment&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2&quot;</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3&quot;</span><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"plate"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.4"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HCS Experiment"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"columns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3"</span><span class="p">}</span>
 <span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;B&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="nt">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"B"</span><span class="p">}</span>
 <span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;wells&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A/1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rowIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;columnIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A/2&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rowIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;columnIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;B/1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rowIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;columnIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">}</span>
+<span class="w">    </span><span class="nt">"wells"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A/1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rowIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"columnIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A/2"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rowIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"columnIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"B/1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rowIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"columnIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">}</span>
 <span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;acquisitions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Initial&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;maximumfieldcount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;24h&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;maximumfieldcount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">}</span>
-<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"acquisitions"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Initial"</span><span class="p">,</span><span class="w"> </span><span class="nt">"maximumfieldcount"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"24h"</span><span class="p">,</span><span class="w"> </span><span class="nt">"maximumfieldcount"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
 
 <span class="n">plate_def</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">PlateDef</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HCS Experiment&quot;</span><span class="p">,</span>
-    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;3&quot;</span><span class="p">)</span>
-    <span class="p">],</span>
-    <span class="n">rows</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
-    <span class="p">],</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"HCS Experiment"</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">v04</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"1"</span><span class="p">),</span> <span class="n">v04</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"2"</span><span class="p">),</span> <span class="n">v04</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"3"</span><span class="p">)],</span>
+    <span class="n">rows</span><span class="o">=</span><span class="p">[</span><span class="n">v04</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"A"</span><span class="p">),</span> <span class="n">v04</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"B"</span><span class="p">)],</span>
     <span class="n">wells</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;A/1&quot;</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;A/2&quot;</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;B/1&quot;</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"A/1"</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"A/2"</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"B/1"</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
     <span class="p">],</span>
     <span class="n">acquisitions</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Initial&quot;</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;24h&quot;</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-    <span class="p">]</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Initial"</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"24h"</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+    <span class="p">],</span>
 <span class="p">)</span>
 
 <span class="n">plate</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Plate</span><span class="p">(</span><span class="n">plate</span><span class="o">=</span><span class="n">plate_def</span><span class="p">)</span>
@@ -1723,66 +1695,69 @@ metadata.</p>
 <div class="tabbed-block">
 <p>Same structure as v0.4, stored under <code>attributes.ome</code> in <code>zarr.json</code>:</p>
 <p><strong>Spec JSON (<code>zarr.json</code> at plate root):</strong></p>
-<p><div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;ome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;plate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3&quot;</span><span class="w"> </span><span class="p">}</span>
+<p><div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"zarr_format"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"node_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"group"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"ome"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.5"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"plate"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"columns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3"</span><span class="w"> </span><span class="p">}</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;B&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="nt">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"B"</span><span class="w"> </span><span class="p">}</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;wells&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A/1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rowIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;columnIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A/2&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rowIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;columnIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;B/1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;rowIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;columnIndex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="nt">"wells"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A/1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rowIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"columnIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A/2"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rowIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"columnIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"B/1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rowIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"columnIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">}</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;acquisitions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;maximumfieldcount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Initial&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;maximumfieldcount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;24h&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="nt">"acquisitions"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"maximumfieldcount"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Initial"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"maximumfieldcount"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"24h"</span><span class="w"> </span><span class="p">}</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;field_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HCS Experiment&quot;</span>
+<span class="w">        </span><span class="nt">"field_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HCS Experiment"</span>
 <span class="w">      </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 <strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
 
 <span class="n">plate_def</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">PlateDef</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HCS Experiment&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"HCS Experiment"</span><span class="p">,</span>
     <span class="n">columns</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># must have at least 1 column</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;3&quot;</span><span class="p">)</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"1"</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"2"</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"3"</span><span class="p">),</span>
     <span class="p">],</span>
     <span class="n">rows</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># must have at least 1 row</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"A"</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"B"</span><span class="p">),</span>
     <span class="p">],</span>
     <span class="n">wells</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># must have at least 1 well, paths match tree structure</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;A/1&quot;</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;A/2&quot;</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;B/1&quot;</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"A/1"</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"A/2"</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">PlateWell</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"B/1"</span><span class="p">,</span> <span class="n">rowIndex</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">columnIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
     <span class="p">],</span>
-    <span class="n">acquisitions</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># optional </span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Initial&quot;</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-        <span class="n">v05</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;24h&quot;</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+    <span class="n">acquisitions</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># optional</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Initial"</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+        <span class="n">v05</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"24h"</span><span class="p">,</span> <span class="n">maximumfieldcount</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
     <span class="p">],</span>
-    <span class="n">field_count</span><span class="o">=</span><span class="mi">4</span>  <span class="c1"># max FOV per well</span>
+    <span class="n">field_count</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>  <span class="c1"># max FOV per well</span>
 <span class="p">)</span>
 
 <span class="n">plate</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">Plate</span><span class="p">(</span><span class="n">plate</span><span class="o">=</span><span class="n">plate_def</span><span class="p">)</span>
 
 <span class="c1"># Create full zarr.json</span>
-<span class="n">zarr_json</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">OMEZarrGroupJSON</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ome&quot;</span><span class="p">:</span> <span class="n">plate</span><span class="p">})</span>
-<span class="n">json_str</span> <span class="o">=</span> <span class="n">zarr_json</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">zarr_json</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">OMEZarrGroupJSON</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">"ome"</span><span class="p">:</span> <span class="n">plate</span><span class="p">})</span>
+<span class="n">json_str</span> <span class="o">=</span> <span class="n">zarr_json</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -1791,25 +1766,25 @@ metadata.</p>
 <h3 id="well-metadata">Well Metadata<a class="headerlink" href="#well-metadata" title="Link to this section">#</a></h3>
 <p>Wells list the fields of view (images) they contain:</p>
 <p><strong>Spec JSON (<code>.zattrs</code> in well directory):</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;well&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.4&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;images&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;acquisition&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;acquisition&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span>
-<span class="w">      </span><span class="p">{</span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;acquisition&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"well"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.4"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"images"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w"> </span><span class="nt">"acquisition"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"acquisition"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">,</span><span class="w"> </span><span class="nt">"acquisition"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
 
 <span class="n">well_def</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">WellDef</span><span class="p">(</span>
     <span class="n">images</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">FieldOfView</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">FieldOfView</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-        <span class="n">v04</span><span class="o">.</span><span class="n">FieldOfView</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">FieldOfView</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"0"</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">FieldOfView</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"1"</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">v04</span><span class="o">.</span><span class="n">FieldOfView</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"2"</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
     <span class="p">]</span>
 <span class="p">)</span>
 
@@ -1874,12 +1849,12 @@ dumping multiple series (commonly found in image formats supported by
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">v0.4</label><label for="__tabbed_7_2">v0.5</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>series.ome.zarr               # One converted fileset from bioformats2raw
+<div class="language-text highlight"><pre><span></span><code>series.ome.zarr               # One converted fileset from bioformats2raw
     ├── .zgroup
-    ├── .zattrs               # Contains &quot;bioformats2raw.layout&quot; metadata
+    ├── .zattrs               # Contains "bioformats2raw.layout" metadata
     ├── OME                   # Special group for containing OME metadata
     │   ├── .zgroup
-    │   ├── .zattrs           # Contains &quot;series&quot; metadata
+    │   ├── .zattrs           # Contains "series" metadata
     │   └── METADATA.ome.xml  # OME-XML file stored within the Zarr fileset
     ├── 0                     # First image in the collection
     ├── 1                     # Second image in the collection
@@ -1887,10 +1862,10 @@ dumping multiple series (commonly found in image formats supported by
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>series.ome.zarr               # One converted fileset from bioformats2raw
-    ├── zarr.json             # Contains &quot;bioformats2raw.layout&quot; metadata
+<div class="language-text highlight"><pre><span></span><code>series.ome.zarr               # One converted fileset from bioformats2raw
+    ├── zarr.json             # Contains "bioformats2raw.layout" metadata
     ├── OME                   # Special group for containing OME metadata
-    │   ├── zarr.json         # Contains &quot;series&quot; metadata
+    │   ├── zarr.json         # Contains "series" metadata
     │   └── METADATA.ome.xml  # OME-XML file stored within the Zarr fileset
     ├── 0                     # First image in the collection
     ├── 1                     # Second image in the collection
@@ -1904,32 +1879,30 @@ dumping multiple series (commonly found in image formats supported by
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p><strong>Spec JSON (<code>.zattrs</code> at root):</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;bioformats2raw.layout&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"bioformats2raw.layout"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
 <span class="p">}</span>
 </code></pre></div>
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
 
 <span class="c1"># Root .zattrs</span>
 <span class="n">bf2raw</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Bf2Raw</span><span class="p">()</span>  <span class="c1"># layout defaults to 3</span>
 
 <span class="c1"># OME/.zattrs</span>
-<span class="n">series</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">])</span>
+<span class="n">series</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">])</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <p><strong>yaozarrs Code:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
 
 <span class="c1"># Root zarr.json</span>
-<span class="n">root_zarr_json</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">OMEZarrGroupJSON</span><span class="p">(</span>
-  <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ome&quot;</span><span class="p">:</span> <span class="n">v05</span><span class="o">.</span><span class="n">Bf2Raw</span><span class="p">()}</span>
-<span class="p">)</span>
+<span class="n">root_zarr_json</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">OMEZarrGroupJSON</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">"ome"</span><span class="p">:</span> <span class="n">v05</span><span class="o">.</span><span class="n">Bf2Raw</span><span class="p">()})</span>
 
 <span class="c1"># OME/zarr.json</span>
 <span class="n">ome_zarr_json</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">OMEZarrGroupJSON</span><span class="p">(</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ome&quot;</span><span class="p">:</span> <span class="n">v05</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">])}</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">"ome"</span><span class="p">:</span> <span class="n">v05</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">])}</span>
 <span class="p">)</span>
 </code></pre></div>
 </div>
@@ -2099,13 +2072,15 @@ If it's just <strong>multiple related images</strong>, use a <strong>Collection<
 <li><a href="../API_Reference/yaozarrs/">yaozarrs API Documentation</a> - Complete API reference</li>
 <li><a href="https://zarr-specs.readthedocs.io/">Zarr Format Specification</a> - Zarr v2 and v3 specs</li>
 <li><a href="https://docs.openmicroscopy.org/ome-model/">OME Data Model</a> - Full OME-XML specification</li>
-<li><a href="https://github.com/tlambert03/yaozarrs">GitHub Repository</a> - Source code and issues</li>
+<li><a href="https://github.com/imaging-formats/yaozarrs">GitHub Repository</a> - Source code and issues</li>
 </ul>
 <hr />
 <div class="admonition success">
 <p class="admonition-title">You're ready!</p>
 <p>You now understand the OME-Zarr specification and how to work with it using yaozarrs. Happy imaging!</p>
 </div>
+
+
 
 
 
@@ -2143,7 +2118,7 @@ If it's just <strong>multiple related images</strong>, use a <strong>Collection<
           <a href="../ome_zarr_explorer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: OME-Zarr Explorer">
             <div class="md-footer__button md-icon">
               
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
@@ -2168,7 +2143,7 @@ If it's just <strong>multiple related images</strong>, use a <strong>Collection<
             </div>
             <div class="md-footer__button md-icon">
               
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </a>
         
@@ -2179,10 +2154,14 @@ If it's just <strong>multiple related images</strong>, use a <strong>Collection<
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
   
+    <div class="md-copyright__highlight">
+      2026, Talley Lambert
+    </div>
+  
   
     Made with
-    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
     </a>
   
 </div>
@@ -2192,7 +2171,7 @@ If it's just <strong>multiple related images</strong>, use a <strong>Collection<
 </footer>
       
     </div>
-    <div class="md-dialog" data-md-component="dialog">
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
@@ -2200,12 +2179,18 @@ If it's just <strong>multiple related images</strong>, use a <strong>Collection<
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["search.highlight", "search.suggest", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["search.highlight","search.suggest","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d31f0ffa.min.js"></script>
       
         <script src="../javascripts/yaozarrs-animation.js"></script>
+      
+        <script src="../javascripts/ome_explorer.js" type="module"></script>
       
     
   </body>
