@@ -1426,6 +1426,10 @@ translation, wrap both in a single <code>sequence</code> transformation (scale f
   <code>coordinateSystems</code>, the same one for every dataset, and should omit
   <code>path</code> (see below)</li>
 <li>Parameter lengths <strong>MUST</strong> match the number of axes</li>
+<li>The scale gives the pixel size in physical units (or the time step).
+  If that isn't known (or doesn't apply) for an axis, the value <strong>MUST</strong>
+  be the downsampling factor relative to the first level instead (<code>1.0</code>
+  if that axis isn't downsampled)</li>
 </ul>
 <p><em>About omitting <code>input.name</code> and <code>output.path</code>:</em> the spec says this
 both ways.  Its "Constraints" section says they <strong>MUST</strong> be omitted,

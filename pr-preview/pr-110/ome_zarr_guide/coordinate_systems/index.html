@@ -1254,21 +1254,8 @@ to you.  (The spec's examples use <code>physical</code> or <code>intrinsic</code
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> uses <code>"intrinsic"</code>
 unless you pass <code>coordinate_system=...</code>).</p>
-<div class="admonition important">
-<p class="admonition-title">Rules for dataset transformations</p>
-<ul>
-<li>Each dataset has <strong>exactly one</strong> transformation: a <code>scale</code>, an
-  <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation.</li>
-<li>Its <code>input</code> is the dataset's array (<code>{"path": "&lt;dataset path&gt;"}</code>), and its
-  <code>output</code> is the intrinsic coordinate system (<code>{"name": "..."}</code>).</li>
-<li><strong>Every</strong> dataset outputs to the <strong>same</strong> coordinate system.  That's
-  what makes it <em>the</em> intrinsic one.</li>
-<li>The scale gives the pixel size in physical units (or the time step).  If
-  that isn't known (or doesn't apply) for an axis, the value <strong>MUST</strong> be
-  the downsampling factor relative to the first level instead (<code>1.0</code> if
-  that axis isn't downsampled).</li>
-</ul>
-</div>
+<p>The rules for these dataset transformations are listed under <a href="../#coordinate-transformations">Coordinate
+Transformations</a> in the guide.</p>
 <h3 id="where-is-a-pixel">Where is a pixel?<a class="headerlink" href="#where-is-a-pixel" title="Link to this section">#</a></h3>
 <p>Why does level <code>1</code> above have a translation of <code>0.25</code>?  It comes down to a
 convention that v0.6 now spells out:</p>
