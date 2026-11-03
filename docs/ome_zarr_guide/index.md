@@ -1086,7 +1086,7 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
     ```
 
     !!! warning "Breaking change from v0.3"
-        In v0.4, `rowIndex` and `columnIndex` became **required** for all wells. This enables efficient sparse plate handling without path parsing.
+        v0.4 added `rowIndex` and `columnIndex`, **required** for all wells. This enables efficient sparse plate handling without path parsing.
 
 ---
 
@@ -1709,7 +1709,7 @@ metadata.
 | Metadata location | `.zattrs` | `.zattrs` | `.zattrs` | `zarr.json` | `zarr.json` |
 | OME namespace | N/A | N/A | N/A | `attributes.ome` | `attributes.ome` |
 | `dimension_names` | N/A | N/A | N/A | **MUST** | Not required |
-| Plate indices | Optional | Optional | **MUST** | **MUST** | **MUST** |
+| Plate indices | N/A | N/A | **MUST** | **MUST** | **MUST** |
 | Scenes | N/A | N/A | N/A | N/A | MAY |
 
 ### Breaking Changes Quick Reference

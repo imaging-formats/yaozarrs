@@ -422,21 +422,21 @@ from yaozarrs import write
 
 # write a 5D image with single pyramid level
 data = np.zeros((10, 3, 9, 64, 64), dtype=np.uint16)
-root_path = write.v05.write_image("example.ome.zarr", image, data)
+root_path = write.v06.write_image("example.ome.zarr", image, data)
 
 # other high level write functions
-write.v05.write_plate(...)
-write.v05.write_bioformats2raw(...)
+write.v06.write_plate(...)
+write.v06.write_bioformats2raw(...)
+write.v06.write_scene(...)  # v0.6 only
 
 # low-level prepare/builder functions
-write.v05.prepare_image(...)
-write.v05.LabelsBuilder(...)
-write.v05.PlateBuilder(...)
-write.v05.Bf2RawBuilder(...)
+write.v06.prepare_image(...)
+write.v06.LabelsBuilder(...)
+write.v06.PlateBuilder(...)
+write.v06.Bf2RawBuilder(...)
+write.v06.SceneBuilder(...)  # v0.6 only
 
-# v0.6 has all of the above (in write.v06), plus scenes:
-write.v06.write_scene(...)
-write.v06.SceneBuilder(...)
+# write.v05 has the same functions (for v05 models), except for scenes
 ```
 
 ### CLI validation
