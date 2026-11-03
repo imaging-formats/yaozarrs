@@ -157,6 +157,8 @@ You can create OME-Zarr metadata objects using the pydantic models in
 If you have an existing JSON file, string, or python object, you can
 validate it and cast it to the appropriate typed `yaozarrs` model:
 
+<!-- no-test -->
+
 ```python
 import yaozarrs
 
@@ -315,6 +317,8 @@ See [`yaozarrs.write.v05`][] for convenience functions to write OME-Zarr v0.5
 stores using your metadata objects, with either `zarr-python`, `tensorstore`,
 or custom backends.
 
+<!-- no-test -->
+
 ```python
 import numpy as np
 
@@ -404,6 +408,8 @@ extra](./installation.md#structural-validation) to support remote URIs.  This
 class is used behind the scenes for structural validation, but can also be used
 directly.
 
+<!-- no-test -->
+
 ```python
 import yaozarrs
 
@@ -421,6 +427,8 @@ child = group["0"]  # (2)!
 
 You can also get a tree view of the hierarchy programmatically with
 [`ZarrGroup.tree()`][yaozarrs._zarr.ZarrGroup.tree]:
+
+<!-- no-test -->
 
 ```python
 print(group.tree(depth=2))
