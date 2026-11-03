@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import Annotated, Any, TypeAlias, cast
 
 from annotated_types import Len, MinLen
-from pydantic import Discriminator, Field, model_validator
+from pydantic import Field, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
@@ -41,7 +41,7 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
 # - A sequence transformation containing one scale and one translation transformation.
 DatasetTransformation: TypeAlias = Annotated[
     ScaleTransformation | IdentityTransformation | SequenceTransformation,
-    Discriminator("type"),
+    Field(discriminator="type"),
 ]
 
 

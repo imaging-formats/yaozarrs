@@ -4,7 +4,6 @@ from typing import Annotated, Any, Literal, NoReturn, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import (
-    Discriminator,
     Field,
     NonNegativeInt,
     field_validator,
@@ -358,7 +357,10 @@ CoordinateTransformation: TypeAlias = Annotated[
     | BijectionTransformation
     | DisplacementsTransformation
     | CoordinatesTransformation,
-    Discriminator("type"),
+    # NOTE: not `Discriminator("type")`: on pydantic 2.11.0-2.11.6 that gets applied
+    # twice to this recursive alias, raising "Discriminator must be used with a
+    # Union type" (pydantic/pydantic#11898, fixed in 2.11.7).
+    Field(discriminator="type"),
 ]
 # Resolve the forward references to CoordinateTransformation.  Older pydantic (2.5)
 # needs these explicit rebuilds, but DON'T rebuild BijectionTransformation (which
