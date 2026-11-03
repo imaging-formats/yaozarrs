@@ -91,8 +91,8 @@ The general pattern is:
   `write_plate` can generate for you, a [`Scene`][yaozarrs.v06.Scene] says how
   *your* images relate to each other, so you write it yourself.  `write_scene`
   checks it against the images before anything is written: every image it refers
-  to must be there, with the coordinate systems it names, and everything must be
-  connected.
+  to must be there, with the coordinate systems it names, and the scene's
+  transformations must connect them all.
 - **Transformation parameters stored in Zarr aren't written for you.**  An
   `affine` or `rotation` may keep its matrix in a Zarr array (referenced by
   `path`) instead of in the JSON, and `displacements` and `coordinates` always keep
