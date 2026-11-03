@@ -203,17 +203,8 @@ to you.  (The spec's examples use `physical` or `intrinsic`;
 [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] uses `"intrinsic"`
 unless you pass `coordinate_system=...`).
 
-!!! important "Rules for dataset transformations"
-    - Each dataset has **exactly one** transformation: a `scale`, an
-      `identity`, or a `sequence` of a scale followed by a translation.
-    - Its `input` is the dataset's array (`{"path": "<dataset path>"}`), and its
-      `output` is the intrinsic coordinate system (`{"name": "..."}`).
-    - **Every** dataset outputs to the **same** coordinate system.  That's
-      what makes it *the* intrinsic one.
-    - The scale gives the pixel size in physical units (or the time step).  If
-      that isn't known (or doesn't apply) for an axis, the value **MUST** be
-      the downsampling factor relative to the first level instead (`1.0` if
-      that axis isn't downsampled).
+The rules for these dataset transformations are listed under [Coordinate
+Transformations](index.md#coordinate-transformations) in the guide.
 
 ### Where is a pixel?
 

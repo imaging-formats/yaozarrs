@@ -443,6 +443,10 @@ as well as stage positions and spatial offsets for registration.
           `coordinateSystems`, the same one for every dataset, and should omit
           `path` (see below)
         - Parameter lengths **MUST** match the number of axes
+        - The scale gives the pixel size in physical units (or the time step).
+          If that isn't known (or doesn't apply) for an axis, the value **MUST**
+          be the downsampling factor relative to the first level instead (`1.0`
+          if that axis isn't downsampled)
 
         *About omitting `input.name` and `output.path`:* the spec says this
         both ways.  Its "Constraints" section says they **MUST** be omitted,
