@@ -156,6 +156,18 @@ class Dataset(_BaseModel):
         )
     )
 
+    @property
+    def scale_transform(self) -> ScaleTransformation:
+        """Return the scale transformation from the list.
+
+        (CoordinateTransformsList validator ensures there is exactly one.)
+        """
+        return next(
+            t
+            for t in self.coordinateTransformations
+            if isinstance(t, ScaleTransformation)
+        )
+
 
 def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
     """Validate a list of Dataset for `Multiscale.datasets`."""
@@ -258,14 +270,7 @@ class Multiscale(_BaseModel):
         # allowing for float noise)
         spatial_indices = [i for i, ax in enumerate(self.axes) if ax.type == "space"]
         spatial_scales = [
-            tuple(
-                next(
-                    t
-                    for t in ds.coordinateTransformations
-                    if isinstance(t, ScaleTransformation)
-                ).scale[idx]
-                for idx in spatial_indices
-            )
+            tuple(ds.scale_transform.scale[i] for i in spatial_indices)
             for ds in self.datasets
         ]
         if any(
