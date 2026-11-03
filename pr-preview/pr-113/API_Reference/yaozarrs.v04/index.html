@@ -559,6 +559,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.v04._image.Dataset.scale_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;scale_transform
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1030,6 +1047,23 @@
       </span>
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.v04._image.Dataset.scale_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;scale_transform
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1791,12 +1825,7 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
 <span class="normal">294</span>
@@ -1832,7 +1861,12 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="normal">324</span>
 <span class="normal">325</span>
 <span class="normal">326</span>
-<span class="normal">327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dims</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DimSpec</span><span class="p">],</span>
@@ -1972,6 +2006,31 @@ where each level represents the same physical region at different sampling rates
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="yaozarrs.v04._image.Dataset.scale_transform" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">scale_transform</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#yaozarrs.v04._image.Dataset.scale_transform" class="headerlink" title="Link to this section">#</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">scale_transform</span><span class="p">:</span> <span class="n">ScaleTransformation</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the scale transformation from the list.</p>
+<p>(CoordinateTransformsList validator ensures there is exactly one.)</p>
+
+    </div>
+
+</div>
 
 
 
