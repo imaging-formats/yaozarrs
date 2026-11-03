@@ -359,7 +359,7 @@ CoordinateTransformation: TypeAlias = Annotated[
     | CoordinatesTransformation,
     # NOTE: not `Discriminator("type")`: on pydantic 2.11.0-2.11.6 that gets applied
     # twice to this recursive alias, raising "Discriminator must be used with a
-    # Union type" (pydantic/pydantic#11898, fixed in 2.11.7).
+    # Union type" (pydantic/pydantic#11980, fixed in 2.11.7).
     Field(discriminator="type"),
 ]
 # Resolve the forward references to CoordinateTransformation.  Older pydantic (2.5)
