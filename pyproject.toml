@@ -148,8 +148,9 @@ addopts = [
     "--color=yes",
     "--ignore=tests/test_realworld.py",
     "--ignore=tests/benchmarks",
+    "--doctest-modules",
 ]
-testpaths = ["tests"]
+testpaths = ["tests", "src"]
 filterwarnings = ["error"]
 
 # https://mypy.readthedocs.io/en/stable/config_file.html
