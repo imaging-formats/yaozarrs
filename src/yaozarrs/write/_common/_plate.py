@@ -170,6 +170,27 @@ def _merge_plate_metadata(
     return plate
 
 
+def _extend_plate_metadata(plate: Any, new: Mapping[str, Any]) -> Any:
+    """Add the rows, columns and wells of `new` that `plate` doesn't have yet."""
+    merged = plate.plate.model_dump(mode="json", exclude_none=True)
+    for key in ("rows", "columns"):
+        have = {item["name"] for item in merged[key]}
+        merged[key] += [item for item in new[key] if item["name"] not in have]
+    rows = [row["name"] for row in merged["rows"]]
+    cols = [col["name"] for col in merged["columns"]]
+    for well in new["wells"]:
+        row, col = well["path"].split("/")
+        merged["wells"].append(
+            {
+                "path": well["path"],
+                "rowIndex": rows.index(row),
+                "columnIndex": cols.index(col),
+            }
+        )
+    data = plate.model_dump(mode="json", exclude_none=True)
+    return type(plate).model_validate({**data, "plate": merged})
+
+
 def _validate_plate_matches_images(
     plate: Any,
     images: Mapping[tuple[str, str, str], ImageWithAny],
