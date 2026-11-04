@@ -204,7 +204,7 @@ DatasetsList: TypeAlias = Annotated[
 class Multiscale(_BaseModel):
     """Multi-resolution image pyramid (<=5D) with coordinate metadata.
 
-    Defines a image at one ore more resolution levels, along with the
+    Defines an image at one or more resolution levels, along with the
     coordinate system that relates array indices to physical space. This is
     the core metadata for any OME-NGFF image.
 

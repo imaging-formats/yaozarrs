@@ -778,7 +778,7 @@ class StorageValidator:
             result.add_error(
                 StorageErrorType.labels_metadata_invalid,
                 labels_loc,
-                f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
+                f"Found a 'labels' sub-group inside of ome-zarr group {zarr_group}, "
                 f"but metadata not valid LabelsGroup metadata: {e!s}",
                 ctx={"error": str(e)},
             )
