@@ -930,6 +930,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Types
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.write.v05._write.ImageWithDatasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;ImageWithDatasets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1258,6 +1286,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Types
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.write.v05._write.ImageWithDatasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;ImageWithDatasets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1327,13 +1383,33 @@ for how to use them.</p>
 
 <a href="#yaozarrs.write.v05.LabelsBuilder" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">LabelsBuilder</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="n">ShapeLike</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="n">ShapeLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1596,7 +1672,7 @@ an exception will be raised instead.</p>
   </span>
 
 <a href="#yaozarrs.write.v05.LabelsBuilder.root_path" class="headerlink" title="Link to this section">#</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">root_path</span><span class="p">:</span> <span class="n">Path</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">root_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1619,12 +1695,22 @@ an exception will be raised instead.</p>
 
 <a href="#yaozarrs.write.v05.LabelsBuilder.write_label" class="headerlink" title="Link to this section">#</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">write_label</span><span class="p">(</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">ArrayOrPyramid</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">label_image</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            LabelImage
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.LabelImage&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.LabelImage">LabelImage</a></span><span class="p">,</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1667,7 +1753,12 @@ automatically. Use this for the "immediate write" workflow.</p>
                 <code>label_image</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._builders.LabelImage">LabelImage</span></code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            LabelImage
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.LabelImage&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.LabelImage">LabelImage</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1683,7 +1774,12 @@ automatically. Use this for the "immediate write" workflow.</p>
                 <code>datasets</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._arrays.ArrayLike">ArrayLike</span> | <a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Sequence&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<span title="yaozarrs.write._common._arrays.ArrayLike">ArrayLike</span>]</code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1726,7 +1822,7 @@ pass the array directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing_extensions.Self">Self</span></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1773,11 +1869,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1085</span>
-<span class="normal">1086</span>
-<span class="normal">1087</span>
-<span class="normal">1088</span>
-<span class="normal">1089</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1089</span>
 <span class="normal">1090</span>
 <span class="normal">1091</span>
 <span class="normal">1092</span>
@@ -1843,7 +1935,11 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">1152</span>
 <span class="normal">1153</span>
 <span class="normal">1154</span>
-<span class="normal">1155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -1863,7 +1959,7 @@ pass the array directly without wrapping in a list.</p>
 <span class="sd">        Label name (becomes the subgroup path, e.g., "cells", "nuclei").</span>
 <span class="sd">    label_image : LabelImage</span>
 <span class="sd">        OME-Zarr LabelImage metadata model for this label.</span>
-<span class="sd">    datasets : ArrayLike | Sequence[ArrayLike]</span>
+<span class="sd">    datasets : ArrayOrPyramid</span>
 <span class="sd">        Data array(s) for each resolution level. For a single dataset,</span>
 <span class="sd">        pass the array directly without wrapping in a list.</span>
 <span class="sd">    progress : bool, optional</span>
@@ -1929,10 +2025,20 @@ pass the array directly without wrapping in a list.</p>
 
 <a href="#yaozarrs.write.v05.LabelsBuilder.add_label" class="headerlink" title="Link to this section">#</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">add_label</span><span class="p">(</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">ShapeAndDTypeOrPyramid</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">label_image</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            LabelImage
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.LabelImage&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.LabelImage">LabelImage</a></span><span class="p">,</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1976,7 +2082,12 @@ array handles.</p>
                 <code>label_image</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._builders.LabelImage">LabelImage</span></code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            LabelImage
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.LabelImage&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.LabelImage">LabelImage</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1992,7 +2103,12 @@ array handles.</p>
                 <code>datasets</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</span></code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2020,7 +2136,7 @@ array handles.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing_extensions.Self">Self</span></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2068,11 +2184,7 @@ number of specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1157</span>
-<span class="normal">1158</span>
-<span class="normal">1159</span>
-<span class="normal">1160</span>
-<span class="normal">1161</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1161</span>
 <span class="normal">1162</span>
 <span class="normal">1163</span>
 <span class="normal">1164</span>
@@ -2116,7 +2228,11 @@ number of specs doesn't match the metadata.</p>
 <span class="normal">1202</span>
 <span class="normal">1203</span>
 <span class="normal">1204</span>
-<span class="normal">1205</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2179,7 +2295,7 @@ number of specs doesn't match the metadata.</p>
 
 
 <a href="#yaozarrs.write.v05.LabelsBuilder.prepare" class="headerlink" title="Link to this section">#</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2263,11 +2379,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1207</span>
-<span class="normal">1208</span>
-<span class="normal">1209</span>
-<span class="normal">1210</span>
-<span class="normal">1211</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1211</span>
 <span class="normal">1212</span>
 <span class="normal">1213</span>
 <span class="normal">1214</span>
@@ -2324,7 +2436,11 @@ tensorstore.TensorStore).</p>
 <span class="normal">1265</span>
 <span class="normal">1266</span>
 <span class="normal">1267</span>
-<span class="normal">1268</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">1268</span>
+<span class="normal">1269</span>
+<span class="normal">1270</span>
+<span class="normal">1271</span>
+<span class="normal">1272</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete labels group structure including LabelsGroup</span>
@@ -2410,15 +2526,35 @@ tensorstore.TensorStore).</p>
 
 <a href="#yaozarrs.write.v05.PlateBuilder" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PlateBuilder</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">plate</span><span class="p">:</span> <span class="n">Plate</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="n">ShapeLike</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="n">ShapeLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+    <span class="n">plate</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Plate&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.Plate&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._plate.Plate">Plate</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2740,7 +2876,7 @@ an exception will be raised instead.</p>
   </span>
 
 <a href="#yaozarrs.write.v05.PlateBuilder.root_path" class="headerlink" title="Link to this section">#</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">root_path</span><span class="p">:</span> <span class="n">Path</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">root_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2763,12 +2899,22 @@ an exception will be raised instead.</p>
 
 <a href="#yaozarrs.write.v05.PlateBuilder.write_well" class="headerlink" title="Link to this section">#</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">write_well</span><span class="p">(</span>
-    <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">images</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ImageWithDatasets</span><span class="p">[</span><span class="n">Image</span><span class="p">]],</span>
+    <span class="n">row</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">col</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">images</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithDatasets
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.ImageWithDatasets&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.ImageWithDatasets">ImageWithDatasets</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            Image
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2828,7 +2974,12 @@ from all written wells and rewritten after each call.</p>
                 <code>images</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <span title="yaozarrs.write._common._builders.ImageWithDatasets">ImageWithDatasets</span>]</code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithDatasets
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.ImageWithDatasets&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.ImageWithDatasets">ImageWithDatasets</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2874,7 +3025,7 @@ from all written wells and rewritten after each call.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing_extensions.Self">Self</span></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2922,11 +3073,7 @@ provided Plate doesn't include this well.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">670</span>
-<span class="normal">671</span>
-<span class="normal">672</span>
-<span class="normal">673</span>
-<span class="normal">674</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">674</span>
 <span class="normal">675</span>
 <span class="normal">676</span>
 <span class="normal">677</span>
@@ -3002,7 +3149,11 @@ provided Plate doesn't include this well.</p>
 <span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
-<span class="normal">750</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3099,10 +3250,20 @@ provided Plate doesn't include this well.</p>
 <a href="#yaozarrs.write.v05.PlateBuilder.add_well" class="headerlink" title="Link to this section">#</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">add_well</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">images</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ImageWithShapeSpecs</span><span class="p">[</span><span class="n">Image</span><span class="p">]],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="n">row</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">col</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">images</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithShapeSpecs
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.ImageWithShapeSpecs&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.ImageWithShapeSpecs">ImageWithShapeSpecs</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            Image
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3162,7 +3323,12 @@ handles.</p>
                 <code>images</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <span title="yaozarrs.write._common._builders.ImageWithShapeSpecs">ImageWithShapeSpecs</span>]</code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithShapeSpecs
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.ImageWithShapeSpecs&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.ImageWithShapeSpecs">ImageWithShapeSpecs</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3191,7 +3357,7 @@ dtype and shape for each resolution level:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing_extensions.Self">Self</span></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3240,11 +3406,7 @@ don't match Image metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">756</span>
 <span class="normal">757</span>
 <span class="normal">758</span>
 <span class="normal">759</span>
@@ -3291,7 +3453,11 @@ don't match Image metadata.</p>
 <span class="normal">800</span>
 <span class="normal">801</span>
 <span class="normal">802</span>
-<span class="normal">803</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
+<span class="normal">803</span>
+<span class="normal">804</span>
+<span class="normal">805</span>
+<span class="normal">806</span>
+<span class="normal">807</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3357,7 +3523,7 @@ don't match Image metadata.</p>
 
 
 <a href="#yaozarrs.write.v05.PlateBuilder.prepare" class="headerlink" title="Link to this section">#</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3442,11 +3608,7 @@ objects. The array type depends on the configured writer
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">805</span>
-<span class="normal">806</span>
-<span class="normal">807</span>
-<span class="normal">808</span>
-<span class="normal">809</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">809</span>
 <span class="normal">810</span>
 <span class="normal">811</span>
 <span class="normal">812</span>
@@ -3513,7 +3675,11 @@ objects. The array type depends on the configured writer
 <span class="normal">873</span>
 <span class="normal">874</span>
 <span class="normal">875</span>
-<span class="normal">876</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span>
+<span class="normal">880</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete Plate structure including plate metadata (auto-</span>
@@ -3609,15 +3775,35 @@ objects. The array type depends on the configured writer
 
 <a href="#yaozarrs.write.v05.Bf2RawBuilder" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Bf2RawBuilder</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">ome_xml</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="n">ShapeLike</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="n">ShapeLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+    <span class="n">ome_xml</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3922,7 +4108,7 @@ an exception will be raised instead.</p>
   </span>
 
 <a href="#yaozarrs.write.v05.Bf2RawBuilder.root_path" class="headerlink" title="Link to this section">#</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">root_path</span><span class="p">:</span> <span class="n">Path</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">root_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3945,12 +4131,22 @@ an exception will be raised instead.</p>
 
 <a href="#yaozarrs.write.v05.Bf2RawBuilder.write_image" class="headerlink" title="Link to this section">#</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">write_image</span><span class="p">(</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">ArrayOrPyramid</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            Image
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></span><span class="p">,</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3993,7 +4189,12 @@ Use this for the "immediate write" workflow.</p>
                 <code>image</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._builders.Image">Image</span></code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            Image
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4009,7 +4210,12 @@ Use this for the "immediate write" workflow.</p>
                 <code>datasets</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._arrays.ArrayLike">ArrayLike</span> | <a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Sequence&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<span title="yaozarrs.write._common._arrays.ArrayLike">ArrayLike</span>]</code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4052,7 +4258,7 @@ pass the array directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing_extensions.Self">Self</span></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4099,11 +4305,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">374</span>
-<span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">378</span>
 <span class="normal">379</span>
 <span class="normal">380</span>
 <span class="normal">381</span>
@@ -4167,7 +4369,11 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">439</span>
 <span class="normal">440</span>
 <span class="normal">441</span>
-<span class="normal">442</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_image</span><span class="p">(</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_image</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
@@ -4187,7 +4393,7 @@ pass the array directly without wrapping in a list.</p>
 <span class="sd">        Series name (becomes the subgroup path, e.g., "0", "1").</span>
 <span class="sd">    image : Image</span>
 <span class="sd">        OME-Zarr Image metadata model for this series.</span>
-<span class="sd">    datasets : ArrayLike | Sequence[ArrayLike]</span>
+<span class="sd">    datasets : ArrayOrPyramid</span>
 <span class="sd">        Data array(s) for each resolution level. For a single dataset,</span>
 <span class="sd">        pass the array directly without wrapping in a list.</span>
 <span class="sd">    progress : bool, optional</span>
@@ -4251,10 +4457,20 @@ pass the array directly without wrapping in a list.</p>
 
 <a href="#yaozarrs.write.v05.Bf2RawBuilder.add_series" class="headerlink" title="Link to this section">#</a></h4>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">add_series</span><span class="p">(</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">ShapeAndDTypeOrPyramid</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            Image
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></span><span class="p">,</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4298,7 +4514,12 @@ array handles.</p>
                 <code>image</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._builders.Image">Image</span></code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            Image
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4314,7 +4535,12 @@ array handles.</p>
                 <code>datasets</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._arrays.ShapeAndDType">ShapeAndDType</span> | <a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Sequence&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<span title="yaozarrs.write._common._arrays.ShapeAndDType">ShapeAndDType</span>]</code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4342,7 +4568,7 @@ directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing_extensions.Self">Self</span></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4390,11 +4616,7 @@ number of dataset specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
-<span class="normal">447</span>
-<span class="normal">448</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">448</span>
 <span class="normal">449</span>
 <span class="normal">450</span>
 <span class="normal">451</span>
@@ -4437,7 +4659,11 @@ number of dataset specs doesn't match the metadata.</p>
 <span class="normal">488</span>
 <span class="normal">489</span>
 <span class="normal">490</span>
-<span class="normal">491</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_series</span><span class="p">(</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_series</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
@@ -4456,7 +4682,7 @@ number of dataset specs doesn't match the metadata.</p>
 <span class="sd">        Series name (becomes the subgroup path, e.g., "0", "1").</span>
 <span class="sd">    image : Image</span>
 <span class="sd">        OME-Zarr Image metadata model for this series.</span>
-<span class="sd">    datasets : ShapeAndDType | Sequence[ShapeAndDType]</span>
+<span class="sd">    datasets : ShapeAndDTypeOrPyramid</span>
 <span class="sd">        Shape and dtype specification(s) for each resolution level, as</span>
 <span class="sd">        `(shape, dtype)` tuples. For a single dataset, pass the tuple</span>
 <span class="sd">        directly without wrapping in a list.</span>
@@ -4499,7 +4725,7 @@ number of dataset specs doesn't match the metadata.</p>
 
 
 <a href="#yaozarrs.write.v05.Bf2RawBuilder.prepare" class="headerlink" title="Link to this section">#</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4583,11 +4809,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">493</span>
-<span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">497</span>
 <span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span>
@@ -4649,7 +4871,11 @@ tensorstore.TensorStore).</p>
 <span class="normal">556</span>
 <span class="normal">557</span>
 <span class="normal">558</span>
-<span class="normal">559</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete bioformats2raw structure including root metadata,</span>
@@ -4740,22 +4966,42 @@ tensorstore.TensorStore).</p>
 
 <a href="#yaozarrs.write.v05.write_image" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">write_image</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
-    <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">ArrayOrPyramid</span><span class="p">,</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Image&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.Image&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._image.Image">Image</a></span><span class="p">,</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">labels</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">LabelImage</span><span class="p">,</span> <span class="n">ArrayOrPyramid</span><span class="p">]]</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;LabelImage&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.LabelImage&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._labels.LabelImage">LabelImage</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">]]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
-    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4825,7 +5071,12 @@ one Dataset entry per array in <code>datasets</code>.</p>
                 <code>datasets</code>
             </td>
             <td>
-                  <code><span title="yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</span></code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4846,7 +5097,12 @@ Must match the number and order of <code>image.multiscales[0].datasets</code>.</
                 <code>labels</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;LabelImage&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.LabelImage&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._labels.LabelImage">LabelImage</a>, <span title="yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</span>]] | None</code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;LabelImage&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.LabelImage&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._labels.LabelImage">LabelImage</a>, <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a>]] | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5450,22 +5706,37 @@ shuffle filter. "zstd" uses raw zstd without blosc container.</p>
 
 <a href="#yaozarrs.write.v05.write_plate" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">write_plate</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
-    <span class="n">images</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span>
-        <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">ImageWithDatasets</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
+    <span class="n">images</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithDatasets
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write.v05._write.ImageWithDatasets&lt;/code&gt;)" href="./#yaozarrs.write.v05._write.ImageWithDatasets">ImageWithDatasets</a></span>
     <span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">plate</span><span class="p">:</span> <span class="n">Plate</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="n">plate</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Plate&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.Plate&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._plate.Plate">Plate</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
-    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5531,7 +5802,12 @@ and stores image data in a single call.</p>
                 <code>images</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>], <span title="yaozarrs.write.v05._write.ImageWithDatasets">ImageWithDatasets</span>]</code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>], <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithDatasets
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write.v05._write.ImageWithDatasets&lt;/code&gt;)" href="./#yaozarrs.write.v05._write.ImageWithDatasets">ImageWithDatasets</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6121,20 +6397,35 @@ When present, shard_shape must be divisible by chunk shape.</p>
 
 <a href="#yaozarrs.write.v05.write_bioformats2raw" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">write_bioformats2raw</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
-    <span class="n">images</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ImageWithDatasets</span><span class="p">],</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
+    <span class="n">images</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithDatasets
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write.v05._write.ImageWithDatasets&lt;/code&gt;)" href="./#yaozarrs.write.v05._write.ImageWithDatasets">ImageWithDatasets</a></span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">ome_xml</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="n">ome_xml</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
-    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6207,7 +6498,12 @@ directly.</p>
                 <code>images</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <span title="yaozarrs.write.v05._write.ImageWithDatasets">ImageWithDatasets</span>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ImageWithDatasets
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write.v05._write.ImageWithDatasets&lt;/code&gt;)" href="./#yaozarrs.write.v05._write.ImageWithDatasets">ImageWithDatasets</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6773,19 +7069,34 @@ When present, shard_shape must be divisible by chunk shape.</p>
 
 <a href="#yaozarrs.write.v05.prepare_image" class="headerlink" title="Link to this section">#</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare_image</span><span class="p">(</span>
-    <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
-    <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
-    <span class="n">datasets</span><span class="p">:</span> <span class="n">ShapeAndDTypeOrPyramid</span><span class="p">,</span>
+    <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;os.PathLike&lt;/code&gt;" href="https://docs.python.org/3/library/os.html#os.PathLike">PathLike</a></span><span class="p">,</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Image&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.Image&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._image.Image">Image</a></span><span class="p">,</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">extra_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">chunks</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">shards</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">writer</span><span class="p">:</span> <span class="n">ZarrWriter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">compression</span><span class="p">:</span> <span class="n">CompressionName</span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.CompressionName&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.CompressionName">CompressionName</a></span> <span class="o">=</span> <span class="s2">"blosc-zstd"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6855,7 +7166,12 @@ over how data is written (e.g., chunk-by-chunk streaming, parallel writes).</p>
                 <code>datasets</code>
             </td>
             <td>
-                  <code><span title="ShapeAndDType">ShapeAndDType</span> | <span title="Sequence">Sequence</span>[<span title="ShapeAndDType">ShapeAndDType</span>]</code>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6985,7 +7301,12 @@ the return type is narrowed to the specific array type.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <span title="Array">Array</span>]]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" title="&lt;code&gt;pathlib.Path&lt;/code&gt;" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            AnyZarrArray
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.AnyZarrArray&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.AnyZarrArray">AnyZarrArray</a>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -7251,7 +7572,7 @@ to array objects. The array type depends on the writer:</p>
 <span class="sd">        Destination path for the Zarr group.</span>
 <span class="sd">    image : Image</span>
 <span class="sd">        OME-Zarr Image metadata model.</span>
-<span class="sd">    datasets : ShapeAndDType | Sequence[ShapeAndDType]</span>
+<span class="sd">    datasets : ShapeAndDTypeOrPyramid</span>
 <span class="sd">        Shape and dtype specification(s) for each dataset, as `(shape, dtype)`</span>
 <span class="sd">        tuples. Can be:</span>
 
@@ -7276,7 +7597,7 @@ to array objects. The array type depends on the writer:</p>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tuple[Path, dict[str, Array]]</span>
+<span class="sd">    tuple[Path, dict[str, AnyZarrArray]]</span>
 <span class="sd">        A tuple of (path, arrays) where `arrays` maps dataset paths (e.g., "0")</span>
 <span class="sd">        to array objects. The array type depends on the writer:</span>
 
@@ -7348,6 +7669,37 @@ to array objects. The array type depends on the writer:</p>
 
 
   </div>
+
+    </div>
+
+</div><h2 id="types">Types<a class="headerlink" href="#types" title="Link to this section">#</a></h2>
+<p>See also the <a href="../../writing/#types">types shared by both write modules</a>.</p>
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="yaozarrs.write.v05._write.ImageWithDatasets" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            ImageWithDatasets
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#yaozarrs.write.v05._write.ImageWithDatasets" class="headerlink" title="Link to this section">#</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ImageWithDatasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.TypeAlias&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Image&lt;/span&gt; (&lt;code&gt;yaozarrs.v05.Image&lt;/code&gt;)" href="../yaozarrs.v05/#yaozarrs.v05._image.Image">Image</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>A v0.5 <code>Image</code> model, with its array data (one array per dataset).</p>
 
     </div>
 
