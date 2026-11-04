@@ -371,10 +371,18 @@ class StorageValidator:
                     ctx={"path": label_path, "type": type(label_image_model).__name__},
                 )
                 result = result.merge(
-                    self.visit_image(label_group, label_image_model, label_loc)
+                    self._visit_unmarked_label_image(
+                        label_group, label_image_model, label_loc
+                    )
                 )
 
         return result
+
+    def _visit_unmarked_label_image(
+        self, zarr_group: ZarrGroup, image_model: Any, loc_prefix: Loc
+    ) -> ValidationResult:
+        """Validate a listed label path that has only Image metadata."""
+        return self.visit_image(zarr_group, image_model, loc_prefix)
 
     def _visit_multiscale_no_prefetch(
         self, zarr_group: ZarrGroup, multiscale: Any, loc_prefix: Loc

@@ -68,6 +68,17 @@ class StorageValidatorV06(StorageValidator):
     Bf2Raw = Bf2Raw
     Series = Series
 
+    def _visit_unmarked_label_image(
+        self, zarr_group: ZarrGroup, image_model: Any, loc_prefix: Loc
+    ) -> ValidationResult:
+        # The `labels` value is "a JSON array of paths to the labeled multiscale
+        # image(s)", and "the pixels of the label images MUST be integer data types",
+        # whether or not they have the (SHOULD) `image-label` metadata.
+        result = self.visit_image(zarr_group, image_model, loc_prefix)
+        return result.merge(
+            self._validate_label_data_types(image_model, zarr_group, loc_prefix)
+        )
+
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
         return validate_ome_object(dict(attrs), OMEAttributes, strict=self.strict).ome
 
