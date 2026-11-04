@@ -151,6 +151,38 @@ def test_fixture_round_trip_is_exact(path: Path) -> None:
         assert back.model_dump() == obj.model_dump()
 
 
+def _add_unknown_keys(obj: Any, keys: list[str]) -> list[str]:
+    """Add a uniquely named unknown key to every JSON object in `obj`."""
+    if isinstance(obj, (dict, list)):
+        for value in list(obj.values() if isinstance(obj, dict) else obj):
+            _add_unknown_keys(value, keys)
+    if isinstance(obj, dict):
+        keys.append(f"x-unknown-{len(keys)}")
+        obj[keys[-1]] = 0
+    return keys
+
+
+def _convert_warned(obj: Any, version: Any) -> tuple[Any, str]:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        return convert_version(obj, version), " ".join(str(x.message) for x in w)
+
+
+@pytest.mark.parametrize("version", VERSIONS.values())
+@pytest.mark.parametrize("path", FIXTURES, ids=IDS)
+def test_fixture_unknown_keys_survive_or_warn(path: Path, version: Any) -> None:
+    if (obj := _load(path)) is None or isinstance(obj, v06.Scene):
+        pytest.skip("no OME metadata (or a scene, which can't be converted)")
+    whole = ("coordinate system '", "multiscale coordinateTransformations")
+    if any(w in _convert_warned(obj, version)[1] for w in whole):
+        pytest.skip("drops whole objects (which the warning names, not their keys)")
+    doc = obj.model_dump(mode="json")
+    keys = _add_unknown_keys(doc, [])
+    result, warned = _convert_warned(type(obj).model_validate(doc), version)
+    kept = json.dumps(result.model_dump(mode="json"))
+    assert [k for k in keys if f'"{k}"' not in kept and f"'{k}'" not in warned] == []
+
+
 # ------------------------------------------------------------------------------
 # Upgrades
 # ------------------------------------------------------------------------------
