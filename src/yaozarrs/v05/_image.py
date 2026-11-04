@@ -1,4 +1,3 @@
-import math
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
@@ -8,14 +7,11 @@ from typing_extensions import Self
 
 from yaozarrs._axis import AxesList
 from yaozarrs._base import _BaseModel, _OMEDocument
+from yaozarrs._common._image import check_resolution_order, check_transform_lengths
 from yaozarrs._common._omero import Omero
-from yaozarrs._dim_spec import DimSpec
+from yaozarrs._dim_spec import DimSpec, _axes_datasets
 from yaozarrs._types import UniqueList
 from yaozarrs._util import SuggestDatasetPath
-
-# ------------------------------------------------------------------------------
-# Transformations model
-# ------------------------------------------------------------------------------
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Image",
@@ -75,11 +71,11 @@ def _validate_transforms_list(
 ) -> list[CoordinateTransformation]:
     # [the list of transforms] MUST contain exactly one scale transformation that
     # specifies the pixel size in physical units or time duration
-    num_scales = len([t for t in transforms if isinstance(t, ScaleTransformation)])
-    if num_scales != 1:
+    scales = [t for t in transforms if isinstance(t, ScaleTransformation)]
+    if len(scales) != 1:
         raise ValueError(
             "There must be exactly one scale transformation in the list of transforms. "
-            f"Found {num_scales}.\n\n"
+            f"Found {len(scales)}.\n\n"
             "TIP:\n"
             "If scaling information is not available or applicable for one of the axes,"
             " the value MUST express the scaling factor between the current resolution "
@@ -89,29 +85,20 @@ def _validate_transforms_list(
 
     # It MAY contain exactly one translation that specifies the offset from the origin
     # in physical units.
-    num_trans = len([t for t in transforms if isinstance(t, TranslationTransformation)])
-    if num_trans > 1:
+    translations = [t for t in transforms if isinstance(t, TranslationTransformation)]
+    if len(translations) > 1:
         raise ValueError(
             "There can be at most one translation transformation in the list of "
-            f"transforms. Found {num_trans}."
+            f"transforms. Found {len(translations)}."
         )
 
     # If translation is given it MUST be listed after scale to ensure that it is given
     # in physical coordinates.
-    if num_trans:
-        translation_idx = next(
-            i
-            for i, t in enumerate(transforms)
-            if isinstance(t, TranslationTransformation)
+    if translations and transforms.index(translations[0]) < transforms.index(scales[0]):
+        raise ValueError(
+            "If a translation transformation is given, it must be listed after "
+            "the scale transformation."
         )
-        scale_idx = next(
-            i for i, t in enumerate(transforms) if isinstance(t, ScaleTransformation)
-        )
-        if translation_idx < scale_idx:
-            raise ValueError(
-                "If a translation transformation is given, it must be listed after "
-                "the scale transformation."
-            )
 
     # The length of the scale and translation array MUST be the same as the length of
     # "axes" (checked by Multiscale), so they must also match each other.
@@ -130,10 +117,6 @@ CoordinateTransformsList: TypeAlias = Annotated[
     MinLen(1),
     AfterValidator(_validate_transforms_list),
 ]
-
-# ------------------------------------------------------------------------------
-# Dataset model
-# ------------------------------------------------------------------------------
 
 
 class Dataset(_BaseModel):
@@ -217,10 +200,6 @@ DatasetsList: TypeAlias = Annotated[
     AfterValidator(_validate_datasets_list),
 ]
 
-# ------------------------------------------------------------------------------
-# Multiscale model
-# ------------------------------------------------------------------------------
-
 
 class Multiscale(_BaseModel):
     """Multi-resolution image pyramid (<=5D) with coordinate metadata.
@@ -268,51 +247,22 @@ class Multiscale(_BaseModel):
     )
 
     @model_validator(mode="after")
-    def _post_validate(self) -> Self:
+    def _validate(self) -> Self:
         # The number and order of dimensions in each dataset MUST
         # correspond to number and order of "axes".
         # TODO ... this is ambiguous.  is it the same as the following check?
 
         # The length of the scale and translation array MUST be the same as the length
         # of "axes".
-        for _id, ds in enumerate(self.datasets):
-            for _it, transform in enumerate(ds.coordinateTransformations):
-                if transform.ndim != self.ndim:
-                    raise ValueError(
-                        f"at datasets.[{_id}].coordinateTransformations[{_it}]:\n"
-                        f"  The length of the transformation ({transform.ndim}) does "
-                        f"not match the number of axes ({self.ndim})."
-                    )
-        if self.coordinateTransformations:
-            for _it, transform in enumerate(self.coordinateTransformations):
-                if transform.ndim != self.ndim:
-                    raise ValueError(
-                        f"at coordinateTransformations[{_it}]:\n"
-                        f"  The length of the transformation ({transform.ndim}) "
-                        f"does not match the number of axes ({self.ndim})."
-                    )
-
+        check_transform_lengths(
+            self.datasets, self.coordinateTransformations, self.ndim
+        )
         # The "paths" of the datasets MUST be be ordered from the highest resolution to
         # the lowest resolution (i.e. largest to smallest
-        # (checked per spatial axis: a scale may not shrink from one level to the next,
-        # allowing for float noise)
-        spatial_indices: dict[int, str] = {
-            i: ax.name for i, ax in enumerate(self.axes) if ax.type == "space"
-        }
-        spatial_scales = [
-            tuple(ds.scale_transform.scale[idx] for idx in spatial_indices)
-            for ds in self.datasets
-        ]
-        if any(
-            b < a and not math.isclose(a, b, rel_tol=1e-6)
-            for prev, cur in zip(spatial_scales, spatial_scales[1:])
-            for a, b in zip(prev, cur)
-        ):
-            raise ValueError(
-                "The datasets are not ordered from highest to lowest resolution. "
-                f"Found spatial scales: {spatial_scales}"
-            )
-
+        space = [i for i, ax in enumerate(self.axes) if ax.type == "space"]
+        check_resolution_order(
+            [tuple(ds.scale_transform.scale[i] for i in space) for ds in self.datasets]
+        )
         return self
 
     @property
@@ -358,14 +308,7 @@ class Multiscale(_BaseModel):
         >>> [ds.path for ds in ms.datasets]
         ['0', '1', '2']
         """
-        from yaozarrs._dim_spec import _axes_datasets
-
         return cls(name=name, **_axes_datasets(dims, n_levels))  # type: ignore
-
-
-# ------------------------------------------------------------------------------
-# Image model
-# ------------------------------------------------------------------------------
 
 
 class Image(_OMEDocument):

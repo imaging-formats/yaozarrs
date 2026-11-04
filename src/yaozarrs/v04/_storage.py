@@ -32,7 +32,7 @@ _OME_VALIDATOR = TypeAdapter(OMEZarrGroupJSON)
 
 
 class StorageValidatorV04(StorageValidator):
-    """Concrete implementation of storage validator. for OME-ZARR v0.4 spec."""
+    """Storage validator for the OME-Zarr v0.4 spec."""
 
     __slots__ = ()
 
@@ -60,7 +60,7 @@ class StorageValidatorV04(StorageValidator):
     ) -> ValidationResult:
         result = ValidationResult()
         # Check dimension_names attribute matches axes
-        if dim_names := list(dict(arr.attrs).get("dimension_names", [])):
+        if dim_names := list(arr.attrs.get("dimension_names", [])):
             expected_names = [ax.name for ax in multiscale.axes]
             if dim_names != expected_names:
                 result.add_error(

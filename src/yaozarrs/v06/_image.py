@@ -1,4 +1,3 @@
-import math
 import warnings
 from collections.abc import Sequence
 from typing import Annotated, Any, TypeAlias, cast
@@ -8,6 +7,7 @@ from pydantic import Field, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
+from yaozarrs._common._image import check_resolution_order
 from yaozarrs._common._omero import Omero
 from yaozarrs._dim_spec import DimSpec
 from yaozarrs._types import UniqueList
@@ -31,10 +31,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Multiscale",
     "Dataset",
 ]
-
-# ------------------------------------------------------------------------------
-# Dataset model
-# ------------------------------------------------------------------------------
 
 # The transformation MUST be one of the following:
 # - A single scale or identity transformation
@@ -152,16 +148,6 @@ class Dataset(_BaseModel):
             last = t.transformations[-1]
             return last if isinstance(last, TranslationTransformation) else None
         return None
-
-
-# ------------------------------------------------------------------------------
-# Multiscale model
-# ------------------------------------------------------------------------------
-
-
-# types allowed when transforming to a coordinate system in a child labels group
-# (see also `_is_label_transform`)
-_LABEL_TRANSFORM_TYPES = ("identity", "scale", "translation")
 
 
 class Multiscale(_BaseModel):
@@ -294,23 +280,13 @@ class Multiscale(_BaseModel):
         # The `path`s MUST be ordered from largest (i.e. highest resolution) to
         # smallest.
         # (Really a storage-level rule; like v05, we also check it on the scales of
-        # the spatial axes, when every level has one: per axis, a scale may not shrink
-        # from one level to the next, allowing for float noise. Scales may be negative
-        # (flips), so we compare magnitudes.)
+        # the spatial axes, when every level has one. Scales may be negative (flips),
+        # so we compare magnitudes.)
         scales = [ds.scale_transform for ds in self.datasets]
         if any(s is None for s in scales):
             return
         space = [i for i, ax in enumerate(intrinsic.axes) if ax.type == "space"]
-        spatial = [tuple(abs(s.scale[i]) for i in space) for s in scales]
-        if any(
-            b < a and not math.isclose(a, b, rel_tol=1e-6)
-            for prev, cur in zip(spatial, spatial[1:])
-            for a, b in zip(prev, cur)
-        ):
-            raise ValueError(
-                "The datasets are not ordered from highest to lowest resolution. "
-                f"Found spatial scales: {spatial}"
-            )
+        check_resolution_order([tuple(abs(s.scale[i]) for i in space) for s in scales])
 
     @property
     def intrinsic_coordinate_system(self) -> CoordinateSystem:
@@ -409,6 +385,10 @@ def _coordinate_systems_datasets(
     }
 
 
+# types allowed when transforming to a coordinate system in a child labels group
+_LABEL_TRANSFORM_TYPES = ("identity", "scale", "translation")
+
+
 def _is_label_transform(t: CoordinateTransformation) -> bool:
     if isinstance(t, SequenceTransformation):
         # (no order is given here, unlike for dataset transformations)
@@ -417,11 +397,6 @@ def _is_label_transform(t: CoordinateTransformation) -> bool:
             "translation",
         ]
     return t.type in _LABEL_TRANSFORM_TYPES
-
-
-# ------------------------------------------------------------------------------
-# Image model
-# ------------------------------------------------------------------------------
 
 
 class Image(_OMEDocument):

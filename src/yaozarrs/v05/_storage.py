@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 class StorageValidatorV05(StorageValidator):
-    """Concrete implementation of storage validator. for OME-ZARR v0.5 spec."""
+    """Storage validator for the OME-Zarr v0.5 spec."""
 
     __slots__ = ()
 

@@ -19,10 +19,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "LabelsGroup",
 ]
 
-# ------------------------------------------------------------------------------
-# Color model
-# ------------------------------------------------------------------------------
-
 Int8bit = Annotated[int, Interval(ge=0, le=255)]
 
 
@@ -44,11 +40,6 @@ class LabelColor(_BaseModel):
         default=None,
         description="RGBA color as [red, green, blue, alpha], each 0-255",
     )
-
-
-# ------------------------------------------------------------------------------
-# Properties model
-# ------------------------------------------------------------------------------
 
 
 class LabelProperty(_BaseModel):
@@ -73,11 +64,6 @@ class LabelProperty(_BaseModel):
     )
 
 
-# ------------------------------------------------------------------------------
-# Source model
-# ------------------------------------------------------------------------------
-
-
 class LabelSource(_BaseModel):
     """Reference to the source image that was segmented.
 
@@ -92,11 +78,6 @@ class LabelSource(_BaseModel):
             "pointing to the parent of the labels/ directory)"
         ),
     )
-
-
-# ------------------------------------------------------------------------------
-# ImageLabel model
-# ------------------------------------------------------------------------------
 
 
 class ImageLabel(_BaseModel):
@@ -122,11 +103,6 @@ class ImageLabel(_BaseModel):
     version: Literal["0.4"] = "0.4"
 
 
-# ------------------------------------------------------------------------------
-# Labels group model (contains paths to individual label images)
-# ------------------------------------------------------------------------------
-
-
 # NOTE: this is described in the spec, but doesn't appear in the schema.
 class LabelsGroup(_BaseModel):
     """Top-level labels collection metadata.
@@ -150,11 +126,6 @@ class LabelsGroup(_BaseModel):
     labels: list[str] = Field(
         description="Paths to individual label image groups within this collection"
     )
-
-
-# ------------------------------------------------------------------------------
-# Label model (top-level for individual label images)
-# ------------------------------------------------------------------------------
 
 
 class LabelImage(Image):

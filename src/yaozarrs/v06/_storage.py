@@ -11,7 +11,7 @@ from __future__ import annotations
 import posixpath
 from typing import TYPE_CHECKING, Any, TypeAlias
 
-from yaozarrs._common._storage import StorageValidator, _build_fs_path
+from yaozarrs._common._storage import StorageValidator, _build_fs_path, _invalid_ctx
 from yaozarrs._storage import StorageErrorType, ValidationResult
 from yaozarrs._validate import validate_ome_object, validate_ome_uri
 from yaozarrs._zarr import ZarrArray, ZarrGroup
@@ -49,15 +49,7 @@ _FIELDS = (DisplacementsTransformation, CoordinatesTransformation)
 
 
 class StorageValidatorV06(StorageValidator):
-    """Concrete implementation of storage validator. for OME-ZARR v0.6 spec."""
-
-    # (images already visited and parameter checks already done, by normalized path:
-    # references can point back to a group being validated, or to the same group twice)
-    __slots__ = ("_checked", "_visited")
-
-    def __init__(self) -> None:
-        self._visited: set[str] = set()
-        self._checked: set[tuple] = set()
+    """Storage validator for the OME-Zarr v0.6 spec."""
 
     VERSION = "0.6"
     Image = Image
@@ -67,6 +59,14 @@ class StorageValidatorV06(StorageValidator):
     Well = Well
     Bf2Raw = Bf2Raw
     Series = Series
+
+    # (images already visited and parameter checks already done, by normalized path:
+    # references can point back to a group being validated, or to the same group twice)
+    __slots__ = ("_checked", "_visited")
+
+    def __init__(self) -> None:
+        self._visited: set[str] = set()
+        self._checked: set[tuple] = set()
 
     def _visit_unmarked_label_image(
         self, zarr_group: ZarrGroup, image_model: Any, loc_prefix: Loc
@@ -235,10 +235,7 @@ class StorageValidatorV06(StorageValidator):
         """Return the LabelsGroup model of child group `name`, if it is one."""
         if not isinstance(group := zarr_group.get(name), ZarrGroup):
             return None
-        try:
-            model = group.ome_metadata(version=self.VERSION, strict=self.strict)
-        except ValueError:
-            return None
+        model = self._child_model(group)
         return model if isinstance(model, LabelsGroup) else None
 
     def _resolve_label_coordinate_system(
@@ -250,14 +247,18 @@ class StorageValidatorV06(StorageValidator):
         result: ValidationResult,
     ) -> CoordinateSystem | None:
         """Find coordinate system `name` in the label image at `path`, or add errors."""
-        norm = posixpath.normpath(path)
-        if _child_head(path) is None:
+
+        def _not_in_labels_group() -> None:
             result.add_error(
                 StorageErrorType.coordinate_system_path_invalid,
                 (*loc, "path"),
                 f"Path '{path}' is not in a child labels group of this image",
                 ctx={"path": path, "expected": "<labels group>/<label image>"},
             )
+
+        norm = posixpath.normpath(path)
+        if _child_head(path) is None:
+            _not_in_labels_group()
             return None
         if zarr_group.get(norm) is None:
             result.add_error(
@@ -271,12 +272,7 @@ class StorageValidatorV06(StorageValidator):
         # be a labels group (whatever its name)
         head, _, rest = norm.partition("/")
         if not rest or self._child_labels_group(zarr_group, head) is None:
-            result.add_error(
-                StorageErrorType.coordinate_system_path_invalid,
-                (*loc, "path"),
-                f"Path '{path}' is not in a child labels group of this image",
-                ctx={"path": path, "expected": "<labels group>/<label image>"},
-            )
+            _not_in_labels_group()
             return None
         image = self._image_at(zarr_group, norm, loc, result)
         return None if image is None else self._find_cs(image, path, name, loc, result)
@@ -286,24 +282,14 @@ class StorageValidatorV06(StorageValidator):
     ) -> Image | None:
         """Return the Image model of the (existing) group at `path`, or add errors."""
         group = zarr_group.get(path)
-        model: Any = None
-        if isinstance(group, ZarrGroup):
-            try:
-                model = group.ome_metadata(version=self.VERSION, strict=self.strict)
-            except ValueError as e:
-                model = e
+        model = self._child_model(group) if isinstance(group, ZarrGroup) else None
         if isinstance(model, Image):
             return model
-        ctx: dict = {"fs_path": _build_fs_path(zarr_group, path)}
-        if isinstance(model, Exception):
-            ctx["error"] = model
-        else:
-            ctx["type"] = type(model).__name__
         result.add_error(
             StorageErrorType.coordinate_system_path_invalid,
             (*loc, "path"),
             f"Path '{path}' does not contain valid Image ('multiscales') metadata",
-            ctx=ctx,
+            ctx=_invalid_ctx({"fs_path": _build_fs_path(zarr_group, path)}, model),
         )
         return None
 
@@ -368,19 +354,17 @@ class StorageValidatorV06(StorageValidator):
 
         for t_idx, t in enumerate(scene.coordinateTransformations):
             t_loc = (*scene_loc, "coordinateTransformations", t_idx)
-            ends: list[tuple[Node, CoordinateSystem] | None] = []
-            for side in ("input", "output"):
-                ends.append(
-                    self._resolve_scene_ref(
-                        zarr_group,
-                        getattr(t, side),
-                        systems,
-                        images,
-                        (*t_loc, side),
-                        result,
-                    )
+            start, end = (
+                self._resolve_scene_ref(
+                    zarr_group,
+                    getattr(t, side),
+                    systems,
+                    images,
+                    (*t_loc, side),
+                    result,
                 )
-            start, end = ends
+                for side in ("input", "output")
+            )
             if start is None or end is None:
                 resolved_all = False
                 n_in = n_out = None
@@ -637,16 +621,8 @@ class StorageValidatorV06(StorageValidator):
         if not isinstance(node, ZarrGroup):
             _error("is a Zarr array, but must be a multiscale image group")
             return result
-        try:
-            model: Any = node.ome_metadata(version=self.VERSION, strict=self.strict)
-        except ValueError as e:
-            model = e
-        if not isinstance(model, Image):
-            reason = (
-                {"error": model}
-                if isinstance(model, Exception)
-                else {"type": type(model).__name__}
-            )
+        if not isinstance(model := self._child_model(node), Image):
+            reason = _invalid_ctx({}, model)
             _error("does not contain valid Image ('multiscales') metadata", **reason)
             return result
         result = result.merge(self._visit_image(node, model, (*loc, "path")))
