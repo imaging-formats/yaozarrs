@@ -50,7 +50,7 @@ title: Guide to OME-Zarr
     ---
 
     Tiles of a mosaic, multiple views of a sample, or images to register onto
-    each other (*new in v0.6*)
+    each other (*v0.6 and later*)
 
     [:octicons-arrow-right-24: Go to Scenes](#working-with-scenes)
 
@@ -58,17 +58,13 @@ title: Guide to OME-Zarr
 
 !!! info "Which version is this guide about?"
     This guide covers OME-Zarr **v0.4, v0.5 and v0.6**, with tabs to show the
-    differences.  The biggest change in v0.6 is a much more expressive way of
-    describing where your pixels are in space (coordinate systems and
-    transformations).  That topic gets its own page:
-    [Coordinate Systems & Transformations](coordinate_systems.md).
+    differences.  The coordinate systems and transformations of v0.6 get their
+    own page: [Coordinate Systems & Transformations](coordinate_systems.md).
 
     ??? question "Which version should I write?"
         It depends on who needs to read your data.  Newer versions can express
         more, but your files are only useful if the tools you (and your
-        collaborators) rely on can read them.  Support for v0.6 is still new, so
-        check the tools you care about before choosing it.  If you don't need
-        anything new in v0.6, v0.5 is a safe choice today.
+        collaborators) rely on can read them, so check those first.
 
 ## What is OME-Zarr?
 
@@ -810,14 +806,10 @@ They are represented as a special group named "labels/" within an image group.
 
 ### Lining labels up with the image (v0.6)
 
-Up to v0.5, a label image was expected to be "in the same coordinate system" as
-its parent image, so the only way to place it was through its own `scale` and
-`translation`.  In v0.6, that's still the default: without anything else, the
-label image's [intrinsic coordinate
+By default, a label image's [intrinsic coordinate
 system](coordinate_systems.md#the-intrinsic-coordinate-system) is "usually
-understood to be the same" as the image's.
-
-What v0.6 adds is a way to link the two when they *aren't* the same.  Say a
+understood to be the same" as its image's.  In v0.6, you can also link the two
+when they *aren't* the same.  Say a
 segmentation tool wrote labels for a crop of the image, with the corner of the
 crop as its origin.  Rather than rewriting the label image's metadata, you can add
 a transformation to the **parent image's** multiscale `coordinateTransformations`,
@@ -1372,13 +1364,7 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 
 ## Working with Scenes
 
-!!! info "New in v0.6"
-    Scenes arrived in v0.6, along with named coordinate systems and many new
-    transformation types
-    ([RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html)).  They aren't
-    available in earlier versions.
-
-A **Scene** is a group of images that **share a spatial relationship** with each
+A **Scene** (v0.6 and later) is a group of images that **share a spatial relationship** with each
 other.  For example:
 
 - Tiles of a mosaic, placed side by side in a common "stage" coordinate system
@@ -1564,105 +1550,6 @@ scene = v06.Scene(
 
 ## Reference
 
-### What changed in v0.6?
-
-v0.6 was [released on September 14, 2026](https://github.com/ome/ngff-spec/releases/tag/0.6).
-Its headline feature is
-[RFC-5: Coordinate Systems and Transformations](https://ngff.openmicroscopy.org/rfc/5/index.html),
-by John Bogovic, Davis Bennett, Luca Marconato, Matt McCormick, Stephan Saalfeld
-and Johannes Soltwedel, which "provides first-class support for spatial and
-coordinate transformations in OME-Zarr".
-
-Here's what changed, roughly in order of how likely it is to affect you:
-
-1. **Axes now live in named coordinate systems.**  A multiscale no longer has an
-   `axes` field.  Instead, it has `coordinateSystems`: a list of
-   `{"name": ..., "axes": [...]}` objects.  The axis rules you know (2-5
-   dimensions, `[time,] [channel/custom,] space` ordering) still apply to each of
-   them.  See [Axes](#axes).
-2. **Dataset transformations are more explicit.**  Each dataset now has *exactly
-   one* transformation, with an `input` (the dataset's array, by `path`) and an
-   `output` (the image's [intrinsic coordinate
-   system](coordinate_systems.md#the-intrinsic-coordinate-system), by `name`).
-   A scale and a translation are no longer listed side by side: they go inside a
-   single `sequence` (scale first).  An `identity` is now allowed too.  See
-   [Coordinate Transformations](#coordinate-transformations).
-3. **Multiscale-level `coordinateTransformations` mean something different.**
-   In v0.5, they were applied *after* the datasets' transformations (with the
-   same rules).  In v0.6, they link the intrinsic coordinate system to *other*
-   named coordinate systems (of the same multiscale, or of a label image).  If
-   you used them in v0.5, you'll need to rethink them (e.g. fold them into each
-   dataset's transformation, which is what
-   [`convert_version`][yaozarrs.convert_version] does).  Also, all coordinate
-   systems **MUST** now be connected by transformations (an unlinked extra
-   coordinate system is invalid).  See [Coordinate Systems &
-   Transformations](coordinate_systems.md#more-coordinate-systems-in-one-image).
-4. **Many more transformation types.**  `identity`, `scale` and `translation`
-   are joined by `mapAxis`, `projectAxis`, `affine`, `rotation`, `sequence`,
-   `byDimension`, `bijection`, `displacements` and `coordinates`.  (Readers
-   **MUST** parse identity, scale, translation and sequences of them, and
-   **SHOULD** parse mapAxis, affine, rotation and byDimension.)  See
-   [Transformation types](coordinate_systems.md#transformation-types).
-5. **Scenes: images that share a spatial relationship.**  A new `scene`
-   group describes how several images relate to each other in space.  See
-   [Working with Scenes](#working-with-scenes).
-6. **Labels can be explicitly lined up with their image**, with a transformation
-   in the parent image's metadata.  See [Lining labels up with the
-   image](#lining-labels-up-with-the-image-v06).
-7. **New axis fields**: `discrete` and `longName`, plus new suggested axis
-   types (`array`, `coordinate`, `displacement`).  Axis names must now be
-   non-empty (they already had to be unique).
-8. **An explicit pixel coordinate convention**: the *center* of a pixel is its
-   coordinate (so pixel `(0, 0)` covers the area from -0.5 to 0.5 along each
-   axis).  See [Where is a pixel?](coordinate_systems.md#where-is-a-pixel).
-9. **All resolution levels MUST have the same data type** (in addition to the
-   same number of dimensions).
-10. **`dimension_names` are no longer required** on arrays.  v0.5.2 made them a
-    **MUST**; v0.6 doesn't mention them ([confirmed as
-    intentional](https://github.com/ome/ngff/issues/645)).
-11. **`scale` and `translation` parameters must be inline JSON.**  v0.5 also
-    allowed storing them at a `path`; v0.6 doesn't.  (The spec's summary table
-    still says otherwise.)
-12. **Field of view paths in a well** follow Zarr's node name rules, rather than
-    being strictly alphanumeric.  See [Well Metadata](#well-metadata).
-13. **No more nested `version` keys.**  The v0.5 text still required a
-    `version` key inside `plate` (and recommended one in `well` and
-    `image-label`), although its schemas didn't; v0.6 only has `ome.version`.
-
-!!! tip "Converting existing metadata"
-    [`yaozarrs.convert_version`][] converts metadata models between v0.4, v0.5
-    and v0.6, keeping their kind (an `Image` stays an `Image`):
-
-    ```python
-    from yaozarrs import DimSpec, convert_version, v05
-
-    image = v05.Image(
-        multiscales=[v05.Multiscale.from_dims([DimSpec(name="y"), DimSpec(name="x")])]
-    )
-    v06_image = convert_version(image, "0.6")
-    ```
-
-    It only converts metadata: no store is read or written.  Anything the target
-    version can't express is dropped with a `ConversionWarning`.
-
-**What *didn't* change:** the storage format (still Zarr v3, with metadata under
-`attributes.ome`), the 2-5 dimension limit for images, the layout of plates and
-wells, and the (still transitional) `bioformats2raw.layout` and `omero`
-metadata.
-
-??? info "Still on the horizon"
-    These RFCs are **not** part of v0.6:
-
-    - [RFC-3](https://ngff.openmicroscopy.org/rfc/3/index.html): removing the
-      axis restrictions (more than 5 dimensions, etc...)
-    - [RFC-4](https://ngff.openmicroscopy.org/rfc/4/index.html): anatomical
-      orientation of axes (accepted, but not in the spec yet)
-    - [RFC-8](https://ngff.openmicroscopy.org/rfc/8/index.html): collections
-    - [RFC-9](https://ngff.openmicroscopy.org/rfc/9/index.html): zipped OME-Zarr
-
-    See the [RFC index](https://ngff.openmicroscopy.org/rfc/index.html) for
-    their current status.
-
 ### Version Comparison Matrix
 
 | Feature | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 |
@@ -1679,14 +1566,17 @@ metadata.
 | Plate indices | N/A | N/A | **MUST** | **MUST** | **MUST** |
 | Scenes | N/A | N/A | N/A | N/A | MAY |
 
-### Breaking Changes Quick Reference
+### What changed in each version
 
-| Migration | Key Breaking Change | Impact |
-|-----------|---------------------|--------|
-| **v0.2 → v0.3** | Axes must be explicit strings | :warning: Moderate - add `axes` field |
-| **v0.3 → v0.4** | Axes become objects + coordinate transforms required | :warning::warning: Major - restructure metadata |
-| **v0.4 → v0.5** | Zarr v3 file structure + OME namespace | :warning::warning::warning: Critical - completely different storage |
-| **v0.5 → v0.6** | Axes move into named coordinate systems + explicit `input`/`output` on transformations | :warning::warning: Major - restructure `multiscales` metadata (storage unchanged) |
+| Version | Main changes |
+|---------|--------------|
+| **v0.3** | Explicit `axes` (as strings) |
+| **v0.4** | Axes become objects with a `type` and `unit`; each dataset needs `coordinateTransformations`; plate wells get `rowIndex`/`columnIndex` (v0.4.1 added `bioformats2raw.layout`) |
+| **v0.5** | Zarr v3: metadata moves to `zarr.json`, under `attributes.ome` |
+| **v0.6** | Axes move into named coordinate systems, transformations get an explicit `input`/`output`, many more transformation types, and scenes ([RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html)) |
+
+To convert metadata models between v0.4, v0.5 and v0.6, see
+[`yaozarrs.convert_version`][].
 
 ---
 

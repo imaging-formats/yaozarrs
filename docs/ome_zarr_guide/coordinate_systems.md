@@ -6,9 +6,8 @@ title: Coordinate Systems & Transformations
 # Coordinate Systems & Transformations
 
 !!! tip "What you'll learn"
-    OME-Zarr v0.6 introduced a new (and much more expressive) way of describing
-    *where your pixels are*: **coordinate systems** and **transformations**.
-    This page explains these from scratch, with no prior knowledge assumed, and
+    Since v0.6, OME-Zarr describes *where your pixels are* with **coordinate
+    systems** and **transformations**.  This page explains these from scratch, with no prior knowledge assumed, and
     shows how they appear in the metadata.
 
     If you only need a single image with a pixel size, you can mostly skip
@@ -25,10 +24,10 @@ title: Coordinate Systems & Transformations
 
 ## Why does this exist?
 
-Up to v0.5, each image had a single list of `axes`, and each resolution level had
-a `scale` (and optionally a `translation`) that converted pixel indices into
-physical units: "*each pixel is 0.1 µm wide, and the image starts 20 µm from
-the origin*".  That's enough to describe one image on its own.
+For a single image, a `scale` (and optionally a `translation`) per resolution
+level is enough to convert pixel indices into physical units: "*each pixel is
+0.1 µm wide, and the image starts 20 µm from the origin*".  That's all v0.4 and
+v0.5 can express.
 
 But microscopy data often needs more than that:
 
@@ -40,8 +39,8 @@ But microscopy data often needs more than that:
 - A **segmentation** computed on a crop of an image needs to line up with the
   original.
 
-v0.6 adopted [RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html), which
-describes all of these with just two concepts: **coordinate systems** (named
+v0.6 ([RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html)) describes all
+of these with just two concepts: **coordinate systems** (named
 spaces where points live) and **transformations** (arrows that take points from
 one coordinate system to another).
 
