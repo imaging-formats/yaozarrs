@@ -557,6 +557,56 @@ V04_INVALID_IMAGES_WITH_MESSAGES: list[tuple[dict, str]] = [
         },
         "Axis names must be unique",
     ),
+    # Datasets not ordered from highest to lowest resolution
+    (
+        {
+            "multiscales": [
+                {
+                    "axes": [X_AXIS, Y_AXIS],
+                    "datasets": [
+                        {
+                            "path": "0",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [2.0, 2.0]}
+                            ],
+                        },
+                        {
+                            "path": "1",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 1.0]}
+                            ],
+                        },
+                    ],
+                }
+            ]
+        },
+        "The datasets are not ordered from highest to lowest resolution",
+    ),
+    # ... on every spatial axis, not only the first
+    (
+        {
+            "multiscales": [
+                {
+                    "axes": [C_AXIS, X_AXIS, Y_AXIS],
+                    "datasets": [
+                        {
+                            "path": "0",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 1.0, 4.0]}
+                            ],
+                        },
+                        {
+                            "path": "1",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 2.0, 0.1]}
+                            ],
+                        },
+                    ],
+                }
+            ]
+        },
+        "The datasets are not ordered from highest to lowest resolution",
+    ),
 ]
 
 # Combine all invalid cases with specific error messages

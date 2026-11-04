@@ -1,3 +1,4 @@
+import math
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypeAlias
 
@@ -155,6 +156,18 @@ class Dataset(_BaseModel):
         )
     )
 
+    @property
+    def scale_transform(self) -> ScaleTransformation:
+        """Return the scale transformation from the list.
+
+        (CoordinateTransformsList validator ensures there is exactly one.)
+        """
+        return next(
+            t
+            for t in self.coordinateTransformations
+            if isinstance(t, ScaleTransformation)
+        )
+
 
 def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
     """Validate a list of Dataset for `Multiscale.datasets`."""
@@ -250,6 +263,25 @@ class Multiscale(_BaseModel):
                         f"  The length of the transformation ({transform.ndim}) "
                         f"does not match the number of axes ({self.ndim})."
                     )
+
+        # The "path"s MUST be ordered from largest (i.e. highest resolution) to
+        # smallest.
+        # (checked per spatial axis: a scale may not shrink from one level to the next,
+        # allowing for float noise)
+        spatial_indices = [i for i, ax in enumerate(self.axes) if ax.type == "space"]
+        spatial_scales = [
+            tuple(ds.scale_transform.scale[i] for i in spatial_indices)
+            for ds in self.datasets
+        ]
+        if any(
+            b < a and not math.isclose(a, b, rel_tol=1e-6)
+            for prev, cur in zip(spatial_scales, spatial_scales[1:])
+            for a, b in zip(prev, cur)
+        ):
+            raise ValueError(
+                "The datasets are not ordered from highest to lowest resolution. "
+                f"Found spatial scales: {spatial_scales}"
+            )
         return self
 
     @property
