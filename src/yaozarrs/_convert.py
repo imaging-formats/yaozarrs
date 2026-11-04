@@ -75,6 +75,7 @@ def _multiscale_05_06(ms: dict, coordinate_system: str, dropped: list[str]) -> d
     overall_transforms = ms.pop("coordinateTransformations", None) or []
     _drop_unknown_transform_keys(overall_transforms, _V05_TRANSFORM_KEYS, dropped)
     overall = _transform_params_05(overall_transforms)
+    # (an unknown `coordinateSystems` key is overwritten: v0.6 formalized that key)
     ms["coordinateSystems"] = [{"name": coordinate_system, "axes": axes}]
     ms["datasets"] = [
         _dataset_05_06(ds, overall, coordinate_system, dropped) for ds in ms["datasets"]
@@ -173,6 +174,7 @@ def _multiscale_06_05(ms: dict, dropped: list[str]) -> dict:
         if ax.get(key) is not None
     )
 
+    # (an unknown `axes` key is overwritten: v0.5 formalized that key)
     ms["axes"] = [
         {k: v for k, v in ax.items() if k not in ("longName", "discrete")}
         for ax in axes
@@ -388,7 +390,8 @@ def convert_version(
     coordinate_system : str, optional
         Name for the intrinsic coordinate system, when converting to v0.6 from an
         older version.  An existing coordinate system is never renamed.
-        Default is "intrinsic".
+        Default is "intrinsic".  (Older versions have no coordinate systems, so
+        converting from v0.6 doesn't keep its name: pass it here to restore it.)
 
     Returns
     -------
