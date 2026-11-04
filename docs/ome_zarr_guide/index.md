@@ -330,9 +330,6 @@ optional `discrete` and `longName`, and moves axes into named coordinate systems
     ]
     ```
 
-    !!! warning "Breaking change from v0.3"
-        In v0.3, axes were simple strings: `["c", "z", "y", "x"]`. In v0.4+, they must be objects with explicit types.
-
 ---
 
 ### Coordinate Transformations
@@ -1081,9 +1078,6 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
     plate = v04.Plate(plate=plate_def)
     ```
 
-    !!! warning "Breaking change from v0.3"
-        v0.4 added `rowIndex` and `columnIndex`, **required** for all wells. This enables efficient sparse plate handling without path parsing.
-
 ---
 
 ### Well Metadata
@@ -1552,26 +1546,20 @@ scene = v06.Scene(
 
 ### Version Comparison Matrix
 
-| Feature | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 |
-|---------|:----:|:----:|:----:|:----:|:----:|
-| Zarr version | v2 | v2 | v2 | v3 | v3 |
-| Axes format | Implicit TCZYX | Strings | Objects | Objects | Objects, in named coordinate systems |
-| Axis type field | N/A | N/A | SHOULD | SHOULD | SHOULD |
-| Axis unit field | N/A | N/A | SHOULD | SHOULD | SHOULD |
-| Coordinate transforms | N/A | N/A | **MUST** | **MUST** | **MUST** |
-| Transformation types | N/A | N/A | identity, scale, translation | identity, scale, translation | 12 types |
-| Metadata location | `.zattrs` | `.zattrs` | `.zattrs` | `zarr.json` | `zarr.json` |
-| OME namespace | N/A | N/A | N/A | `attributes.ome` | `attributes.ome` |
-| `dimension_names` | N/A | N/A | N/A | **MUST** | Not required |
-| Plate indices | N/A | N/A | **MUST** | **MUST** | **MUST** |
-| Scenes | N/A | N/A | N/A | N/A | MAY |
+| Feature | v0.4 | v0.5 | v0.6 |
+|---------|:----:|:----:|:----:|
+| Zarr version | v2 | v3 | v3 |
+| Axes format | Objects | Objects | Objects, in named coordinate systems |
+| Transformation types | identity, scale, translation | identity, scale, translation | 12 types |
+| Metadata location | `.zattrs` | `zarr.json` | `zarr.json` |
+| OME namespace | N/A | `attributes.ome` | `attributes.ome` |
+| `dimension_names` | N/A | **MUST** | Not required |
+| Scenes | N/A | N/A | MAY |
 
 ### What changed in each version
 
 | Version | Main changes |
 |---------|--------------|
-| **v0.3** | Explicit `axes` (as strings) |
-| **v0.4** | Axes become objects with a `type` and `unit`; each dataset needs `coordinateTransformations`; plate wells get `rowIndex`/`columnIndex` (v0.4.1 added `bioformats2raw.layout`) |
 | **v0.5** | Zarr v3: metadata moves to `zarr.json`, under `attributes.ome` |
 | **v0.6** | Axes move into named coordinate systems, transformations get an explicit `input`/`output`, many more transformation types, and scenes ([RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html)) |
 
