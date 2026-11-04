@@ -247,6 +247,7 @@ class StorageValidatorV06(StorageValidator):
         result: ValidationResult,
     ) -> CoordinateSystem | None:
         """Find coordinate system `name` in the label image at `path`, or add errors."""
+        norm = posixpath.normpath(path)
 
         def _not_in_labels_group() -> None:
             result.add_error(
@@ -256,7 +257,6 @@ class StorageValidatorV06(StorageValidator):
                 ctx={"path": path, "expected": "<labels group>/<label image>"},
             )
 
-        norm = posixpath.normpath(path)
         if _child_head(path) is None:
             _not_in_labels_group()
             return None
@@ -289,7 +289,10 @@ class StorageValidatorV06(StorageValidator):
             StorageErrorType.coordinate_system_path_invalid,
             (*loc, "path"),
             f"Path '{path}' does not contain valid Image ('multiscales') metadata",
-            ctx=_invalid_ctx({"fs_path": _build_fs_path(zarr_group, path)}, model),
+            ctx={
+                "fs_path": _build_fs_path(zarr_group, path),
+                **_invalid_ctx(model),
+            },
         )
         return None
 
@@ -354,16 +357,11 @@ class StorageValidatorV06(StorageValidator):
 
         for t_idx, t in enumerate(scene.coordinateTransformations):
             t_loc = (*scene_loc, "coordinateTransformations", t_idx)
-            start, end = (
-                self._resolve_scene_ref(
-                    zarr_group,
-                    getattr(t, side),
-                    systems,
-                    images,
-                    (*t_loc, side),
-                    result,
-                )
-                for side in ("input", "output")
+            start = self._resolve_scene_ref(
+                zarr_group, t.input, systems, images, (*t_loc, "input"), result
+            )
+            end = self._resolve_scene_ref(
+                zarr_group, t.output, systems, images, (*t_loc, "output"), result
             )
             if start is None or end is None:
                 resolved_all = False
@@ -622,8 +620,10 @@ class StorageValidatorV06(StorageValidator):
             _error("is a Zarr array, but must be a multiscale image group")
             return result
         if not isinstance(model := self._child_model(node), Image):
-            reason = _invalid_ctx({}, model)
-            _error("does not contain valid Image ('multiscales') metadata", **reason)
+            _error(
+                "does not contain valid Image ('multiscales') metadata",
+                **_invalid_ctx(model),
+            )
             return result
         result = result.merge(self._visit_image(node, model, (*loc, "path")))
 

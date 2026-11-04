@@ -57,13 +57,11 @@ def _build_fs_path(zarr_group: ZarrGroup, relative_path: str = "") -> str:
     return full_path or store_path.split("/")[-1]
 
 
-def _invalid_ctx(ctx: dict, model: Any) -> dict:
-    """Add the error raised parsing `model`, or else its (unexpected) type, to `ctx`."""
+def _invalid_ctx(model: Any) -> dict:
+    """Error ctx for metadata that isn't the expected model: the error, or its type."""
     if isinstance(model, Exception):
-        ctx["error"] = model
-    else:
-        ctx["type"] = type(model).__name__
-    return ctx
+        return {"error": model}
+    return {"type": type(model).__name__}
 
 
 class StorageValidator:
@@ -275,7 +273,7 @@ class StorageValidator:
                 )
                 continue
 
-            # (a LabelImage, or at least an Image: see below)
+            # (validate as an Image here; LabelImage is checked below)
             label_image_model = self._child_model(label_group)
             if not isinstance(label_image_model, self.Image):
                 result.add_error(
@@ -283,7 +281,7 @@ class StorageValidator:
                     label_loc,
                     f"Label path '{label_path}' does not contain "
                     "valid Image ('multiscales') metadata",
-                    ctx=_invalid_ctx({"path": label_path}, label_image_model),
+                    ctx={"path": label_path, **_invalid_ctx(label_image_model)},
                 )
                 continue
 
@@ -457,7 +455,7 @@ class StorageValidator:
                     StorageErrorType.well_invalid,
                     well_loc,
                     f"Well path '{well.path}' does not contain valid Well metadata",
-                    ctx=_invalid_ctx({"path": well.path}, well_model),
+                    ctx={"path": well.path, **_invalid_ctx(well_model)},
                 )
 
         return result
@@ -545,7 +543,7 @@ class StorageValidator:
                     field_loc,
                     f"Field path '{field_image.path}' does not contain "
                     "valid Image metadata",
-                    ctx=_invalid_ctx({"fs_path": fs_path}, field_model),
+                    ctx={"fs_path": fs_path, **_invalid_ctx(field_model)},
                 )
 
         return result
@@ -615,7 +613,7 @@ class StorageValidator:
                     image_loc,
                     f"Bioformats2raw path '{path}' does not contain "
                     "valid Image metadata",
-                    ctx=_invalid_ctx({"path": path}, image_model),
+                    ctx={"path": path, **_invalid_ctx(image_model)},
                 )
 
         return result
@@ -675,7 +673,7 @@ class StorageValidator:
                     series_loc,
                     f"Series path '{series_path}' does not contain "
                     "valid Image metadata",
-                    ctx=_invalid_ctx({"path": series_path}, series_model),
+                    ctx={"path": series_path, **_invalid_ctx(series_model)},
                 )
 
         return result
@@ -861,11 +859,6 @@ class StorageValidator:
                     )
 
         return result
-
-
-# ----------------------------------------------------------
-# HELPER FUNCTIONS
-# ----------------------------------------------------------
 
 
 def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup | None:

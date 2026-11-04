@@ -257,8 +257,8 @@ class Multiscale(_BaseModel):
         check_transform_lengths(
             self.datasets, self.coordinateTransformations, self.ndim
         )
-        # The "paths" of the datasets MUST be be ordered from the highest resolution to
-        # the lowest resolution (i.e. largest to smallest
+        # The "paths" of the datasets MUST be ordered from the highest resolution to
+        # the lowest resolution (i.e. largest to smallest)
         space = [i for i, ax in enumerate(self.axes) if ax.type == "space"]
         check_resolution_order(
             [tuple(ds.scale_transform.scale[i] for i in space) for ds in self.datasets]
