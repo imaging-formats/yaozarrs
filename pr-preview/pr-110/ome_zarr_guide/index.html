@@ -2271,7 +2271,7 @@ dumping multiple series (commonly found in image formats supported by
 <p class="admonition-title">Image Location Rules</p>
 <ol>
 <li>If <code>plate</code> metadata exists → use plate structure</li>
-<li>If <code>series</code> attribute exists in <code>OME/.zattrs</code> → paths must match OME-XML Image element order</li>
+<li>If <code>series</code> attribute exists in the <code>OME</code> group → paths must match OME-XML Image element order</li>
 <li>Otherwise → consecutively numbered groups: <code>0/</code>, <code>1/</code>, <code>2/</code>...</li>
 </ol>
 </div>
@@ -2527,8 +2527,8 @@ and community hackathons.  Along the way, the spec itself moved from
     intentional</a>, though not everyone
     agrees, and it didn't make it into the changelog.)</li>
 <li><strong><code>scale</code> and <code>translation</code> parameters must be inline JSON.</strong>  v0.5 also
-    allowed storing them in a Zarr array (with <code>path</code>); v0.6 doesn't.  (One
-    leftover line in the spec's summary table still says otherwise.)</li>
+    allowed storing them at a <code>path</code>; v0.6 doesn't.  (The spec's summary table
+    still says otherwise.)</li>
 <li><strong>Field of view paths in a well</strong> follow Zarr's node name rules, rather than
     being strictly alphanumeric.  See <a href="#well-metadata">Well Metadata</a>.</li>
 <li><strong>No more nested <code>version</code> keys.</strong>  The v0.5 text still required a
@@ -2560,7 +2560,7 @@ metadata.</p>
 <li><a href="https://ngff.openmicroscopy.org/rfc/3/index.html">RFC-3</a>: removing the
   axis restrictions (more than 5 dimensions, etc...)</li>
 <li><a href="https://ngff.openmicroscopy.org/rfc/4/index.html">RFC-4</a>: anatomical
-  orientation of axes</li>
+  orientation of axes (accepted, but not in the spec yet)</li>
 <li><a href="https://ngff.openmicroscopy.org/rfc/8/index.html">RFC-8</a>: collections</li>
 <li><a href="https://ngff.openmicroscopy.org/rfc/9/index.html">RFC-9</a>: zipped OME-Zarr</li>
 </ul>

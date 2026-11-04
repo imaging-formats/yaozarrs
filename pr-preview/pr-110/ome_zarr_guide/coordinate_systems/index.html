@@ -1246,7 +1246,7 @@ viewing and processing unless a use case dictates otherwise".</p>
 <span class="p">}</span>
 </code></pre></div>
 <p>Here, the intrinsic coordinate system is called <code>physical</code>, but the name is up
-to you.  (The spec's examples use <code>physical</code> or <code>intrinsic</code>;
+to you.  (The spec's examples mostly use <code>physical</code> or <code>intrinsic</code>;
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
 
 
@@ -1373,7 +1373,7 @@ other directly.  (A path through a transformation that can't be inverted
 still counts.)</p>
 </div>
 <p>To get from any coordinate system to any other, follow the arrows (or walk them
-backwards, inverting the transformations as you go), composing the
+backwards, where they can be inverted), composing the
 transformations along the way.</p>
 <p>Pick an example below, then click on an arrow (or a coordinate system) to see
 its metadata, and which <code>zarr.json</code> it's stored in:</p>
@@ -1383,7 +1383,7 @@ its metadata, and which <code>zarr.json</code> it's stored in:</p>
 <p>v0.6 defines 12 types of transformations: <code>identity</code>, <code>scale</code>, <code>translation</code>,
 <code>sequence</code>, <code>mapAxis</code>, <code>affine</code>, <code>rotation</code>, <code>byDimension</code>, <code>projectAxis</code>,
 <code>bijection</code>, <code>displacements</code> and <code>coordinates</code>.  Readers <strong>MUST</strong> parse the
-first four (for <code>sequence</code>, sequences of those), and <strong>SHOULD</strong> understand
+first four (for <code>sequence</code>, sequences of those), and <strong>SHOULD</strong> parse
 <code>mapAxis</code>, <code>affine</code>, <code>rotation</code> and <code>byDimension</code>.  Actually <em>applying</em>
 transformations to points or images is a <strong>SHOULD</strong>.  See the
 <a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">spec</a> for
