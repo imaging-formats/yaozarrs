@@ -94,6 +94,10 @@ class _OMEDocument(_BaseModel):
     version-independent `validate_ome_*` functions (which can't guess it).
     """
 
+    if TYPE_CHECKING:
+        # (each version declares its own `version` field, as a `Literal`)
+        version: Any
+
     @model_validator(mode="before")
     @classmethod
     def _require_version(cls, data: Any, info: ValidationInfo) -> Any:
