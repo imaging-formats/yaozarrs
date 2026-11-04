@@ -125,28 +125,13 @@ def _calculate_auto_chunks(
     - Iteratively halve largest spatial dimension until under target size
     """
     target_elements = (target_mb * 1024 * 1024) // dtype_itemsize
-    chunks = list(shape)
-    ndim = len(chunks)
-
-    # Set non-spatial dims to 1 (assume last 2-3 are spatial)
-    n_spatial = min(3, ndim)
-    for i in range(ndim - n_spatial):
-        chunks[i] = 1
-
-    # Work on spatial dimensions
-    spatial_start = ndim - n_spatial
-    spatial_chunks = [shape[i] for i in range(spatial_start, ndim)]
-
-    # Iteratively halve largest dimension
-    while math.prod(spatial_chunks) > target_elements and max(spatial_chunks) > 1:
-        max_idx = spatial_chunks.index(max(spatial_chunks))
-        spatial_chunks[max_idx] = max(1, spatial_chunks[max_idx] // 2)
-
-    # Apply back
-    for i, val in enumerate(spatial_chunks):
-        chunks[spatial_start + i] = val
-
-    return tuple(chunks)
+    # (the last 3 dims, or all if fewer, are taken to be spatial)
+    n_non_spatial = max(0, len(shape) - 3)
+    spatial = list(shape[n_non_spatial:])
+    while math.prod(spatial) > target_elements and max(spatial) > 1:
+        i = spatial.index(max(spatial))
+        spatial[i] = max(1, spatial[i] // 2)
+    return (1,) * n_non_spatial + tuple(spatial)
 
 
 # ######################## Array Creation Functions #############################
@@ -167,7 +152,6 @@ def _create_array_zarr(
     import zarr
     from zarr.codecs import BloscCodec, BytesCodec, ZstdCodec
 
-    # Configure compression codecs
     serializer = BytesCodec(endian="little")
     if compression == "blosc-zstd":
         compressors = (BloscCodec(cname="zstd", clevel=3, shuffle="shuffle"),)
@@ -208,25 +192,21 @@ def _create_array_tensorstore(
     """Create zarr array using tensorstore, return store object."""
     import tensorstore as ts
 
-    # Configure compression codecs
     if compression == "blosc-zstd":
         chunk_codecs = [
-            {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}},
+            {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}}
         ]
     elif compression == "blosc-lz4":
         chunk_codecs = [
-            {"name": "blosc", "configuration": {"cname": "lz4", "clevel": 5}},
+            {"name": "blosc", "configuration": {"cname": "lz4", "clevel": 5}}
         ]
     elif compression == "zstd":
-        chunk_codecs = [
-            {"name": "zstd", "configuration": {"level": 3}},
-        ]
+        chunk_codecs = [{"name": "zstd", "configuration": {"level": 3}}]
     elif compression == "none":
         chunk_codecs = []
     else:
         raise ValueError(f"Unknown compression: {compression}")
 
-    # Build codec chain and chunk layout
     codecs = chunk_codecs
     chunk_layout = {"chunk": {"shape": list(chunks)}}
     if shards is not None:
@@ -260,8 +240,7 @@ def _create_array_tensorstore(
         "create": True,
         "delete_existing": overwrite,
     }
-    store = ts.open(spec).result()
-    return store
+    return ts.open(spec).result()
 
 
 def _align_dask_chunks(data: da.Array, unit: tuple[int, ...]) -> da.Array:
@@ -351,28 +330,27 @@ def _get_create_func(writer: str | CreateArrayFunc) -> CreateArrayFunc:
         )
 
     if writer == "tensorstore":
-        if importlib.util.find_spec("tensorstore"):
-            return _create_array_tensorstore
-        elif writer == "tensorstore":
+        if not importlib.util.find_spec("tensorstore"):
             raise ImportError(
                 "tensorstore is required for the 'tensorstore' writer. "
                 "Please pip install with yaozarrs[write-tensorstore]"
             )
-    elif writer == "zarr":
-        if importlib.util.find_spec("zarr"):
-            zarr_version_str = importlib.metadata.version("zarr")
-            zarr_major_version = int(zarr_version_str.split(".")[0])
-            if zarr_major_version < 3 and writer in {"zarr"}:
-                raise ImportError(
-                    f"zarr v3 or higher is required for OME-Zarr writing, "
-                    f"but zarr v{zarr_version_str} is installed. "
-                    "Please upgrade zarr to v3 or higher."
-                )
-            return _create_array_zarr
-        raise ImportError(
-            "zarr-python is required for the 'zarr' writer. "
-            "Please pip install with yaozarrs[write-zarr]"
-        )
+        return _create_array_tensorstore
+
+    if writer == "zarr":
+        if not importlib.util.find_spec("zarr"):
+            raise ImportError(
+                "zarr-python is required for the 'zarr' writer. "
+                "Please pip install with yaozarrs[write-zarr]"
+            )
+        zarr_version_str = importlib.metadata.version("zarr")
+        if int(zarr_version_str.split(".")[0]) < 3:
+            raise ImportError(
+                f"zarr v3 or higher is required for OME-Zarr writing, "
+                f"but zarr v{zarr_version_str} is installed. "
+                "Please upgrade zarr to v3 or higher."
+            )
+        return _create_array_zarr
 
     raise ValueError(
         f"Unknown writer option: {writer}.  "

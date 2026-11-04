@@ -36,7 +36,6 @@ Notes specific to v0.6:
 from __future__ import annotations
 
 import posixpath
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, overload
 
@@ -55,7 +54,9 @@ from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
     PlateBuilderBase,
+    _BuilderBase,
     _check_image_args,
+    _Default,
     _prepare_image,
     _write_bioformats2raw,
     _write_image,
@@ -100,12 +101,6 @@ if TYPE_CHECKING:
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
     # (an image added to a SceneBuilder: its dataset specs and array options)
     AddedImage: TypeAlias = tuple[Image, ShapeAndDTypeOrPyramid, dict[str, Any]]
-
-
-class _Default(Enum):
-    """Sentinel for a per-image setting that defaults to the builder's."""
-
-    BUILDER = "builder"
 
 
 # ######################## Public API ##########################################
@@ -1208,7 +1203,7 @@ class LabelsBuilder(LabelsBuilderBase[LabelImage]):
         )
 
 
-class SceneBuilder:
+class SceneBuilder(_BuilderBase):
     """Builder for OME-Zarr v0.6 scene hierarchies.
 
     A scene group holds [`Scene`][yaozarrs.v06.Scene] metadata, describing the
@@ -1300,6 +1295,8 @@ class SceneBuilder:
     >>> arrays["b/0"][:] = np.zeros((32, 32), dtype=np.uint16)
     """
 
+    _image_type = Image
+
     def __init__(
         self,
         dest: str | PathLike,
@@ -1313,19 +1310,20 @@ class SceneBuilder:
         compression: CompressionName = "blosc-zstd",
     ) -> None:
         _check_model(scene, Scene, "scene: ")
-        self._dest = Path(dest)
+        super().__init__(
+            Path(dest),
+            writer=writer,
+            chunks=chunks,
+            shards=shards,
+            overwrite=overwrite,
+            compression=compression,
+        )
         self._scene = scene
         self._extra_attributes = extra_attributes
-        self._writer: ZarrWriter = writer
-        self._chunks: ShapeLike | Literal["auto"] | None = chunks
-        self._shards = shards
-        self._overwrite = overwrite
-        self._compression: CompressionName = compression
 
         # For prepare-only workflow: {path: (image, dataset_specs, array_options)}
         self._images: dict[str, AddedImage] = {}
         # For immediate write workflow: {path: image}
-        self._initialized = False
         self._written_images: dict[str, Image] = {}
 
     @property
@@ -1387,15 +1385,14 @@ class SceneBuilder:
 
         self._ensure_initialized()
         _ensure_parent_groups(self._dest, path)
-        _write_image(
-            self._dest / path,
+        self._write(
             image,
             datasets,
-            image_type=Image,
-            writer=self._writer,
-            overwrite=self._overwrite,
+            path,
             progress=progress,
-            **self._array_options(chunks, shards, compression),
+            chunks=chunks,
+            shards=shards,
+            compression=compression,
         )
         self._written_images[path] = image
         return self
@@ -1487,17 +1484,7 @@ class SceneBuilder:
         all_arrays: dict[str, Any] = {}
         for path, (image, specs, options) in self._images.items():
             _ensure_parent_groups(self._dest, path)
-            _, arrays = _prepare_image(
-                self._dest / path,
-                image,
-                specs,
-                image_type=Image,
-                writer=self._writer,
-                overwrite=self._overwrite,
-                **options,
-            )
-            for dataset_path, arr in arrays.items():
-                all_arrays[f"{path}/{dataset_path}"] = arr
+            all_arrays.update(self._prepare(image, specs, path, **options))
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
@@ -1505,21 +1492,6 @@ class SceneBuilder:
         return f"<{self.__class__.__name__}: {total_images} images>"
 
     # ------------------ Internal methods ------------------
-
-    def _array_options(
-        self,
-        chunks: ShapeLike | Literal["auto"] | _Default | None,
-        shards: ShapeLike | _Default | None,
-        compression: CompressionName | _Default,
-    ) -> dict[str, Any]:
-        """Resolve per-image array settings, falling back to the builder's."""
-        return {
-            "chunks": self._chunks if chunks is _Default.BUILDER else chunks,
-            "shards": self._shards if shards is _Default.BUILDER else shards,
-            "compression": (
-                self._compression if compression is _Default.BUILDER else compression
-            ),
-        }
 
     def _check_image(
         self,
@@ -1544,11 +1516,11 @@ class SceneBuilder:
                 raise ValueError(
                     f"Image '{path}' can't be nested in (or contain) image '{other}'."
                 )
-        options = self._array_options(chunks, shards, self._compression)
+        options = self._array_options(chunks, shards)
         return _check_image_args(
             image,
             datasets,
-            Image,
+            self._image_type,
             f"Image '{path}': ",
             options["chunks"],
             options["shards"],
@@ -1569,13 +1541,12 @@ class SceneBuilder:
 
 
 def _check_image_path(path: str) -> None:
-    # (the path of each node below the scene group: Zarr node names must be
-    # non-empty, not only periods, and not start with "__")
-    # (and "zarr.json" would collide with a group's own metadata)
-    parts = path.split("/")
+    # (each part is the name of a node below the scene group: Zarr node names must be
+    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
+    # collide with a group's own metadata)
     if any(
         not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
-        for p in parts
+        for p in path.split("/")
     ):
         raise ValueError(
             f"Invalid image path {path!r}: each part must be a valid Zarr node name "
