@@ -1,6 +1,7 @@
 """Units recommended by the spec for space and time axes (from UDUNITS-2)."""
 
 import warnings
+from collections.abc import Callable
 from typing import Annotated, Literal, TypeAlias
 
 from pydantic import AfterValidator
@@ -64,35 +65,26 @@ ValidTimeUnit: TypeAlias = Literal[
 ]
 
 
-_VALID_SPACE_UNITS = get_args(ValidSpaceUnit)
-_VALID_TIME_UNITS = get_args(ValidTimeUnit)
+def _warn_if_not_one_of(kind: str, valid: tuple[str, ...]) -> Callable[[str], str]:
+    def _warn(v: str) -> str:
+        if v not in valid:
+            warnings.warn(
+                f"Warning: {kind} axis unit {v!r}, SHOULD be one of {valid}",
+                ValidationWarning,
+                stacklevel=3,
+            )
+        return v
 
-
-def _warn_if_not_space_unit(v: str) -> str:
-    if v not in _VALID_SPACE_UNITS:
-        warnings.warn(
-            f"Warning: Space axis unit {v!r}, SHOULD be one of {_VALID_SPACE_UNITS}",
-            ValidationWarning,
-            stacklevel=3,
-        )
-    return v
-
-
-def _warn_if_not_time_unit(v: str) -> str:
-    if v not in _VALID_TIME_UNITS:
-        warnings.warn(
-            f"Warning: Time axis unit {v!r}, SHOULD be one of {_VALID_TIME_UNITS}",
-            ValidationWarning,
-            stacklevel=3,
-        )
-    return v
+    return _warn
 
 
 # these Annotated types give type hinting and IDE autocompletion,
 # but still fallback to string (with a warning) for unrecognized units
 SpaceUnits: TypeAlias = Annotated[
-    ValidSpaceUnit | str, AfterValidator(_warn_if_not_space_unit)
+    ValidSpaceUnit | str,
+    AfterValidator(_warn_if_not_one_of("Space", get_args(ValidSpaceUnit))),
 ]
 TimeUnits: TypeAlias = Annotated[
-    ValidTimeUnit | str, AfterValidator(_warn_if_not_time_unit)
+    ValidTimeUnit | str,
+    AfterValidator(_warn_if_not_one_of("Time", get_args(ValidTimeUnit))),
 ]

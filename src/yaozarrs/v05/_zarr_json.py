@@ -275,9 +275,8 @@ from typing import Annotated, Any, Literal, TypeAlias
 from pydantic import BaseModel, ConfigDict, Discriminator, Tag
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
-from yaozarrs.v05._bf2raw import Bf2Raw
 
-from ._bf2raw import Series
+from ._bf2raw import Bf2Raw, Series
 from ._image import Image
 from ._labels import LabelImage, LabelsGroup
 from ._plate import Plate, Well

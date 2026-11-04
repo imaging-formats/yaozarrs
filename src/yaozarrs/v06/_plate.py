@@ -25,10 +25,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "FieldOfView",
 ]
 
-# ------------------------------------------------------------------------------
-# Plate model (top-level)
-# ------------------------------------------------------------------------------
-
 
 class Plate(_OMEDocument):
     """Top-level plate metadata for high-content screening.
@@ -74,11 +70,6 @@ class Plate(_OMEDocument):
             "Marker indicating this plate was created by bioformats2raw version 3"
         ),
     )
-
-
-# ------------------------------------------------------------------------------
-# Well model
-# ------------------------------------------------------------------------------
 
 
 def _validate_fov_path(path: str) -> str:
