@@ -464,10 +464,26 @@ def test_unknown_keys_of_intrinsic_coordinate_system_warn() -> None:
         convert_version(src, "0.5")
 
 
-def test_unknown_keys_of_rebuilt_transformations_warn() -> None:
+def test_unknown_keys_of_dataset_transformations_survive() -> None:
     ms = _multiscale_05()
-    ms["datasets"][0]["coordinateTransformations"][0][UNKNOWN_KEY] = 1
+    ms["datasets"][0]["coordinateTransformations"] = [
+        {"type": "scale", "scale": [1.0, 0.5, 0.5], UNKNOWN_KEY: 1},
+        {"type": "translation", "translation": [0.0, 1.0, 1.0], UNKNOWN_KEY: 2},
+    ]
     src = v05.Image.model_validate({"multiscales": [ms]})
+    upgraded = convert_version(src, "0.6")  # (warnings are errors)
+    (sequence,) = upgraded.multiscales[0].datasets[0].coordinateTransformations
+    steps = sequence.transformations  # type: ignore[union-attr]
+    assert [t.model_extra for t in steps] == [{UNKNOWN_KEY: 1}, {UNKNOWN_KEY: 2}]
+    assert convert_version(upgraded, "0.5").model_dump() == src.model_dump()
+
+
+def test_unknown_keys_of_multiscale_transformations_warn() -> None:
+    # (they're folded into each dataset's transformation, so have nowhere to go)
+    overall = [{"type": "scale", "scale": [1.0, 2.0, 2.0], UNKNOWN_KEY: 1}]
+    src = v05.Image.model_validate(
+        {"multiscales": [_multiscale_05(coordinateTransformations=overall)]}
+    )
     with pytest.warns(ConversionWarning, match=f"transformation key '{UNKNOWN_KEY}'"):
         convert_version(src, "0.6")
 

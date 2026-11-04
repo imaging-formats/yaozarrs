@@ -85,11 +85,15 @@ def _multiscale_05_06(ms: dict, coordinate_system: str, dropped: list[str]) -> d
 def _dataset_05_06(
     ds: dict, overall: dict, coordinate_system: str, dropped: list[str]
 ) -> dict:
-    _drop_unknown_transform_keys(
-        ds["coordinateTransformations"], _V05_TRANSFORM_KEYS, dropped
-    )
-    params = _transform_params_05(ds["coordinateTransformations"])
-    scale, translation = params["scale"], params.get("translation")
+    # (the new scale and translation start from the old ones, to keep their unknown
+    # keys; except any named like a v0.6 field, which would become that field)
+    old = {}
+    for t in ds["coordinateTransformations"]:
+        clash = t.keys() & set(_V06_ONLY_TRANSFORM_KEYS)
+        dropped.extend(f"transformation key {key!r}" for key in clash)
+        old[t["type"]] = {k: v for k, v in t.items() if k not in clash}
+    scale = old["scale"]["scale"]
+    translation = old.get("translation", {}).get("translation")
     if overall:
         # multiscale transformations are "applied after" those of the datasets, and
         # the intrinsic coordinate system is the image's native physical one, so they
@@ -106,13 +110,14 @@ def _dataset_05_06(
             ]
         scale = [g * s for g, s in zip(g_scale, scale)]
 
-    transform: dict[str, Any] = {"type": "scale", "scale": scale}
+    transform: dict[str, Any] = {**old["scale"], "scale": scale}
     if translation is not None:
+        old_translation = old.get("translation", {"type": "translation"})
         transform = {
             "type": "sequence",
             "transformations": [
                 transform,
-                {"type": "translation", "translation": translation},
+                {**old_translation, "translation": translation},
             ],
         }
     transform["input"] = {"path": ds["path"]}
