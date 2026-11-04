@@ -1367,7 +1367,7 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 
 !!! info "Image Location Rules"
     1. If `plate` metadata exists → use plate structure
-    2. If `series` attribute exists in `OME/.zattrs` → paths must match OME-XML Image element order
+    2. If `series` attribute exists in the `OME` group → paths must match OME-XML Image element order
     3. Otherwise → consecutively numbered groups: `0/`, `1/`, `2/`...
 
 ---
@@ -1638,8 +1638,8 @@ Here's what changed, roughly in order of how likely it is to affect you:
     intentional](https://github.com/ome/ngff/issues/645), though not everyone
     agrees, and it didn't make it into the changelog.)
 11. **`scale` and `translation` parameters must be inline JSON.**  v0.5 also
-    allowed storing them in a Zarr array (with `path`); v0.6 doesn't.  (One
-    leftover line in the spec's summary table still says otherwise.)
+    allowed storing them at a `path`; v0.6 doesn't.  (The spec's summary table
+    still says otherwise.)
 12. **Field of view paths in a well** follow Zarr's node name rules, rather than
     being strictly alphanumeric.  See [Well Metadata](#well-metadata).
 13. **No more nested `version` keys.**  The v0.5 text still required a
@@ -1673,7 +1673,7 @@ metadata.
     - [RFC-3](https://ngff.openmicroscopy.org/rfc/3/index.html): removing the
       axis restrictions (more than 5 dimensions, etc...)
     - [RFC-4](https://ngff.openmicroscopy.org/rfc/4/index.html): anatomical
-      orientation of axes
+      orientation of axes (accepted, but not in the spec yet)
     - [RFC-8](https://ngff.openmicroscopy.org/rfc/8/index.html): collections
     - [RFC-9](https://ngff.openmicroscopy.org/rfc/9/index.html): zipped OME-Zarr
 

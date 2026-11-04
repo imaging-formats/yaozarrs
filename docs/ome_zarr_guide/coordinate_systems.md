@@ -199,7 +199,7 @@ viewing and processing unless a use case dictates otherwise".
 ```
 
 Here, the intrinsic coordinate system is called `physical`, but the name is up
-to you.  (The spec's examples use `physical` or `intrinsic`;
+to you.  (The spec's examples mostly use `physical` or `intrinsic`;
 [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] uses `"intrinsic"`
 unless you pass `coordinate_system=...`).
 
@@ -335,7 +335,7 @@ it:
     still counts.)
 
 To get from any coordinate system to any other, follow the arrows (or walk them
-backwards, inverting the transformations as you go), composing the
+backwards, where they can be inverted), composing the
 transformations along the way.
 
 Pick an example below, then click on an arrow (or a coordinate system) to see
@@ -350,7 +350,7 @@ its metadata, and which `zarr.json` it's stored in:
 v0.6 defines 12 types of transformations: `identity`, `scale`, `translation`,
 `sequence`, `mapAxis`, `affine`, `rotation`, `byDimension`, `projectAxis`,
 `bijection`, `displacements` and `coordinates`.  Readers **MUST** parse the
-first four (for `sequence`, sequences of those), and **SHOULD** understand
+first four (for `sequence`, sequences of those), and **SHOULD** parse
 `mapAxis`, `affine`, `rotation` and `byDimension`.  Actually *applying*
 transformations to points or images is a **SHOULD**.  See the
 [spec](https://ngff.openmicroscopy.org/specifications/0.6/index.html) for
