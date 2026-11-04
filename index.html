@@ -1102,7 +1102,7 @@ description [context]
 <p>An example validation error (for a file that has <em>many</em> problems):</p>
 <div class="language-bash highlight"><pre><span></span><code>uvx<span class="w"> </span><span class="s2">"yaozarrs[io]"</span><span class="w"> </span>validate<span class="w"> </span>https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
 </code></pre></div>
-<div class="language-text highlight"><pre><span></span><code>yaozarrs._storage.StorageValidationError: 14 validation error(s) for StorageValidationError
+<div class="language-text highlight"><pre><span></span><code>yaozarrs.StorageValidationError: 14 validation error(s) for StorageValidationError
 ome.plate.wells.0.well.images.0.multiscales.0.datasets.0.path
 Dataset path '0' not found in zarr group [type=dataset_path_not_found, fs_path='broken_v05.ome.zarr/A/1/0/0', expected='zarr array']
 
