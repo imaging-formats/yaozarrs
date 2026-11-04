@@ -2168,7 +2168,9 @@ that discusses potential future standards for collections, and
 topic (still under review).  But as of v0.6, there is no official spec for
 collections.</p>
 <p>v0.6 <em>does</em> add <a href="#working-with-scenes">scenes</a>, which cover one common
-case: images that share a spatial relationship.</p>
+case: images that share a spatial relationship.  (RFC-8 describes scenes as
+having "partially solved this issue", and aims to fold them into a more
+general collection mechanism in the future.)</p>
 <p>The <a href="https://ngff.openmicroscopy.org/0.5/index.html#bf2raw"><code>"bioformats2raw"</code>
 layout</a> is a
 <em>transitional</em> solution, internally employed by the
@@ -2463,6 +2465,17 @@ Its headline feature is
 by John Bogovic, Davis Bennett, Luca Marconato, Matt McCormick, Stephan Saalfeld
 and Johannes Soltwedel, which "provides first-class support for spatial and
 coordinate transformations in OME-Zarr".</p>
+<p>That work has a long history.  It grew out of community discussions that started
+in early 2022 (<a href="https://github.com/ome/ngff/issues/84">user stories</a>,
+<a href="https://github.com/ome/ngff/issues/94">spaces and transforms</a>,
+<a href="https://github.com/ome/ngff/issues/101">transformation types</a>) and a first
+<a href="https://github.com/ome/ngff/pull/138">proposal PR</a>, and was then refined through
+two rounds of <a href="https://ngff.openmicroscopy.org/rfc/5/reviews/index.html">RFC reviews</a>
+(see also the authors' <a href="https://ngff.openmicroscopy.org/rfc/5/responses/index.html">responses</a>)
+and community hackathons.  Along the way, the spec itself moved from
+<a href="https://github.com/ome/ngff">ome/ngff</a> to its own repository,
+<a href="https://github.com/ome/ngff-spec">ome/ngff-spec</a>
+(<a href="https://github.com/ome/ngff/issues/399">why</a>).</p>
 <p>Here's what changed, roughly in order of how likely it is to affect you:</p>
 <ol>
 <li><strong>Axes now live in named coordinate systems.</strong>  A multiscale no longer has an
@@ -2495,7 +2508,9 @@ coordinate transformations in OME-Zarr".</p>
    <a href="coordinate_systems/#transformation-types">Transformation types</a>.</li>
 <li><strong>Scenes: images that share a spatial relationship.</strong>  A new <code>scene</code>
    group describes how several images relate to each other in space.  See
-   <a href="#working-with-scenes">Working with Scenes</a>.</li>
+   <a href="#working-with-scenes">Working with Scenes</a>.  (The name "scene" was picked at
+   the <a href="https://ngff.openmicroscopy.org/rfc/5/responses/2/index.html">2025 NGFF hackathon</a>,
+   among candidates like "SpatialCollection" and "TransformGroup".)</li>
 <li><strong>Labels can be explicitly lined up with their image</strong>, with a transformation
    in the parent image's metadata.  See <a href="#lining-labels-up-with-the-image-v06">Lining labels up with the
    image</a>.</li>
@@ -2508,8 +2523,9 @@ coordinate transformations in OME-Zarr".</p>
 <li><strong>All resolution levels MUST have the same data type</strong> (in addition to the
    same number of dimensions).</li>
 <li><strong><code>dimension_names</code> are no longer required</strong> on arrays.  v0.5.2 made them a
-    <strong>MUST</strong>; v0.6 doesn't mention them (<a href="https://github.com/ome/ngff/issues/645">confirmed as
-    intentional</a>).</li>
+    <strong>MUST</strong>; v0.6 doesn't mention them.  (This was <a href="https://github.com/ome/ngff/issues/645">confirmed as
+    intentional</a>, though not everyone
+    agrees, and it didn't make it into the changelog.)</li>
 <li><strong><code>scale</code> and <code>translation</code> parameters must be inline JSON.</strong>  v0.5 also
     allowed storing them at a <code>path</code>; v0.6 doesn't.  (The spec's summary table
     still says otherwise.)</li>
@@ -2539,7 +2555,7 @@ wells, and the (still transitional) <code>bioformats2raw.layout</code> and <code
 metadata.</p>
 <details class="info">
 <summary>Still on the horizon</summary>
-<p>These RFCs are <strong>not</strong> part of v0.6:</p>
+<p>A few RFCs that come up a lot are <strong>not</strong> part of v0.6:</p>
 <ul>
 <li><a href="https://ngff.openmicroscopy.org/rfc/3/index.html">RFC-3</a>: removing the
   axis restrictions (more than 5 dimensions, etc...)</li>
