@@ -13,7 +13,7 @@ import pytest
 
 def dd() -> Any:
     try:
-        from yaozarrs import _demo_data
+        import _demo_data
     except Exception:
         pytest.skip("ome-zarr not installed", allow_module_level=True)
     else:

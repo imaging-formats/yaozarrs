@@ -12,7 +12,7 @@ import pytest
 
 collect_ignore = [
     # a test helper that needs `ome-zarr`, and has no doctests
-    "src/yaozarrs/_demo_data.py",
+    "tests/_demo_data.py",
     # scripts for `just test-conformance`, which run when imported
     "tests/conformance",
 ]

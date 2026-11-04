@@ -5,9 +5,9 @@ from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
+from yaozarrs._common._node_names import RelaxedFOVPathName
 from yaozarrs._common._plate import check_plate_layout
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
-from yaozarrs._util import RelaxedFOVPathName
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Plate",

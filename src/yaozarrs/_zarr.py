@@ -692,7 +692,7 @@ class ZarrGroup(ZarrNode):
         StorageValidationError
             If the storage structure is invalid.
         """
-        from yaozarrs._storage import validate_zarr_store
+        from yaozarrs._validate import validate_zarr_store
 
         validate_zarr_store(self, strict=strict)
         return self

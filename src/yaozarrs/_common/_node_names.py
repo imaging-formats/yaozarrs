@@ -1,3 +1,5 @@
+"""Validators for the names of zarr nodes (dataset, field-of-view paths, ...)."""
+
 import os
 import re
 import warnings

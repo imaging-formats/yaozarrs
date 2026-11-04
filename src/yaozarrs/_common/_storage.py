@@ -17,13 +17,13 @@ from urllib.parse import urljoin
 
 from pydantic import ValidationError
 
-from yaozarrs._storage import StorageErrorType, ValidationResult
+from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from yaozarrs._storage import ErrorDetails
+    from yaozarrs._errors import ErrorDetails
 
 Loc: TypeAlias = tuple[int | str, ...]
 

@@ -1,136 +1,21 @@
+"""Errors, warnings, and results reported by yaozarrs validation."""
+
 from __future__ import annotations
 
 import textwrap
-import warnings
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import ValidationError
 from typing_extensions import NotRequired, TypedDict
 
-from yaozarrs._validation_warning import ValidationWarning
-from yaozarrs._zarr import ZarrGroup, open_group
-from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-    from pathlib import Path
+class ValidationWarning(UserWarning):
+    """A warning indicating a potential issue with OME-Zarr storage or metadata."""
 
-
-def validate_zarr_store(
-    obj: ZarrGroup | str | Path | Mapping[str, bytes] | Any,
-    *,
-    strict: bool | None = None,
-) -> ZarrGroup:
-    """Validate both structure and metadata of an OME-Zarr hierarchy.
-
-    !!!important
-        Requires `yaozarrs[io]` or `fsspec` to be installed, unless `obj` is a mapping
-        or a [`yaozarrs.ZarrGroup`][] opened from one.
-
-    This is a high-level function to validate both the metadata and the structure
-    of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
-    CLI command.
-
-    Supports OME-Zarr versions 0.4, 0.5 and 0.6.
-
-    Parameters
-    ----------
-    obj : ZarrGroup | str | Path | Mapping[str, bytes] | Any
-        The zarr store to validate. Can be a URI string, a Path, a ZarrGroup instance,
-        a zarr.Group object (for backwards compatibility), or a mapping of store keys
-        to the bytes of the metadata documents, if you want to do the IO yourself (see
-        [`yaozarrs.open_group`][]).  To validate a single document without a store,
-        use [`yaozarrs.validate_ome_object`][] or [`yaozarrs.validate_ome_json`][].
-    strict : bool | None
-        If `True`, reject metadata that would otherwise be coerced to the right type
-        (e.g. `"1"` for an integer). By default, such metadata is accepted.
-
-    Returns
-    -------
-    ZarrGroup
-        The opened ZarrGroup if validation is successful.
-
-    Raises
-    ------
-    StorageValidationError
-        If the storage structure is invalid.
-    """
-    zarr_group = open_group(obj)
-    ome_version = zarr_group.ome_version()
-    if not ome_version and "ome" in zarr_group.attrs:
-        # (OME metadata, so an invalid OME-Zarr group rather than not one at all)
-        error = ValidationResult().add_error(
-            StorageErrorType.version_missing,
-            ("ome", "version"),
-            "The OME metadata must declare its 'version'",
-        )
-        raise StorageValidationError(error.errors)
-    if not ome_version:
-        raise ValueError(
-            f"Unable to determine OME-Zarr version for {zarr_group}. "
-            "Is this an OME-Zarr group?"
-        )
-
-    if ome_version == "0.5":
-        from yaozarrs.v05._storage import StorageValidatorV05
-
-        Validator = StorageValidatorV05
-    elif ome_version == "0.4":
-        from yaozarrs.v04._storage import StorageValidatorV04
-
-        Validator = StorageValidatorV04
-    elif ome_version in V06_VERSIONS:
-        from yaozarrs.v06._storage import StorageValidatorV06
-
-        Validator = StorageValidatorV06
-
-    else:
-        error = ValidationResult().add_error(
-            StorageErrorType.unsupported_version,
-            ("version",),
-            f"Unsupported OME-Zarr version {ome_version!r}",
-        )
-        raise StorageValidationError(error.errors)
-
-    # Capture RuntimeWarnings from pydantic validators during validation
-    # and convert them to StorageValidationWarning
-    with warnings.catch_warnings(record=True) as captured_warnings:
-        warnings.filterwarnings("always", category=ValidationWarning)
-        result = Validator.validate_group(zarr_group, strict=strict)
-
-    # prepend captured warnings to the result
-    for w in captured_warnings:
-        details: ErrorDetails = {
-            "type": "model_warning",
-            "loc": (),
-            "msg": str(w.message),
-        }
-        result.warnings.insert(0, details)
-
-    # Emit warnings for SHOULD directives from structural validation
-    if result.warnings:
-        # Use a custom formatter to match exception style
-        warning_instance = StorageValidationWarning(result.warnings)
-
-        _original_formatwarning = warnings.formatwarning
-
-        def _custom_formatwarning(message, category, *_, **__) -> str:
-            # Format like an exception: module.Class: message
-            return f"{category.__module__}.{category.__name__}: {message}\n"
-
-        warnings.formatwarning = _custom_formatwarning  # ty: ignore[invalid-assignment]
-        try:
-            warnings.warn(warning_instance, stacklevel=2)
-        finally:
-            warnings.formatwarning = _original_formatwarning
-
-    # Raise error if any validation issues found
-    if not result.is_valid:
-        raise StorageValidationError(result.errors)
-
-    return zarr_group
+    # exported from `yaozarrs`: show the public path in tracebacks and warnings
+    __module__ = "yaozarrs"
 
 
 class ErrorDetails(TypedDict):
@@ -277,6 +162,8 @@ class StorageValidationError(_ValidationMessageMixin, ValueError):
     It contains a list of errors which detail why validation failed.
     """
 
+    __module__ = "yaozarrs"
+
     def __init__(self, errors: list[ErrorDetails]) -> None:
         self._details = errors
         super().__init__(self._format_message())
@@ -310,6 +197,8 @@ class StorageValidationWarning(_ValidationMessageMixin, UserWarning):
 
     It contains a list of warnings which detail recommendations that were not followed.
     """
+
+    __module__ = "yaozarrs"
 
     def __init__(self, warnings_list: list[ErrorDetails] | str) -> None:
         if isinstance(warnings_list, str):

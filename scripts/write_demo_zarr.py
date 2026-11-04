@@ -45,9 +45,16 @@ Create a bioformats2raw-style plate with acquisitions:
 """
 
 import json
+import sys
 from pathlib import Path
 
-from yaozarrs._demo_data import write_ome_image, write_ome_labels, write_ome_plate
+# the demo-data writers live with the tests that use them
+sys.path.insert(0, str(Path(__file__).parent.parent / "tests"))
+from _demo_data import (  # ty: ignore[unresolved-import]
+    write_ome_image,
+    write_ome_labels,
+    write_ome_plate,
+)
 
 
 def main():

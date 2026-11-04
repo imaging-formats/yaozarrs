@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import TypeAdapter
 
 from yaozarrs._common._storage import StorageValidator
-from yaozarrs._storage import StorageErrorType, ValidationResult
+from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._zarr import open_group
 from yaozarrs.v04._bf2raw import Bf2Raw, Series
 from yaozarrs.v04._image import Dataset, Image, Multiscale

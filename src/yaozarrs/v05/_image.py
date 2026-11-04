@@ -5,13 +5,13 @@ from annotated_types import MinLen
 from pydantic import AfterValidator, Field, model_validator
 from typing_extensions import Self
 
-from yaozarrs._axis import AxesList
 from yaozarrs._base import _BaseModel, _OMEDocument
+from yaozarrs._common._axis import AxesList
 from yaozarrs._common._image import check_resolution_order, check_transform_lengths
+from yaozarrs._common._node_names import SuggestDatasetPath
 from yaozarrs._common._omero import Omero
 from yaozarrs._dim_spec import DimSpec, _axes_datasets
 from yaozarrs._types import UniqueList
-from yaozarrs._util import SuggestDatasetPath
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Image",

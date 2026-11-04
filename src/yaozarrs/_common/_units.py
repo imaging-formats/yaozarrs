@@ -7,7 +7,7 @@ from typing import Annotated, Literal, TypeAlias
 from pydantic import AfterValidator
 from typing_extensions import get_args
 
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 ValidSpaceUnit: TypeAlias = Literal[
     "angstrom",

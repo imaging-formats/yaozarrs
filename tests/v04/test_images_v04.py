@@ -751,7 +751,7 @@ def test_v04_omero_models() -> None:
 def test_v04_axis_name_uniqueness_custom_validation() -> None:
     """Test that axis names must be unique - triggers custom validation logic."""
     # Import the validation function directly to test it
-    from yaozarrs._axis import _validate_axes_list
+    from yaozarrs._common._axis import _validate_axes_list
 
     # Create axes with same names but different types to bypass UniqueList
     axes = [
