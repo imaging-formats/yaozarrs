@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs.v04/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs.v05/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs.write.v05/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/installation/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/ome_zarr_explorer/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/ome_zarr_guide/</loc>
+      </url>
+</urlset>
