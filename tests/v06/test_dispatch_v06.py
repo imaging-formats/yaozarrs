@@ -9,9 +9,8 @@ import pytest
 
 import yaozarrs
 from yaozarrs import v05, v06
-from yaozarrs._storage import StorageValidationError
+from yaozarrs._errors import StorageValidationError, ValidationWarning
 from yaozarrs._tree import render_tree
-from yaozarrs._validation_warning import ValidationWarning
 
 if TYPE_CHECKING:
     from pathlib import Path

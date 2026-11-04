@@ -77,16 +77,6 @@ dev = [
     # bump me when running `prek autoupdate`
     "ty==0.0.85",
 ]
-
-old_docs = [
-    "markdown-exec[ansi]>=1.11.0",
-    "griffe-fieldz>=0.4.0",
-    "mkdocs>=1.6.1",
-    "mkdocs-api-autonav>=0.4.0",
-    "mkdocs-material>=9.6.20",
-    "mkdocstrings-python>=1.18.2",
-    "ruff>=0.13.2",
-]
 bench = [
     "numpy>=2",
     "pytest-codspeed>=5.0.4",

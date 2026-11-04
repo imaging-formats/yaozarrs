@@ -14,8 +14,8 @@ from pydantic import (
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._units import SpaceUnits, TimeUnits
+from yaozarrs._errors import ValidationWarning
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
-from yaozarrs._validation_warning import ValidationWarning
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Axis",

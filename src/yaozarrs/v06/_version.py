@@ -3,7 +3,7 @@ from typing import Annotated, Literal, TypeAlias, get_args
 
 from pydantic import AfterValidator
 
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 
 def _warn_prerelease(v: str) -> str:

@@ -6,8 +6,8 @@ import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from yaozarrs import v06
-from yaozarrs._axis import AxesList as V05AxesList
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._common._axis import AxesList as V05AxesList
+from yaozarrs._errors import ValidationWarning
 from yaozarrs.v06._axes import validate_multiscale_axes
 from yaozarrs.v06._coordinate_systems import CoordinateSystemsList
 

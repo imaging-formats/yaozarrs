@@ -5,7 +5,7 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import AfterValidator, ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 
 class OmeroWindow(_BaseModel):

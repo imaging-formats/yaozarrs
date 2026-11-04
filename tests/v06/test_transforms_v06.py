@@ -7,7 +7,7 @@ import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from yaozarrs import v06
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 from yaozarrs.v06._transforms import check_transform_ndim
 
 TRANSFORM = TypeAdapter(v06.CoordinateTransformation)

@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from yaozarrs import v06
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 COLUMNS = [{"name": "1"}, {"name": "2"}]
 ROWS = [{"name": "A"}, {"name": "B"}]

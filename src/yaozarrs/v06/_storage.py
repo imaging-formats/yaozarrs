@@ -12,7 +12,7 @@ import posixpath
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 from yaozarrs._common._storage import StorageValidator, _build_fs_path, _invalid_ctx
-from yaozarrs._storage import StorageErrorType, ValidationResult
+from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._validate import validate_ome_object, validate_ome_uri
 from yaozarrs._zarr import ZarrArray, ZarrGroup
 from yaozarrs.v06._bf2raw import Bf2Raw, Series
