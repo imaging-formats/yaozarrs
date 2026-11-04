@@ -269,3 +269,8 @@ def test_bf2raw_layout_defaults_to_3(mod: Any) -> None:
     doc = {} if mod is v04 else {"version": mod.Bf2Raw().version}
     with pytest.raises(ValidationError):
         yaozarrs.validate_ome_object(doc)
+
+
+def test_validation_warning_is_a_user_warning() -> None:
+    # (so the usual `UserWarning` filters catch it, like yaozarrs' other warnings)
+    assert issubclass(ValidationWarning, UserWarning)
