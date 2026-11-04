@@ -611,3 +611,26 @@ def test_dataset_path_warns_on_risky_characters() -> None:
             path="__thing",  # invalid name according to zarr spec itself
             coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],
         )
+
+
+@pytest.mark.parametrize("scale_len, translation_len", [(2, 3), (3, 2)])
+def test_transform_lengths_must_match(scale_len: int, translation_len: int) -> None:
+    """Scale and translation must have the same length, even without the axes."""
+    transforms = [scale_tform(scale_len), translate_tform(translation_len)]
+    match = "scale and translation transformations must have the same length"
+    with pytest.raises(ValidationError, match=match):
+        v05.Dataset(path="0", coordinateTransformations=transforms)
+
+    # (in a multiscale this was already an error, against its axes: now it's
+    # reported at the transformation list, of a dataset or of the multiscale)
+    axes = [Y_AXIS, X_AXIS]
+    datasets = [{"path": "0", "coordinateTransformations": transforms}]
+    with pytest.raises(ValidationError, match=match) as e:
+        v05.Multiscale(axes=axes, datasets=datasets)
+    assert e.value.errors()[0]["loc"] == ("datasets", 0, "coordinateTransformations")
+    datasets = [{"path": "0", "coordinateTransformations": [scale_tform(2)]}]
+    with pytest.raises(ValidationError, match=match) as e:
+        v05.Multiscale(
+            axes=axes, datasets=datasets, coordinateTransformations=transforms
+        )
+    assert e.value.errors()[0]["loc"] == ("coordinateTransformations",)

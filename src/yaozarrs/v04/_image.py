@@ -116,6 +116,15 @@ def _validate_transforms_list(
                 "the scale transformation."
             )
 
+    # The length of the scale and translation array MUST be the same as the length of
+    # "axes" (checked by Multiscale), so they must also match each other.
+    if len({t.ndim for t in transforms}) > 1:
+        lengths = ", ".join(f"{t.type} has {t.ndim}" for t in transforms)
+        raise ValueError(
+            "The scale and translation transformations must have the same length "
+            f"(one value per axis), but {lengths}."
+        )
+
     return transforms
 
 
