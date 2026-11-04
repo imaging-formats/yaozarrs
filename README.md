@@ -184,6 +184,7 @@ print(type(convert_version(image, "0.6")))
 Metadata that the target version can't express is dropped with a
 `ConversionWarning`, which you can turn into an error using
 `warnings.filterwarnings("error", category=yaozarrs.ConversionWarning)`.
+Keys the spec doesn't define are carried over as they are.
 
 > [!NOTE]
 > This converts metadata only: no store is read or written. v0.5 and v0.6 stores

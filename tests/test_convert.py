@@ -407,17 +407,31 @@ def test_conversion_warning_can_be_an_error() -> None:
             convert_version(src, "0.5")
 
 
-def test_label_color_extras_warn_only_for_v04() -> None:
+def test_label_color_extras_survive() -> None:
     colors = [{"label-value": 1, "rgba": [1, 2, 3, 4], "note": "x"}]
     src = v05.LabelImage.model_validate(
         {"multiscales": [_multiscale_05()], "image-label": {"colors": colors}}
     )
-    upgraded = convert_version(src, "0.6")  # no warning
-    assert upgraded.model_dump()["image-label"]["colors"] == colors
-    with pytest.warns(ConversionWarning, match="label color key 'note'"):
-        convert_version(src, "0.4")
-    with pytest.warns(ConversionWarning, match="label color key 'note'"):
-        convert_version(upgraded, "0.4")
+    for version in ("0.4", "0.6"):  # (warnings are errors)
+        converted = convert_version(src, version)
+        assert converted.model_dump()["image-label"]["colors"] == colors
+
+
+def test_unknown_keys_survive() -> None:
+    ms = {**_multiscale_05(), "tool:key": 1}
+    src = v05.Image.model_validate({"multiscales": [ms], "_creator": {"name": "me"}})
+    for version in ("0.4", "0.6"):  # (warnings are errors)
+        dumped = convert_version(src, version).model_dump()
+        assert dumped["_creator"] == {"name": "me"}
+        assert dumped["multiscales"][0]["tool:key"] == 1
+
+
+def test_unknown_keys_of_rebuilt_transformations_warn() -> None:
+    ms = _multiscale_05()
+    ms["datasets"][0]["coordinateTransformations"][0]["tool:key"] = 1
+    src = v05.Image.model_validate({"multiscales": [ms]})
+    with pytest.warns(ConversionWarning, match="transformation key 'tool:key'"):
+        convert_version(src, "0.6")
 
 
 def test_scene_cannot_be_downgraded() -> None:

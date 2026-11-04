@@ -86,9 +86,9 @@ def test_label_properties_keep_extra_keys() -> None:
 
 
 def test_image_label_has_no_version() -> None:
-    # v0.6 removed `image-label.version`; a stray one (from 0.5) is ignored
+    # v0.6 removed `image-label.version`; a stray one (from 0.5) is an unknown key
     img = v06.LabelImage.model_validate(label_image({"version": "0.5"}))
-    assert "version" not in img.model_dump(mode="json")["image-label"]
+    assert img.image_label.model_extra == {"version": "0.5"}
     assert "version" not in v06.ImageLabel.model_fields
 
 
