@@ -44,7 +44,7 @@ from yaozarrs.write._common._builders import (
 
 __all__ = [
     "Bf2RawBuilder",
-    "CreateArrayFunc",  # (documented as `yaozarrs.write.v05._write.CreateArrayFunc`)
+    "CreateArrayFunc",  # (documented in docs/writing.md)
     "LabelsBuilder",
     "PlateBuilder",
     "prepare_image",

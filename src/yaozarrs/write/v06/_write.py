@@ -66,7 +66,7 @@ from yaozarrs.write._common._models import _check_model
 
 __all__ = [
     "Bf2RawBuilder",
-    "CreateArrayFunc",  # (documented as `yaozarrs.write.v06._write.CreateArrayFunc`)
+    "CreateArrayFunc",  # (documented in docs/writing.md)
     "LabelsBuilder",
     "PlateBuilder",
     "SceneBuilder",

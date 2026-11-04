@@ -15,6 +15,7 @@ nav = [
     "ome_zarr_guide/index.md",
     "ome_zarr_guide/coordinate_systems.md",
   ] },
+  "writing.md",
   { "API Reference" = [
     "API_Reference/yaozarrs.md",
     "API_Reference/yaozarrs.v04.md",

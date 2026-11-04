@@ -421,9 +421,9 @@ yaozarrs.validate_zarr_store(store)
 
 ### Writing OME-Zarr Stores
 
-See [`yaozarrs.write.v05`][] and [`yaozarrs.write.v06`][] for convenience
-functions to write OME-Zarr v0.5 and v0.6 stores using your metadata objects,
-with either `zarr-python`, `tensorstore`, or custom backends.
+See [Writing OME-Zarr](./writing.md) for functions to write OME-Zarr v0.5 and
+v0.6 stores from your metadata objects, with either `zarr-python`,
+`tensorstore`, or custom backends.
 
 <!-- no-test -->
 
