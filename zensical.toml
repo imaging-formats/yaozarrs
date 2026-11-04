@@ -99,6 +99,7 @@ show_root_toc_entry = false
 members_order = "__all__"
 separate_signature = true
 show_signature_annotations = true
+show_overloads = false
 
 [[project.plugins.mkdocstrings.handlers.python.options.extensions]]
 griffe_fieldz = { strip_annotated = true }
