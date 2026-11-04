@@ -57,6 +57,8 @@ VALID_SCENES = [
     # `path` "MAY be omitted or null when referencing a coordinate system defined in
     # the scene's own `coordinateSystems`"
     scene([{**tile(0), "output": {"name": "world", "path": None}}], [WORLD]),
+    # (unknown keys are allowed on the transformation itself)
+    scene([{**tile(0), "tool:note": "x"}], [WORLD]),
 ]
 
 
@@ -128,6 +130,15 @@ INVALID_SCENES = [
         "size here is inferred",
     ),
 ]
+
+
+# scene.schema: the input and output objects have `additionalProperties: false`
+INVALID_SCENES.append(
+    (
+        scene([{**tile(0), "input": {"path": "tile_0", "name": "physical", "x": 1}}]),
+        "input may only contain 'name' and 'path', not ['x']",
+    )
+)
 
 
 @pytest.mark.parametrize("obj, msg", INVALID_SCENES)
