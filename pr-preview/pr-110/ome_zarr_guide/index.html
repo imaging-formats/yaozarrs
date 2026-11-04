@@ -958,17 +958,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#what-changed-in-v06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What changed in v0.6?
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#version-comparison-matrix" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -980,10 +969,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#breaking-changes-quick-reference" class="md-nav__link">
+  <a href="#what-changed-in-each-version" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Breaking Changes Quick Reference
+        What changed in each version
       </span>
     </span>
   </a>
@@ -1066,7 +1055,7 @@ and confusions encountered in the community.</p>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3v6h2.95l2 6H6v6h6v-4.59L17.41 11H22V5h-6v4.57L10.59 15H9.06l-2-6H8V3M4 5h2v2H4m14 0h2v2h-2M8 17h2v2H8Z"/></svg></span> <strong>My images are related in space</strong></p>
 <hr />
 <p>Tiles of a mosaic, multiple views of a sample, or images to register onto
-each other (<em>new in v0.6</em>)</p>
+each other (<em>v0.6 and later</em>)</p>
 <p><a href="#working-with-scenes"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Go to Scenes</a></p>
 </li>
 </ul>
@@ -1074,17 +1063,13 @@ each other (<em>new in v0.6</em>)</p>
 <div class="admonition info">
 <p class="admonition-title">Which version is this guide about?</p>
 <p>This guide covers OME-Zarr <strong>v0.4, v0.5 and v0.6</strong>, with tabs to show the
-differences.  The biggest change in v0.6 is a much more expressive way of
-describing where your pixels are in space (coordinate systems and
-transformations).  That topic gets its own page:
-<a href="coordinate_systems/">Coordinate Systems &amp; Transformations</a>.</p>
+differences.  The coordinate systems and transformations of v0.6 get their
+own page: <a href="coordinate_systems/">Coordinate Systems &amp; Transformations</a>.</p>
 <details class="question">
 <summary>Which version should I write?</summary>
 <p>It depends on who needs to read your data.  Newer versions can express
 more, but your files are only useful if the tools you (and your
-collaborators) rely on can read them.  Support for v0.6 is still new, so
-check the tools you care about before choosing it.  If you don't need
-anything new in v0.6, v0.5 is a safe choice today.</p>
+collaborators) rely on can read them, so check those first.</p>
 </details>
 </div>
 <h2 id="what-is-ome-zarr">What is OME-Zarr?<a class="headerlink" href="#what-is-ome-zarr" title="Link to this section">#</a></h2>
@@ -1755,13 +1740,10 @@ optional transformation, but doesn't have to.)</p>
 </div>
 </details>
 <h3 id="lining-labels-up-with-the-image-v06">Lining labels up with the image (v0.6)<a class="headerlink" href="#lining-labels-up-with-the-image-v06" title="Link to this section">#</a></h3>
-<p>Up to v0.5, a label image was expected to be "in the same coordinate system" as
-its parent image, so the only way to place it was through its own <code>scale</code> and
-<code>translation</code>.  In v0.6, that's still the default: without anything else, the
-label image's <a href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
+<p>By default, a label image's <a href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
 system</a> is "usually
-understood to be the same" as the image's.</p>
-<p>What v0.6 adds is a way to link the two when they <em>aren't</em> the same.  Say a
+understood to be the same" as its image's.  In v0.6, you can also link the two
+when they <em>aren't</em> the same.  Say a
 segmentation tool wrote labels for a crop of the image, with the corner of the
 crop as its origin.  Rather than rewriting the label image's metadata, you can add
 a transformation to the <strong>parent image's</strong> multiscale <code>coordinateTransformations</code>,
@@ -2168,9 +2150,7 @@ that discusses potential future standards for collections, and
 topic (still under review).  But as of v0.6, there is no official spec for
 collections.</p>
 <p>v0.6 <em>does</em> add <a href="#working-with-scenes">scenes</a>, which cover one common
-case: images that share a spatial relationship.  (RFC-8 describes scenes as
-having "partially solved this issue", and aims to fold them into a more
-general collection mechanism in the future.)</p>
+case: images that share a spatial relationship.</p>
 <p>The <a href="https://ngff.openmicroscopy.org/0.5/index.html#bf2raw"><code>"bioformats2raw"</code>
 layout</a> is a
 <em>transitional</em> solution, internally employed by the
@@ -2277,14 +2257,7 @@ dumping multiple series (commonly found in image formats supported by
 </div>
 <hr />
 <h2 id="working-with-scenes">Working with Scenes<a class="headerlink" href="#working-with-scenes" title="Link to this section">#</a></h2>
-<div class="admonition info">
-<p class="admonition-title">New in v0.6</p>
-<p>Scenes arrived in v0.6, along with named coordinate systems and many new
-transformation types
-(<a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>).  They aren't
-available in earlier versions.</p>
-</div>
-<p>A <strong>Scene</strong> is a group of images that <strong>share a spatial relationship</strong> with each
+<p>A <strong>Scene</strong> (v0.6 and later) is a group of images that <strong>share a spatial relationship</strong> with each
 other.  For example:</p>
 <ul>
 <li>Tiles of a mosaic, placed side by side in a common "stage" coordinate system</li>
@@ -2458,115 +2431,6 @@ the images.</p>
 </details>
 <hr />
 <h2 id="reference">Reference<a class="headerlink" href="#reference" title="Link to this section">#</a></h2>
-<h3 id="what-changed-in-v06">What changed in v0.6?<a class="headerlink" href="#what-changed-in-v06" title="Link to this section">#</a></h3>
-<p>v0.6 was <a href="https://github.com/ome/ngff-spec/releases/tag/0.6">released on September 14, 2026</a>.
-Its headline feature is
-<a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5: Coordinate Systems and Transformations</a>,
-by John Bogovic, Davis Bennett, Luca Marconato, Matt McCormick, Stephan Saalfeld
-and Johannes Soltwedel, which "provides first-class support for spatial and
-coordinate transformations in OME-Zarr".</p>
-<p>That work has a long history.  It grew out of community discussions that started
-in early 2022 (<a href="https://github.com/ome/ngff/issues/84">user stories</a>,
-<a href="https://github.com/ome/ngff/issues/94">spaces and transforms</a>,
-<a href="https://github.com/ome/ngff/issues/101">transformation types</a>) and a first
-<a href="https://github.com/ome/ngff/pull/138">proposal PR</a>, and was then refined through
-two rounds of <a href="https://ngff.openmicroscopy.org/rfc/5/reviews/index.html">RFC reviews</a>
-(see also the authors' <a href="https://ngff.openmicroscopy.org/rfc/5/responses/index.html">responses</a>)
-and community hackathons.  Along the way, the spec itself moved from
-<a href="https://github.com/ome/ngff">ome/ngff</a> to its own repository,
-<a href="https://github.com/ome/ngff-spec">ome/ngff-spec</a>
-(<a href="https://github.com/ome/ngff/issues/399">why</a>).</p>
-<p>Here's what changed, roughly in order of how likely it is to affect you:</p>
-<ol>
-<li><strong>Axes now live in named coordinate systems.</strong>  A multiscale no longer has an
-   <code>axes</code> field.  Instead, it has <code>coordinateSystems</code>: a list of
-   <code>{"name": ..., "axes": [...]}</code> objects.  The axis rules you know (2-5
-   dimensions, <code>[time,] [channel/custom,] space</code> ordering) still apply to each of
-   them.  See <a href="#axes">Axes</a>.</li>
-<li><strong>Dataset transformations are more explicit.</strong>  Each dataset now has <em>exactly
-   one</em> transformation, with an <code>input</code> (the dataset's array, by <code>path</code>) and an
-   <code>output</code> (the image's <a href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
-   system</a>, by <code>name</code>).
-   A scale and a translation are no longer listed side by side: they go inside a
-   single <code>sequence</code> (scale first).  An <code>identity</code> is now allowed too.  See
-   <a href="#coordinate-transformations">Coordinate Transformations</a>.</li>
-<li><strong>Multiscale-level <code>coordinateTransformations</code> mean something different.</strong>
-   In v0.5, they were applied <em>after</em> the datasets' transformations (with the
-   same rules).  In v0.6, they link the intrinsic coordinate system to <em>other</em>
-   named coordinate systems (of the same multiscale, or of a label image).  If
-   you used them in v0.5, you'll need to rethink them (e.g. fold them into each
-   dataset's transformation, which is what
-   <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.convert_version"><code>convert_version</code></a> does).  Also, all coordinate
-   systems <strong>MUST</strong> now be connected by transformations (an unlinked extra
-   coordinate system is invalid).  See <a href="coordinate_systems/#more-coordinate-systems-in-one-image">Coordinate Systems &amp;
-   Transformations</a>.</li>
-<li><strong>Many more transformation types.</strong>  <code>identity</code>, <code>scale</code> and <code>translation</code>
-   are joined by <code>mapAxis</code>, <code>projectAxis</code>, <code>affine</code>, <code>rotation</code>, <code>sequence</code>,
-   <code>byDimension</code>, <code>bijection</code>, <code>displacements</code> and <code>coordinates</code>.  (Readers
-   <strong>MUST</strong> parse identity, scale, translation and sequences of them, and
-   <strong>SHOULD</strong> parse mapAxis, affine, rotation and byDimension.)  See
-   <a href="coordinate_systems/#transformation-types">Transformation types</a>.</li>
-<li><strong>Scenes: images that share a spatial relationship.</strong>  A new <code>scene</code>
-   group describes how several images relate to each other in space.  See
-   <a href="#working-with-scenes">Working with Scenes</a>.  (The name "scene" was picked at
-   the <a href="https://ngff.openmicroscopy.org/rfc/5/responses/2/index.html">2025 NGFF hackathon</a>,
-   among candidates like "SpatialCollection" and "TransformGroup".)</li>
-<li><strong>Labels can be explicitly lined up with their image</strong>, with a transformation
-   in the parent image's metadata.  See <a href="#lining-labels-up-with-the-image-v06">Lining labels up with the
-   image</a>.</li>
-<li><strong>New axis fields</strong>: <code>discrete</code> and <code>longName</code>, plus new suggested axis
-   types (<code>array</code>, <code>coordinate</code>, <code>displacement</code>).  Axis names must now be
-   non-empty (they already had to be unique).</li>
-<li><strong>An explicit pixel coordinate convention</strong>: the <em>center</em> of a pixel is its
-   coordinate (so pixel <code>(0, 0)</code> covers the area from -0.5 to 0.5 along each
-   axis).  See <a href="coordinate_systems/#where-is-a-pixel">Where is a pixel?</a>.</li>
-<li><strong>All resolution levels MUST have the same data type</strong> (in addition to the
-   same number of dimensions).</li>
-<li><strong><code>dimension_names</code> are no longer required</strong> on arrays.  v0.5.2 made them a
-    <strong>MUST</strong>; v0.6 doesn't mention them.  (This was <a href="https://github.com/ome/ngff/issues/645">confirmed as
-    intentional</a>, though not everyone
-    agrees, and it didn't make it into the changelog.)</li>
-<li><strong><code>scale</code> and <code>translation</code> parameters must be inline JSON.</strong>  v0.5 also
-    allowed storing them at a <code>path</code>; v0.6 doesn't.  (The spec's summary table
-    still says otherwise.)</li>
-<li><strong>Field of view paths in a well</strong> follow Zarr's node name rules, rather than
-    being strictly alphanumeric.  See <a href="#well-metadata">Well Metadata</a>.</li>
-<li><strong>No more nested <code>version</code> keys.</strong>  The v0.5 text still required a
-    <code>version</code> key inside <code>plate</code> (and recommended one in <code>well</code> and
-    <code>image-label</code>), although its schemas didn't; v0.6 only has <code>ome.version</code>.</li>
-</ol>
-<div class="admonition tip">
-<p class="admonition-title">Converting existing metadata</p>
-<p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.convert_version"><code>yaozarrs.convert_version</code></a> converts metadata models between v0.4, v0.5
-and v0.6, keeping their kind (an <code>Image</code> stays an <code>Image</code>):</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">convert_version</span><span class="p">,</span> <span class="n">v05</span>
-
-<span class="n">image</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span>
-    <span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="n">v05</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">from_dims</span><span class="p">([</span><span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">),</span> <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)])]</span>
-<span class="p">)</span>
-<span class="n">v06_image</span> <span class="o">=</span> <span class="n">convert_version</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s2">"0.6"</span><span class="p">)</span>
-</code></pre></div>
-<p>It only converts metadata: no store is read or written.  Anything the target
-version can't express is dropped with a <code>ConversionWarning</code>.</p>
-</div>
-<p><strong>What <em>didn't</em> change:</strong> the storage format (still Zarr v3, with metadata under
-<code>attributes.ome</code>), the 2-5 dimension limit for images, the layout of plates and
-wells, and the (still transitional) <code>bioformats2raw.layout</code> and <code>omero</code>
-metadata.</p>
-<details class="info">
-<summary>Still on the horizon</summary>
-<p>A few RFCs that come up a lot are <strong>not</strong> part of v0.6:</p>
-<ul>
-<li><a href="https://ngff.openmicroscopy.org/rfc/3/index.html">RFC-3</a>: removing the
-  axis restrictions (more than 5 dimensions, etc...)</li>
-<li><a href="https://ngff.openmicroscopy.org/rfc/4/index.html">RFC-4</a>: anatomical
-  orientation of axes (accepted, but not in the spec yet)</li>
-<li><a href="https://ngff.openmicroscopy.org/rfc/8/index.html">RFC-8</a>: collections</li>
-<li><a href="https://ngff.openmicroscopy.org/rfc/9/index.html">RFC-9</a>: zipped OME-Zarr</li>
-</ul>
-<p>See the <a href="https://ngff.openmicroscopy.org/rfc/index.html">RFC index</a> for
-their current status.</p>
-</details>
 <h3 id="version-comparison-matrix">Version Comparison Matrix<a class="headerlink" href="#version-comparison-matrix" title="Link to this section">#</a></h3>
 <table>
 <thead>
@@ -2670,38 +2534,35 @@ their current status.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="breaking-changes-quick-reference">Breaking Changes Quick Reference<a class="headerlink" href="#breaking-changes-quick-reference" title="Link to this section">#</a></h3>
+<h3 id="what-changed-in-each-version">What changed in each version<a class="headerlink" href="#what-changed-in-each-version" title="Link to this section">#</a></h3>
 <table>
 <thead>
 <tr>
-<th>Migration</th>
-<th>Key Breaking Change</th>
-<th>Impact</th>
+<th>Version</th>
+<th>Main changes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>v0.2 → v0.3</strong></td>
-<td>Axes must be explicit strings</td>
-<td><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Moderate - add <code>axes</code> field</td>
+<td><strong>v0.3</strong></td>
+<td>Explicit <code>axes</code> (as strings)</td>
 </tr>
 <tr>
-<td><strong>v0.3 → v0.4</strong></td>
-<td>Axes become objects + coordinate transforms required</td>
-<td><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Major - restructure metadata</td>
+<td><strong>v0.4</strong></td>
+<td>Axes become objects with a <code>type</code> and <code>unit</code>; each dataset needs <code>coordinateTransformations</code>; plate wells get <code>rowIndex</code>/<code>columnIndex</code> (v0.4.1 added <code>bioformats2raw.layout</code>)</td>
 </tr>
 <tr>
-<td><strong>v0.4 → v0.5</strong></td>
-<td>Zarr v3 file structure + OME namespace</td>
-<td><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Critical - completely different storage</td>
+<td><strong>v0.5</strong></td>
+<td>Zarr v3: metadata moves to <code>zarr.json</code>, under <code>attributes.ome</code></td>
 </tr>
 <tr>
-<td><strong>v0.5 → v0.6</strong></td>
-<td>Axes move into named coordinate systems + explicit <code>input</code>/<code>output</code> on transformations</td>
-<td><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Major - restructure <code>multiscales</code> metadata (storage unchanged)</td>
+<td><strong>v0.6</strong></td>
+<td>Axes move into named coordinate systems, transformations get an explicit <code>input</code>/<code>output</code>, many more transformation types, and scenes (<a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>)</td>
 </tr>
 </tbody>
 </table>
+<p>To convert metadata models between v0.4, v0.5 and v0.6, see
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.convert_version"><code>yaozarrs.convert_version</code></a>.</p>
 <hr />
 <h2 id="additional-resources">Additional Resources<a class="headerlink" href="#additional-resources" title="Link to this section">#</a></h2>
 <ul>

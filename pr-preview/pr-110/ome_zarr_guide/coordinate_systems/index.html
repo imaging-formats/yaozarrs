@@ -1055,9 +1055,8 @@
 <h1 id="coordinate-systems-transformations">Coordinate Systems &amp; Transformations<a class="headerlink" href="#coordinate-systems-transformations" title="Link to this section">#</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">What you'll learn</p>
-<p>OME-Zarr v0.6 introduced a new (and much more expressive) way of describing
-<em>where your pixels are</em>: <strong>coordinate systems</strong> and <strong>transformations</strong>.
-This page explains these from scratch, with no prior knowledge assumed, and
+<p>Since v0.6, OME-Zarr describes <em>where your pixels are</em> with <strong>coordinate
+systems</strong> and <strong>transformations</strong>.  This page explains these from scratch, with no prior knowledge assumed, and
 shows how they appear in the metadata.</p>
 <p>If you only need a single image with a pixel size, you can mostly skip
 this: <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
@@ -1077,10 +1076,10 @@ and <a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>.  In ca
 discrepancies, the official spec takes precedence!</p>
 </div>
 <h2 id="why-does-this-exist">Why does this exist?<a class="headerlink" href="#why-does-this-exist" title="Link to this section">#</a></h2>
-<p>Up to v0.5, each image had a single list of <code>axes</code>, and each resolution level had
-a <code>scale</code> (and optionally a <code>translation</code>) that converted pixel indices into
-physical units: "<em>each pixel is 0.1 µm wide, and the image starts 20 µm from
-the origin</em>".  That's enough to describe one image on its own.</p>
+<p>For a single image, a <code>scale</code> (and optionally a <code>translation</code>) per resolution
+level is enough to convert pixel indices into physical units: "<em>each pixel is
+0.1 µm wide, and the image starts 20 µm from the origin</em>".  That's all v0.4 and
+v0.5 can express.</p>
 <p>But microscopy data often needs more than that:</p>
 <ul>
 <li><strong>Tiles of a mosaic</strong> need to be placed relative to each other.</li>
@@ -1091,8 +1090,8 @@ the origin</em>".  That's enough to describe one image on its own.</p>
 <li>A <strong>segmentation</strong> computed on a crop of an image needs to line up with the
   original.</li>
 </ul>
-<p>v0.6 adopted <a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>, which
-describes all of these with just two concepts: <strong>coordinate systems</strong> (named
+<p>v0.6 (<a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5</a>) describes all
+of these with just two concepts: <strong>coordinate systems</strong> (named
 spaces where points live) and <strong>transformations</strong> (arrows that take points from
 one coordinate system to another).</p>
 <hr />
