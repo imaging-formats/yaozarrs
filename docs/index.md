@@ -177,6 +177,14 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
 3. [`yaozarrs.validate_zarr_store`][]. Requires the `yaozarrs[io]`
    extra to support remote URIs.
 
+???note "Keys the spec doesn't define"
+
+    The spec doesn't forbid keys it doesn't define, and neither do the JSON
+    schemas (except in the `input` and `output` of v0.6 scene transformations),
+    so yaozarrs keeps them: they're in each model's `model_extra`, and
+    `model_dump()` / `model_dump_json()` write them back out. So a misspelled
+    *optional* key is (unfortunately) kept as an unknown key, not reported.
+
 ???tip "Storage Validation Errors"
 
     Validation errors that relate to the structure of the OME-Zarr itself

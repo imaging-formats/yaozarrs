@@ -64,23 +64,37 @@ def _map_multiscales(doc: dict, func: Callable[[dict], dict]) -> dict:
 
 
 def _upgrade_05_06(doc: dict, coordinate_system: str, dropped: list[str]) -> dict:
-    return _map_multiscales(doc, lambda ms: _multiscale_05_06(ms, coordinate_system))
+    return _map_multiscales(
+        doc, lambda ms: _multiscale_05_06(ms, coordinate_system, dropped)
+    )
 
 
-def _multiscale_05_06(ms: dict, coordinate_system: str) -> dict:
+def _multiscale_05_06(ms: dict, coordinate_system: str, dropped: list[str]) -> dict:
     ms = dict(ms)
     axes = ms.pop("axes")
-    overall = _transform_params_05(ms.pop("coordinateTransformations", None) or [])
+    overall_transforms = ms.pop("coordinateTransformations", None) or []
+    _drop_unknown_transform_keys(overall_transforms, _V05_TRANSFORM_KEYS, dropped)
+    overall = _transform_params_05(overall_transforms)
+    # (an unknown `coordinateSystems` key is overwritten: v0.6 formalized that key)
     ms["coordinateSystems"] = [{"name": coordinate_system, "axes": axes}]
     ms["datasets"] = [
-        _dataset_05_06(ds, overall, coordinate_system) for ds in ms["datasets"]
+        _dataset_05_06(ds, overall, coordinate_system, dropped) for ds in ms["datasets"]
     ]
     return ms
 
 
-def _dataset_05_06(ds: dict, overall: dict, coordinate_system: str) -> dict:
-    params = _transform_params_05(ds["coordinateTransformations"])
-    scale, translation = params["scale"], params.get("translation")
+def _dataset_05_06(
+    ds: dict, overall: dict, coordinate_system: str, dropped: list[str]
+) -> dict:
+    # (the new scale and translation start from the old ones, to keep their unknown
+    # keys; except any named like a v0.6 field, which would become that field)
+    old = {}
+    for t in ds["coordinateTransformations"]:
+        clash = t.keys() & set(_V06_ONLY_TRANSFORM_KEYS)
+        dropped.extend(f"transformation key {key!r}" for key in clash)
+        old[t["type"]] = {k: v for k, v in t.items() if k not in clash}
+    scale = old["scale"]["scale"]
+    translation = old.get("translation", {}).get("translation")
     if overall:
         # multiscale transformations are "applied after" those of the datasets, and
         # the intrinsic coordinate system is the image's native physical one, so they
@@ -97,18 +111,34 @@ def _dataset_05_06(ds: dict, overall: dict, coordinate_system: str) -> dict:
             ]
         scale = [g * s for g, s in zip(g_scale, scale)]
 
-    transform: dict[str, Any] = {"type": "scale", "scale": scale}
+    transform: dict[str, Any] = {**old["scale"], "scale": scale}
     if translation is not None:
+        old_translation = old.get("translation", {"type": "translation"})
         transform = {
             "type": "sequence",
             "transformations": [
                 transform,
-                {"type": "translation", "translation": translation},
+                {**old_translation, "translation": translation},
             ],
         }
     transform["input"] = {"path": ds["path"]}
     transform["output"] = {"name": coordinate_system}
     return {**ds, "coordinateTransformations": [transform]}
+
+
+# (the keys of a v0.5 scale/translation, and the keys of a v0.6 transformation that
+# v0.5 doesn't have)
+_V05_TRANSFORM_KEYS = frozenset({"type", "scale", "translation"})
+_V06_ONLY_TRANSFORM_KEYS = ("input", "output", "name")
+
+
+def _drop_unknown_transform_keys(
+    transforms: list[dict], known: frozenset[str] | set[str], dropped: list[str]
+) -> None:
+    """Report keys of transformations that conversion rebuilds, so can't keep."""
+    dropped.extend(
+        f"transformation key {key!r}" for t in transforms for key in t.keys() - known
+    )
 
 
 def _transform_params_05(transforms: list[dict]) -> dict[str, list[float]]:
@@ -124,7 +154,13 @@ def _multiscale_06_05(ms: dict, dropped: list[str]) -> dict:
     ms = dict(ms)
     systems = ms.pop("coordinateSystems")
     intrinsic = ms["datasets"][0]["coordinateTransformations"][0]["output"]["name"]
-    axes = next(cs for cs in systems if cs["name"] == intrinsic)["axes"]
+    intrinsic_cs = next(cs for cs in systems if cs["name"] == intrinsic)
+    axes = intrinsic_cs["axes"]
+    # (v0.5 keeps only its axes)
+    dropped.extend(
+        f"coordinate system key {key!r}"
+        for key in intrinsic_cs.keys() - {"name", "axes"}
+    )
 
     dropped.extend(
         f"coordinate system {cs['name']!r}" for cs in systems if cs["name"] != intrinsic
@@ -138,36 +174,62 @@ def _multiscale_06_05(ms: dict, dropped: list[str]) -> dict:
         if ax.get(key) is not None
     )
 
-    ms["axes"] = axes
+    # (an unknown `axes` key is overwritten: v0.5 formalized that key)
+    ms["axes"] = [
+        {k: v for k, v in ax.items() if k not in ("longName", "discrete")}
+        for ax in axes
+    ]
     ms["datasets"] = [
-        {**ds, "coordinateTransformations": _transform_06_05(ds, len(axes))}
+        {**ds, "coordinateTransformations": _transform_06_05(ds, len(axes), dropped)}
         for ds in ms["datasets"]
     ]
     return ms
 
 
-def _transform_06_05(ds: dict, ndim: int) -> list[dict]:
+def _transform_06_05(ds: dict, ndim: int, dropped: list[str]) -> list[dict]:
     transform = ds["coordinateTransformations"][0]
     if transform["type"] == "identity":
-        return [{"type": "scale", "scale": [1.0] * ndim}]
-    if transform["type"] == "sequence":
-        return list(transform["transformations"])
-    return [transform]
+        transforms = [{"type": "scale", "scale": [1.0] * ndim}]
+        _drop_unknown_transform_keys(
+            [transform], {"type", *_V06_ONLY_TRANSFORM_KEYS}, dropped
+        )
+    elif transform["type"] == "sequence":
+        transforms = list(transform["transformations"])
+        known = {"type", "transformations", *_V06_ONLY_TRANSFORM_KEYS}
+        _drop_unknown_transform_keys([transform], known, dropped)
+    else:
+        transforms = [transform]
+    dropped.extend(
+        f"transformation name {t['name']!r}"
+        for t in [transform, *transforms]
+        if t.get("name") is not None
+    )
+    # (v0.5 implies the input and output of a dataset's transformation: its path, and
+    # the intrinsic coordinate system; there's no place for anything else in them)
+    _report_lost_refs(transform, {"input": "path", "output": "name"}, dropped)
+    for step in transforms:
+        if step is not transform:
+            _report_lost_refs(step, {}, dropped)
+    return [
+        {k: v for k, v in t.items() if k not in _V06_ONLY_TRANSFORM_KEYS}
+        for t in transforms
+    ]
 
 
-def _downgrade_05_04(doc: dict, coordinate_system: str, dropped: list[str]) -> dict:
-    # (only v0.5 onwards allows additional keys under `colors`)
-    colors = (doc.get("image-label") or {}).get("colors") or []
-    known = {"label-value", "rgba"}
-    extras = dict.fromkeys(key for color in colors for key in color.keys() - known)
-    dropped.extend(f"label color key {key!r}" for key in extras)
-    return doc
+def _report_lost_refs(t: dict, implied: dict[str, str], dropped: list[str]) -> None:
+    """Report what's in a transformation's input/output beyond what v0.5 implies."""
+    for side in ("input", "output"):
+        for key, value in (t.get(side) or {}).items():
+            # (`name` and `path` are fields, None if unset; any other key is unknown)
+            if key != implied.get(side) and (
+                value is not None or key not in ("name", "path")
+            ):
+                dropped.append(f"transformation {side} key {key!r}")
 
 
 _STEPS = {
     ("0.5", "0.6"): _upgrade_05_06,
     ("0.6", "0.5"): _downgrade_06_05,
-    ("0.5", "0.4"): _downgrade_05_04,
 }
 
 
@@ -191,9 +253,11 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
     package = _PACKAGES[version]
     if isinstance(obj, _GROUPS):
         attrs = _convert(obj.attributes, version, coordinate_system, dropped)
+        extra = copy.deepcopy(obj.model_extra or {})
         if not hasattr(package, "OMEAttributes"):
+            dropped.extend(f"zarr.json key {key!r}" for key in extra)
             return attrs
-        return package.OMEZarrGroupJSON(attributes=attrs)
+        return package.OMEZarrGroupJSON.model_validate({**extra, "attributes": attrs})
     if isinstance(obj, _ATTRIBUTES):
         ome = _convert(obj.ome, version, coordinate_system, dropped)
         extra = copy.deepcopy(obj.model_extra or {})
@@ -211,8 +275,10 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
 
     # (not excluding None, which would drop user-defined keys whose value is `null`)
     dumped = obj.model_dump(exclude_none=False)
-    # (the fields of a subclass aren't part of the spec, and may clash with its keys)
+    # (the fields of a subclass aren't part of the spec, and may clash with its keys;
+    # unknown keys are kept)
     fields = {field.alias or name for name, field in base.model_fields.items()}
+    fields |= (obj.model_extra or {}).keys()
     doc = _strip_versions({k: v for k, v in dumped.items() if k in fields})
     start, stop = _ORDER.index(source), _ORDER.index(version)
     path = _ORDER[start : stop + 1] if start <= stop else _ORDER[stop : start + 1][::-1]
@@ -324,7 +390,8 @@ def convert_version(
     coordinate_system : str, optional
         Name for the intrinsic coordinate system, when converting to v0.6 from an
         older version.  An existing coordinate system is never renamed.
-        Default is "intrinsic".
+        Default is "intrinsic".  (Older versions have no coordinate systems, so
+        converting from v0.6 doesn't keep its name: pass it here to restore it.)
 
     Returns
     -------

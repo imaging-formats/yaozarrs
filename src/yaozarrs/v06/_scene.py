@@ -72,6 +72,13 @@ class SceneDef(_BaseModel):
             if t.input is None or t.output is None:
                 raise ValueError(f"{loc}: must have both an 'input' and an 'output'.")
             for side, ref in (("input", t.input), ("output", t.output)):
+                # (the spec is silent, but scene.schema has no other keys here:
+                # `additionalProperties: false`, unlike anywhere else)
+                if ref.model_extra:
+                    raise ValueError(
+                        f"{loc}: {side} may only contain 'name' and 'path', "
+                        f"not {sorted(ref.model_extra)}."
+                    )
                 if ref.name is None:
                     raise ValueError(f"{loc}: {side} must specify a 'name'.")
                 # If `name` refers to a coordinate system in the `scene` object, the
