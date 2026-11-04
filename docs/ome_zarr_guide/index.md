@@ -1251,9 +1251,7 @@ that do not fit into the plate model.  Examples include:
     collections.
 
     v0.6 *does* add [scenes](#working-with-scenes), which cover one common
-    case: images that share a spatial relationship.  (RFC-8 describes scenes as
-    having "partially solved this issue", and aims to fold them into a more
-    general collection mechanism in the future.)
+    case: images that share a spatial relationship.
 
     The [`"bioformats2raw"`
     layout](https://ngff.openmicroscopy.org/0.5/index.html#bf2raw) is a
@@ -1575,18 +1573,6 @@ by John Bogovic, Davis Bennett, Luca Marconato, Matt McCormick, Stephan Saalfeld
 and Johannes Soltwedel, which "provides first-class support for spatial and
 coordinate transformations in OME-Zarr".
 
-That work has a long history.  It grew out of community discussions that started
-in early 2022 ([user stories](https://github.com/ome/ngff/issues/84),
-[spaces and transforms](https://github.com/ome/ngff/issues/94),
-[transformation types](https://github.com/ome/ngff/issues/101)) and a first
-[proposal PR](https://github.com/ome/ngff/pull/138), and was then refined through
-two rounds of [RFC reviews](https://ngff.openmicroscopy.org/rfc/5/reviews/index.html)
-(see also the authors' [responses](https://ngff.openmicroscopy.org/rfc/5/responses/index.html))
-and community hackathons.  Along the way, the spec itself moved from
-[ome/ngff](https://github.com/ome/ngff) to its own repository,
-[ome/ngff-spec](https://github.com/ome/ngff-spec)
-([why](https://github.com/ome/ngff/issues/399)).
-
 Here's what changed, roughly in order of how likely it is to affect you:
 
 1. **Axes now live in named coordinate systems.**  A multiscale no longer has an
@@ -1619,9 +1605,7 @@ Here's what changed, roughly in order of how likely it is to affect you:
    [Transformation types](coordinate_systems.md#transformation-types).
 5. **Scenes: images that share a spatial relationship.**  A new `scene`
    group describes how several images relate to each other in space.  See
-   [Working with Scenes](#working-with-scenes).  (The name "scene" was picked at
-   the [2025 NGFF hackathon](https://ngff.openmicroscopy.org/rfc/5/responses/2/index.html),
-   among candidates like "SpatialCollection" and "TransformGroup".)
+   [Working with Scenes](#working-with-scenes).
 6. **Labels can be explicitly lined up with their image**, with a transformation
    in the parent image's metadata.  See [Lining labels up with the
    image](#lining-labels-up-with-the-image-v06).
@@ -1634,9 +1618,8 @@ Here's what changed, roughly in order of how likely it is to affect you:
 9. **All resolution levels MUST have the same data type** (in addition to the
    same number of dimensions).
 10. **`dimension_names` are no longer required** on arrays.  v0.5.2 made them a
-    **MUST**; v0.6 doesn't mention them.  (This was [confirmed as
-    intentional](https://github.com/ome/ngff/issues/645), though not everyone
-    agrees, and it didn't make it into the changelog.)
+    **MUST**; v0.6 doesn't mention them ([confirmed as
+    intentional](https://github.com/ome/ngff/issues/645)).
 11. **`scale` and `translation` parameters must be inline JSON.**  v0.5 also
     allowed storing them at a `path`; v0.6 doesn't.  (The spec's summary table
     still says otherwise.)
@@ -1668,7 +1651,7 @@ wells, and the (still transitional) `bioformats2raw.layout` and `omero`
 metadata.
 
 ??? info "Still on the horizon"
-    A few RFCs that come up a lot are **not** part of v0.6:
+    These RFCs are **not** part of v0.6:
 
     - [RFC-3](https://ngff.openmicroscopy.org/rfc/3/index.html): removing the
       axis restrictions (more than 5 dimensions, etc...)
