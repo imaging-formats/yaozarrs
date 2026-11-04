@@ -23,10 +23,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "FieldOfView",
 ]
 
-# ------------------------------------------------------------------------------
-# Acquisition model
-# ------------------------------------------------------------------------------
-
 
 class Acquisition(_BaseModel):
     """An imaging acquisition run within a plate.
@@ -67,11 +63,6 @@ class Acquisition(_BaseModel):
     )
 
 
-# ------------------------------------------------------------------------------
-# Column model
-# ------------------------------------------------------------------------------
-
-
 class Column(_BaseModel):
     """A column in the plate grid.
 
@@ -85,11 +76,6 @@ class Column(_BaseModel):
     )
 
 
-# ------------------------------------------------------------------------------
-# Row model
-# ------------------------------------------------------------------------------
-
-
 class Row(_BaseModel):
     """A row in the plate grid.
 
@@ -100,11 +86,6 @@ class Row(_BaseModel):
         description="Row identifier (typically alphabetic, e.g., 'A', 'B', 'C')",
         pattern=r"^[A-Za-z0-9]+$",
     )
-
-
-# ------------------------------------------------------------------------------
-# Well model
-# ------------------------------------------------------------------------------
 
 
 class PlateWell(_BaseModel):
@@ -127,11 +108,6 @@ class PlateWell(_BaseModel):
     columnIndex: NonNegativeInt = Field(
         description="Zero-based index into the plate's columns list",
     )
-
-
-# ------------------------------------------------------------------------------
-# Plate model
-# ------------------------------------------------------------------------------
 
 
 class PlateDef(_BaseModel):
@@ -187,7 +163,6 @@ class FieldOfView(_BaseModel):
             "Relative path to this field's image group "
             "(typically a number like '0', '1', etc.)"
         ),
-        # pattern=r"^[A-Za-z0-9]+$",
     )
     acquisition: int | None = Field(
         default=None,
@@ -219,11 +194,6 @@ class WellDef(_BaseModel):
         return self
 
 
-# ------------------------------------------------------------------------------
-# Well model (top-level)
-# ------------------------------------------------------------------------------
-
-
 class Well(ZarrGroupModel):
     """Top-level well metadata within a plate.
 
@@ -246,11 +216,6 @@ class Well(ZarrGroupModel):
     well: WellDef = Field(
         description="Field-of-view organization for this well",
     )
-
-
-# ------------------------------------------------------------------------------
-# Plate model (top-level)
-# ------------------------------------------------------------------------------
 
 
 class Plate(ZarrGroupModel):

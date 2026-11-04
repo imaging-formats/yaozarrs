@@ -9,10 +9,11 @@ classes, parses metadata with its own models, and may add per-array checks.
 from __future__ import annotations
 
 import posixpath
+import re
 import warnings
-from dataclasses import dataclass
 from itertools import chain, product
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from urllib.parse import urljoin
 
 from pydantic import ValidationError
 
@@ -24,11 +25,9 @@ if TYPE_CHECKING:
 
     from yaozarrs._storage import ErrorDetails
 
-# ----------------------------------------------------------
-# VALIDATORS
-# ----------------------------------------------------------
-
 Loc: TypeAlias = tuple[int | str, ...]
+
+_PROTOCOL = re.compile(r"^(?:file|https?|s3)://")
 
 
 def _build_fs_path(zarr_group: ZarrGroup, relative_path: str = "") -> str:
@@ -46,43 +45,23 @@ def _build_fs_path(zarr_group: ZarrGroup, relative_path: str = "") -> str:
     str
         A human-readable filesystem path (e.g., "plate.zarr/A/1/0").
     """
-    # Get the base path from the group
-    base = zarr_group.path or ""
-
-    # Combine with relative path
-    if relative_path:
-        full_path = f"{base}/{relative_path}" if base else relative_path
-    else:
-        full_path = base
-
-    # Try to get a readable store name (without protocol)
-    store_path = zarr_group._display_name()
+    full_path = "/".join(p for p in (zarr_group.path, relative_path) if p)
     # Remove protocol prefix for readability (file://, https://, etc.)
-    for prefix in ("file://", "https://", "http://", "s3://"):
-        if store_path.startswith(prefix):
-            store_path = store_path[len(prefix) :]
-            break
-
-    # Get just the store root name
+    store_path = _PROTOCOL.sub("", zarr_group._display_name(), count=1)
     if full_path:
-        # Extract just the zarr store name from the beginning of full store path
-        # e.g., "/tmp/foo/plate.zarr/A/1" -> "plate.zarr/A/1"
-        parts = store_path.rstrip("/").split("/")
-        for _i, part in enumerate(parts):
-            if part.endswith(".zarr") or part.endswith(".zarr/"):
-                store_name = part.rstrip("/")
-                return f"{store_name}/{full_path}"
-
-    # Fall back to just returning the path
+        # Start from the name of the zarr store in the store's path,
+        # e.g., "/tmp/foo/plate.zarr" and "A/1" -> "plate.zarr/A/1"
+        for part in store_path.rstrip("/").split("/"):
+            if part.endswith(".zarr"):
+                return f"{part}/{full_path}"
     return full_path or store_path.split("/")[-1]
 
 
-@dataclass
-class LabelsCheckResult:
-    """Result of checking for a labels group."""
-
-    result: ValidationResult
-    labels_info: tuple[ZarrGroup, Any] | None = None
+def _invalid_ctx(model: Any) -> dict:
+    """Error ctx for metadata that isn't the expected model: the error, or its type."""
+    if isinstance(model, Exception):
+        return {"error": model}
+    return {"type": type(model).__name__}
 
 
 class StorageValidator:
@@ -117,6 +96,13 @@ class StorageValidator:
     ) -> ValidationResult:
         """Version-specific checks of one dataset array (none by default)."""
         return ValidationResult()
+
+    def _child_model(self, group: ZarrGroup) -> Any:
+        """Return the OME metadata model of `group`, or the `ValueError` raised."""
+        try:
+            return group.ome_metadata(version=self.VERSION, strict=self.strict)
+        except ValueError as e:
+            return e
 
     @classmethod
     def validate_group(
@@ -219,37 +205,29 @@ class StorageValidator:
         """Validate an image group with multiscales metadata."""
         result = ValidationResult()
 
-        # Collect all children we'll need to check and prefetch them in one batch
-        children_to_prefetch = []
-        for multiscale in image_model.multiscales:
-            children_to_prefetch.extend(ds.path for ds in multiscale.datasets)
-        # Also check for labels group
-        children_to_prefetch.append("labels")
-        zarr_group.prefetch_children(children_to_prefetch)
-
-        # Validate each multiscale
+        # Prefetch the datasets of every multiscale, and any labels group, in one batch
+        zarr_group.prefetch_children(
+            [
+                *(ds.path for ms in image_model.multiscales for ds in ms.datasets),
+                "labels",
+            ]
+        )
         for ms_idx, multiscale in enumerate(image_model.multiscales):
             ms_loc = (*loc_prefix, "multiscales", ms_idx)
-            # Note: datasets already prefetched above, no need to prefetch again
             result = result.merge(
                 self._visit_multiscale_no_prefetch(zarr_group, multiscale, ms_loc)
             )
 
         # Check whether this image has a labels group, and validate if so
-        lbls_check = self._check_for_labels_group(zarr_group, loc_prefix)
-        result = result.merge(lbls_check.result)
-
-        if lbls_check.labels_info is not None:
-            labels_group, labels_model = lbls_check.labels_info
+        labels_result, labels = self._check_for_labels_group(zarr_group, loc_prefix)
+        result = result.merge(labels_result)
+        if labels is not None:
+            labels_group, labels_model = labels
             result = result.merge(
                 self.visit_labels_group(
-                    labels_group,
-                    labels_model,
-                    (*loc_prefix, "labels"),
-                    image_model,
+                    labels_group, labels_model, (*loc_prefix, "labels"), image_model
                 )
             )
-
         return result
 
     def visit_labels_group(
@@ -295,25 +273,15 @@ class StorageValidator:
                 )
                 continue
 
-            # Validate as LabelImage
-            try:
-                label_image_model = label_group.ome_metadata(
-                    version=self.VERSION, strict=self.strict
-                )
-            except ValueError as e:
-                label_image_model = e
+            # (validate as an Image here; LabelImage is checked below)
+            label_image_model = self._child_model(label_group)
             if not isinstance(label_image_model, self.Image):
-                ctx: dict = {"path": label_path}
-                if isinstance(label_image_model, Exception):
-                    ctx["error"] = label_image_model
-                else:
-                    ctx["type"] = type(label_image_model).__name__
                 result.add_error(
                     StorageErrorType.label_image_invalid,
                     label_loc,
                     f"Label path '{label_path}' does not contain "
                     "valid Image ('multiscales') metadata",
-                    ctx=ctx,
+                    ctx={"path": label_path, **_invalid_ctx(label_image_model)},
                 )
                 continue
 
@@ -389,7 +357,7 @@ class StorageValidator:
     ) -> ValidationResult:
         """Validate multiscale without prefetching (assumes already prefetched)."""
         result = ValidationResult()
-
+        expected_ndim = len(multiscale.axes)
         for ds_idx, dataset in enumerate(multiscale.datasets):
             ds_loc = (*loc_prefix, "datasets", ds_idx, "path")
 
@@ -419,8 +387,6 @@ class StorageValidator:
                 )
                 continue
 
-            # Check array dimensionality matches axes
-            expected_ndim = len(multiscale.axes)
             if arr.ndim != expected_ndim:
                 result.add_error(
                     StorageErrorType.dataset_dimension_mismatch,
@@ -446,13 +412,10 @@ class StorageValidator:
     ) -> ValidationResult:
         """Validate a plate group and its wells."""
         result = ValidationResult()
-
-        well_paths = [well.path for well in plate_model.plate.wells]
-
         # Prefetch all metadata in one go to minimize network round trips
-        self._prefetch_plate_hierarchy(zarr_group, well_paths)
-
-        # Validate each well path
+        self._prefetch_plate_hierarchy(
+            zarr_group, [well.path for well in plate_model.plate.wells]
+        )
         for well_idx, well in enumerate(plate_model.plate.wells):
             well_loc = (*loc_prefix, "plate", "wells", well_idx)
 
@@ -481,29 +444,18 @@ class StorageValidator:
                 )
                 continue
 
-            # Validate well metadata
-            try:
-                well_model = well_group.ome_metadata(
-                    version=self.VERSION, strict=self.strict
-                )
-            except ValueError as e:
-                well_model = e
+            well_model = self._child_model(well_group)
             if isinstance(well_model, self.Well):
                 result = result.merge(self.visit_well(well_group, well_model, well_loc))
                 result = result.merge(
                     self._validate_well_acquisitions(plate_model, well_model, well_loc)
                 )
             else:
-                ctx: dict = {"path": well.path}
-                if isinstance(well_model, Exception):
-                    ctx["error"] = well_model
-                else:
-                    ctx["type"] = type(well_model).__name__
                 result.add_error(
                     StorageErrorType.well_invalid,
                     well_loc,
                     f"Well path '{well.path}' does not contain valid Well metadata",
-                    ctx=ctx,
+                    ctx={"path": well.path, **_invalid_ctx(well_model)},
                 )
 
         return result
@@ -550,14 +502,8 @@ class StorageValidator:
     ) -> ValidationResult:
         """Validate a well group and its field images."""
         result = ValidationResult()
-
-        # Performance optimization: prefetch all field image metadata in one batch
-        # Note: For plates, this is often already prefetched by visit_plate's
-        # deep prefetch strategy, but we do it here too for standalone wells
-        field_paths = [field.path for field in well_model.well.images]
-        zarr_group.prefetch_children(field_paths)
-
-        # Validate each field image path
+        # (in a plate, `visit_plate` has usually prefetched these already)
+        zarr_group.prefetch_children([field.path for field in well_model.well.images])
         for field_idx, field_image in enumerate(well_model.well.images):
             field_loc = (*loc_prefix, "well", "images", field_idx)
             if (field_group := zarr_group.get(field_image.path)) is None:
@@ -585,29 +531,19 @@ class StorageValidator:
                 )
                 continue
 
-            # Validate field as image group
-            try:
-                field_group_model = field_group.ome_metadata(
-                    version=self.VERSION, strict=self.strict
-                )
-            except ValueError as e:
-                field_group_model = e
-            if isinstance(field_group_model, self.Image):
+            field_model = self._child_model(field_group)
+            if isinstance(field_model, self.Image):
                 result = result.merge(
-                    self.visit_image(field_group, field_group_model, field_loc)
+                    self.visit_image(field_group, field_model, field_loc)
                 )
             else:
-                ctx: dict = {"fs_path": _build_fs_path(zarr_group, field_image.path)}
-                if isinstance(field_group_model, Exception):
-                    ctx["error"] = field_group_model
-                else:
-                    ctx["type"] = type(field_group_model).__name__
+                fs_path = _build_fs_path(zarr_group, field_image.path)
                 result.add_error(
                     StorageErrorType.field_image_invalid,
                     field_loc,
                     f"Field path '{field_image.path}' does not contain "
                     "valid Image metadata",
-                    ctx=ctx,
+                    ctx={"fs_path": fs_path, **_invalid_ctx(field_model)},
                 )
 
         return result
@@ -624,25 +560,16 @@ class StorageValidator:
         """
         result = ValidationResult()
 
-        # First, check if there's an OME subgroup
         zarr_group.prefetch_children(["OME"])
-
-        # Check for OME subgroup with series metadata
-        ome_group = zarr_group.get("OME")
-        if ome_group is not None and isinstance(ome_group, ZarrGroup):
+        if isinstance(ome_group := zarr_group.get("OME"), ZarrGroup):
             try:
                 ome_model = self._parse_ome(ome_group.attrs)
             except ValueError:
-                # OME group exists but doesn't have valid OME metadata
-                # Fall through to numbered directory validation
-                ome_model = None
-
-            # If OME group has series metadata, use that to find images
+                ome_model = None  # (fall back to the numbered directories)
             if isinstance(ome_model, self.Series):
                 return self.visit_series(zarr_group, ome_model, (*loc_prefix, "OME"))
 
-        # No OME group with series, so validate numbered directories
-        # Discover consecutively numbered directories (0, 1, 2, etc.)
+        # Without series metadata, find consecutively numbered directories (0, 1, ...)
         # FIXME: ... do better for searching
         numbered_paths = []
         for i in range(1000):  # reasonable upper limit
@@ -675,29 +602,18 @@ class StorageValidator:
                 )
                 continue
 
-            # Validate as image group
-            try:
-                image_group_meta = image_group.ome_metadata(
-                    version=self.VERSION, strict=self.strict
-                )
-            except ValueError as e:
-                image_group_meta = e
-            if isinstance(image_group_meta, self.Image):
+            image_model = self._child_model(image_group)
+            if isinstance(image_model, self.Image):
                 result = result.merge(
-                    self.visit_image(image_group, image_group_meta, image_loc)
+                    self.visit_image(image_group, image_model, image_loc)
                 )
             else:
-                ctx: dict = {"path": path}
-                if isinstance(image_group_meta, Exception):
-                    ctx["error"] = image_group_meta
-                else:
-                    ctx["type"] = type(image_group_meta).__name__
                 result.add_error(
                     StorageErrorType.bf2raw_invalid_image,
                     image_loc,
                     f"Bioformats2raw path '{path}' does not contain "
                     "valid Image metadata",
-                    ctx=ctx,
+                    ctx={"path": path, **_invalid_ctx(image_model)},
                 )
 
         return result
@@ -723,11 +639,7 @@ class StorageValidator:
         ```
         """
         result = ValidationResult()
-
-        # Prefetch all series path metadata
         zarr_group.prefetch_children(ome_model.series)
-
-        # Validate each series path
         for series_idx, series_path in enumerate(ome_model.series):
             series_loc = (*loc_prefix, "series", series_idx)
 
@@ -750,29 +662,18 @@ class StorageValidator:
                 )
                 continue
 
-            # Validate series as image group
-            try:
-                series_group_meta = series_group.ome_metadata(
-                    version=self.VERSION, strict=self.strict
-                )
-            except ValueError as e:
-                series_group_meta = e
-            if isinstance(series_group_meta, self.Image):
+            series_model = self._child_model(series_group)
+            if isinstance(series_model, self.Image):
                 result = result.merge(
-                    self.visit_image(series_group, series_group_meta, series_loc)
+                    self.visit_image(series_group, series_model, series_loc)
                 )
             else:
-                ctx: dict = {"path": series_path}
-                if isinstance(series_group_meta, Exception):
-                    ctx["error"] = series_group_meta
-                else:
-                    ctx["type"] = type(series_group_meta).__name__
                 result.add_error(
                     StorageErrorType.series_invalid_image,
                     series_loc,
                     f"Series path '{series_path}' does not contain "
                     "valid Image metadata",
-                    ctx=ctx,
+                    ctx={"path": series_path, **_invalid_ctx(series_model)},
                 )
 
         return result
@@ -787,32 +688,20 @@ class StorageValidator:
         """
         if not well_paths:  # pragma: no cover
             return
-
-        # Step 1: Prefetch all well metadata
         zarr_group.prefetch_children(well_paths)
 
-        # Step 2: Get structure from first well
-        field_paths = self._get_field_paths_from_first_well(zarr_group, well_paths[0])
-        if not field_paths:
-            return
-
-        # Step 3: Prefetch all field images across all wells
-        all_field_paths = ("/".join(grp) for grp in product(well_paths, field_paths))
-        zarr_group.prefetch_children(all_field_paths)
-
-        # Step 4: Get dataset structure from first field
         first_well = zarr_group.get(well_paths[0])
         if not isinstance(first_well, ZarrGroup):
-            return  # pragma: no cover
-
-        dataset_paths = self._get_dataset_paths_from_first_field(
-            first_well, field_paths[0]
-        )
-        if not dataset_paths:
             return
+        if not (field_paths := self._field_paths(first_well)):
+            return
+        zarr_group.prefetch_children(
+            "/".join(grp) for grp in product(well_paths, field_paths)
+        )
 
-        # Step 5: Prefetch all datasets across entire plate
-        # Also prefetch labels metadata (optional, but common)
+        if not (dataset_paths := self._dataset_paths(first_well.get(field_paths[0]))):
+            return
+        # (and labels metadata: optional, but common)
         ds_paths = (
             "/".join(grp) for grp in product(well_paths, field_paths, dataset_paths)
         )
@@ -821,51 +710,42 @@ class StorageValidator:
         )
         zarr_group.prefetch_children(chain(ds_paths, labels_paths))
 
-    def _get_field_paths_from_first_well(
-        self, zarr_group: ZarrGroup, first_well_path: str
-    ) -> list[str]:
-        """Extract field image paths from the first well."""
-        first_well = zarr_group.get(first_well_path)
-        if not isinstance(first_well, ZarrGroup):
-            return []
-
+    def _field_paths(self, well: ZarrGroup) -> list[str]:
+        """Field image paths listed by the metadata of `well`, if it is a Well."""
         try:
-            first_well_meta = self._parse_ome(first_well.attrs)
-            if isinstance(first_well_meta, self.Well):
-                return [img.path for img in first_well_meta.well.images]
+            well_meta = self._parse_ome(well.attrs)
+            if isinstance(well_meta, self.Well):
+                return [img.path for img in well_meta.well.images]
         except Exception:
             pass
         return []
 
-    def _get_dataset_paths_from_first_field(
-        self, first_well: ZarrGroup, first_field_path: str
-    ) -> list[str]:
-        """Extract dataset paths from the first field image."""
-        first_field = first_well.get(first_field_path)
-        if not isinstance(first_field, ZarrGroup):
+    def _dataset_paths(self, field: ZarrGroup | ZarrArray | None) -> list[str]:
+        """Dataset paths of the first multiscale of `field`, if it is an Image."""
+        if not isinstance(field, ZarrGroup):
             return []  # pragma: no cover
 
         try:
-            first_field_meta = self._parse_ome(first_field.attrs)
+            field_meta = self._parse_ome(field.attrs)
         except Exception:
             return []  # pragma: no cover
 
-        if (
-            not isinstance(first_field_meta, self.Image)
-            or not first_field_meta.multiscales
-        ):
+        if not isinstance(field_meta, self.Image) or not field_meta.multiscales:
             return []  # pragma: no cover
 
-        return [ds.path for ds in first_field_meta.multiscales[0].datasets]
+        return [ds.path for ds in field_meta.multiscales[0].datasets]
 
     def _check_for_labels_group(
         self, zarr_group: ZarrGroup, loc_prefix: Loc
-    ) -> LabelsCheckResult:
-        """Check for labels group at same level as datasets and return result."""
+    ) -> tuple[ValidationResult, tuple[ZarrGroup, Any] | None]:
+        """Check for a labels group at the same level as the datasets.
+
+        Returns the errors found, and the labels group and its model, if valid.
+        """
         result = ValidationResult()
 
         if (labels_group := zarr_group.get("labels")) is None:
-            return LabelsCheckResult(result=result, labels_info=None)
+            return result, None
 
         labels_loc = (*loc_prefix, "labels")
 
@@ -877,15 +757,12 @@ class StorageValidator:
                 "not a zarr group",
                 ctx={"expected": "group", "found": type(labels_group).__name__},
             )
-            return LabelsCheckResult(result=result, labels_info=None)
+            return result, None
 
         try:
             labels_model = self._parse_ome(labels_group.attrs)
             if isinstance(labels_model, self.LabelsGroup):
-                # Return the labels info directly
-                return LabelsCheckResult(
-                    result=result, labels_info=(labels_group, labels_model)
-                )
+                return result, (labels_group, labels_model)
             # The OME-Zarr Metadata in the zarr.json file associated with the "labels"
             # group MUST contain a JSON object with the key labels ...
             # (but it's valid OME metadata, and the image is fine: so warn and skip)
@@ -901,12 +778,12 @@ class StorageValidator:
             result.add_error(
                 StorageErrorType.labels_metadata_invalid,
                 labels_loc,
-                f"Found a 'labels' subg-group inside of ome-zarr group {zarr_group}, "
+                f"Found a 'labels' sub-group inside of ome-zarr group {zarr_group}, "
                 f"but metadata not valid LabelsGroup metadata: {e!s}",
                 ctx={"error": str(e)},
             )
 
-        return LabelsCheckResult(result=result, labels_info=None)
+        return result, None
 
     def _validate_labels_image_source(
         self, zarr_group: ZarrGroup, src_img_rel_path: str, loc_prefix: Loc
@@ -963,41 +840,25 @@ class StorageValidator:
         """Validate that label arrays contain only integer data types."""
         result = ValidationResult()
 
-        # The "labels" group is not itself an image; it contains images.
         # The pixels of the label images MUST be integer data types, i.e. one of
         # [uint8, int8, uint16, int16, uint32, int32, uint64, int64].
         for ms_idx, multiscale in enumerate(image_model.multiscales):
             ms_loc = (*loc_prefix, "multiscales", ms_idx)
-
             for ds_idx, dataset in enumerate(multiscale.datasets):
-                ds_loc = (*ms_loc, "datasets", ds_idx, "path")
-                if (arr := zarr_group.get(dataset.path)) is None:
-                    # Path validation will catch this separately
-                    continue
-
-                # check if integer dtype
-                if isinstance(arr, ZarrArray):
-                    dt = arr.dtype
-                    if not _is_integer_dtype(dt):
-                        result.add_error(
-                            StorageErrorType.label_non_integer_dtype,
-                            ds_loc,
-                            f"Label array '{dataset.path}' has non-integer dtype "
-                            f"'{dt}'. Labels must use integer types.",
-                            ctx={
-                                "path": dataset.path,
-                                "dtype": str(
-                                    dt,
-                                ),
-                            },
-                        )
+                # (a missing or non-array path is reported by the dataset checks)
+                arr = zarr_group.get(dataset.path)
+                if isinstance(arr, ZarrArray) and not _is_integer_dtype(
+                    dt := arr.dtype
+                ):
+                    result.add_error(
+                        StorageErrorType.label_non_integer_dtype,
+                        (*ms_loc, "datasets", ds_idx, "path"),
+                        f"Label array '{dataset.path}' has non-integer dtype "
+                        f"'{dt}'. Labels must use integer types.",
+                        ctx={"path": dataset.path, "dtype": str(dt)},
+                    )
 
         return result
-
-
-# ----------------------------------------------------------
-# HELPER FUNCTIONS
-# ----------------------------------------------------------
 
 
 def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup | None:
@@ -1040,34 +901,25 @@ def _resolve_source_path(zarr_group: ZarrGroup, src_rel_path: str) -> str:
     str
         The resolved absolute path
     """
-    # Get the mapper's root path if available
     mapper = zarr_group._store
     path = zarr_group.path
-
-    # Try to get the root path from the mapper
     if hasattr(mapper, "root"):
         root = mapper.root
     elif hasattr(mapper, "fs") and hasattr(mapper.fs, "root"):
         root = mapper.fs.root
     else:
-        # Fall back to using the path directly
         root = ""
 
-    # Handle URL paths
     if isinstance(root, str) and root.startswith(("http://", "https://")):
-        from urllib.parse import urljoin
-
-        # Ensure root ends with separator for proper urljoin behavior
+        # (urljoin replaces the last segment of a base without a trailing "/")
         if not root.endswith("/"):
-            root = root + "/"
+            root += "/"
         root = urljoin(root, path)
         if not root.endswith("/"):
-            root = root + "/"
+            root += "/"
         return urljoin(root, src_rel_path)
-    else:
-        # For other filesystems, use posixpath for UNIX-style path joining
-        # Most fsspec filesystems use forward slashes as separators
-        return posixpath.normpath(posixpath.join(str(root), path, src_rel_path))
+    # (most fsspec filesystems use forward slashes as separators)
+    return posixpath.normpath(posixpath.join(str(root), path, src_rel_path))
 
 
 def _is_integer_dtype(dtype_str: str) -> bool:
