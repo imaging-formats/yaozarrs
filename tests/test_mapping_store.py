@@ -78,7 +78,7 @@ def test_label_source_outside_of_mapping(
         validate_zarr_store(metadata_dict(path / "labels"))
 
 
-@pytest.mark.parametrize("version", ["0.6"])
+@pytest.mark.parametrize("version", ["0.5", "0.6"])
 def test_label_dtype_checked_without_image_label(version: str) -> None:
     # a path listed in `labels` is a label image, with or without `image-label`
     ms = getattr(yaozarrs, f"v0{version[-1]}").Multiscale.from_dims(
