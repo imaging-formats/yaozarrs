@@ -38,6 +38,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping
 
     from yaozarrs._common._storage import Loc
+
+    # (in method signatures, the class attributes `Image` and `LabelImage` would
+    # shadow the models of the same name, so they're spelled out there)
+    from yaozarrs.v06 import _image, _labels
     from yaozarrs.v06._coordinate_systems import CoordinateSystem
     from yaozarrs.v06._transforms import CoordinateTransformation
 
@@ -102,7 +106,7 @@ class StorageValidatorV06(StorageValidator):
     # ------------------------------------------------------------------------------
 
     def visit_image(
-        self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, image_model: _image.Image, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate an image that is not part of a scene."""
         first_visit = _norm(zarr_group.path) not in self._visited
@@ -112,7 +116,10 @@ class StorageValidatorV06(StorageValidator):
         return result
 
     def visit_label_image(
-        self, zarr_group: ZarrGroup, label_image_model: LabelImage, loc_prefix: Loc
+        self,
+        zarr_group: ZarrGroup,
+        label_image_model: _labels.LabelImage,
+        loc_prefix: Loc,
     ) -> ValidationResult:
         key = f"label:{_norm(zarr_group.path)}"
         if key in self._visited:
@@ -121,7 +128,7 @@ class StorageValidatorV06(StorageValidator):
         return super().visit_label_image(zarr_group, label_image_model, loc_prefix)
 
     def _visit_image(
-        self, zarr_group: ZarrGroup, image_model: Image, loc_prefix: Loc
+        self, zarr_group: ZarrGroup, image_model: _image.Image, loc_prefix: Loc
     ) -> ValidationResult:
         # The base class looks for a child group named `labels`: the spec calls it
         # "the `labels` group", and nothing else in the metadata needs to point to it,
@@ -279,7 +286,7 @@ class StorageValidatorV06(StorageValidator):
 
     def _image_at(
         self, zarr_group: ZarrGroup, path: str, loc: Loc, result: ValidationResult
-    ) -> Image | None:
+    ) -> _image.Image | None:
         """Return the Image model of the (existing) group at `path`, or add errors."""
         group = zarr_group.get(path)
         model = self._child_model(group) if isinstance(group, ZarrGroup) else None
@@ -297,7 +304,12 @@ class StorageValidatorV06(StorageValidator):
         return None
 
     def _find_cs(
-        self, image: Image, path: str, name: str, loc: Loc, result: ValidationResult
+        self,
+        image: _image.Image,
+        path: str,
+        name: str,
+        loc: Loc,
+        result: ValidationResult,
     ) -> CoordinateSystem | None:
         if (found := _find_coordinate_system(image, name)) is not None:
             return found[1]
@@ -319,7 +331,9 @@ class StorageValidatorV06(StorageValidator):
     # Graph connectedness
     # ------------------------------------------------------------------------------
 
-    def _warn_if_disconnected(self, image: Image, loc_prefix: Loc) -> ValidationResult:
+    def _warn_if_disconnected(
+        self, image: _image.Image, loc_prefix: Loc
+    ) -> ValidationResult:
         # The graph MUST be connected (but need not be complete)
         # (that rule is about the multiscales and scene metadata combined, so outside
         # of a scene we only warn. Each multiscales entry is a graph of its own, as
@@ -424,7 +438,7 @@ class StorageValidatorV06(StorageValidator):
         zarr_group: ZarrGroup,
         ref: Any,
         systems: dict[str, CoordinateSystem],
-        images: dict[str, Image | None],
+        images: dict[str, _image.Image | None],
         loc: Loc,
         result: ValidationResult,
     ) -> tuple[Node, CoordinateSystem] | None:
@@ -447,7 +461,7 @@ class StorageValidatorV06(StorageValidator):
 
     def _scene_image(
         self, zarr_group: ZarrGroup, path: str, loc: Loc, result: ValidationResult
-    ) -> Image | None:
+    ) -> _image.Image | None:
         if path.startswith(("..", "/")):
             result.add_error(
                 StorageErrorType.coordinate_system_path_invalid,
