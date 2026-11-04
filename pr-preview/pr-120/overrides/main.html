@@ -1,7 +1,0 @@
-{% extends "base.html" %}
-
-{% block extrahead %}
-  {{ super() }}
-  <!-- Load ome-explorer web component as ES module -->
-  <script type="module" src="{{ 'javascripts/ome_explorer.js' | url }}"></script>
-{% endblock %}
