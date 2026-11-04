@@ -96,8 +96,8 @@ if TYPE_CHECKING:
         ZarrWriter,
     )
 
-    # Compound types for images with data or specs
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
+    """A v0.6 `Image` model, with its array data (one array per dataset)."""
     # (an image added to a SceneBuilder: its dataset specs and array options)
     AddedImage: TypeAlias = tuple[Image, ShapeAndDTypeOrPyramid, dict[str, Any]]
 
@@ -106,6 +106,7 @@ class _Default(Enum):
     """Sentinel for a per-image setting that defaults to the builder's."""
 
     BUILDER = "builder"
+    """Use the setting passed to the `SceneBuilder`."""
 
 
 # ######################## Public API ##########################################
@@ -785,7 +786,7 @@ def prepare_image(
         Destination path for the Zarr group.
     image : Image
         OME-Zarr Image metadata model.
-    datasets : ShapeAndDType | Sequence[ShapeAndDType]
+    datasets : ShapeAndDTypeOrPyramid
         Shape and dtype specification(s) for each dataset, as `(shape, dtype)`
         tuples. Can be:
 
@@ -810,7 +811,7 @@ def prepare_image(
 
     Returns
     -------
-    tuple[Path, dict[str, Array]]
+    tuple[Path, dict[str, AnyZarrArray]]
         A tuple of (path, arrays) where `arrays` maps dataset paths (e.g., "0")
         to array objects. The array type depends on the writer:
 
@@ -1355,7 +1356,7 @@ class SceneBuilder:
             or "tiles/0").
         image : Image
             OME-Zarr Image metadata model for this image.
-        datasets : ArrayLike | Sequence[ArrayLike]
+        datasets : ArrayOrPyramid
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
         chunks : tuple[int, ...] | "auto" | None, optional
@@ -1421,7 +1422,7 @@ class SceneBuilder:
             or "tiles/0").
         image : Image
             OME-Zarr Image metadata model for this image.
-        datasets : ShapeAndDType | Sequence[ShapeAndDType]
+        datasets : ShapeAndDTypeOrPyramid
             Shape and dtype specification(s) for each resolution level, as
             `(shape, dtype)` tuples. For a single dataset, pass the tuple
             directly without wrapping in a list.

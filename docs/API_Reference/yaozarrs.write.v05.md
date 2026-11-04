@@ -14,3 +14,13 @@ for how to use them.
         show_root_heading: true
         summary: false
         inherited_members: true
+
+## Types
+
+See also the [types shared by both write modules](../writing.md#types).
+
+::: yaozarrs.write.v05._write.ImageWithDatasets
+      options:
+        heading_level: 3
+        heading: "ImageWithDatasets"
+        show_root_heading: true

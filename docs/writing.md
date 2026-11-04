@@ -110,3 +110,86 @@ the arrays:
         heading: "CreateArrayFunc"
         show_root_heading: true
         show_source: false
+
+## Types
+
+The type hints used in the signatures of both modules.  (They aren't importable:
+they're only there for type checkers, and for these docs.)
+
+::: yaozarrs.write._common._arrays.ArrayLike
+      options:
+        heading_level: 3
+        heading: "ArrayLike"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.ArrayOrPyramid
+      options:
+        heading_level: 3
+        heading: "ArrayOrPyramid"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.ShapeLike
+      options:
+        heading_level: 3
+        heading: "ShapeLike"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.ShapeAndDType
+      options:
+        heading_level: 3
+        heading: "ShapeAndDType"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid
+      options:
+        heading_level: 3
+        heading: "ShapeAndDTypeOrPyramid"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.ZarrWriter
+      options:
+        heading_level: 3
+        heading: "ZarrWriter"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.WriterName
+      options:
+        heading_level: 3
+        heading: "WriterName"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.CompressionName
+      options:
+        heading_level: 3
+        heading: "CompressionName"
+        show_root_heading: true
+
+::: yaozarrs.write._common._arrays.AnyZarrArray
+      options:
+        heading_level: 3
+        heading: "AnyZarrArray"
+        show_root_heading: true
+
+::: yaozarrs.write._common._builders.Image
+      options:
+        heading_level: 3
+        heading: "Image"
+        show_root_heading: true
+
+::: yaozarrs.write._common._builders.LabelImage
+      options:
+        heading_level: 3
+        heading: "LabelImage"
+        show_root_heading: true
+
+::: yaozarrs.write._common._builders.ImageWithDatasets
+      options:
+        heading_level: 3
+        heading: "ImageWithDatasets"
+        show_root_heading: true
+
+::: yaozarrs.write._common._builders.ImageWithShapeSpecs
+      options:
+        heading_level: 3
+        heading: "ImageWithShapeSpecs"
+        show_root_heading: true

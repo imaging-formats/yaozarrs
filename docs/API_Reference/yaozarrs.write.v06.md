@@ -40,3 +40,20 @@ for how to use them.
         show_root_heading: true
         summary: false
         inherited_members: true
+
+## Types
+
+See also the [types shared by both write modules](../writing.md#types).
+
+::: yaozarrs.write.v06._write.ImageWithDatasets
+      options:
+        heading_level: 3
+        heading: "ImageWithDatasets"
+        show_root_heading: true
+
+::: yaozarrs.write.v06._write._Default
+      options:
+        heading_level: 3
+        heading: "_Default"
+        show_root_heading: true
+        members_order: source

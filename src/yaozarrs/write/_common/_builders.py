@@ -22,7 +22,9 @@ from ._plate import (
 # The builders are generic over each version's Image/LabelImage models.  (Named like
 # the models, so the rendered docs read the same as a version's own signatures.)
 Image = TypeVar("Image")
+"""The `Image` model of the builder's version (`v05.Image` or `v06.Image`)."""
 LabelImage = TypeVar("LabelImage")
+"""The `LabelImage` model of the builder's version."""
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -43,7 +45,9 @@ if TYPE_CHECKING:
 
     # (image, data) or (image, specs) pairs
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
+    """An `Image` model, with its array data (one array per dataset)."""
     ImageWithShapeSpecs: TypeAlias = tuple[Image, ShapeAndDTypeOrPyramid]
+    """An `Image` model, with the (shape, dtype) of each of its datasets."""
     ImageWithAny: TypeAlias = ImageWithDatasets[Any] | ImageWithShapeSpecs[Any]
 
 
@@ -391,7 +395,7 @@ class Bf2RawBuilderBase(Generic[Image]):
             Series name (becomes the subgroup path, e.g., "0", "1").
         image : Image
             OME-Zarr Image metadata model for this series.
-        datasets : ArrayLike | Sequence[ArrayLike]
+        datasets : ArrayOrPyramid
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
         progress : bool, optional
@@ -460,7 +464,7 @@ class Bf2RawBuilderBase(Generic[Image]):
             Series name (becomes the subgroup path, e.g., "0", "1").
         image : Image
             OME-Zarr Image metadata model for this series.
-        datasets : ShapeAndDType | Sequence[ShapeAndDType]
+        datasets : ShapeAndDTypeOrPyramid
             Shape and dtype specification(s) for each resolution level, as
             `(shape, dtype)` tuples. For a single dataset, pass the tuple
             directly without wrapping in a list.
@@ -1102,7 +1106,7 @@ class LabelsBuilderBase(Generic[LabelImage]):
             Label name (becomes the subgroup path, e.g., "cells", "nuclei").
         label_image : LabelImage
             OME-Zarr LabelImage metadata model for this label.
-        datasets : ArrayLike | Sequence[ArrayLike]
+        datasets : ArrayOrPyramid
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
         progress : bool, optional

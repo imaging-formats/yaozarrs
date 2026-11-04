@@ -85,6 +85,10 @@ toggle.name = "Switch to light mode"
 inventories = [
     "https://docs.python.org/3/objects.inv",
     "https://docs.pydantic.dev/latest/objects.inv",
+    "https://typing-extensions.readthedocs.io/en/latest/objects.inv",
+    "https://numpy.org/doc/stable/objects.inv",
+    "https://zarr.readthedocs.io/en/stable/objects.inv",
+    "https://google.github.io/tensorstore/objects.inv",
 ]
 paths = ["src"]
 
@@ -101,6 +105,7 @@ members_order = "__all__"
 separate_signature = true
 show_signature_annotations = true
 show_overloads = false
+signature_crossrefs = true
 
 [[project.plugins.mkdocstrings.handlers.python.options.extensions]]
 griffe_fieldz = { strip_annotated = true }
