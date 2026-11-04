@@ -148,7 +148,13 @@ def _multiscale_06_05(ms: dict, dropped: list[str]) -> dict:
     ms = dict(ms)
     systems = ms.pop("coordinateSystems")
     intrinsic = ms["datasets"][0]["coordinateTransformations"][0]["output"]["name"]
-    axes = next(cs for cs in systems if cs["name"] == intrinsic)["axes"]
+    intrinsic_cs = next(cs for cs in systems if cs["name"] == intrinsic)
+    axes = intrinsic_cs["axes"]
+    # (v0.5 keeps only its axes)
+    dropped.extend(
+        f"coordinate system key {key!r}"
+        for key in intrinsic_cs.keys() - {"name", "axes"}
+    )
 
     dropped.extend(
         f"coordinate system {cs['name']!r}" for cs in systems if cs["name"] != intrinsic
@@ -191,10 +197,27 @@ def _transform_06_05(ds: dict, ndim: int, dropped: list[str]) -> list[dict]:
         for t in [transform, *transforms]
         if t.get("name") is not None
     )
+    # (v0.5 implies the input and output of a dataset's transformation: its path, and
+    # the intrinsic coordinate system; there's no place for anything else in them)
+    _report_lost_refs(transform, {"input": "path", "output": "name"}, dropped)
+    for step in transforms:
+        if step is not transform:
+            _report_lost_refs(step, {}, dropped)
     return [
         {k: v for k, v in t.items() if k not in _V06_ONLY_TRANSFORM_KEYS}
         for t in transforms
     ]
+
+
+def _report_lost_refs(t: dict, implied: dict[str, str], dropped: list[str]) -> None:
+    """Report what's in a transformation's input/output beyond what v0.5 implies."""
+    for side in ("input", "output"):
+        for key, value in (t.get(side) or {}).items():
+            # (`name` and `path` are fields, None if unset; any other key is unknown)
+            if key != implied.get(side) and (
+                value is not None or key not in ("name", "path")
+            ):
+                dropped.append(f"transformation {side} key {key!r}")
 
 
 _STEPS = {
@@ -223,9 +246,11 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
     package = _PACKAGES[version]
     if isinstance(obj, _GROUPS):
         attrs = _convert(obj.attributes, version, coordinate_system, dropped)
+        extra = copy.deepcopy(obj.model_extra or {})
         if not hasattr(package, "OMEAttributes"):
+            dropped.extend(f"zarr.json key {key!r}" for key in extra)
             return attrs
-        return package.OMEZarrGroupJSON(attributes=attrs)
+        return package.OMEZarrGroupJSON.model_validate({**extra, "attributes": attrs})
     if isinstance(obj, _ATTRIBUTES):
         ome = _convert(obj.ome, version, coordinate_system, dropped)
         extra = copy.deepcopy(obj.model_extra or {})

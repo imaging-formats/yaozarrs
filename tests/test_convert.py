@@ -426,11 +426,49 @@ def test_unknown_keys_survive() -> None:
         assert dumped["multiscales"][0]["tool:key"] == 1
 
 
+def test_group_unknown_keys_survive() -> None:
+    META = {"kind": "inline", "metadata": {}}
+    group = v05.OMEZarrGroupJSON.model_validate(
+        {
+            "zarr_format": 3,
+            "node_type": "group",
+            "consolidated_metadata": META,
+            "attributes": {
+                "ome": {"version": "0.5", "multiscales": [_multiscale_05()]}
+            },
+        }
+    )
+    for version in ("0.5", "0.6"):  # (warnings are errors)
+        extra = convert_version(group, version).model_extra
+        assert extra == {"consolidated_metadata": META}
+    with pytest.warns(ConversionWarning, match="'consolidated_metadata'"):
+        convert_version(group, "0.4")
+
+
+UNKNOWN_KEY = "tool:key"
+
+
+def test_unknown_keys_of_dataset_input_output_warn() -> None:
+    ms = _multiscale_06()
+    ms["datasets"][0]["coordinateTransformations"][0]["input"][UNKNOWN_KEY] = 1
+    src = v06.Image.model_validate({"multiscales": [ms]})
+    with pytest.warns(ConversionWarning, match=f"'{UNKNOWN_KEY}'"):
+        convert_version(src, "0.5")
+
+
+def test_unknown_keys_of_intrinsic_coordinate_system_warn() -> None:
+    ms = _multiscale_06()
+    ms["coordinateSystems"][0][UNKNOWN_KEY] = 1
+    src = v06.Image.model_validate({"multiscales": [ms]})
+    with pytest.warns(ConversionWarning, match=f"'{UNKNOWN_KEY}'"):
+        convert_version(src, "0.5")
+
+
 def test_unknown_keys_of_rebuilt_transformations_warn() -> None:
     ms = _multiscale_05()
-    ms["datasets"][0]["coordinateTransformations"][0]["tool:key"] = 1
+    ms["datasets"][0]["coordinateTransformations"][0][UNKNOWN_KEY] = 1
     src = v05.Image.model_validate({"multiscales": [ms]})
-    with pytest.warns(ConversionWarning, match="transformation key 'tool:key'"):
+    with pytest.warns(ConversionWarning, match=f"transformation key '{UNKNOWN_KEY}'"):
         convert_version(src, "0.6")
 
 
