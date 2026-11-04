@@ -1314,10 +1314,6 @@ or more of these under <code>coordinateSystems</code>.  (The <em>why</em> is exp
     <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="p">]</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Breaking change from v0.3</p>
-<p>In v0.3, axes were simple strings: <code>["c", "z", "y", "x"]</code>. In v0.4+, they must be objects with explicit types.</p>
-</div>
 </div>
 </div>
 </div>
@@ -1987,10 +1983,6 @@ text too, since the version is already given at <code>ome.version</code>.)</p>
 
 <span class="n">plate</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Plate</span><span class="p">(</span><span class="n">plate</span><span class="o">=</span><span class="n">plate_def</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Breaking change from v0.3</p>
-<p>v0.4 added <code>rowIndex</code> and <code>columnIndex</code>, <strong>required</strong> for all wells. This enables efficient sparse plate handling without path parsing.</p>
-</div>
 </div>
 </div>
 </div>
@@ -2436,8 +2428,6 @@ the images.</p>
 <thead>
 <tr>
 <th>Feature</th>
-<th style="text-align: center;">v0.2</th>
-<th style="text-align: center;">v0.3</th>
 <th style="text-align: center;">v0.4</th>
 <th style="text-align: center;">v0.5</th>
 <th style="text-align: center;">v0.6</th>
@@ -2447,47 +2437,17 @@ the images.</p>
 <tr>
 <td>Zarr version</td>
 <td style="text-align: center;">v2</td>
-<td style="text-align: center;">v2</td>
-<td style="text-align: center;">v2</td>
 <td style="text-align: center;">v3</td>
 <td style="text-align: center;">v3</td>
 </tr>
 <tr>
 <td>Axes format</td>
-<td style="text-align: center;">Implicit TCZYX</td>
-<td style="text-align: center;">Strings</td>
 <td style="text-align: center;">Objects</td>
 <td style="text-align: center;">Objects</td>
 <td style="text-align: center;">Objects, in named coordinate systems</td>
 </tr>
 <tr>
-<td>Axis type field</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">SHOULD</td>
-<td style="text-align: center;">SHOULD</td>
-<td style="text-align: center;">SHOULD</td>
-</tr>
-<tr>
-<td>Axis unit field</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">SHOULD</td>
-<td style="text-align: center;">SHOULD</td>
-<td style="text-align: center;">SHOULD</td>
-</tr>
-<tr>
-<td>Coordinate transforms</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;"><strong>MUST</strong></td>
-<td style="text-align: center;"><strong>MUST</strong></td>
-<td style="text-align: center;"><strong>MUST</strong></td>
-</tr>
-<tr>
 <td>Transformation types</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
 <td style="text-align: center;">identity, scale, translation</td>
 <td style="text-align: center;">identity, scale, translation</td>
 <td style="text-align: center;">12 types</td>
@@ -2495,15 +2455,11 @@ the images.</p>
 <tr>
 <td>Metadata location</td>
 <td style="text-align: center;"><code>.zattrs</code></td>
-<td style="text-align: center;"><code>.zattrs</code></td>
-<td style="text-align: center;"><code>.zattrs</code></td>
 <td style="text-align: center;"><code>zarr.json</code></td>
 <td style="text-align: center;"><code>zarr.json</code></td>
 </tr>
 <tr>
 <td>OME namespace</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
 <td style="text-align: center;">N/A</td>
 <td style="text-align: center;"><code>attributes.ome</code></td>
 <td style="text-align: center;"><code>attributes.ome</code></td>
@@ -2511,23 +2467,11 @@ the images.</p>
 <tr>
 <td><code>dimension_names</code></td>
 <td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
 <td style="text-align: center;"><strong>MUST</strong></td>
 <td style="text-align: center;">Not required</td>
 </tr>
 <tr>
-<td>Plate indices</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;"><strong>MUST</strong></td>
-<td style="text-align: center;"><strong>MUST</strong></td>
-<td style="text-align: center;"><strong>MUST</strong></td>
-</tr>
-<tr>
 <td>Scenes</td>
-<td style="text-align: center;">N/A</td>
-<td style="text-align: center;">N/A</td>
 <td style="text-align: center;">N/A</td>
 <td style="text-align: center;">N/A</td>
 <td style="text-align: center;">MAY</td>
@@ -2543,14 +2487,6 @@ the images.</p>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><strong>v0.3</strong></td>
-<td>Explicit <code>axes</code> (as strings)</td>
-</tr>
-<tr>
-<td><strong>v0.4</strong></td>
-<td>Axes become objects with a <code>type</code> and <code>unit</code>; each dataset needs <code>coordinateTransformations</code>; plate wells get <code>rowIndex</code>/<code>columnIndex</code> (v0.4.1 added <code>bioformats2raw.layout</code>)</td>
-</tr>
 <tr>
 <td><strong>v0.5</strong></td>
 <td>Zarr v3: metadata moves to <code>zarr.json</code>, under <code>attributes.ome</code></td>
