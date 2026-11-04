@@ -11,7 +11,7 @@ import pytest
 
 import yaozarrs
 from yaozarrs import DimSpec, open_group, validate_zarr_store
-from yaozarrs._storage import StorageValidationError
+from yaozarrs._errors import StorageValidationError
 
 if TYPE_CHECKING:
     from typing import Callable

@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from yaozarrs import DimSpec, v06
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 Y = {"name": "y", "type": "space", "unit": "micrometer"}
 X = {"name": "x", "type": "space", "unit": "micrometer"}

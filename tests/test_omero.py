@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from yaozarrs import v05
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 WINDOW = {"start": 0, "end": 255, "min": 0, "max": 255}
 

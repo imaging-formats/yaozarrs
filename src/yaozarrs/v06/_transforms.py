@@ -12,8 +12,8 @@ from pydantic import (
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._errors import ValidationWarning
 from yaozarrs._types import duplicates
-from yaozarrs._validation_warning import ValidationWarning
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "CoordinateTransformation",

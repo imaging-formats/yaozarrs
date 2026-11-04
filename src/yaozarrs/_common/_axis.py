@@ -1,3 +1,5 @@
+"""Axis building blocks (identical in v0.4 and v0.5)."""
+
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Len
@@ -9,9 +11,10 @@ from pydantic import (
     model_validator,
 )
 
-from ._base import _BaseModel
-from ._common._units import SpaceUnits, TimeUnits
-from ._types import UNIQUE_ITEMS
+from yaozarrs._base import _BaseModel
+from yaozarrs._types import UNIQUE_ITEMS
+
+from ._units import SpaceUnits, TimeUnits
 
 
 class _AxisBase(_BaseModel):

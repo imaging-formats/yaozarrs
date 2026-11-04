@@ -14,7 +14,7 @@ Schema: <https://github.com/ome/ngff/tree/7ac3430c74a66e5bcf53e41c429143172d68c0
 
 from __future__ import annotations
 
-from yaozarrs._axis import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
+from yaozarrs._common._axis import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
 from yaozarrs._common._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 
 from ._bf2raw import Bf2Raw, Series

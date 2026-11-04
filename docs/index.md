@@ -203,7 +203,7 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
     ```
 
     ```txt
-    yaozarrs._storage.StorageValidationError: 14 validation error(s) for StorageValidationError
+    yaozarrs.StorageValidationError: 14 validation error(s) for StorageValidationError
     ome.plate.wells.0.well.images.0.multiscales.0.datasets.0.path
     Dataset path '0' not found in zarr group [type=dataset_path_not_found, fs_path='broken_v05.ome.zarr/A/1/0/0', expected='zarr array']
 

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from yaozarrs import validate_zarr_store
-from yaozarrs._storage import (
+from yaozarrs._errors import (
     StorageErrorType,
     StorageValidationError,
     StorageValidationWarning,

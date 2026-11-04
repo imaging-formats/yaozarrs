@@ -8,7 +8,7 @@ from contextlib import suppress
 import pytest
 
 import yaozarrs
-from yaozarrs._storage import StorageValidationWarning
+from yaozarrs._errors import StorageValidationWarning
 
 VALID_URLS = (
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr",

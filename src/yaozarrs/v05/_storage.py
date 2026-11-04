@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from yaozarrs._common._storage import StorageValidator
-from yaozarrs._storage import StorageErrorType, ValidationResult
+from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._validate import validate_ome_object, validate_ome_uri
 from yaozarrs.v05._bf2raw import Bf2Raw, Series
 from yaozarrs.v05._image import Dataset, Image, Multiscale

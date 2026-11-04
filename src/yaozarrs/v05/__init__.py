@@ -12,7 +12,7 @@ Schema: <https://github.com/ome/ngff/tree/8cbba216e37407bd2d4bd5c7128ab13bd0a640
 # version: fork the class into the newer version instead ("fork, don't flag").
 # Guarded by tests/test_frozen_schemas.py and tests/test_architecture.py.
 
-from yaozarrs._axis import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
+from yaozarrs._common._axis import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
 from yaozarrs._common._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 
 from ._bf2raw import Bf2Raw, Series

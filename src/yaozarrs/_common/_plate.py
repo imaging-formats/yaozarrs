@@ -9,8 +9,8 @@ from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._errors import ValidationWarning
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
-from yaozarrs._validation_warning import ValidationWarning
 
 
 class Acquisition(_BaseModel):

@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 from typing import get_args
 
-from yaozarrs._axis import SpaceUnits, TimeUnits
+from yaozarrs._common._units import SpaceUnits, TimeUnits
 
 # Output path relative to repo root
 OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "javascripts" / "ome_units.js"

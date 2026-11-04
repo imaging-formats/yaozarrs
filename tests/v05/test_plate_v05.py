@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from yaozarrs import v05, validate_ome_object
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 # Helper data
 COLUMN_A = {"name": "01"}
