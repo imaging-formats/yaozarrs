@@ -104,6 +104,13 @@ def test_cached_mapper_caches_values_and_exceptions(
         _missing = cached["missing"]
 
 
+def test_cached_mapper_does_not_cache_default(memory_mapper: fsspec.FSMap) -> None:
+    cached = _CachedMapper(memory_mapper)
+    assert cached.get("missing", b"fallback") == b"fallback"
+    assert cached.get("missing") is None
+    assert "missing" not in cached
+
+
 def test_cached_mapper_contains_len_iter_and_getitem(
     memory_mapper: fsspec.FSMap,
 ) -> None:

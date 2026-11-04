@@ -341,19 +341,18 @@ class _CachedMapper(Mapping[str, bytes]):
     @overload
     def get(self, key: str, /, default: bytes) -> bytes: ...
     @overload
-    def get(self, key: str, /, default: _T) -> _T: ...
+    def get(self, key: str, /, default: _T) -> bytes | _T: ...
     def get(  # ty: ignore[invalid-method-override]
         self, key: str, default: _T | None = None
-    ) -> _T | None:
+    ) -> bytes | _T | None:
         """Get a value from the mapper with caching."""
         if key not in self._cache:
-            val = self._mapper.get(key, default)
-            self._cache[key] = val  # ty: ignore[invalid-assignment]
-        else:
-            val = self._cache[key]
-        if isinstance(val, Exception):
+            # (cache what the mapper holds, never the caller's `default`)
+            self._cache[key] = self._mapper.get(key)
+        val = self._cache[key]
+        if val is None or isinstance(val, Exception):
             return default
-        return val  # ty: ignore[invalid-return-type]
+        return val
 
     def __contains__(self, key: object) -> bool:
         """Check if a key exists in the mapper."""
