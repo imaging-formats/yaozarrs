@@ -10,7 +10,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 import yaozarrs
-from yaozarrs._storage import StorageValidationError
+from yaozarrs._errors import StorageValidationError
 
 path = Path(sys.argv[-1])
 strict = "--strict" in sys.argv[1:-1]

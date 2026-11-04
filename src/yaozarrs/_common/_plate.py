@@ -9,12 +9,8 @@ from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._errors import ValidationWarning
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
-from yaozarrs._validation_warning import ValidationWarning
-
-# ------------------------------------------------------------------------------
-# Acquisition model
-# ------------------------------------------------------------------------------
 
 
 class Acquisition(_BaseModel):
@@ -56,11 +52,6 @@ class Acquisition(_BaseModel):
     )
 
 
-# ------------------------------------------------------------------------------
-# Column model
-# ------------------------------------------------------------------------------
-
-
 class Column(_BaseModel):
     """A column in the plate grid.
 
@@ -72,11 +63,6 @@ class Column(_BaseModel):
         description="Column identifier (typically numeric, e.g., '1', '2', '3')",
         pattern=r"^[A-Za-z0-9]+$",
     )
-
-
-# ------------------------------------------------------------------------------
-# Row model
-# ------------------------------------------------------------------------------
 
 
 class Row(_BaseModel):
@@ -91,12 +77,7 @@ class Row(_BaseModel):
     )
 
 
-# ------------------------------------------------------------------------------
-# Well model
-# ------------------------------------------------------------------------------
-
-
-# naming this PlateWell to disambiguate from a top level Well (see _well.py)
+# (named PlateWell to distinguish it from each version's top-level `Well`)
 class PlateWell(_BaseModel):
     """A well location reference within a plate.
 
@@ -117,11 +98,6 @@ class PlateWell(_BaseModel):
     columnIndex: NonNegativeInt = Field(
         description="Zero-based index into the plate's columns list",
     )
-
-
-# ------------------------------------------------------------------------------
-# Plate model
-# ------------------------------------------------------------------------------
 
 
 def check_plate_layout(

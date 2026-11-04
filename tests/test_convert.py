@@ -151,6 +151,38 @@ def test_fixture_round_trip_is_exact(path: Path) -> None:
         assert back.model_dump() == obj.model_dump()
 
 
+def _add_unknown_keys(obj: Any, keys: list[str]) -> list[str]:
+    """Add a uniquely named unknown key to every JSON object in `obj`."""
+    if isinstance(obj, (dict, list)):
+        for value in list(obj.values() if isinstance(obj, dict) else obj):
+            _add_unknown_keys(value, keys)
+    if isinstance(obj, dict):
+        keys.append(f"x-unknown-{len(keys)}")
+        obj[keys[-1]] = 0
+    return keys
+
+
+def _convert_warned(obj: Any, version: Any) -> tuple[Any, str]:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        return convert_version(obj, version), " ".join(str(x.message) for x in w)
+
+
+@pytest.mark.parametrize("version", VERSIONS.values())
+@pytest.mark.parametrize("path", FIXTURES, ids=IDS)
+def test_fixture_unknown_keys_survive_or_warn(path: Path, version: Any) -> None:
+    if (obj := _load(path)) is None or isinstance(obj, v06.Scene):
+        pytest.skip("no OME metadata (or a scene, which can't be converted)")
+    whole = ("coordinate system '", "multiscale coordinateTransformations")
+    if any(w in _convert_warned(obj, version)[1] for w in whole):
+        pytest.skip("drops whole objects (which the warning names, not their keys)")
+    doc = obj.model_dump(mode="json")
+    keys = _add_unknown_keys(doc, [])
+    result, warned = _convert_warned(type(obj).model_validate(doc), version)
+    kept = json.dumps(result.model_dump(mode="json"))
+    assert [k for k in keys if f'"{k}"' not in kept and f"'{k}'" not in warned] == []
+
+
 # ------------------------------------------------------------------------------
 # Upgrades
 # ------------------------------------------------------------------------------
@@ -407,17 +439,85 @@ def test_conversion_warning_can_be_an_error() -> None:
             convert_version(src, "0.5")
 
 
-def test_label_color_extras_warn_only_for_v04() -> None:
+def test_label_color_extras_survive() -> None:
     colors = [{"label-value": 1, "rgba": [1, 2, 3, 4], "note": "x"}]
     src = v05.LabelImage.model_validate(
         {"multiscales": [_multiscale_05()], "image-label": {"colors": colors}}
     )
-    upgraded = convert_version(src, "0.6")  # no warning
-    assert upgraded.model_dump()["image-label"]["colors"] == colors
-    with pytest.warns(ConversionWarning, match="label color key 'note'"):
-        convert_version(src, "0.4")
-    with pytest.warns(ConversionWarning, match="label color key 'note'"):
-        convert_version(upgraded, "0.4")
+    for version in ("0.4", "0.6"):  # (warnings are errors)
+        converted = convert_version(src, version)
+        assert converted.model_dump()["image-label"]["colors"] == colors
+
+
+def test_unknown_keys_survive() -> None:
+    ms = {**_multiscale_05(), "tool:key": 1}
+    src = v05.Image.model_validate({"multiscales": [ms], "_creator": {"name": "me"}})
+    for version in ("0.4", "0.6"):  # (warnings are errors)
+        dumped = convert_version(src, version).model_dump()
+        assert dumped["_creator"] == {"name": "me"}
+        assert dumped["multiscales"][0]["tool:key"] == 1
+
+
+def test_group_unknown_keys_survive() -> None:
+    META = {"kind": "inline", "metadata": {}}
+    group = v05.OMEZarrGroupJSON.model_validate(
+        {
+            "zarr_format": 3,
+            "node_type": "group",
+            "consolidated_metadata": META,
+            "attributes": {
+                "ome": {"version": "0.5", "multiscales": [_multiscale_05()]}
+            },
+        }
+    )
+    for version in ("0.5", "0.6"):  # (warnings are errors)
+        extra = convert_version(group, version).model_extra
+        assert extra == {"consolidated_metadata": META}
+    with pytest.warns(ConversionWarning, match="'consolidated_metadata'"):
+        convert_version(group, "0.4")
+
+
+UNKNOWN_KEY = "tool:key"
+
+
+def test_unknown_keys_of_dataset_input_output_warn() -> None:
+    ms = _multiscale_06()
+    ms["datasets"][0]["coordinateTransformations"][0]["input"][UNKNOWN_KEY] = 1
+    src = v06.Image.model_validate({"multiscales": [ms]})
+    with pytest.warns(ConversionWarning, match=f"'{UNKNOWN_KEY}'"):
+        convert_version(src, "0.5")
+
+
+def test_unknown_keys_of_intrinsic_coordinate_system_warn() -> None:
+    ms = _multiscale_06()
+    ms["coordinateSystems"][0][UNKNOWN_KEY] = 1
+    src = v06.Image.model_validate({"multiscales": [ms]})
+    with pytest.warns(ConversionWarning, match=f"'{UNKNOWN_KEY}'"):
+        convert_version(src, "0.5")
+
+
+def test_unknown_keys_of_dataset_transformations_survive() -> None:
+    ms = _multiscale_05()
+    ms["datasets"][0]["coordinateTransformations"] = [
+        {"type": "scale", "scale": [1.0, 0.5, 0.5], UNKNOWN_KEY: 1},
+        {"type": "translation", "translation": [0.0, 1.0, 1.0], UNKNOWN_KEY: 2},
+    ]
+    src = v05.Image.model_validate({"multiscales": [ms]})
+    upgraded = convert_version(src, "0.6")  # (warnings are errors)
+    (sequence,) = upgraded.multiscales[0].datasets[0].coordinateTransformations
+    steps = sequence.transformations  # type: ignore[union-attr]
+    assert [t.model_extra for t in steps] == [{UNKNOWN_KEY: 1}, {UNKNOWN_KEY: 2}]
+    assert convert_version(upgraded, "0.5").model_dump() == src.model_dump()
+
+
+def test_unknown_keys_of_multiscale_transformations_warn() -> None:
+    # (they're folded into each dataset's transformation, so have nowhere to go)
+    overall = [{"type": "scale", "scale": [1.0, 2.0, 2.0], UNKNOWN_KEY: 1}]
+    src = v05.Image.model_validate(
+        {"multiscales": [_multiscale_05(coordinateTransformations=overall)]}
+    )
+    with pytest.warns(ConversionWarning, match=f"transformation key '{UNKNOWN_KEY}'"):
+        convert_version(src, "0.6")
 
 
 def test_scene_cannot_be_downgraded() -> None:

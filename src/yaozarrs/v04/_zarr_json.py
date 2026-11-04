@@ -264,8 +264,7 @@ def _discriminate_ome_v04_metadata(v: Any) -> str | None:
     return None
 
 
-# NOTE:
-# these are ALL also ZarrGroupModels (i.e. have a "uri" attribute)
+# (all but LabelsGroup are also ZarrGroupModels, i.e. have a "uri" attribute)
 OMEZarrGroupJSON: TypeAlias = Annotated[
     (
         Annotated[LabelImage, Tag("label-image")]

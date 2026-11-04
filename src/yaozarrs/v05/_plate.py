@@ -5,9 +5,9 @@ from pydantic import Field, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
+from yaozarrs._common._node_names import RelaxedFOVPathName
 from yaozarrs._common._plate import Acquisition, Column, PlateDef, PlateWell, Row
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
-from yaozarrs._util import RelaxedFOVPathName
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Plate",
@@ -22,10 +22,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "WellDef",
     "FieldOfView",
 ]
-
-# ------------------------------------------------------------------------------
-# Plate model (top-level)
-# ------------------------------------------------------------------------------
 
 
 class Plate(_OMEDocument):
@@ -96,7 +92,6 @@ class FieldOfView(_BaseModel):
             "Relative path to this field's image group "
             "(typically a number like '0', '1', etc.)"
         ),
-        # pattern=r"^[A-Za-z0-9]+$",
     )
     acquisition: int | None = Field(
         default=None,
@@ -125,11 +120,6 @@ class WellDef(_BaseModel):
         if dupes := duplicates([img.path for img in self.images]):
             raise ValueError(f"Field of view paths must be unique. Duplicates: {dupes}")
         return self
-
-
-# ------------------------------------------------------------------------------
-# Well model (top-level)
-# ------------------------------------------------------------------------------
 
 
 class Well(_OMEDocument):

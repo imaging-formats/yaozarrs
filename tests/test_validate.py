@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 import yaozarrs
 from yaozarrs import v04, v05, v06
-from yaozarrs._validation_warning import ValidationWarning
+from yaozarrs._errors import ValidationWarning
 
 if TYPE_CHECKING:
     from pathlib import Path

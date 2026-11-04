@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import TypeAdapter
 
 from yaozarrs._common._storage import StorageValidator
-from yaozarrs._storage import StorageErrorType, ValidationResult
+from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._zarr import open_group
 from yaozarrs.v04._bf2raw import Bf2Raw, Series
 from yaozarrs.v04._image import Dataset, Image, Multiscale
@@ -32,7 +32,7 @@ _OME_VALIDATOR = TypeAdapter(OMEZarrGroupJSON)
 
 
 class StorageValidatorV04(StorageValidator):
-    """Concrete implementation of storage validator. for OME-ZARR v0.4 spec."""
+    """Storage validator for the OME-Zarr v0.4 spec."""
 
     __slots__ = ()
 
@@ -60,7 +60,7 @@ class StorageValidatorV04(StorageValidator):
     ) -> ValidationResult:
         result = ValidationResult()
         # Check dimension_names attribute matches axes
-        if dim_names := list(dict(arr.attrs).get("dimension_names", [])):
+        if dim_names := list(arr.attrs.get("dimension_names", [])):
             expected_names = [ax.name for ax in multiscale.axes]
             if dim_names != expected_names:
                 result.add_error(

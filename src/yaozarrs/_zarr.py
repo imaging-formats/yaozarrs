@@ -692,7 +692,7 @@ class ZarrGroup(ZarrNode):
         StorageValidationError
             If the storage structure is invalid.
         """
-        from yaozarrs._storage import validate_zarr_store
+        from yaozarrs._validate import validate_zarr_store
 
         validate_zarr_store(self, strict=strict)
         return self
@@ -732,14 +732,18 @@ class ZarrGroup(ZarrNode):
 
         Examples
         --------
-        >>> group = open_group("https://example.com/data.zarr")
+        >>> url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr"
+        >>> group = open_group(url)
         >>> print(group.tree(depth=2, max_per_level=5))
-        🖼️ data.zarr
-        ├── 📁 A
-        │   ├── 🖼️ 1
-        │   ├── 🖼️ 2
-        │   ⋯ ...
-        └── 📦 labels (uint8, (100, 100))
+        🖼️ 6001240_labels.zarr
+        ├── zarr.json  <- v05.Image
+        ├── 📦 0 (uint16, (2, 236, 275, 271))
+        ├── 📦 1 (uint16, (2, 236, 137, 135))
+        ├── 📦 2 (uint16, (2, 236, 68, 67))
+        └── 🏷️ labels
+            ├── zarr.json  <- v05.LabelsGroup
+            └── 🖼️ 0
+                └── zarr.json  <- v05.LabelImage
         """
         from yaozarrs._tree import render_tree
 

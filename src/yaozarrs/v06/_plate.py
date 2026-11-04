@@ -5,9 +5,9 @@ from pydantic import AfterValidator, Field, model_validator
 from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
+from yaozarrs._common._node_names import BAD_NODE_RE
 from yaozarrs._common._plate import Acquisition, Column, PlateDef, PlateWell, Row
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
-from yaozarrs._util import BAD_NODE_RE
 
 from ._version import VersionStr
 
@@ -24,10 +24,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "WellDef",
     "FieldOfView",
 ]
-
-# ------------------------------------------------------------------------------
-# Plate model (top-level)
-# ------------------------------------------------------------------------------
 
 
 class Plate(_OMEDocument):
@@ -74,11 +70,6 @@ class Plate(_OMEDocument):
             "Marker indicating this plate was created by bioformats2raw version 3"
         ),
     )
-
-
-# ------------------------------------------------------------------------------
-# Well model
-# ------------------------------------------------------------------------------
 
 
 def _validate_fov_path(path: str) -> str:

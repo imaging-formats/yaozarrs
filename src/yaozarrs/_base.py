@@ -52,8 +52,11 @@ def _cached_type_adapter(tp: Any) -> TypeAdapter[Any]:
 
 
 class _BaseModel(BaseModel):
+    # "allow": keys the spec doesn't define are kept, and written back out.  No
+    # version of the spec forbids them, nor do the JSON schemas (except where a model
+    # says otherwise), so a reader shouldn't reject them or silently drop them.
     model_config: ClassVar[ConfigDict] = ConfigDict(
-        extra="ignore",
+        extra="allow",
         validate_assignment=True,
         validate_default=True,
         serialize_by_alias=True,

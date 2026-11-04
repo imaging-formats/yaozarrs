@@ -8,7 +8,8 @@ import sys
 from pydantic import ValidationError
 
 from yaozarrs import __version__
-from yaozarrs._storage import StorageValidationError, validate_zarr_store
+from yaozarrs._errors import StorageValidationError
+from yaozarrs._validate import validate_zarr_store
 from yaozarrs._zarr import open_group
 
 

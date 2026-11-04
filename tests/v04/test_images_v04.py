@@ -557,6 +557,56 @@ V04_INVALID_IMAGES_WITH_MESSAGES: list[tuple[dict, str]] = [
         },
         "Axis names must be unique",
     ),
+    # Datasets not ordered from highest to lowest resolution
+    (
+        {
+            "multiscales": [
+                {
+                    "axes": [X_AXIS, Y_AXIS],
+                    "datasets": [
+                        {
+                            "path": "0",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [2.0, 2.0]}
+                            ],
+                        },
+                        {
+                            "path": "1",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 1.0]}
+                            ],
+                        },
+                    ],
+                }
+            ]
+        },
+        "The datasets are not ordered from highest to lowest resolution",
+    ),
+    # ... on every spatial axis, not only the first
+    (
+        {
+            "multiscales": [
+                {
+                    "axes": [C_AXIS, X_AXIS, Y_AXIS],
+                    "datasets": [
+                        {
+                            "path": "0",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 1.0, 4.0]}
+                            ],
+                        },
+                        {
+                            "path": "1",
+                            "coordinateTransformations": [
+                                {"type": "scale", "scale": [1.0, 2.0, 0.1]}
+                            ],
+                        },
+                    ],
+                }
+            ]
+        },
+        "The datasets are not ordered from highest to lowest resolution",
+    ),
 ]
 
 # Combine all invalid cases with specific error messages
@@ -701,7 +751,7 @@ def test_v04_omero_models() -> None:
 def test_v04_axis_name_uniqueness_custom_validation() -> None:
     """Test that axis names must be unique - triggers custom validation logic."""
     # Import the validation function directly to test it
-    from yaozarrs._axis import _validate_axes_list
+    from yaozarrs._common._axis import _validate_axes_list
 
     # Create axes with same names but different types to bypass UniqueList
     axes = [
@@ -781,3 +831,26 @@ def test_dataset_path_warns_on_risky_characters() -> None:
         path="level_0.test-1",  # all safe: alphanumeric, underscore, dot, hyphen
         coordinateTransformations=[v04.ScaleTransformation(scale=[1.0, 1.0])],
     )
+
+
+@pytest.mark.parametrize("scale_len, translation_len", [(2, 3), (3, 2)])
+def test_transform_lengths_must_match(scale_len: int, translation_len: int) -> None:
+    """Scale and translation must have the same length, even without the axes."""
+    transforms = [scale_tform(scale_len), translate_tform(translation_len)]
+    match = "scale and translation transformations must have the same length"
+    with pytest.raises(ValidationError, match=match):
+        v04.Dataset(path="0", coordinateTransformations=transforms)
+
+    # (in a multiscale this was already an error, against its axes: now it's
+    # reported at the transformation list, of a dataset or of the multiscale)
+    axes = [Y_AXIS, X_AXIS]
+    datasets = [{"path": "0", "coordinateTransformations": transforms}]
+    with pytest.raises(ValidationError, match=match) as e:
+        v04.Multiscale(axes=axes, datasets=datasets)
+    assert e.value.errors()[0]["loc"] == ("datasets", 0, "coordinateTransformations")
+    datasets = [{"path": "0", "coordinateTransformations": [scale_tform(2)]}]
+    with pytest.raises(ValidationError, match=match) as e:
+        v04.Multiscale(
+            axes=axes, datasets=datasets, coordinateTransformations=transforms
+        )
+    assert e.value.errors()[0]["loc"] == ("coordinateTransformations",)

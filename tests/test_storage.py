@@ -29,7 +29,7 @@ except ImportError:
     connection_exceptions = ()
 
 from yaozarrs import validate_zarr_store
-from yaozarrs._storage import (
+from yaozarrs._errors import (
     ErrorDetails,
     StorageErrorType,
     StorageValidationError,
