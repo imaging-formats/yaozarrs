@@ -2,10 +2,9 @@
 
 import warnings
 from collections.abc import Callable
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias, get_args
 
 from pydantic import AfterValidator
-from typing_extensions import get_args
 
 from yaozarrs._errors import ValidationWarning
 

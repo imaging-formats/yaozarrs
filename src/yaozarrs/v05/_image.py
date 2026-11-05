@@ -1,9 +1,8 @@
 from collections.abc import Sequence
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import AfterValidator, Field, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._axis import AxesList

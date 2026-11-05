@@ -1,5 +1,6 @@
 """Multiscale checks shared by more than one version."""
 
+import itertools
 import math
 from collections.abc import Sequence
 from typing import Any
@@ -38,8 +39,8 @@ def check_resolution_order(spatial_scales: Sequence[tuple[float, ...]]) -> None:
     """
     if any(
         b < a and not math.isclose(a, b, rel_tol=1e-6)
-        for prev, cur in zip(spatial_scales, spatial_scales[1:])
-        for a, b in zip(prev, cur)
+        for prev, cur in itertools.pairwise(spatial_scales)
+        for a, b in zip(prev, cur, strict=False)
     ):
         raise ValueError(
             "The datasets are not ordered from highest to lowest resolution. "

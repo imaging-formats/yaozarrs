@@ -45,13 +45,12 @@ from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import TypeVar
+    from typing import Self, TypeVar
 
     import rich.tree
     import tensorstore
     import zarr
     from fsspec import FSMap
-    from typing_extensions import Self
 
     _T = TypeVar("_T")
 

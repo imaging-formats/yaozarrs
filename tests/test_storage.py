@@ -1,11 +1,11 @@
 import json
 import shutil
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import Mock
 
 import pytest

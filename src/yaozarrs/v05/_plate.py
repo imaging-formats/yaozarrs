@@ -1,8 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from annotated_types import MinLen
 from pydantic import Field, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._node_names import RelaxedFOVPathName

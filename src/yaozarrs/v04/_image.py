@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import (
@@ -9,7 +9,6 @@ from pydantic import (
     model_serializer,
     model_validator,
 )
-from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._common._axis import AxesList

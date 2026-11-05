@@ -14,7 +14,7 @@ from yaozarrs import DimSpec, open_group, validate_zarr_store
 from yaozarrs._errors import StorageValidationError
 
 if TYPE_CHECKING:
-    from typing import Callable
+    from collections.abc import Callable
 
 
 class LazyStore(Mapping[str, bytes]):

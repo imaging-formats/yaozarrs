@@ -34,8 +34,8 @@ test-cov-full:
     rm -rf htmlcov/
 
     echo ""
-    echo "📊 Step 1: Running tests with Python 3.10 + lowest dependencies..."
-    uv run -p 3.10 --resolution lowest-direct --exact -U --no-dev --group test-full \
+    echo "📊 Step 1: Running tests with Python 3.11 + lowest dependencies..."
+    uv run -p 3.11 --resolution lowest-direct --exact -U --no-dev --group test-full \
         coverage run --parallel-mode --source=src --omit="*/tests/*" -m pytest -v
 
     sleep 1  

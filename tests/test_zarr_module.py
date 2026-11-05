@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import shutil
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest

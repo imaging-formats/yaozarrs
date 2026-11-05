@@ -591,7 +591,9 @@ class StorageValidatorV06(StorageValidator):
             problem = f"has {len(shape)} dimensions, not 2"
         elif not is_affine and shape[0] != shape[1]:
             problem = f"has shape {list(shape)}, which is not square"
-        elif any(e is not None and e != s for e, s in zip(expected, shape)):
+        elif any(
+            e is not None and e != s for e, s in zip(expected, shape, strict=False)
+        ):
             want = "x".join("?" if e is None else str(e) for e in expected)
             problem = f"has shape {list(shape)}, expected {want}"
         if problem:
