@@ -1859,11 +1859,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 967</span>
-<span class="normal"> 968</span>
-<span class="normal"> 969</span>
-<span class="normal"> 970</span>
-<span class="normal"> 971</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 971</span>
 <span class="normal"> 972</span>
 <span class="normal"> 973</span>
 <span class="normal"> 974</span>
@@ -1905,7 +1901,11 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">1010</span>
 <span class="normal">1011</span>
 <span class="normal">1012</span>
-<span class="normal">1013</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2106,11 +2106,7 @@ number of specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span>
-<span class="normal">1019</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1019</span>
 <span class="normal">1020</span>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
@@ -2148,7 +2144,11 @@ number of specs doesn't match the metadata.</p>
 <span class="normal">1054</span>
 <span class="normal">1055</span>
 <span class="normal">1056</span>
-<span class="normal">1057</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2289,11 +2289,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1059</span>
-<span class="normal">1060</span>
-<span class="normal">1061</span>
-<span class="normal">1062</span>
-<span class="normal">1063</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1063</span>
 <span class="normal">1064</span>
 <span class="normal">1065</span>
 <span class="normal">1066</span>
@@ -2329,7 +2325,11 @@ tensorstore.TensorStore).</p>
 <span class="normal">1096</span>
 <span class="normal">1097</span>
 <span class="normal">1098</span>
-<span class="normal">1099</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">1099</span>
+<span class="normal">1100</span>
+<span class="normal">1101</span>
+<span class="normal">1102</span>
+<span class="normal">1103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete labels group structure including LabelsGroup</span>
@@ -2906,11 +2906,7 @@ provided Plate doesn't include this well.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">684</span>
-<span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">688</span>
 <span class="normal">689</span>
 <span class="normal">690</span>
 <span class="normal">691</span>
@@ -2963,7 +2959,11 @@ provided Plate doesn't include this well.</p>
 <span class="normal">738</span>
 <span class="normal">739</span>
 <span class="normal">740</span>
-<span class="normal">741</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3178,11 +3178,7 @@ don't match Image metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">743</span>
-<span class="normal">744</span>
-<span class="normal">745</span>
-<span class="normal">746</span>
-<span class="normal">747</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
 <span class="normal">750</span>
@@ -3224,7 +3220,11 @@ don't match Image metadata.</p>
 <span class="normal">786</span>
 <span class="normal">787</span>
 <span class="normal">788</span>
-<span class="normal">789</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3370,11 +3370,7 @@ objects. The array type depends on the configured writer
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">791</span>
-<span class="normal">792</span>
-<span class="normal">793</span>
-<span class="normal">794</span>
-<span class="normal">795</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span>
 <span class="normal">798</span>
@@ -3413,7 +3409,11 @@ objects. The array type depends on the configured writer
 <span class="normal">831</span>
 <span class="normal">832</span>
 <span class="normal">833</span>
-<span class="normal">834</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete Plate structure including plate metadata (auto-</span>
@@ -3971,11 +3971,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
 <span class="normal">471</span>
@@ -4014,7 +4010,11 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">504</span>
 <span class="normal">505</span>
 <span class="normal">506</span>
-<span class="normal">507</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_image</span><span class="p">(</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_image</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
@@ -4212,11 +4212,7 @@ number of dataset specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">509</span>
-<span class="normal">510</span>
-<span class="normal">511</span>
-<span class="normal">512</span>
-<span class="normal">513</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">513</span>
 <span class="normal">514</span>
 <span class="normal">515</span>
 <span class="normal">516</span>
@@ -4252,7 +4248,11 @@ number of dataset specs doesn't match the metadata.</p>
 <span class="normal">546</span>
 <span class="normal">547</span>
 <span class="normal">548</span>
-<span class="normal">549</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_series</span><span class="p">(</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_series</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
@@ -4391,11 +4391,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span>
-<span class="normal">555</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">555</span>
 <span class="normal">556</span>
 <span class="normal">557</span>
 <span class="normal">558</span>
@@ -4429,7 +4425,11 @@ tensorstore.TensorStore).</p>
 <span class="normal">586</span>
 <span class="normal">587</span>
 <span class="normal">588</span>
-<span class="normal">589</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete bioformats2raw structure including root metadata,</span>
