@@ -1,0 +1,10167 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Yet another ome-zarr model.">
+      
+      
+        <meta name="author" content="Talley Lambert">
+      
+      
+        <link rel="canonical" href="https://imaging-formats.github.io/yaozarrs/rules/">
+      
+      
+      
+        <link rel="prev" href="../API_Reference/yaozarrs.write.v05/">
+      
+      
+        <link rel="next" href="./YZ-001/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.1.0">
+    
+    
+      
+        <title>Rule codes - YAOZARRS ‼️</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CFira+Code:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/zensical.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="./.." title="YAOZARRS ‼️" class="md-header__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            YAOZARRS ‼️
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Rule codes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/imaging-formats/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    imaging-formats/yaozarrs
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="YAOZARRS ‼️" class="md-nav__button md-logo" aria-label="YAOZARRS ‼️" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+
+    </a>
+    YAOZARRS ‼️
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/imaging-formats/yaozarrs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    imaging-formats/yaozarrs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Get Started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Installing yaozarrs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ome_zarr_explorer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 2H3a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2M11 17.5 9.5 19 5 14.5 9.5 10l1.5 1.5-3 3zm3.5 1.5L13 17.5l3-3-3-3 1.5-1.5 4.5 4.5zM21 7H3V4h18z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  OME-Zarr Explorer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ome_zarr_guide/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5-1.65 0-3.35.3-4.75 1.05-.1.05-.15.05-.25.05-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1 1.11-.35 2.33-.5 3.5-.5 1.95 0 4.05.4 5.5 1.5 1.45-1.1 3.55-1.5 5.5-1.5 1.17 0 2.39.15 3.5.5.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5-.1 0-.15 0-.25-.05-1.4-.75-3.1-1.05-4.75-1.05-1.7 0-4.15.65-5.5 1.5M12 8v11.5c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5V7c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5m1 3.5c1.11-.68 2.6-1 4.5-1 .91 0 1.76.09 2.5.28V9.23c-.87-.15-1.71-.23-2.5-.23q-2.655 0-4.5.84zm4.5.17c-1.71 0-3.21.26-4.5.79v1.69c1.11-.65 2.6-.99 4.5-.99 1.04 0 1.88.08 2.5.24v-1.5c-.87-.16-1.71-.23-2.5-.23m2.5 2.9c-.87-.16-1.71-.24-2.5-.24-1.83 0-3.33.27-4.5.8v1.69c1.11-.66 2.6-.99 4.5-.99 1.04 0 1.88.08 2.5.24z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Guide to OME-Zarr
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  API Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_Reference/yaozarrs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_Reference/yaozarrs.v04/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.v04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_Reference/yaozarrs.v05/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.v05
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_Reference/yaozarrs.write.v05/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  yaozarrs.write.v05
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="././" class="md-nav__link md-nav__link--active">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rules
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link md-nav__link--active" for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Rules
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-001: zarr-node-name-invalid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-002: zarr-node-name-risky
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-003: label-multiscales-count-matches-image
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-005: version-prerelease
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-006: version-unsupported
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-007: transform-path-relative
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-001: axis-name-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-002: axes-space-count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-003: axes-time-at-most-one
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-004: axes-channel-at-most-one
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-005: axes-type-order
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-006: axis-unit-recognized
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-007: dimension-names-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-008: dimension-names-match-axes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-009: axis-name-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-010: axis-name-nonempty-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-011: axis-long-name-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-012: axis-discrete-boolean
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-013/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-013: multiscale-axes-min-count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-014/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-014: axis-type-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-015/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-015: axis-type-known
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-016/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-016: axis-unit-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-AX-017/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-AX-017: axes-spatial-zyx-order
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-001: bf2raw-numbered-image-groups
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-002: bf2raw-series-paths
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-003: bf2raw-layout-3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-004: bf2raw-series-strings
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-005: bf2raw-plate-key-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-006: bf2raw-ome-xml-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-007: bf2raw-ome-xml-valid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-008: bf2raw-ome-xml-metadata-only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-009: bf2raw-plate-image-location
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-010: bf2raw-plate-series
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-011: bf2raw-series-order
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-012: bf2raw-image-per-ome-xml-image
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-BF-013/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-BF-013: bf2raw-reader-show-all-images
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CS-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CS-001: coordinate-system-name-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CS-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CS-002: coordinate-system-name-nonempty-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CS-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CS-003: coordinate-system-name-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CS-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CS-004: coordinate-system-axes-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CS-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CS-005: analysis-same-coordinate-system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-001: scale-exactly-one
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-002: translation-at-most-one
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-003: translation-after-scale
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-004: transform-length-matches-axes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-005: dataset-transform-type
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-006: dataset-transform-input-path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-007: dataset-transform-output-name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-008: dataset-transform-input-name-omitted
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-009: dataset-transform-output-path-omitted
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-010: dataset-transform-same-output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-011: transform-input-output-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-012: multiscale-transform-references-intrinsic
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-013/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-013: multiscale-transform-other-reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-014/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-014: label-transform-type
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-015/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-015: transform-params-match-ndim
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-016/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-016: map-axis-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-017/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-017: map-axis-length
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-018/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-018: map-axis-valid-index
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-019/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-019: map-axis-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-020: project-axis-created-outputs-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-021/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-021: project-axis-dropped-inputs-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-022/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-022: scale-nonzero
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-023/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-023: affine-matrix-stored
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-024/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-024: affine-path-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-025/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-025: affine-inline-shape
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-026/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-026: rotation-same-ndim
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-027/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-027: rotation-orthonormal
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-028/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-028: rotation-matrix-stored
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-029/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-029: rotation-path-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-030/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-030: rotation-inline-shape
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-031/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-031: field-path-multiscale
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-032/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-032: field-vector-axis
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-033/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-033: field-ndim
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-034/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-034: coordinates-vector-length
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-035/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-035: displacements-vector-length
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-036/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-036: by-dimension-item-fields
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-037/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-037: by-dimension-output-axes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-038/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-038: by-dimension-axes-length
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-039/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-039: bijection-not-closed-form-invertible
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-040/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-040: bijection-same-ndim
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-041/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-041: bijection-directions-match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-042/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-042: transform-graph-connected
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-043/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-043: transform-parameters-location
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-044/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-044: scale-positive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-045/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-045: project-axis-fields
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-046/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-046: transform-type-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-047/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-047: transform-type-known
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-048/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-048: transform-prefer-least-expressive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-049/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-049: reader-parse-basic-transforms
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-050/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-050: reader-parse-matrix-transforms
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-051/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-051: reader-warn-unsupported-transform
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-052/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-052: reader-transform-points
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-053/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-053: reader-transform-images
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-054/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-054: implementation-closed-form-inverse
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-055/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-055: field-regular-grid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-056/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-056: field-smooth-coordinate-systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-057/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-057: consumer-interpolation-communicate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-CT-058/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-CT-058: field-vector-axis-position
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-001: datasets-resolution-order
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-002: datasets-same-ndim
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-003: datasets-max-5d
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-004: dataset-path-is-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-005: array-ndim-matches-axes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-006: dataset-path-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-007: dataset-transforms-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-008: datasets-same-dtype
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-009: dataset-transform-scale-translation-only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-010: array-dimension-order-matches-axes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-011: dataset-scale-fallback-factor
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-DS-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-DS-012: dataset-path-treated-as-input-path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-GN-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-GN-001: ome-version-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-GN-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-GN-002: json-no-comments
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-GN-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-GN-003: ome-key-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-GN-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-GN-004: ome-value-object
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-GN-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-GN-005: ome-version-consistent
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-GN-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-GN-006: ome-version-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-001: label-image-multiscales
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-002: label-datasets-count-matches-image
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-003: label-image-has-image-label
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-004: label-source-image-is-image-group
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-005: image-label-colors-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-006: label-color-value-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-007: label-color-value-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-008: label-color-rgba
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-009: image-label-properties-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-010: label-property-value-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-011: label-property-value-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-012: image-label-source-object
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-013/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-013: image-label-source-image-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-014/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-014: image-label-colors-nonempty
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-015/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-015: image-label-colors-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-016/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-016: image-label-properties-nonempty
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-017/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-017: image-label-properties-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-018/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-018: label-colors-display
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-019/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-019: image-label-colors-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-020: image-label-version-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-021/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-021: image-label-version-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-022/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-022: label-colors-value-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-IL-023/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-IL-023: label-colors-duplicate-last
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-LB-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-LB-001: labels-group-metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-LB-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-LB-002: labels-paths-exist
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-LB-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-LB-003: label-pixels-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-LB-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-LB-004: labels-intermediate-groups-no-metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-LB-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-LB-005: labels-list-all-label-images
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-LB-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-LB-006: labels-parent-image-multiscales
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-001: multiscales-name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-002: multiscales-axes-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-003: multiscales-datasets-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-004: multiscales-coordinate-systems-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-005: multiscale-transforms-follow-dataset-rules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-006: multiscales-type
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-007: multiscales-metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-MS-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-MS-008: multiscales-version
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-OM-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-OM-001: omero-channel-color-hex
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-OM-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-OM-002: omero-channels-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-OM-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-OM-003: omero-channel-color-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-OM-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-OM-004: omero-channel-window-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-OM-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-OM-005: omero-window-min-max-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-OM-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-OM-006: omero-window-start-end-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-001: acquisition-id-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-002: plate-column-names-case-collision
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-003: plate-row-names-case-collision
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-004: well-row-index-valid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-005: well-column-index-valid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-006: well-path-matches-indices
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-007: well-path-is-well-group
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-008: plate-acquisitions-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-009: acquisition-id-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-010: acquisition-id-nonnegative-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-011: acquisition-name-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-012: acquisition-maximumfieldcount-positive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-013/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-013: acquisition-description-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-014/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-014: acquisition-times-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-015/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-015: plate-columns-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-016/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-016: plate-columns-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-017/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-017: column-name-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-018/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-018: column-name-alphanumeric
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-019/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-019: column-name-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-020: plate-field-count-positive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-021/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-021: plate-name-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-022/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-022: plate-rows-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-023/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-023: plate-rows-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-024/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-024: row-name-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-025/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-025: row-name-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-026/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-026: row-name-alphanumeric
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-027/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-027: row-name-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-028/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-028: plate-wells-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-029/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-029: plate-wells-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-030/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-030: well-path-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-031/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-031: well-path-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-032/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-032: well-path-row-column
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-033/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-033: well-indices-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-034/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-034: well-row-index-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-035/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-035: well-column-index-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-036/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-036: column-name-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-037/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-037: plate-columns-nonempty
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-038/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-038: plate-rows-nonempty
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-039/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-039: plate-wells-nonempty
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-040/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-040: plate-wells-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-041/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-041: plate-column-defined
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-042/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-042: plate-row-defined
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-043/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-043: column-name-case-sensitive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-044/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-044: row-name-case-sensitive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-045/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-045: well-indices-zero-based
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-046/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-046: acquisition-maximumfieldcount-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-047/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-047: plate-version-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-048/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-048: plate-version-required
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-049/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-049: plate-version-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-050/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-050: acquisition-name-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-051/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-051: plate-field-count-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-PL-052/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-PL-052: plate-name-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-001: scene-transforms-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-002: scene-transforms-valid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-003: scene-coordinate-systems-valid
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-004: scene-transform-input-output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-005: scene-transform-reference-name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-006: scene-transform-reference-path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-007: scene-transform-reference-resolves
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-008: scene-transform-reference-keys
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-009: scene-default-coordinate-system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-SC-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-SC-010: scene-reference-coordinate-system-first
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-001: field-path-alphanumeric
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-002: field-path-unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-003: field-path-is-image-group
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-004: well-images-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-005: well-images-array
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-006: field-path-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-007: field-acquisition-integer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-008: field-acquisition-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-009: field-acquisition-matches-plate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-010/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-010: field-path-characters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-011/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-011: field-path-node-name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-012/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-012: well-images-nonempty
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-013/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-013: well-version-present
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-014/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-014: well-version-string
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-WL-015/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-WL-015: field-path-case-sensitive
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-001/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-001: zarr-v2-hierarchy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-002/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-002: zarr-v3-hierarchy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-003/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-003: metadata-in-group-attributes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-004/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-004: hcs-groups-above-images
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-005/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-005: hcs-well-group-implements-well
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-006/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-006: hcs-plate-group-implements-plate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-007/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-007: hcs-empty-row-absent
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-008/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-008: hcs-empty-well-absent
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./YZ-ZR-009/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  YZ-ZR-009: scene-group-implements-scene
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#spec-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Spec rules
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yaozarrs-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        yaozarrs checks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="rule-codes">Rule codes<a class="headerlink" href="#rule-codes" title="Link to this section">#</a></h1>
+<p>Every error or warning that yaozarrs raises for a spec violation carries a code that identifies one normative statement in the <a href="https://ngff.openmicroscopy.org/">NGFF specification</a>. Each code links to the exact text in the spec that supports it, for each spec version.</p>
+<ul>
+<li><code>YZ-&lt;AREA&gt;-&lt;NNN&gt;</code> codes refer to statements in the NGFF spec or its JSON schemas.</li>
+<li><code>YZ-&lt;NNN&gt;</code> codes are checks that yaozarrs adds beyond the spec.</li>
+</ul>
+<p>Codes are permanent: a code is never renumbered or reused. If a statement changes meaning in a later spec version, its code is retired and a new one supersedes it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These codes are assigned by yaozarrs; they are not (yet) part of the NGFF specification itself (see <a href="https://github.com/ome/ngff/issues/646">ome/ngff#646</a>). If official codes are adopted, each spec rule will record its official code. Spec versions audited so far: 0.4, 0.5, 0.6. Every RFC 2119 keyword in those versions is inside the quote of a rule here, or of an entry (with a reason) in <code>skipped.toml</code>.</p>
+</div>
+<p><em>Reported</em> means yaozarrs reports the rule's code for its example. A rule whose code isn't reported may still be enforced, under another code or none.</p>
+<h2 id="spec-rules">Spec rules<a class="headerlink" href="#spec-rules" title="Link to this section">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Level</th>
+<th>Severity</th>
+<th>Versions</th>
+<th>Reported in</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="YZ-AX-001/">YZ-AX-001</a></td>
+<td><code>axis-name-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Axis names must be unique within <code>axes</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-002/">YZ-AX-002</a></td>
+<td><code>axes-space-count</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>axes</code> must contain 2 or 3 axes of type <code>space</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-003/">YZ-AX-003</a></td>
+<td><code>axes-time-at-most-one</code></td>
+<td>MAY</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>axes</code> may contain at most one axis of type <code>time</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-004/">YZ-AX-004</a></td>
+<td><code>axes-channel-at-most-one</code></td>
+<td>MAY</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>axes</code> may contain at most one axis of type <code>channel</code> (or of a null/custom type).</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-005/">YZ-AX-005</a></td>
+<td><code>axes-type-order</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Axes must be ordered by type: <code>time</code> (if present), then <code>channel</code> or custom (if present), then <code>space</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-006/">YZ-AX-006</a></td>
+<td><code>axis-unit-recognized</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An axis <code>unit</code> should be one of the UDUNITS-2 units in the spec.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-007/">YZ-AX-007</a></td>
+<td><code>dimension-names-present</code></td>
+<td>MUST</td>
+<td>warning</td>
+<td>0.5 to 0.6</td>
+<td>—</td>
+<td>Each multiscale array's <code>zarr.json</code> must include <code>dimension_names</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-008/">YZ-AX-008</a></td>
+<td><code>dimension-names-match-axes</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5 to 0.6</td>
+<td>—</td>
+<td>An array's <code>dimension_names</code> must match the names in <code>axes</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-009/">YZ-AX-009</a></td>
+<td><code>axis-name-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each axis must have a <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-010/">YZ-AX-010</a></td>
+<td><code>axis-name-nonempty-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>An axis <code>name</code> must be a non-empty string.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-011/">YZ-AX-011</a></td>
+<td><code>axis-long-name-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>An axis <code>longName</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-012/">YZ-AX-012</a></td>
+<td><code>axis-discrete-boolean</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>An axis <code>discrete</code>, if present, must be a boolean.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-013/">YZ-AX-013</a></td>
+<td><code>multiscale-axes-min-count</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A coordinate system inside <code>multiscales</code> must have at least 2 axes.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-014/">YZ-AX-014</a></td>
+<td><code>axis-type-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each axis should have a <code>type</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-015/">YZ-AX-015</a></td>
+<td><code>axis-type-known</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An axis <code>type</code> should be one of the types defined in the spec; other values are allowed for custom types.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-016/">YZ-AX-016</a></td>
+<td><code>axis-unit-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each axis should have a <code>unit</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-AX-017/">YZ-AX-017</a></td>
+<td><code>axes-spatial-zyx-order</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Three spatial axes, two in the image plane and one stacking axis, should be ordered <code>zyx</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CS-001/">YZ-CS-001</a></td>
+<td><code>coordinate-system-name-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A coordinate system must contain <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CS-002/">YZ-CS-002</a></td>
+<td><code>coordinate-system-name-nonempty-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A coordinate system <code>name</code> must be a non-empty string.</td>
+</tr>
+<tr>
+<td><a href="YZ-CS-003/">YZ-CS-003</a></td>
+<td><code>coordinate-system-name-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Coordinate system names must be unique within a <code>coordinateSystems</code> array.</td>
+</tr>
+<tr>
+<td><a href="YZ-CS-004/">YZ-CS-004</a></td>
+<td><code>coordinate-system-axes-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A coordinate system must contain <code>axes</code>, an array.</td>
+</tr>
+<tr>
+<td><a href="YZ-CS-005/">YZ-CS-005</a></td>
+<td><code>analysis-same-coordinate-system</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Analysis tasks should ensure that their inputs are in, or can be transformed to, the same coordinate system.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-001/">YZ-MS-001</a></td>
+<td><code>multiscales-name</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each "multiscales" dictionary should contain the field "name".</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-002/">YZ-MS-002</a></td>
+<td><code>multiscales-axes-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>Each "multiscales" entry must contain <code>axes</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-003/">YZ-MS-003</a></td>
+<td><code>multiscales-datasets-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each "multiscales" entry must contain <code>datasets</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-004/">YZ-MS-004</a></td>
+<td><code>multiscales-coordinate-systems-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Each <code>multiscales</code> entry must contain <code>coordinateSystems</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-005/">YZ-MS-005</a></td>
+<td><code>multiscale-transforms-follow-dataset-rules</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>Transformations in <code>multiscales</code> <code>coordinateTransformations</code> must follow the same rules (allowed types, order, etc.) as those of <code>datasets</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-006/">YZ-MS-006</a></td>
+<td><code>multiscales-type</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each "multiscales" dictionary should contain the field "type", the downscaling method.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-007/">YZ-MS-007</a></td>
+<td><code>multiscales-metadata</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each "multiscales" dictionary should contain the field "metadata", with information about the downscaling method.</td>
+</tr>
+<tr>
+<td><a href="YZ-MS-008/">YZ-MS-008</a></td>
+<td><code>multiscales-version</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4 to 0.5</td>
+<td>—</td>
+<td>Each "multiscales" dictionary should contain the field "version", the version of its metadata.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-001/">YZ-DS-001</a></td>
+<td><code>datasets-resolution-order</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>datasets</code> must be ordered from highest to lowest resolution.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-002/">YZ-DS-002</a></td>
+<td><code>datasets-same-ndim</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>All <code>datasets</code> must have the same number of dimensions.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-003/">YZ-DS-003</a></td>
+<td><code>datasets-max-5d</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>datasets</code> must not have more than 5 dimensions.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-004/">YZ-DS-004</a></td>
+<td><code>dataset-path-is-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each <code>datasets</code> "path" must point to a Zarr array, relative to the image group.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-005/">YZ-DS-005</a></td>
+<td><code>array-ndim-matches-axes</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each multiscale array must have one dimension per axis.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-006/">YZ-DS-006</a></td>
+<td><code>dataset-path-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each entry in <code>datasets</code> must contain <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-007/">YZ-DS-007</a></td>
+<td><code>dataset-transforms-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each entry in <code>datasets</code> must contain <code>coordinateTransformations</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-008/">YZ-DS-008</a></td>
+<td><code>datasets-same-dtype</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>All arrays referred to by <code>datasets</code> must have the same data type.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-009/">YZ-DS-009</a></td>
+<td><code>dataset-transform-scale-translation-only</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>Dataset transformations must be of type <code>scale</code> or <code>translation</code> only.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-010/">YZ-DS-010</a></td>
+<td><code>array-dimension-order-matches-axes</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>The dimensions of each multiscale array must be in the order of <code>axes</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-011/">YZ-DS-011</a></td>
+<td><code>dataset-scale-fallback-factor</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>For an axis without physical scale information, the dataset <code>scale</code> must be the scaling factor relative to the first resolution (1.0 if not downsampled).</td>
+</tr>
+<tr>
+<td><a href="YZ-DS-012/">YZ-DS-012</a></td>
+<td><code>dataset-path-treated-as-input-path</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Implementations should treat a dataset's <code>path</code> as the <code>path</code> of its transformation's <code>input</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-001/">YZ-CT-001</a></td>
+<td><code>scale-exactly-one</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td><code>coordinateTransformations</code> must contain exactly one <code>scale</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-002/">YZ-CT-002</a></td>
+<td><code>translation-at-most-one</code></td>
+<td>MAY</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td><code>coordinateTransformations</code> may contain at most one <code>translation</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-003/">YZ-CT-003</a></td>
+<td><code>translation-after-scale</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>A <code>translation</code> must be listed after the <code>scale</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-004/">YZ-CT-004</a></td>
+<td><code>transform-length-matches-axes</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>scale</code> and <code>translation</code> arrays must have one entry per axis.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-005/">YZ-CT-005</a></td>
+<td><code>dataset-transform-type</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A dataset must have a single transformation: a <code>scale</code>, an <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-006/">YZ-CT-006</a></td>
+<td><code>dataset-transform-input-path</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>input</code> of a dataset's transformation must specify a <code>path</code> matching the dataset's.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-007/">YZ-CT-007</a></td>
+<td><code>dataset-transform-output-name</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>output</code> of a dataset's transformation must name a coordinate system.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-008/">YZ-CT-008</a></td>
+<td><code>dataset-transform-input-name-omitted</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>input</code> of a dataset's transformation should not have a <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-009/">YZ-CT-009</a></td>
+<td><code>dataset-transform-output-path-omitted</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>output</code> of a dataset's transformation should not have a <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-010/">YZ-CT-010</a></td>
+<td><code>dataset-transform-same-output</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Every dataset of a multiscale must output to the same coordinate system.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-011/">YZ-CT-011</a></td>
+<td><code>transform-input-output-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A transformation must have an <code>input</code> and an <code>output</code>, unless it is part of a wrapper transformation.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-012/">YZ-CT-012</a></td>
+<td><code>multiscale-transform-references-intrinsic</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>One of the <code>input</code> or <code>output</code> of a multiscale's transformation must be the intrinsic coordinate system.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-013/">YZ-CT-013</a></td>
+<td><code>multiscale-transform-other-reference</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The other end of a multiscale's transformation must name a coordinate system in the same multiscale, or in a child labels group.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-014/">YZ-CT-014</a></td>
+<td><code>label-transform-type</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A transformation to a coordinate system in a child labels group must be <code>identity</code>, <code>scale</code>, or <code>translation</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-015/">YZ-CT-015</a></td>
+<td><code>transform-params-match-ndim</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A transformation's parameters must be compatible with the dimensionality of its input and output.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-016/">YZ-CT-016</a></td>
+<td><code>map-axis-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>mapAxis</code> transformation must have a <code>mapAxis</code> field.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-017/">YZ-CT-017</a></td>
+<td><code>map-axis-length</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The length of <code>mapAxis</code> must equal the number of input and output axes.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-018/">YZ-CT-018</a></td>
+<td><code>map-axis-valid-index</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Each value in <code>mapAxis</code> must be a valid index into the input axes.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-019/">YZ-CT-019</a></td>
+<td><code>map-axis-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Each index must appear exactly once in <code>mapAxis</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-020/">YZ-CT-020</a></td>
+<td><code>project-axis-created-outputs-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The values in <code>createdOutputs</code> must be unique.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-021/">YZ-CT-021</a></td>
+<td><code>project-axis-dropped-inputs-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The values in <code>droppedInputs</code> must be unique.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-022/">YZ-CT-022</a></td>
+<td><code>scale-nonzero</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Values in a <code>scale</code> array should be non-zero.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-023/">YZ-CT-023</a></td>
+<td><code>affine-matrix-stored</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>An <code>affine</code> must have its matrix either inline or in a Zarr array at <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-024/">YZ-CT-024</a></td>
+<td><code>affine-path-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>path</code> of an <code>affine</code> must point to a 2D Zarr array of shape <code>(M)x(N+1)</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-025/">YZ-CT-025</a></td>
+<td><code>affine-inline-shape</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>An inline <code>affine</code> matrix must have <code>M</code> rows of length <code>N+1</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-026/">YZ-CT-026</a></td>
+<td><code>rotation-same-ndim</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The input and output of a <code>rotation</code> must have the same dimensionality.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-027/">YZ-CT-027</a></td>
+<td><code>rotation-orthonormal</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>rotation</code> matrix must have determinant 1, with orthonormal rows and columns.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-028/">YZ-CT-028</a></td>
+<td><code>rotation-matrix-stored</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>rotation</code> must have its matrix either inline or in a Zarr array at <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-029/">YZ-CT-029</a></td>
+<td><code>rotation-path-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>path</code> of a <code>rotation</code> must point to a 2D Zarr array of shape <code>N x N</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-030/">YZ-CT-030</a></td>
+<td><code>rotation-inline-shape</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>An inline <code>rotation</code> matrix must be <code>N x N</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-031/">YZ-CT-031</a></td>
+<td><code>field-path-multiscale</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>path</code> of a <code>coordinates</code> or <code>displacements</code> transformation must point to a multiscale image group.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-032/">YZ-CT-032</a></td>
+<td><code>field-vector-axis</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A coordinate or displacement field must have one axis of type <code>coordinate</code> or <code>displacement</code>, with <code>discrete: true</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-033/">YZ-CT-033</a></td>
+<td><code>field-ndim</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A field for an input with <code>N</code> axes must have <code>N+1</code> dimensions.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-034/">YZ-CT-034</a></td>
+<td><code>coordinates-vector-length</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>coordinate</code> axis of a field must have length <code>M</code>, the number of output axes.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-035/">YZ-CT-035</a></td>
+<td><code>displacements-vector-length</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>displacement</code> axis of a field must have length <code>N</code>, the number of input (and output) axes.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-036/">YZ-CT-036</a></td>
+<td><code>by-dimension-item-fields</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td><code>transformations</code> of a <code>byDimension</code> must be an array of objects with <code>inputAxes</code>, <code>outputAxes</code>, and <code>transformation</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-037/">YZ-CT-037</a></td>
+<td><code>by-dimension-output-axes</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Every output axis of a <code>byDimension</code> must appear in exactly one <code>outputAxes</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-038/">YZ-CT-038</a></td>
+<td><code>by-dimension-axes-length</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td><code>inputAxes</code> and <code>outputAxes</code> must have the same length as the parameter arrays of their transformation.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-039/">YZ-CT-039</a></td>
+<td><code>bijection-not-closed-form-invertible</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Each direction of a <code>bijection</code> should be a type that is not closed-form invertible.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-040/">YZ-CT-040</a></td>
+<td><code>bijection-same-ndim</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The input and output of a <code>bijection</code> must have the same dimensionality.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-041/">YZ-CT-041</a></td>
+<td><code>bijection-directions-match</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The forward and inverse of a <code>bijection</code> must match its input and output dimensionality.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-042/">YZ-CT-042</a></td>
+<td><code>transform-graph-connected</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The coordinate systems and transformations of the metadata must form a connected graph.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-043/">YZ-CT-043</a></td>
+<td><code>transform-parameters-location</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>In a scene, arrays with transformation parameters should be in a group called <code>coordinateTransformations</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-044/">YZ-CT-044</a></td>
+<td><code>scale-positive</code></td>
+<td>MUST</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Values in a <code>scale</code> array must be greater than 0.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-045/">YZ-CT-045</a></td>
+<td><code>project-axis-fields</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>projectAxis</code> transformation must have <code>droppedInputs</code> or <code>createdOutputs</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-046/">YZ-CT-046</a></td>
+<td><code>transform-type-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each coordinate transformation must contain <code>type</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-047/">YZ-CT-047</a></td>
+<td><code>transform-type-known</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>The <code>type</code> of a coordinate transformation must be one of the types the spec defines.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-048/">YZ-CT-048</a></td>
+<td><code>transform-prefer-least-expressive</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A transformation should be stored as its least expressive equivalent (e.g. a <code>scale</code>, a <code>rotation</code>, or a sequence of such, rather than an <code>affine</code>).</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-049/">YZ-CT-049</a></td>
+<td><code>reader-parse-basic-transforms</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Conforming readers must parse <code>identity</code>, <code>scale</code>, and <code>translation</code> transformations, and <code>sequence</code>s of them.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-050/">YZ-CT-050</a></td>
+<td><code>reader-parse-matrix-transforms</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Conforming readers should parse <code>mapAxis</code>, <code>affine</code>, and <code>rotation</code> transformations, and <code>byDimension</code>s of the transformations they support.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-051/">YZ-CT-051</a></td>
+<td><code>reader-warn-unsupported-transform</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Conforming readers should warn about transformations they cannot parse or display.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-052/">YZ-CT-052</a></td>
+<td><code>reader-transform-points</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Conforming readers should be able to apply transformations to points.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-053/">YZ-CT-053</a></td>
+<td><code>reader-transform-images</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Conforming readers should be able to apply transformations to images.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-054/">YZ-CT-054</a></td>
+<td><code>implementation-closed-form-inverse</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Implementations should be able to compute and apply the inverse of transformations that are invertible in closed form.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-055/">YZ-CT-055</a></td>
+<td><code>field-regular-grid</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The array of a <code>coordinates</code> or <code>displacements</code> transformation must be a regular grid of vectors.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-056/">YZ-CT-056</a></td>
+<td><code>field-smooth-coordinate-systems</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td><code>coordinates</code> and <code>displacements</code> transformations must only be used between coordinate systems defined in smooth, regularly sampled coordinate arrays.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-057/">YZ-CT-057</a></td>
+<td><code>consumer-interpolation-communicate</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Consumers should tell users when they use a different interpolation method than the one a field transformation specifies.</td>
+</tr>
+<tr>
+<td><a href="YZ-CT-058/">YZ-CT-058</a></td>
+<td><code>field-vector-axis-position</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>coordinate</code> or <code>displacement</code> axis of a field must come after the time axis (if present) and before the spatial axes.</td>
+</tr>
+<tr>
+<td><a href="YZ-OM-001/">YZ-OM-001</a></td>
+<td><code>omero-channel-color-hex</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An omero channel <code>color</code> must be a string of 6 hexadecimal digits.</td>
+</tr>
+<tr>
+<td><a href="YZ-OM-002/">YZ-OM-002</a></td>
+<td><code>omero-channels-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>omero</code> metadata, if present, must contain <code>channels</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-OM-003/">YZ-OM-003</a></td>
+<td><code>omero-channel-color-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each omero channel must contain <code>color</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-OM-004/">YZ-OM-004</a></td>
+<td><code>omero-channel-window-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each omero channel must contain <code>window</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-OM-005/">YZ-OM-005</a></td>
+<td><code>omero-window-min-max-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An omero channel <code>window</code> must contain <code>min</code> and <code>max</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-OM-006/">YZ-OM-006</a></td>
+<td><code>omero-window-start-end-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An omero channel <code>window</code> must contain <code>start</code> and <code>end</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-001/">YZ-PL-001</a></td>
+<td><code>acquisition-id-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Acquisition <code>id</code>s must be unique within a plate.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-002/">YZ-PL-002</a></td>
+<td><code>plate-column-names-case-collision</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate column names should not differ only by case.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-003/">YZ-PL-003</a></td>
+<td><code>plate-row-names-case-collision</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate row names should not differ only by case.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-004/">YZ-PL-004</a></td>
+<td><code>well-row-index-valid</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A well's <code>rowIndex</code> must be an index into the plate's <code>rows</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-005/">YZ-PL-005</a></td>
+<td><code>well-column-index-valid</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A well's <code>columnIndex</code> must be an index into the plate's <code>columns</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-006/">YZ-PL-006</a></td>
+<td><code>well-path-matches-indices</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A well's <code>path</code>, <code>rowIndex</code>, and <code>columnIndex</code> must agree.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-007/">YZ-PL-007</a></td>
+<td><code>well-path-is-well-group</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each plate well <code>path</code> must point to a well group.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-008/">YZ-PL-008</a></td>
+<td><code>plate-acquisitions-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>acquisitions</code>, if present, must be a list of objects.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-009/">YZ-PL-009</a></td>
+<td><code>acquisition-id-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each acquisition must contain <code>id</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-010/">YZ-PL-010</a></td>
+<td><code>acquisition-id-nonnegative-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An acquisition <code>id</code> must be an integer greater than or equal to 0.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-011/">YZ-PL-011</a></td>
+<td><code>acquisition-name-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An acquisition <code>name</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-012/">YZ-PL-012</a></td>
+<td><code>acquisition-maximumfieldcount-positive</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An acquisition <code>maximumfieldcount</code>, if present, must be a positive integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-013/">YZ-PL-013</a></td>
+<td><code>acquisition-description-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An acquisition <code>description</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-014/">YZ-PL-014</a></td>
+<td><code>acquisition-times-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An acquisition <code>starttime</code> or <code>endtime</code>, if present, must be an integer epoch timestamp.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-015/">YZ-PL-015</a></td>
+<td><code>plate-columns-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate must contain <code>columns</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-016/">YZ-PL-016</a></td>
+<td><code>plate-columns-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>columns</code> must be a list of objects.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-017/">YZ-PL-017</a></td>
+<td><code>column-name-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each plate column must contain <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-018/">YZ-PL-018</a></td>
+<td><code>column-name-alphanumeric</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate column <code>name</code> must contain only alphanumeric characters.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-019/">YZ-PL-019</a></td>
+<td><code>column-name-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate column names must be unique.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-020/">YZ-PL-020</a></td>
+<td><code>plate-field-count-positive</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>field_count</code>, if present, must be a positive integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-021/">YZ-PL-021</a></td>
+<td><code>plate-name-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>name</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-022/">YZ-PL-022</a></td>
+<td><code>plate-rows-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate must contain <code>rows</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-023/">YZ-PL-023</a></td>
+<td><code>plate-rows-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>rows</code> must be a list of objects.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-024/">YZ-PL-024</a></td>
+<td><code>row-name-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each plate row must contain <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-025/">YZ-PL-025</a></td>
+<td><code>row-name-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate row <code>name</code> must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-026/">YZ-PL-026</a></td>
+<td><code>row-name-alphanumeric</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate row <code>name</code> must contain only alphanumeric characters.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-027/">YZ-PL-027</a></td>
+<td><code>row-name-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate row names must be unique.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-028/">YZ-PL-028</a></td>
+<td><code>plate-wells-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate must contain <code>wells</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-029/">YZ-PL-029</a></td>
+<td><code>plate-wells-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>wells</code> must be a list of objects.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-030/">YZ-PL-030</a></td>
+<td><code>well-path-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each plate well must contain <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-031/">YZ-PL-031</a></td>
+<td><code>well-path-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate well <code>path</code> must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-032/">YZ-PL-032</a></td>
+<td><code>well-path-row-column</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate well <code>path</code> must have the form <code>&lt;row name&gt;/&lt;column name&gt;</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-033/">YZ-PL-033</a></td>
+<td><code>well-indices-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each plate well must contain <code>rowIndex</code> and <code>columnIndex</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-034/">YZ-PL-034</a></td>
+<td><code>well-row-index-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate well <code>rowIndex</code> must be an integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-035/">YZ-PL-035</a></td>
+<td><code>well-column-index-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate well <code>columnIndex</code> must be an integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-036/">YZ-PL-036</a></td>
+<td><code>column-name-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate column <code>name</code> must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-037/">YZ-PL-037</a></td>
+<td><code>plate-columns-nonempty</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>columns</code> must have at least one entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-038/">YZ-PL-038</a></td>
+<td><code>plate-rows-nonempty</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>rows</code> must have at least one entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-039/">YZ-PL-039</a></td>
+<td><code>plate-wells-nonempty</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>wells</code> must have at least one entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-040/">YZ-PL-040</a></td>
+<td><code>plate-wells-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate <code>wells</code> must not contain identical entries.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-041/">YZ-PL-041</a></td>
+<td><code>plate-column-defined</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Every column in the physical plate must be defined in <code>columns</code>, even if it has no wells.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-042/">YZ-PL-042</a></td>
+<td><code>plate-row-defined</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Every row in the physical plate must be defined in <code>rows</code>, even if it has no wells.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-043/">YZ-PL-043</a></td>
+<td><code>column-name-case-sensitive</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate column names are case-sensitive.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-044/">YZ-PL-044</a></td>
+<td><code>row-name-case-sensitive</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Plate row names are case-sensitive.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-045/">YZ-PL-045</a></td>
+<td><code>well-indices-zero-based</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate well <code>rowIndex</code> and <code>columnIndex</code> must be 0-based.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-046/">YZ-PL-046</a></td>
+<td><code>acquisition-maximumfieldcount-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each acquisition should contain <code>maximumfieldcount</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-047/">YZ-PL-047</a></td>
+<td><code>plate-version-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4 to 0.5</td>
+<td>—</td>
+<td>The <code>plate</code> object should contain <code>version</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-048/">YZ-PL-048</a></td>
+<td><code>plate-version-required</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5 to 0.6</td>
+<td>—</td>
+<td>The <code>plate</code> object must contain <code>version</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-049/">YZ-PL-049</a></td>
+<td><code>plate-version-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>A plate <code>version</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-050/">YZ-PL-050</a></td>
+<td><code>acquisition-name-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each acquisition should contain <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-051/">YZ-PL-051</a></td>
+<td><code>plate-field-count-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate should contain <code>field_count</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-PL-052/">YZ-PL-052</a></td>
+<td><code>plate-name-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A plate should contain <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-001/">YZ-WL-001</a></td>
+<td><code>field-path-alphanumeric</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>A field of view <code>path</code> must contain only alphanumeric characters.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-002/">YZ-WL-002</a></td>
+<td><code>field-path-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Field of view <code>path</code>s must be unique within a well.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-003/">YZ-WL-003</a></td>
+<td><code>field-path-is-image-group</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each well image <code>path</code> must point to an image (field of view) group.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-004/">YZ-WL-004</a></td>
+<td><code>well-images-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A well must contain <code>images</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-005/">YZ-WL-005</a></td>
+<td><code>well-images-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Well <code>images</code> must be a list of objects.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-006/">YZ-WL-006</a></td>
+<td><code>field-path-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each well image (field of view) must contain <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-007/">YZ-WL-007</a></td>
+<td><code>field-acquisition-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A field of view <code>acquisition</code>, if present, must be an integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-008/">YZ-WL-008</a></td>
+<td><code>field-acquisition-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>If a plate has multiple acquisitions, each field of view must have an <code>acquisition</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-009/">YZ-WL-009</a></td>
+<td><code>field-acquisition-matches-plate</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A field of view's <code>acquisition</code> must match an acquisition in the plate.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-010/">YZ-WL-010</a></td>
+<td><code>field-path-characters</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A field of view <code>path</code> must only use the characters <code>a-z</code>, <code>A-Z</code>, <code>0-9</code>, <code>-</code>, <code>_</code>, and <code>.</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-011/">YZ-WL-011</a></td>
+<td><code>field-path-node-name</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A field of view <code>path</code> must not consist only of periods, or start with <code>__</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-012/">YZ-WL-012</a></td>
+<td><code>well-images-nonempty</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Well <code>images</code> must have at least one entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-013/">YZ-WL-013</a></td>
+<td><code>well-version-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>The <code>well</code> object should contain <code>version</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-014/">YZ-WL-014</a></td>
+<td><code>well-version-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>A well <code>version</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-WL-015/">YZ-WL-015</a></td>
+<td><code>field-path-case-sensitive</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Field of view <code>path</code>s are case-sensitive.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-001/">YZ-BF-001</a></td>
+<td><code>bf2raw-numbered-image-groups</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Without <code>series</code> metadata, bioformats2raw images must be groups numbered consecutively from 0.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-002/">YZ-BF-002</a></td>
+<td><code>bf2raw-series-paths</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each path in the OME group's "series" must point to an image group.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-003/">YZ-BF-003</a></td>
+<td><code>bf2raw-layout-3</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>The top of a bioformats2raw hierarchy must have <code>"bioformats2raw.layout": 3</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-004/">YZ-BF-004</a></td>
+<td><code>bf2raw-series-strings</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>"series" must be a list of strings.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-005/">YZ-BF-005</a></td>
+<td><code>bf2raw-plate-key-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A bioformats2raw top-level group that represents a plate must also have the <code>plate</code> key.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-006/">YZ-BF-006</a></td>
+<td><code>bf2raw-ome-xml-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A bioformats2raw collection should have OME metadata for all of its images in <code>OME/METADATA.ome.xml</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-007/">YZ-BF-007</a></td>
+<td><code>bf2raw-ome-xml-valid</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>OME/METADATA.ome.xml</code> must adhere to the OME-XML specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-008/">YZ-BF-008</a></td>
+<td><code>bf2raw-ome-xml-metadata-only</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>OME/METADATA.ome.xml</code> must use <code>&lt;MetadataOnly/&gt;</code> elements, not <code>&lt;BinData/&gt;</code>, <code>&lt;BinaryOnly/&gt;</code> or <code>&lt;TiffData/&gt;</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-009/">YZ-BF-009</a></td>
+<td><code>bf2raw-plate-image-location</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>If a bioformats2raw collection has <code>plate</code> metadata, its images must be at the locations the plate defines.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-010/">YZ-BF-010</a></td>
+<td><code>bf2raw-plate-series</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A bioformats2raw plate should also provide matching <code>series</code> metadata.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-011/">YZ-BF-011</a></td>
+<td><code>bf2raw-series-order</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>The order of the <code>series</code> paths must match the order of the <code>Image</code> elements in <code>OME/METADATA.ome.xml</code>, if that file is provided.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-012/">YZ-BF-012</a></td>
+<td><code>bf2raw-image-per-ome-xml-image</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each bioformats2raw <code>multiscales</code> group must represent exactly one OME-XML <code>Image</code>, in the order of the <code>series</code> index or the group numbers.</td>
+</tr>
+<tr>
+<td><a href="YZ-BF-013/">YZ-BF-013</a></td>
+<td><code>bf2raw-reader-show-all-images</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Readers should make users aware that a bioformats2raw collection has more than one image, rather than only opening the first.</td>
+</tr>
+<tr>
+<td><a href="YZ-LB-001/">YZ-LB-001</a></td>
+<td><code>labels-group-metadata</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A "labels" group must be a group whose metadata contains the key <code>labels</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-LB-002/">YZ-LB-002</a></td>
+<td><code>labels-paths-exist</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each path listed in <code>labels</code> must point to a label image group.</td>
+</tr>
+<tr>
+<td><a href="YZ-LB-003/">YZ-LB-003</a></td>
+<td><code>label-pixels-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Label image arrays must have an integer data type.</td>
+</tr>
+<tr>
+<td><a href="YZ-LB-004/">YZ-LB-004</a></td>
+<td><code>labels-intermediate-groups-no-metadata</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td>Intermediate groups between a "labels" group and its label images must not contain metadata.</td>
+</tr>
+<tr>
+<td><a href="YZ-LB-005/">YZ-LB-005</a></td>
+<td><code>labels-list-all-label-images</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.5+</td>
+<td>—</td>
+<td>All label images in a "labels" group should be listed in its <code>labels</code> metadata.</td>
+</tr>
+<tr>
+<td><a href="YZ-LB-006/">YZ-LB-006</a></td>
+<td><code>labels-parent-image-multiscales</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>The image group that contains a "labels" group must implement the multiscales specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-001/">YZ-IL-001</a></td>
+<td><code>label-image-multiscales</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A label image must implement the multiscales specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-002/">YZ-IL-002</a></td>
+<td><code>label-datasets-count-matches-image</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A label image must have the same number of <code>datasets</code> (scale levels) as its image.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-003/">YZ-IL-003</a></td>
+<td><code>label-image-has-image-label</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A label image should contain <code>image-label</code> metadata.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-004/">YZ-IL-004</a></td>
+<td><code>label-source-image-is-image-group</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An <code>image-label</code> <code>source.image</code> path must point to an image group.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-005/">YZ-IL-005</a></td>
+<td><code>image-label-colors-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>image-label</code> <code>colors</code> must be an array.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-006/">YZ-IL-006</a></td>
+<td><code>label-color-value-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each entry in <code>colors</code> must contain <code>label-value</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-007/">YZ-IL-007</a></td>
+<td><code>label-color-value-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A <code>colors</code> entry's <code>label-value</code> must be an integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-008/">YZ-IL-008</a></td>
+<td><code>label-color-rgba</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A <code>colors</code> entry's <code>rgba</code>, if present, must be an array of four integers from 0 to 255.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-009/">YZ-IL-009</a></td>
+<td><code>image-label-properties-array</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>image-label</code> <code>properties</code> must be an array of objects.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-010/">YZ-IL-010</a></td>
+<td><code>label-property-value-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>Each entry in <code>properties</code> must contain <code>label-value</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-011/">YZ-IL-011</a></td>
+<td><code>label-property-value-integer</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A <code>properties</code> entry's <code>label-value</code> must be an integer.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-012/">YZ-IL-012</a></td>
+<td><code>image-label-source-object</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>image-label</code> <code>source</code> must be an object.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-013/">YZ-IL-013</a></td>
+<td><code>image-label-source-image-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td><code>image-label</code> <code>source.image</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-014/">YZ-IL-014</a></td>
+<td><code>image-label-colors-nonempty</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td><code>image-label</code> <code>colors</code>, if present, must have at least one entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-015/">YZ-IL-015</a></td>
+<td><code>image-label-colors-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td><code>image-label</code> <code>colors</code> must not contain identical entries.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-016/">YZ-IL-016</a></td>
+<td><code>image-label-properties-nonempty</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td><code>image-label</code> <code>properties</code>, if present, must have at least one entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-017/">YZ-IL-017</a></td>
+<td><code>image-label-properties-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td><code>image-label</code> <code>properties</code> must not contain identical entries.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-018/">YZ-IL-018</a></td>
+<td><code>label-colors-display</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.5+</td>
+<td>—</td>
+<td>Readers should display labels using the colors in <code>colors</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-019/">YZ-IL-019</a></td>
+<td><code>image-label-colors-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>An <code>image-label</code> object should contain <code>colors</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-020/">YZ-IL-020</a></td>
+<td><code>image-label-version-present</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>An <code>image-label</code> object should contain <code>version</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-021/">YZ-IL-021</a></td>
+<td><code>image-label-version-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.6</td>
+<td>—</td>
+<td>An <code>image-label</code> <code>version</code>, if present, must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-022/">YZ-IL-022</a></td>
+<td><code>label-colors-value-unique</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.5</td>
+<td>—</td>
+<td>The <code>label-value</code>s in <code>colors</code> must be unique.</td>
+</tr>
+<tr>
+<td><a href="YZ-IL-023/">YZ-IL-023</a></td>
+<td><code>label-colors-duplicate-last</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4 to 0.5</td>
+<td>—</td>
+<td>Readers that accept duplicate <code>label-value</code>s in <code>colors</code> should use only the last entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-001/">YZ-SC-001</a></td>
+<td><code>scene-transforms-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>scene</code> must contain <code>coordinateTransformations</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-002/">YZ-SC-002</a></td>
+<td><code>scene-transforms-valid</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>scene</code>'s <code>coordinateTransformations</code> must be an array of valid transformations.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-003/">YZ-SC-003</a></td>
+<td><code>scene-coordinate-systems-valid</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A <code>scene</code>'s <code>coordinateSystems</code>, if present, must be an array of valid coordinate systems.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-004/">YZ-SC-004</a></td>
+<td><code>scene-transform-input-output</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Transformations in a <code>scene</code> must have an <code>input</code> and an <code>output</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-005/">YZ-SC-005</a></td>
+<td><code>scene-transform-reference-name</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>input</code> and <code>output</code> of a transformation in a <code>scene</code> must contain <code>name</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-006/">YZ-SC-006</a></td>
+<td><code>scene-transform-reference-path</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A reference in a <code>scene</code> to a coordinate system in an image must have both <code>path</code> and <code>name</code>, so one without <code>path</code> must be in the scene's <code>coordinateSystems</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-007/">YZ-SC-007</a></td>
+<td><code>scene-transform-reference-resolves</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A reference in a <code>scene</code> must resolve to a coordinate system in the multiscale image subgroup at <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-008/">YZ-SC-008</a></td>
+<td><code>scene-transform-reference-keys</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The <code>input</code> and <code>output</code> of a transformation in a <code>scene</code> may only contain <code>name</code> and <code>path</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-009/">YZ-SC-009</a></td>
+<td><code>scene-default-coordinate-system</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>Readers that pick a default coordinate system for a <code>scene</code> should use the scene's first <code>coordinateSystems</code> entry, if present.</td>
+</tr>
+<tr>
+<td><a href="YZ-SC-010/">YZ-SC-010</a></td>
+<td><code>scene-reference-coordinate-system-first</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.6+</td>
+<td>—</td>
+<td>A coordinate system that is a common reference for the others in a <code>scene</code> should be the scene's first <code>coordinateSystems</code> entry.</td>
+</tr>
+<tr>
+<td><a href="YZ-GN-001/">YZ-GN-001</a></td>
+<td><code>ome-version-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td>The <code>ome</code> object must contain a <code>version</code> key.</td>
+</tr>
+<tr>
+<td><a href="YZ-GN-002/">YZ-GN-002</a></td>
+<td><code>json-no-comments</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>JSON metadata must not contain comments.</td>
+</tr>
+<tr>
+<td><a href="YZ-GN-003/">YZ-GN-003</a></td>
+<td><code>ome-key-present</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td>The group <code>attributes</code> must contain the key <code>ome</code>.</td>
+</tr>
+<tr>
+<td><a href="YZ-GN-004/">YZ-GN-004</a></td>
+<td><code>ome-value-object</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>The value of the <code>ome</code> key must be a JSON object.</td>
+</tr>
+<tr>
+<td><a href="YZ-GN-005/">YZ-GN-005</a></td>
+<td><code>ome-version-consistent</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td>The OME-Zarr metadata version must be the same throughout a hierarchy.</td>
+</tr>
+<tr>
+<td><a href="YZ-GN-006/">YZ-GN-006</a></td>
+<td><code>ome-version-string</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td>The <code>version</code> of the <code>ome</code> object must be a string.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-001/">YZ-ZR-001</a></td>
+<td><code>zarr-v2-hierarchy</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4 to 0.5</td>
+<td>—</td>
+<td>Arrays must be stored in a hierarchy as defined by the Zarr v2 specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-002/">YZ-ZR-002</a></td>
+<td><code>zarr-v3-hierarchy</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.5+</td>
+<td>—</td>
+<td>OME-Zarr must be stored in the Zarr format as defined by the Zarr v3 specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-003/">YZ-ZR-003</a></td>
+<td><code>metadata-in-group-attributes</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>OME-Zarr metadata must be stored as attributes of the corresponding Zarr groups.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-004/">YZ-ZR-004</a></td>
+<td><code>hcs-groups-above-images</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A high-content screening dataset must have three groups above the images: the well, the well row, and the plate.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-005/">YZ-ZR-005</a></td>
+<td><code>hcs-well-group-implements-well</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>In a high-content screening dataset, the group above the images must implement the well specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-006/">YZ-ZR-006</a></td>
+<td><code>hcs-plate-group-implements-plate</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.4+</td>
+<td>—</td>
+<td>In a high-content screening dataset, the group above the well rows must implement the plate specification.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-007/">YZ-ZR-007</a></td>
+<td><code>hcs-empty-row-absent</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A well row group should not be present if there are no images in the well row.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-008/">YZ-ZR-008</a></td>
+<td><code>hcs-empty-well-absent</code></td>
+<td>SHOULD</td>
+<td>warning</td>
+<td>0.4+</td>
+<td>—</td>
+<td>A well group should not be present if there are no images in the well.</td>
+</tr>
+<tr>
+<td><a href="YZ-ZR-009/">YZ-ZR-009</a></td>
+<td><code>scene-group-implements-scene</code></td>
+<td>MUST</td>
+<td>error</td>
+<td>0.6+</td>
+<td>—</td>
+<td>In a scene dataset, the group above the images must implement the scene specification.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="yaozarrs-checks">yaozarrs checks<a class="headerlink" href="#yaozarrs-checks" title="Link to this section">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Severity</th>
+<th>Reported in</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="YZ-001/">YZ-001</a></td>
+<td><code>zarr-node-name-invalid</code></td>
+<td>error</td>
+<td>—</td>
+<td>A path used as a Zarr node name violates the Zarr v3 node-name rules.</td>
+</tr>
+<tr>
+<td><a href="YZ-002/">YZ-002</a></td>
+<td><code>zarr-node-name-risky</code></td>
+<td>warning</td>
+<td>—</td>
+<td>A path used as a Zarr node name contains characters outside <code>[A-Za-z0-9._-]</code>, which can cause problems on some filesystems or in URLs.</td>
+</tr>
+<tr>
+<td><a href="YZ-003/">YZ-003</a></td>
+<td><code>label-multiscales-count-matches-image</code></td>
+<td>error</td>
+<td>—</td>
+<td>A label image must have the same number of <code>multiscales</code> as its image.</td>
+</tr>
+<tr>
+<td><a href="YZ-005/">YZ-005</a></td>
+<td><code>version-prerelease</code></td>
+<td>warning</td>
+<td>—</td>
+<td>The document declares a pre-release of a spec version.</td>
+</tr>
+<tr>
+<td><a href="YZ-006/">YZ-006</a></td>
+<td><code>version-unsupported</code></td>
+<td>error</td>
+<td>—</td>
+<td>The document or store declares an OME-Zarr version that yaozarrs does not know.</td>
+</tr>
+<tr>
+<td><a href="YZ-007/">YZ-007</a></td>
+<td><code>transform-path-relative</code></td>
+<td>error</td>
+<td>—</td>
+<td>The <code>path</code> of a transformation's parameters must be a relative path with no empty, <code>.</code> or <code>..</code> segments.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../API_Reference/yaozarrs.write.v05/" class="md-footer__link md-footer__link--prev" aria-label="Previous: yaozarrs.write.v05">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                yaozarrs.write.v05
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="./YZ-001/" class="md-footer__link md-footer__link--next" aria-label="Next: YZ-001: zarr-node-name-invalid">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                YZ-001: zarr-node-name-invalid
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      2026, Talley Lambert
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["search.highlight","search.suggest","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../javascripts/yaozarrs-animation.js"></script>
+      
+        <script src="../javascripts/ome_explorer.js" type="module"></script>
+      
+    
+  </body>
+</html>
