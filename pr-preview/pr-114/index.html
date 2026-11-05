@@ -1083,6 +1083,14 @@ validate it and cast it to the appropriate typed <code>yaozarrs</code> model:</p
 <li><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="API_Reference/yaozarrs/#yaozarrs.validate_zarr_store"><code>yaozarrs.validate_zarr_store</code></a>. Requires the <code>yaozarrs[io]</code>
    extra to support remote URIs.</li>
 </ol>
+<details class="note">
+<summary>Keys the spec doesn't define</summary>
+<p>The spec doesn't forbid keys it doesn't define, and neither do the JSON
+schemas (except in the <code>input</code> and <code>output</code> of v0.6 scene transformations),
+so yaozarrs keeps them: they're in each model's <code>model_extra</code>, and
+<code>model_dump()</code> / <code>model_dump_json()</code> write them back out. So a misspelled
+<em>optional</em> key is (unfortunately) kept as an unknown key, not reported.</p>
+</details>
 <details class="tip">
 <summary>Storage Validation Errors</summary>
 <p>Validation errors that relate to the structure of the OME-Zarr itself
@@ -1094,7 +1102,7 @@ description [context]
 <p>An example validation error (for a file that has <em>many</em> problems):</p>
 <div class="language-bash highlight"><pre><span></span><code>uvx<span class="w"> </span><span class="s2">"yaozarrs[io]"</span><span class="w"> </span>validate<span class="w"> </span>https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
 </code></pre></div>
-<div class="language-text highlight"><pre><span></span><code>yaozarrs._storage.StorageValidationError: 14 validation error(s) for StorageValidationError
+<div class="language-text highlight"><pre><span></span><code>yaozarrs.StorageValidationError: 14 validation error(s) for StorageValidationError
 ome.plate.wells.0.well.images.0.multiscales.0.datasets.0.path
 Dataset path '0' not found in zarr group [type=dataset_path_not_found, fs_path='broken_v05.ome.zarr/A/1/0/0', expected='zarr array']
 

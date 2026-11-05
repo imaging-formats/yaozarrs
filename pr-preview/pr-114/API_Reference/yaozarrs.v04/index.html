@@ -559,6 +559,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.v04._image.Dataset.scale_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;scale_transform
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1030,6 +1047,23 @@
       </span>
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaozarrs.v04._image.Dataset.scale_transform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;scale_transform
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1547,7 +1581,7 @@ the core metadata for any OME-NGFF image.</p>
                 <code>axes</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#list">list</a>[<span title="yaozarrs._axis.SpaceAxis">SpaceAxis</span> | <span title="yaozarrs._axis.TimeAxis">TimeAxis</span> | <span title="yaozarrs._axis.ChannelAxis">ChannelAxis</span> | <span title="yaozarrs._axis.CustomAxis">CustomAxis</span>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#list">list</a>[<span title="yaozarrs._common._axis.SpaceAxis">SpaceAxis</span> | <span title="yaozarrs._common._axis.TimeAxis">TimeAxis</span> | <span title="yaozarrs._common._axis.ChannelAxis">ChannelAxis</span> | <span title="yaozarrs._common._axis.CustomAxis">CustomAxis</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1791,7 +1825,14 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v04/_image.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">259</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
@@ -1823,16 +1864,7 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="normal">288</span>
 <span class="normal">289</span>
 <span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dims</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DimSpec</span><span class="p">],</span>
@@ -1871,8 +1903,6 @@ Must follow OME-Zarr axis ordering: <code>[time,] [channel,] space...</code></p>
 <span class="sd">    &gt;&gt;&gt; [ds.path for ds in ms.datasets]</span>
 <span class="sd">    ['0', '1', '2']</span>
 <span class="sd">    """</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs._dim_spec</span><span class="w"> </span><span class="kn">import</span> <span class="n">_axes_datasets</span>
-
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">_axes_datasets</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">n_levels</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1972,6 +2002,31 @@ where each level represents the same physical region at different sampling rates
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="yaozarrs.v04._image.Dataset.scale_transform" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">scale_transform</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#yaozarrs.v04._image.Dataset.scale_transform" class="headerlink" title="Link to this section">#</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">scale_transform</span><span class="p">:</span> <span class="n">ScaleTransformation</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the scale transformation from the list.</p>
+<p>(CoordinateTransformsList validator ensures there is exactly one.)</p>
+
+    </div>
+
+</div>
 
 
 
