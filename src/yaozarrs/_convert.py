@@ -9,12 +9,15 @@ and validated as the target model.  Version pairs without a step differ only in 
 from __future__ import annotations
 
 import copy
+import itertools
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from . import v04, v05, v06
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pydantic import BaseModel
 
 __all__ = ["ConversionWarning", "convert_version"]
@@ -107,9 +110,10 @@ def _dataset_05_06(
                     g_scale,
                     translation or [0.0] * len(scale),
                     g_translation or [0.0] * len(scale),
+                    strict=False,
                 )
             ]
-        scale = [g * s for g, s in zip(g_scale, scale)]
+        scale = [g * s for g, s in zip(g_scale, scale, strict=False)]
 
     transform: dict[str, Any] = {**old["scale"], "scale": scale}
     if translation is not None:
@@ -282,7 +286,7 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
     doc = _strip_versions({k: v for k, v in dumped.items() if k in fields})
     start, stop = _ORDER.index(source), _ORDER.index(version)
     path = _ORDER[start : stop + 1] if start <= stop else _ORDER[stop : start + 1][::-1]
-    for hop in zip(path, path[1:]):
+    for hop in itertools.pairwise(path):
         if step := _STEPS.get(hop):
             doc = step(doc, coordinate_system, dropped)
     return getattr(package, kind).model_validate(doc)

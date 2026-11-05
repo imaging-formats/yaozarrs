@@ -6,9 +6,12 @@ import json
 import shutil
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def dd() -> Any:

@@ -94,7 +94,7 @@ yaozarrs = { workspace = true }
 # https://docs.astral.sh/ruff
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py311"
 src = ["src"]
 fix = true
 unsafe-fixes = true

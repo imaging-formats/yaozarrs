@@ -1,8 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from annotated_types import MinLen
 from pydantic import Field, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._types import UNIQUE_ITEMS

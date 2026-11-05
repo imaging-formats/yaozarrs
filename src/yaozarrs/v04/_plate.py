@@ -1,8 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from annotated_types import MinLen
 from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._common._node_names import RelaxedFOVPathName

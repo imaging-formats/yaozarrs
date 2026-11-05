@@ -306,7 +306,11 @@ class StorageValidator:
                     )
 
                 for ms_idx, (lbl_ms, img_ms) in enumerate(
-                    zip(label_image_model.multiscales, parent_image_model.multiscales)
+                    zip(
+                        label_image_model.multiscales,
+                        parent_image_model.multiscales,
+                        strict=False,
+                    )
                 ):
                     n_lbl_ds = len(lbl_ms.datasets)
                     n_img_ds = len(img_ms.datasets)

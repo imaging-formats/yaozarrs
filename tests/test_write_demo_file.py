@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 from contextlib import suppress
-from typing import TYPE_CHECKING, Callable, Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import pytest
 
 import yaozarrs
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import zarr
 
     VersionStr: TypeAlias = Literal["0.4", "0.5"]

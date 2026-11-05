@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, assert_type
 
 import pytest
 from pydantic import ValidationError
-from typing_extensions import assert_type
 
 from yaozarrs import (
     ConversionWarning,

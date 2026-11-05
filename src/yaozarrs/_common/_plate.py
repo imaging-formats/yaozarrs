@@ -2,11 +2,10 @@
 
 import warnings
 from collections.abc import Sequence
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
 from annotated_types import MinLen
 from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._errors import ValidationWarning

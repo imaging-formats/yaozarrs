@@ -56,10 +56,10 @@ __all__ = [
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from os import PathLike
+    from typing import Literal, TypeAlias
 
     import tensorstore
     import zarr
-    from typing_extensions import Literal, TypeAlias
 
     from yaozarrs.write._common._arrays import (
         AnyZarrArray,

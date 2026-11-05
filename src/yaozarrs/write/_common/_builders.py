@@ -34,9 +34,9 @@ LabelImage = TypeVar("LabelImage")
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
     from os import PathLike
+    from typing import Literal, Self, TypeAlias
 
     from pydantic import BaseModel
-    from typing_extensions import Literal, Self, TypeAlias
 
     from ._arrays import (
         ArrayLike,
@@ -97,7 +97,9 @@ def _check_image_args(
         )
 
     ndim = len(multiscale.axes)
-    for item, dataset in zip(cast("Sequence[Any]", datasets_seq), multiscale.datasets):
+    for item, dataset in zip(
+        cast("Sequence[Any]", datasets_seq), multiscale.datasets, strict=False
+    ):
         shape = tuple(item.shape if hasattr(item, "shape") else item[0])
         if len(shape) != ndim:
             raise ValueError(
@@ -157,7 +159,9 @@ def _prepare_image(
     import numpy as np
 
     arrays = {}
-    for (shape, dtype_spec), dataset_meta in zip(datasets_seq, multiscale.datasets):
+    for (shape, dtype_spec), dataset_meta in zip(
+        datasets_seq, multiscale.datasets, strict=False
+    ):
         dtype = np.dtype(dtype_spec)  # (an np.dtype, which every backend accepts)
         arrays[dataset_meta.path] = create_func(
             path=dest_path / dataset_meta.path,
@@ -214,7 +218,9 @@ def _write_image(
         compression=compression,
     )
 
-    for data_array, dataset_meta in zip(datasets_seq, multiscale.datasets):
+    for data_array, dataset_meta in zip(
+        datasets_seq, multiscale.datasets, strict=False
+    ):
         _write_to_array(arrays[dataset_meta.path], data_array, progress=progress)
 
     if labels:

@@ -5,10 +5,10 @@ from __future__ import annotations
 import textwrap
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any
+from typing import Any, NotRequired
 
 from pydantic import ValidationError
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 
 class ValidationWarning(UserWarning):

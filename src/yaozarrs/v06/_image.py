@@ -1,10 +1,9 @@
 import warnings
 from collections.abc import Sequence
-from typing import Annotated, Any, TypeAlias, cast
+from typing import Annotated, Any, Self, TypeAlias, cast
 
 from annotated_types import Len, MinLen
 from pydantic import Field, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._image import check_resolution_order
@@ -365,7 +364,8 @@ def _coordinate_systems_datasets(
         # scales ... for classical binning, translations should be
         # (pixel-size-at-resolution-N - pixel-size-at-resolution-0) / 2.
         translation = [
-            (d.translation or 0.0) + (s - d.scale) / 2 for d, s in zip(dims, factors)
+            (d.translation or 0.0) + (s - d.scale) / 2
+            for d, s in zip(dims, factors, strict=False)
         ]
         if any(translation):
             # a scale and a translation must be a sequence (scale first)
