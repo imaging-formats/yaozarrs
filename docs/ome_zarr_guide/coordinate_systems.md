@@ -7,8 +7,8 @@ title: Coordinate Systems & Transformations
 
 !!! tip "What you'll learn"
     Since v0.6, OME-Zarr describes *where your pixels are* with **coordinate
-    systems** and **transformations**.  This page explains these from scratch, with no prior knowledge assumed, and
-    shows how they appear in the metadata.
+    systems** and **transformations**.  This page explains what they are, and
+    how they appear in the metadata.
 
     If you only need a single image with a pixel size, you can mostly skip
     this: [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] handles it
@@ -21,30 +21,6 @@ title: Coordinate Systems & Transformations
     specification](https://ngff.openmicroscopy.org/specifications/0.6/index.html)
     and [RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html).  In case of any
     discrepancies, the official spec takes precedence!
-
-## Why does this exist?
-
-For a single image, a `scale` (and optionally a `translation`) per resolution
-level is enough to convert pixel indices into physical units: "*each pixel is
-0.1 µm wide, and the image starts 20 µm from the origin*".  That's all v0.4 and
-v0.5 can express.
-
-But microscopy data often needs more than that:
-
-- **Tiles of a mosaic** need to be placed relative to each other.
-- **Light sheet** data acquired at an angle needs to be *deskewed* (sheared)
-  before it looks right.
-- Two images of the same sample, **from different microscopes**, need to be
-  registered onto each other.
-- A **segmentation** computed on a crop of an image needs to line up with the
-  original.
-
-v0.6 ([RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html)) describes all
-of these with just two concepts: **coordinate systems** (named
-spaces where points live) and **transformations** (arrows that take points from
-one coordinate system to another).
-
----
 
 ## Coordinate systems
 
@@ -73,8 +49,8 @@ Coordinate systems are defined in two places:
   may define its own, e.g. a shared "stage" or "world" coordinate system that
   several images are placed into.
 
-!!! warning "Same axes ≠ same space"
-    Two coordinate systems with identical axes are **not** necessarily "the
+!!! warning "Identical axes aren't the same space"
+    Two coordinate systems with identical axes are *not* necessarily "the
     same".  An image of sample A and an image of sample B may both have
     `z, y, x` axes in micrometers, but a point at `(0, 0, 0)` in one has nothing
     to do with `(0, 0, 0)` in the other.
@@ -116,9 +92,8 @@ lists them all.
 
 !!! warning "Transformations point from `input` to `output`"
     Transformations map *points* from the input space to the output space
-    (the spec calls this the "forward" direction).  This sounds obvious, but
-    it's an easy place to get things backwards.  To *draw* image A into the
-    coordinate system of image B, a viewer usually needs the **inverse**: for
+    (the spec calls this the "forward" direction).  To *draw* image A into the
+    coordinate system of image B, a viewer usually needs the *inverse*: for
     each pixel of the output, where should it sample A?  For simple
     transformations (scale, translation, rotation...) the viewer can compute
     that inverse itself.
@@ -145,8 +120,8 @@ Which of them are required depends on where the transformation is stored:
 | multiscales > coordinateTransformations | `{"name": "physical"}` | `{"name": "other"}` <br> or <br> `{"name": "physical", "path": "labels/cells"}` |
 | scene > coordinateTransformations | `{"name": "physical", "path": "imageA"}` | `{"name": "physical", "path": "imageB"}` |
 
-(This table is adapted from the spec.  The first row is special: a dataset's
-`input` is the dataset's *array* itself, referenced by its `path`.)
+(The first row is special: a dataset's `input` is the dataset's *array*
+itself, referenced by its `path`.)
 
 ---
 
@@ -155,7 +130,7 @@ Which of them are required depends on where the transformation is stored:
 Every multiscale image has one special coordinate system: the one that **all of
 its datasets (resolution levels) map into**.  The spec calls it the
 **"intrinsic" coordinate system** of the image.  It is "a representation of the
-image in its **native physical coordinate system**", and the one to use "for
+image in its native physical coordinate system", and the one to use "for
 viewing and processing unless a use case dictates otherwise".
 
 ```json
@@ -207,12 +182,11 @@ Transformations](index.md#coordinate-transformations) in the guide.
 
 ### Where is a pixel?
 
-Why does level `1` above have a translation of `0.25`?  It comes down to a
-convention that v0.6 now spells out:
+Level `1` above has a translation of `0.25` because of this convention:
 
 !!! info "The pixel center is the origin"
     Pixel `(0, 0)` of an array is the point `(0.0, 0.0)` in its own (array)
-    coordinates, and that point is the **center** of the pixel.  The pixel
+    coordinates, and that point is the *center* of the pixel.  The pixel
     itself covers the area from `-0.5` to `0.5` along each axis (including
     `-0.5`, excluding `0.5`).
 
@@ -233,15 +207,14 @@ center is, and toggle the translation to see what happens without it.
 !!! tip "yaozarrs does this for you"
     [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] adds this
     translation to every downsampled level, using the `scale_factor` of each
-    [`DimSpec`][yaozarrs.DimSpec].  (The spec's wording is that the translation
-    "should be" this for "the most common downsampling methods such as
-    classical binning".  If your pyramid was made differently, adjust it.)
+    [`DimSpec`][yaozarrs.DimSpec].  That's right for common downsampling
+    methods like binning; if your pyramid was made differently, adjust it.
 
 ---
 
 ## More coordinate systems in one image
 
-A multiscale may define **more than one** coordinate system, linked to the
+A multiscale may define more than one coordinate system, linked to the
 intrinsic one with transformations in the multiscale's own
 `coordinateTransformations`.  These apply to all resolution levels at once.
 
@@ -281,9 +254,8 @@ system for the corrected geometry:
       multiscale (by `name`), or the coordinate system of a label image in the
       image's `labels` group (by `name` and `path`, see [lining labels up with
       the image](index.md#lining-labels-up-with-the-image-v06)).
-    - A transformation to a label image **MUST** be an `identity`, `scale` or
-      `translation`.  (The "labels" section of the spec also allows a
-      `sequence` of a scale and a translation; yaozarrs accepts that too.)
+    - A transformation to a label image **MUST** be an `identity`, `scale`,
+      `translation`, or a `sequence` of a scale and a translation.
 
     So within the image's own metadata, every transformation touches the
     intrinsic coordinate system: there are no chains like
@@ -330,8 +302,7 @@ it:
     Any two coordinate systems (in the multiscales and scene metadata) **MUST**
     be linked by a path of one or more transformations: either directly, or
     through other coordinate systems.  They don't *all* need to link to each
-    other directly.  (A path through a transformation that can't be inverted
-    still counts.)
+    other directly.
 
 To get from any coordinate system to any other, follow the arrows (or walk them
 backwards, where they can be inverted), composing the
@@ -356,20 +327,20 @@ transformations to points or images is a **SHOULD**.  See the
 what each one does and its parameters.
 
 !!! warning "Gotchas"
-    - **Parameters follow the axis order.**  The first number of a `scale` or
+    - Parameters follow the axis order.  The first number of a `scale` or
       `translation` is for the first axis of the coordinate system, and so on.
       With axes `c, z, y, x`, a scale is `[c, z, y, x]`.
-    - **Discrete axes still count.**  If a coordinate system has a channel
+    - Discrete axes still count.  If a coordinate system has a channel
       axis, it needs a parameter too (usually `1.0` for a scale, `0.0` for a
       translation), even though channels aren't "transformed".
-    - **Sequences apply in order**: for `[f0, f1, f2]`, `f0` is applied first,
+    - Sequences apply in order: for `[f0, f1, f2]`, `f0` is applied first,
       and `f2` last (i.e. `f2(f1(f0(x)))`).
-    - **Matrices are lists of rows**, applied to points as column vectors.  An
+    - Matrices are lists of rows, applied to points as column vectors.  An
       `affine` from `N` to `M` dimensions has `M` rows of `N+1` numbers: the
       last number of each row is the translation (the `[0, ..., 0, 1]` row of
       the full homogeneous matrix is left out).  A `rotation` is `N x N`, with
       determinant 1 and orthonormal rows and columns.
-    - **Prefer simple transformations.**  The spec says implementations
+    - Prefer simple transformations.  The spec says implementations
       **SHOULD** prefer a sequence of less expressive transformations (e.g.
       `sequence[translation, rotation]`) over an equivalent `affine`.
 

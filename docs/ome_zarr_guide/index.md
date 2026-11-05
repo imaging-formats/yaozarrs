@@ -57,7 +57,7 @@ title: Guide to OME-Zarr
 </div>
 
 !!! info "Which version is this guide about?"
-    This guide covers OME-Zarr **v0.4, v0.5 and v0.6**, with tabs to show the
+    This guide covers OME-Zarr v0.4, v0.5 and v0.6, with tabs to show the
     differences.  The coordinate systems and transformations of v0.6 get their
     own page: [Coordinate Systems & Transformations](coordinate_systems.md).
 
@@ -345,7 +345,7 @@ as well as stage positions and spatial offsets for registration.
     to physical coordinates, but now it explicitly says *where* it maps from and
     to: its `input` is the dataset's array (by `path`), and its `output` is a
     coordinate system of the multiscale (by `name`).  Every dataset maps into
-    the **same** coordinate system, which the spec calls the image's
+    the *same* coordinate system, which the spec calls the image's
     ["intrinsic" coordinate
     system](coordinate_systems.md#the-intrinsic-coordinate-system).
 
@@ -431,21 +431,15 @@ as well as stage positions and spatial offsets for registration.
         - **MUST** have exactly one transformation per dataset: a `scale`, an
           `identity`, or a `sequence` of a scale followed by a translation
         - Its `input` **MUST** have a `path` matching the dataset's `path`, and
-          should omit `name` (see below)
+          should omit `name`
         - Its `output` **MUST** have the `name` of a coordinate system in
           `coordinateSystems`, the same one for every dataset, and should omit
-          `path` (see below)
+          `path`
         - Parameter lengths **MUST** match the number of axes
         - The scale gives the pixel size in physical units (or the time step).
           If that isn't known (or doesn't apply) for an axis, the value **MUST**
           be the downsampling factor relative to the first level instead (`1.0`
           if that axis isn't downsampled)
-
-        *About omitting `input.name` and `output.path`:* the spec says this
-        both ways.  Its "Constraints" section says they **MUST** be omitted,
-        while its "multiscales" section says they **SHOULD** be.  To be safe,
-        leave them out.  (yaozarrs warns, rather than failing, if they're
-        present.)
 
     !!! tip "Use `Multiscale.from_dims`"
         Writing all of this by hand gets tedious.
@@ -458,7 +452,7 @@ as well as stage positions and spatial offsets for registration.
         not mention them.  (yaozarrs still writes them, as other Zarr tools find
         them useful.)
 
-    **There's a lot more** that v0.6 can express with coordinate systems and
+    There's a lot more that v0.6 can express with coordinate systems and
     transformations (rotations, affines, linking images to their labels or to
     each other...).  See [Coordinate Systems &
     Transformations](coordinate_systems.md).
@@ -638,10 +632,6 @@ They are represented as a special group named "labels/" within an image group.
         }
         ```
 
-        *The v0.5 spec text also asked for a `version` key inside
-        `image-label`.  v0.6 doesn't: the version is given once, at
-        `ome.version`.*
-
         **yaozarrs Code:**
         ```python
         from yaozarrs import DimSpec, v06
@@ -809,7 +799,7 @@ understood to be the same" as its image's.  In v0.6, you can also link the two
 when they *aren't* the same.  Say a
 segmentation tool wrote labels for a crop of the image, with the corner of the
 crop as its origin.  Rather than rewriting the label image's metadata, you can add
-a transformation to the **parent image's** multiscale `coordinateTransformations`,
+a transformation to the *parent image's* multiscale `coordinateTransformations`,
 linking its intrinsic coordinate system to the label image's (referenced by `name`
 *and* `path`, relative to the image group):
 
@@ -833,10 +823,8 @@ coordinate system.  (Either direction is allowed: the image's intrinsic
 coordinate system may be the `input` or the `output`.)
 
 !!! warning "Only simple transformations"
-    A transformation to a label image **MUST** be an `identity`, `scale` or
-    `translation`.  The "labels" section of the spec also allows a `sequence` of
-    a scale and a translation (its "Constraints" and "multiscales" sections
-    don't), and yaozarrs accepts that too.
+    A transformation to a label image **MUST** be an `identity`, `scale`,
+    `translation`, or a `sequence` of a scale and a translation.
 
 ---
 
@@ -922,9 +910,6 @@ Each well can contain multiple fields of view (FOVs) across multiple acquisition
 === "v0.6"
 
     The same structure as v0.5, with `"version": "0.6"` at `ome.version`.
-    (The v0.5 spec *text* still asked for a separate `version` key inside
-    `plate` and `well`, although its schemas didn't.  v0.6 removed it from the
-    text too, since the version is already given at `ome.version`.)
 
     In yaozarrs, just swap `v05` for `v06`:
 
@@ -1123,10 +1108,9 @@ Wells list the fields of view (images) they contain:
     well = v06.Well(well=well_def)
     ```
 
-    !!! info "Field of view paths in v0.6"
-        Up to v0.5, a field of view's `path` had to be alphanumeric.  v0.6
-        follows Zarr's rules for node names instead: letters, digits, `-`, `_`
-        and `.` are allowed, but a path **MUST NOT** be empty, consist only of
+    !!! info "Field of view paths"
+        A field of view's `path` follows Zarr's rules for node names: letters,
+        digits, `-`, `_` and `.` are allowed, but a path **MUST NOT** be empty, consist only of
         periods (like `.` or `..`), or start with `__`.
 
 === "v0.5"
@@ -1358,7 +1342,7 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 
 ## Working with Scenes
 
-A **Scene** (v0.6 and later) is a group of images that **share a spatial relationship** with each
+A **Scene** (v0.6 and later) is a group of images that share a spatial relationship with each
 other.  For example:
 
 - Tiles of a mosaic, placed side by side in a common "stage" coordinate system
@@ -1502,7 +1486,7 @@ scene = v06.Scene(
 
 !!! warning "Scene rules"
     - In a scene, both `input` and `output` **MUST** have a `name`.  A `path`
-      is **required** when the coordinate system belongs to an image, and may be
+      is required when the coordinate system belongs to an image, and may be
       left out when it's one of the scene's own.
     - All of the coordinate systems (the scene's and its images') **MUST** be
       connected by transformations: there must be a path of one or more
@@ -1514,14 +1498,14 @@ scene = v06.Scene(
 
 !!! tip "Which coordinate system is the 'main' one?"
     If a viewer picks a default coordinate system to display a scene in, the
-    spec **RECOMMENDS** the **first** of the scene's own `coordinateSystems`.  Likewise, when
+    spec **RECOMMENDS** the *first* of the scene's own `coordinateSystems`.  Likewise, when
     writing a scene, if one coordinate system acts as the common reference for
     the others (like `stage` above), put it first.
 
 ??? question "Do I need scene coordinate systems at all?"
-    No, they're optional.  A transformation may link one image directly to
-    another (both with a `path`), which is natural for registration, where you
-    map a "moving" image onto a "fixed" one:
+    A transformation may also link one image directly to another (both with a
+    `path`), with no scene coordinate system in between.  This is natural for
+    registration, where you map a "moving" image onto a "fixed" one:
 
     ```json
     {
