@@ -5,8 +5,9 @@ description: Audit, add, change, or retire yaozarrs rule codes (YZ-<AREA>-NNN fo
 
 # NGFF rule codes
 
-Every spec-violation error or warning in yaozarrs carries a permanent code that
-points at one normative statement in the NGFF spec. There are two kinds:
+Each normative statement in the NGFF spec has a permanent code, and a yaozarrs error
+or warning for a spec violation should carry the code of the statement it enforces.
+There are two kinds:
 
 - `YZ-<AREA>-NNN` (e.g. `YZ-WL-002`): a spec rule, citing the spec's prose or JSON
   schemas.
@@ -101,7 +102,8 @@ a tracked spec version is inside a rule's quote, or inside the quote of an entry
 clause of a line doesn't account for a second keyword on the same line. A rule
 doesn't need yaozarrs to check it: a rule without an example is listed as not
 reported (yaozarrs may still reject such input, under another code or none).
-`test_every_statement_catalogued` enforces this, and `scripts/ngff_rules.py uncited` lists the keywords still missing.
+`test_every_statement_catalogued` enforces this, and `scripts/ngff_rules.py uncited`
+lists the keywords still missing.
 
 - Statements about software behavior (what readers, writers, or viewers do) are rules
   with `checkable = false`: no document can violate them.
@@ -189,8 +191,7 @@ id: Annotated[
    `status="draft"`. A draft may be edited in place. When the version is released,
    switch it to `status="stable"`, point its sources at the release `SpecDoc`, and set
    `introduced` to the release version. If it is dropped before release, use
-   `status="withdrawn"` and `removed="<dev version where it disappeared>"`. Only mint
-   codes for dev-version rules that yaozarrs actually checks.
+   `status="withdrawn"` and `removed="<dev version where it disappeared>"`.
 
 Area prefixes: `AX` axes, `CS` coordinateSystems, `MS` multiscales, `DS` datasets, `CT`
 coordinateTransformations, `SC` scene, `LB` labels, `IL` image-label, `PL` plate, `WL`
