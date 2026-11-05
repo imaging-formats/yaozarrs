@@ -228,8 +228,9 @@ catalogued): say in `notes` that yaozarrs accepts the interpretable input.
 Each pin in `rules.toml` (`[spec.*]`) is the commit that ngff.openmicroscopy.org
 publishes, not a release tag. The site is built (Read the Docs) from `ome/ngff` main,
 which includes each version as a submodule `specifications/<v>` of `ome/ngff-spec`,
-rendered from its `index.md`. Fixes land on those branches without new tags, so check
-the pins periodically, and before every release:
+rendered from its `index.md`. Fixes land on those branches without new tags, so the
+pins need checking. `.github/workflows/spec-pins.yml` runs `site` weekly and opens (or
+comments on) an issue when it fails. Also check before every release:
 
 1. `uv run python scripts/ngff_rules.py site` compares each pin with the submodule
    commit on `ome/ngff` main, and exits 1 if any moved.
