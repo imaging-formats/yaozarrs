@@ -24,7 +24,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.74">
+      <meta name="generator" content="zensical-0.1.0">
     
     
       
@@ -1604,25 +1604,25 @@
 for how to use them.</p>
 <h2 id="things-that-are-specific-to-v06">Things that are specific to v0.6<a class="headerlink" href="#things-that-are-specific-to-v06" title="Link to this section">#</a></h2>
 <ul>
-<li><strong><code>dimension_names</code> are still written.</strong>  v0.5 <em>required</em> each array's
+<li><code>dimension_names</code> are still written.  v0.5 <em>required</em> each array's
   <code>zarr.json</code> to include <code>dimension_names</code> matching the axes.  v0.6 no longer
   requires it, but other Zarr tools find it useful, so yaozarrs still writes them,
   using the axis names of the multiscale's <a href="../../ome_zarr_guide/coordinate_systems/#the-intrinsic-coordinate-system">"intrinsic" coordinate
   system</a>.</li>
-<li><strong>No transformation is added between an image and its labels.</strong>  Without one, a
+<li>No transformation is added between an image and its labels.  Without one, a
   label image is usually understood to share the image's intrinsic coordinate
   system.  If it doesn't (e.g. your labels were written for a crop of the
   image, with the crop's corner as their origin), add a
   transformation to the image's <code>Multiscale.coordinateTransformations</code> (see <a href="../../ome_zarr_guide/#lining-labels-up-with-the-image-v06">Lining labels up with the
   image</a>).</li>
-<li><strong>The scene metadata is written as given.</strong>  Unlike plate metadata, which
+<li>The scene metadata is written as given.  Unlike plate metadata, which
   <code>write_plate</code> can generate for you, a <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Scene&lt;/span&gt;" href="../yaozarrs.v06/#yaozarrs.v06._scene.Scene"><code>Scene</code></a> says how
   <em>your</em> images relate to each other, so you write it yourself.  <code>write_scene</code>
   checks it against the images (and their <code>labels</code>) before anything is written:
   every image it refers to must be there, with the coordinate systems it names,
   and the scene's transformations must connect them all.  (A reference to a label
   image you don't pass in isn't checked, and neither is the graph, in that case.)</li>
-<li><strong>Transformation parameters stored in Zarr aren't written for you.</strong>  An
+<li>Transformation parameters stored in Zarr aren't written for you.  An
   <code>affine</code> or <code>rotation</code> may keep its matrix in a Zarr array (referenced by
   <code>path</code>) instead of in the JSON, and <code>displacements</code> and <code>coordinates</code> always keep
   their vector field in a separate multiscale image group.  If you use those,
@@ -1687,7 +1687,7 @@ for how to use them.</p>
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
 
 
@@ -1991,7 +1991,7 @@ an exception will be raised instead.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2103,7 +2103,7 @@ pass the array directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2150,13 +2150,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 976</span>
-<span class="normal"> 977</span>
-<span class="normal"> 978</span>
-<span class="normal"> 979</span>
-<span class="normal"> 980</span>
-<span class="normal"> 981</span>
-<span class="normal"> 982</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 982</span>
 <span class="normal"> 983</span>
 <span class="normal"> 984</span>
 <span class="normal"> 985</span>
@@ -2196,7 +2190,13 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">1019</span>
 <span class="normal">1020</span>
 <span class="normal">1021</span>
-<span class="normal">1022</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2271,7 +2271,7 @@ pass the array directly without wrapping in a list.</p>
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2369,7 +2369,7 @@ array handles.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2417,13 +2417,7 @@ number of specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1024</span>
-<span class="normal">1025</span>
-<span class="normal">1026</span>
-<span class="normal">1027</span>
-<span class="normal">1028</span>
-<span class="normal">1029</span>
-<span class="normal">1030</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1030</span>
 <span class="normal">1031</span>
 <span class="normal">1032</span>
 <span class="normal">1033</span>
@@ -2459,7 +2453,13 @@ number of specs doesn't match the metadata.</p>
 <span class="normal">1063</span>
 <span class="normal">1064</span>
 <span class="normal">1065</span>
-<span class="normal">1066</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span>
+<span class="normal">1069</span>
+<span class="normal">1070</span>
+<span class="normal">1071</span>
+<span class="normal">1072</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2600,13 +2600,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1068</span>
-<span class="normal">1069</span>
-<span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span>
-<span class="normal">1074</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1074</span>
 <span class="normal">1075</span>
 <span class="normal">1076</span>
 <span class="normal">1077</span>
@@ -2640,7 +2634,13 @@ tensorstore.TensorStore).</p>
 <span class="normal">1105</span>
 <span class="normal">1106</span>
 <span class="normal">1107</span>
-<span class="normal">1108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">1108</span>
+<span class="normal">1109</span>
+<span class="normal">1110</span>
+<span class="normal">1111</span>
+<span class="normal">1112</span>
+<span class="normal">1113</span>
+<span class="normal">1114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete labels group structure including LabelsGroup</span>
@@ -2720,7 +2720,7 @@ tensorstore.TensorStore).</p>
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
 
 
@@ -3083,7 +3083,7 @@ an exception will be raised instead.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3194,7 +3194,7 @@ from all written wells and rewritten after each call.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3242,13 +3242,7 @@ provided Plate doesn't include this well.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">693</span>
-<span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">699</span>
 <span class="normal">700</span>
 <span class="normal">701</span>
 <span class="normal">702</span>
@@ -3299,7 +3293,13 @@ provided Plate doesn't include this well.</p>
 <span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
-<span class="normal">750</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3386,7 +3386,7 @@ provided Plate doesn't include this well.</p>
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders.Image&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._builders.Image">Image</a></span><span class="p">]],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3480,7 +3480,7 @@ dtype and shape for each resolution level:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3529,13 +3529,7 @@ don't match Image metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span>
-<span class="normal">758</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">758</span>
 <span class="normal">759</span>
 <span class="normal">760</span>
 <span class="normal">761</span>
@@ -3575,7 +3569,13 @@ don't match Image metadata.</p>
 <span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span>
-<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span>
+<span class="normal">801</span>
+<span class="normal">802</span>
+<span class="normal">803</span>
+<span class="normal">804</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3721,13 +3721,7 @@ objects. The array type depends on the configured writer
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
-<span class="normal">803</span>
-<span class="normal">804</span>
-<span class="normal">805</span>
-<span class="normal">806</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">806</span>
 <span class="normal">807</span>
 <span class="normal">808</span>
 <span class="normal">809</span>
@@ -3764,7 +3758,13 @@ objects. The array type depends on the configured writer
 <span class="normal">840</span>
 <span class="normal">841</span>
 <span class="normal">842</span>
-<span class="normal">843</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete Plate structure including plate metadata (auto-</span>
@@ -3847,7 +3847,7 @@ objects. The array type depends on the configured writer
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
 
 
@@ -4193,7 +4193,7 @@ an exception will be raised instead.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ArrayOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ArrayOrPyramid">ArrayOrPyramid</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4305,7 +4305,7 @@ pass the array directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4352,13 +4352,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">479</span>
 <span class="normal">480</span>
 <span class="normal">481</span>
 <span class="normal">482</span>
@@ -4395,7 +4389,13 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">513</span>
 <span class="normal">514</span>
 <span class="normal">515</span>
-<span class="normal">516</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_image</span><span class="p">(</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_image</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
@@ -4467,7 +4467,7 @@ pass the array directly without wrapping in a list.</p>
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeAndDTypeOrPyramid">ShapeAndDTypeOrPyramid</a></span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4565,7 +4565,7 @@ directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4613,13 +4613,7 @@ number of dataset specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">518</span>
-<span class="normal">519</span>
-<span class="normal">520</span>
-<span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span>
-<span class="normal">524</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">524</span>
 <span class="normal">525</span>
 <span class="normal">526</span>
 <span class="normal">527</span>
@@ -4653,7 +4647,13 @@ number of dataset specs doesn't match the metadata.</p>
 <span class="normal">555</span>
 <span class="normal">556</span>
 <span class="normal">557</span>
-<span class="normal">558</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_series</span><span class="p">(</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_series</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
@@ -4792,13 +4792,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">560</span>
-<span class="normal">561</span>
-<span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">566</span>
 <span class="normal">567</span>
 <span class="normal">568</span>
 <span class="normal">569</span>
@@ -4830,7 +4824,13 @@ tensorstore.TensorStore).</p>
 <span class="normal">595</span>
 <span class="normal">596</span>
 <span class="normal">597</span>
-<span class="normal">598</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete bioformats2raw structure including root metadata,</span>
@@ -4908,7 +4908,7 @@ tensorstore.TensorStore).</p>
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+  &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeLike
 
 
@@ -5279,7 +5279,7 @@ an exception will be raised instead.</p>
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            _Default (&lt;code&gt;yaozarrs.write._common._builders._Default&lt;/code&gt;)" href="./#yaozarrs.write._common._builders._Default">_Default</a></span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;BUILDER&lt;/span&gt;
 
@@ -5313,7 +5313,7 @@ an exception will be raised instead.</p>
       &lt;small class=&quot;doc doc-label doc-label-instance-attribute&quot;&gt;&lt;code&gt;instance-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders._Default.BUILDER&lt;/code&gt;)" href="./#yaozarrs.write._common._builders._Default.BUILDER">BUILDER</a></span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5508,7 +5508,7 @@ pass the array directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5744,7 +5744,7 @@ the metadata.</p>
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-module-attribute&quot;&gt;&lt;code&gt;module-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ShapeLike&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ShapeLike">ShapeLike</a></span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            _Default (&lt;code&gt;yaozarrs.write._common._builders._Default&lt;/code&gt;)" href="./#yaozarrs.write._common._builders._Default">_Default</a></span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-attribute-name&quot;&gt;BUILDER&lt;/span&gt;
 
@@ -5777,7 +5777,7 @@ the metadata.</p>
       &lt;small class=&quot;doc doc-label doc-label-class-attribute&quot;&gt;&lt;code&gt;class-attribute&lt;/code&gt;&lt;/small&gt;
       &lt;small class=&quot;doc doc-label doc-label-instance-attribute&quot;&gt;&lt;code&gt;instance-attribute&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._builders._Default.BUILDER&lt;/code&gt;)" href="./#yaozarrs.write._common._builders._Default.BUILDER">BUILDER</a></span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5957,7 +5957,7 @@ directly without wrapping in a list.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Self&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Self">Self</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Self&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Self">Self</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6368,7 +6368,7 @@ its coordinate systems aren't all connected.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
@@ -7079,7 +7079,7 @@ shuffle filter. "zstd" uses raw zstd without blosc container.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
@@ -7744,7 +7744,7 @@ When present, shard_shape must be divisible by chunk shape.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
@@ -8398,7 +8398,7 @@ When present, shard_shape must be divisible by chunk shape.</p>
   &lt;/span&gt; (&lt;code&gt;yaozarrs.write._common._arrays.ZarrWriter&lt;/code&gt;)" href="../../writing/#yaozarrs.write._common._arrays.ZarrWriter">ZarrWriter</a></span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">compression</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            CompressionName
@@ -9186,7 +9186,7 @@ that isn't in <code>images</code>.</p>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">extra_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Any&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">chunks</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.Literal&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Literal&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="n">shards</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ZarrWriter
@@ -9771,7 +9771,7 @@ to array objects. The array type depends on the writer:</p>
   </span>
 
 <a href="#yaozarrs.write.v06._write.ImageWithDatasets" class="headerlink" title="Link to this section">#</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ImageWithDatasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.TypeAlias&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Image&lt;/span&gt; (&lt;code&gt;yaozarrs.v06.Image&lt;/code&gt;)" href="../yaozarrs.v06/#yaozarrs.v06._image.Image">Image</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ImageWithDatasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.TypeAlias&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Image&lt;/span&gt; (&lt;code&gt;yaozarrs.v06.Image&lt;/code&gt;)" href="../yaozarrs.v06/#yaozarrs.v06._image.Image">Image</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
 
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
@@ -9800,7 +9800,7 @@ to array objects. The array type depends on the writer:</p>
   </span>
 
 <a href="#yaozarrs.write.v06._write.LabelsWithDatasets" class="headerlink" title="Link to this section">#</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">LabelsWithDatasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.TypeAlias&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">LabelsWithDatasets</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.TypeAlias&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;LabelImage&lt;/span&gt; (&lt;code&gt;yaozarrs.v06.LabelImage&lt;/code&gt;)" href="../yaozarrs.v06/#yaozarrs.v06._labels.LabelImage">LabelImage</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ArrayOrPyramid
 
 
@@ -9831,7 +9831,7 @@ to array objects. The array type depends on the writer:</p>
   </span>
 
 <a href="#yaozarrs.write.v06._write.LabelsWithSpecs" class="headerlink" title="Link to this section">#</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">LabelsWithSpecs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing_extensions.TypeAlias&lt;/code&gt;" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">LabelsWithSpecs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.TypeAlias&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;collections.abc.Mapping&lt;/code&gt;" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;LabelImage&lt;/span&gt; (&lt;code&gt;yaozarrs.v06.LabelImage&lt;/code&gt;)" href="../yaozarrs.v06/#yaozarrs.v06._labels.LabelImage">LabelImage</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-attribute&quot;&gt;&lt;/code&gt;            ShapeAndDTypeOrPyramid
 
 

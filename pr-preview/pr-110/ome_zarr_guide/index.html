@@ -26,7 +26,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.74">
+      <meta name="generator" content="zensical-0.1.0">
     
     
       
@@ -1090,7 +1090,7 @@ each other (<em>v0.6 and later</em>)</p>
 </div>
 <div class="admonition info">
 <p class="admonition-title">Which version is this guide about?</p>
-<p>This guide covers OME-Zarr <strong>v0.4, v0.5 and v0.6</strong>, with tabs to show the
+<p>This guide covers OME-Zarr v0.4, v0.5 and v0.6, with tabs to show the
 differences.  The coordinate systems and transformations of v0.6 get their
 own page: <a href="coordinate_systems/">Coordinate Systems &amp; Transformations</a>.</p>
 <details class="question">
@@ -1358,7 +1358,7 @@ as well as stage positions and spatial offsets for registration.</p>
 to physical coordinates, but now it explicitly says <em>where</em> it maps from and
 to: its <code>input</code> is the dataset's array (by <code>path</code>), and its <code>output</code> is a
 coordinate system of the multiscale (by <code>name</code>).  Every dataset maps into
-the <strong>same</strong> coordinate system, which the spec calls the image's
+the <em>same</em> coordinate system, which the spec calls the image's
 <a href="coordinate_systems/#the-intrinsic-coordinate-system">"intrinsic" coordinate
 system</a>.</p>
 <p><strong>Scale Transformation:</strong></p>
@@ -1430,21 +1430,16 @@ translation, wrap both in a single <code>sequence</code> transformation (scale f
 <li><strong>MUST</strong> have exactly one transformation per dataset: a <code>scale</code>, an
   <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation</li>
 <li>Its <code>input</code> <strong>MUST</strong> have a <code>path</code> matching the dataset's <code>path</code>, and
-  should omit <code>name</code> (see below)</li>
+  should omit <code>name</code></li>
 <li>Its <code>output</code> <strong>MUST</strong> have the <code>name</code> of a coordinate system in
   <code>coordinateSystems</code>, the same one for every dataset, and should omit
-  <code>path</code> (see below)</li>
+  <code>path</code></li>
 <li>Parameter lengths <strong>MUST</strong> match the number of axes</li>
 <li>The scale gives the pixel size in physical units (or the time step).
   If that isn't known (or doesn't apply) for an axis, the value <strong>MUST</strong>
   be the downsampling factor relative to the first level instead (<code>1.0</code>
   if that axis isn't downsampled)</li>
 </ul>
-<p><em>About omitting <code>input.name</code> and <code>output.path</code>:</em> the spec says this
-both ways.  Its "Constraints" section says they <strong>MUST</strong> be omitted,
-while its "multiscales" section says they <strong>SHOULD</strong> be.  To be safe,
-leave them out.  (yaozarrs warns, rather than failing, if they're
-present.)</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Use <code>Multiscale.from_dims</code></p>
@@ -1464,7 +1459,7 @@ the coordinate system and every level's transformation for you (see
 not mention them.  (yaozarrs still writes them, as other Zarr tools find
 them useful.)</p>
 </div>
-<p><strong>There's a lot more</strong> that v0.6 can express with coordinate systems and
+<p>There's a lot more that v0.6 can express with coordinate systems and
 transformations (rotations, affines, linking images to their labels or to
 each other...).  See <a href="coordinate_systems/">Coordinate Systems &amp;
 Transformations</a>.</p>
@@ -1614,9 +1609,6 @@ optional transformation, but doesn't have to.)</p>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></p>
-<p><em>The v0.5 spec text also asked for a <code>version</code> key inside
-<code>image-label</code>.  v0.6 doesn't: the version is given once, at
-<code>ome.version</code>.</em></p>
 <p><strong>yaozarrs Code:</strong>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">v06</span>
 
@@ -1770,7 +1762,7 @@ understood to be the same" as its image's.  In v0.6, you can also link the two
 when they <em>aren't</em> the same.  Say a
 segmentation tool wrote labels for a crop of the image, with the corner of the
 crop as its origin.  Rather than rewriting the label image's metadata, you can add
-a transformation to the <strong>parent image's</strong> multiscale <code>coordinateTransformations</code>,
+a transformation to the <em>parent image's</em> multiscale <code>coordinateTransformations</code>,
 linking its intrinsic coordinate system to the label image's (referenced by <code>name</code>
 <em>and</em> <code>path</code>, relative to the image group):</p>
 <div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
@@ -1791,10 +1783,8 @@ coordinate system.  (Either direction is allowed: the image's intrinsic
 coordinate system may be the <code>input</code> or the <code>output</code>.)</p>
 <div class="admonition warning">
 <p class="admonition-title">Only simple transformations</p>
-<p>A transformation to a label image <strong>MUST</strong> be an <code>identity</code>, <code>scale</code> or
-<code>translation</code>.  The "labels" section of the spec also allows a <code>sequence</code> of
-a scale and a translation (its "Constraints" and "multiscales" sections
-don't), and yaozarrs accepts that too.</p>
+<p>A transformation to a label image <strong>MUST</strong> be an <code>identity</code>, <code>scale</code>,
+<code>translation</code>, or a <code>sequence</code> of a scale and a translation.</p>
 </div>
 <hr />
 <h2 id="working-with-plates">Working with Plates<a class="headerlink" href="#working-with-plates" title="Link to this section">#</a></h2>
@@ -1870,10 +1860,7 @@ don't), and yaozarrs accepts that too.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">v0.6</label><label for="__tabbed_6_2">v0.5</label><label for="__tabbed_6_3">v0.4</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<p>The same structure as v0.5, with <code>"version": "0.6"</code> at <code>ome.version</code>.
-(The v0.5 spec <em>text</em> still asked for a separate <code>version</code> key inside
-<code>plate</code> and <code>well</code>, although its schemas didn't.  v0.6 removed it from the
-text too, since the version is already given at <code>ome.version</code>.)</p>
+<p>The same structure as v0.5, with <code>"version": "0.6"</code> at <code>ome.version</code>.</p>
 <p>In yaozarrs, just swap <code>v05</code> for <code>v06</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v06</span>
 
@@ -2052,10 +2039,9 @@ text too, since the version is already given at <code>ome.version</code>.)</p>
 <span class="n">well</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Well</span><span class="p">(</span><span class="n">well</span><span class="o">=</span><span class="n">well_def</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition info">
-<p class="admonition-title">Field of view paths in v0.6</p>
-<p>Up to v0.5, a field of view's <code>path</code> had to be alphanumeric.  v0.6
-follows Zarr's rules for node names instead: letters, digits, <code>-</code>, <code>_</code>
-and <code>.</code> are allowed, but a path <strong>MUST NOT</strong> be empty, consist only of
+<p class="admonition-title">Field of view paths</p>
+<p>A field of view's <code>path</code> follows Zarr's rules for node names: letters,
+digits, <code>-</code>, <code>_</code> and <code>.</code> are allowed, but a path <strong>MUST NOT</strong> be empty, consist only of
 periods (like <code>.</code> or <code>..</code>), or start with <code>__</code>.</p>
 </div>
 </div>
@@ -2277,7 +2263,7 @@ dumping multiple series (commonly found in image formats supported by
 </div>
 <hr />
 <h2 id="working-with-scenes">Working with Scenes<a class="headerlink" href="#working-with-scenes" title="Link to this section">#</a></h2>
-<p>A <strong>Scene</strong> (v0.6 and later) is a group of images that <strong>share a spatial relationship</strong> with each
+<p>A <strong>Scene</strong> (v0.6 and later) is a group of images that share a spatial relationship with each
 other.  For example:</p>
 <ul>
 <li>Tiles of a mosaic, placed side by side in a common "stage" coordinate system</li>
@@ -2409,7 +2395,7 @@ together:</p>
 <p class="admonition-title">Scene rules</p>
 <ul>
 <li>In a scene, both <code>input</code> and <code>output</code> <strong>MUST</strong> have a <code>name</code>.  A <code>path</code>
-  is <strong>required</strong> when the coordinate system belongs to an image, and may be
+  is required when the coordinate system belongs to an image, and may be
   left out when it's one of the scene's own.</li>
 <li>All of the coordinate systems (the scene's and its images') <strong>MUST</strong> be
   connected by transformations: there must be a path of one or more
@@ -2423,15 +2409,15 @@ together:</p>
 <div class="admonition tip">
 <p class="admonition-title">Which coordinate system is the 'main' one?</p>
 <p>If a viewer picks a default coordinate system to display a scene in, the
-spec <strong>RECOMMENDS</strong> the <strong>first</strong> of the scene's own <code>coordinateSystems</code>.  Likewise, when
+spec <strong>RECOMMENDS</strong> the <em>first</em> of the scene's own <code>coordinateSystems</code>.  Likewise, when
 writing a scene, if one coordinate system acts as the common reference for
 the others (like <code>stage</code> above), put it first.</p>
 </div>
 <details class="question">
 <summary>Do I need scene coordinate systems at all?</summary>
-<p>No, they're optional.  A transformation may link one image directly to
-another (both with a <code>path</code>), which is natural for registration, where you
-map a "moving" image onto a "fixed" one:</p>
+<p>A transformation may also link one image directly to another (both with a
+<code>path</code>), with no scene coordinate system in between.  This is natural for
+registration, where you map a "moving" image onto a "fixed" one:</p>
 <div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"affine"</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">"affine"</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="err">...</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]],</span><span class="w">  </span><span class="c1">// a 3x4 matrix, for 3D images</span>
