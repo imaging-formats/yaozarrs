@@ -1,0 +1,532 @@
+# Spec text with an RFC 2119 keyword that deliberately has no rule, so that every
+# keyword is accounted for: each one is inside the quote of a rule in `rules.toml`, or
+# of an entry here, with a reason. `tests/test_rules.py` checks both the quotes and the
+# completeness; `scripts/ngff_rules.py uncited` lists what's still missing.
+#
+# reason:
+#   permission    a MAY that only grants permission: nothing can violate it
+#   boilerplate   RFC 2119 definitions and other text about the document itself
+#   duplicate     restates a requirement that has a rule (name it in `note`)
+#   illustration  the keyword is in an example, diagram, or code comment
+#
+# Line numbers are maintained by `scripts/ngff_rules.py check --fix`.
+
+[[skip]]
+version = '0.4'
+quote = '''The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”,
+“RECOMMENDED”, “MAY”, and “OPTIONAL” are to be interpreted as described in'''
+lines = [106, 107]
+reason = 'boilerplate'
+
+
+[[skip]]
+version = '0.4'
+quote = 'Implementations may be expected (MUST) or encouraged (SHOULD) to support the reading of the data, but writing will usually be optional (MAY).'
+lines = [112, 114]
+reason = 'boilerplate'
+note = 'Defines "transitional" metadata; the keywords describe how transitional sections are worded, not a requirement.'
+
+
+[[skip]]
+version = '0.4'
+quote = "If part of (multiscales metadata)(#version0.4:multiscale-md), the length of \"axes\" MUST be equal to the number of dimensions of the arrays that contain the image data"
+lines = [257, 257]
+reason = 'duplicate'
+note = 'restates YZ-DS-005'
+
+
+[[skip]]
+version = '0.4'
+quote = 'MAY make use of the [minimum specification]'
+lines = [320, 320]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.4'
+quote = 'MAY contain a "series" attribute. If so:'
+lines = [327, 327]
+reason = 'duplicate'
+note = 'restates YZ-BF-004: a MAY that offers a choice, whose value constraint is YZ-BF-004 (and YZ-BF-002)'
+
+
+[[skip]]
+version = '0.4'
+quote = 'MAY use the "series" attribute in the "OME" group to determine a list of valid groups to display;'
+lines = [336, 336]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.4'
+quote = 'MAY choose to show all images within the collection or offer the user a choice of images'
+lines = [337, 337]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.4'
+quote = 'MAY ignore other groups or arrays under the root of the hierarchy.'
+lines = [338, 338]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.4'
+quote = 'The order of the entries MUST correspond to the order of dimensions of the zarr arrays.'
+lines = [368, 368]
+reason = 'duplicate'
+note = 'restates YZ-DS-010'
+
+[[skip]]
+version = '0.4'
+quote = 'Unlisted groups MAY be labels.'
+lines = [467, 467]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.4'
+quote = 'MAY be present for each label value denoting associated metadata.'
+lines = [492, 492]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.4'
+quote = 'The `path` MUST NOT contain additional leading or trailing directories.'
+lines = [558, 558]
+reason = 'duplicate'
+note = 'restates YZ-PL-032 (the path is exactly `<row name>/<column name>`)'
+
+
+[[skip]]
+version = '0.5'
+quote = '''The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”,
+“RECOMMENDED”, “MAY”, and “OPTIONAL” are to be interpreted as described in'''
+lines = [31, 32]
+reason = 'boilerplate'
+
+
+[[skip]]
+version = '0.5'
+quote = 'Implementations may be expected (MUST) or encouraged (SHOULD) to support the reading of the data, but writing will usually be optional (MAY).'
+lines = [38, 40]
+reason = 'boilerplate'
+note = 'Defines "transitional" metadata; the keywords describe how transitional sections are worded, not a requirement.'
+
+
+[[skip]]
+version = '0.5'
+quote = 'The length of "axes" MUST be equal to the number of dimensions of the arrays that contain the image data.'
+lines = [187, 187]
+reason = 'duplicate'
+note = 'restates YZ-DS-005'
+
+
+[[skip]]
+version = '0.5'
+quote = 'MAY make use of the [minimum specification]'
+lines = [251, 251]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.5'
+quote = 'MAY contain a "series" attribute. If so:'
+lines = [258, 258]
+reason = 'duplicate'
+note = 'restates YZ-BF-004: a MAY that offers a choice, whose value constraint is YZ-BF-004 (and YZ-BF-002)'
+
+
+[[skip]]
+version = '0.5'
+quote = 'MAY use the "series" attribute in the "OME" group to determine a list of valid groups to display;'
+lines = [267, 267]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.5'
+quote = 'MAY choose to show all images within the collection or offer the user a choice of images'
+lines = [268, 268]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.5'
+quote = 'MAY ignore other groups or arrays under the root of the hierarchy.'
+lines = [269, 269]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.5'
+quote = 'The order of the entries MUST correspond to the order of dimensions of the zarr arrays.'
+lines = [302, 302]
+reason = 'duplicate'
+note = 'restates YZ-DS-010'
+
+[[skip]]
+version = '0.5'
+quote = 'Additionally, an arbitrary number of key-value pairs MAY be present for each label value, denoting arbitrary metadata associated with that label.'
+lines = [437, 437]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.5'
+quote = 'Next, the `image-label` object MAY contain the following keys: a `properties` key, and a `source` key.'
+lines = [433, 433]
+reason = 'duplicate'
+note = 'the values are constrained by YZ-IL-009 (`properties`) and YZ-IL-012 (`source`)'
+
+
+[[skip]]
+version = '0.5'
+quote = 'The `path` MUST NOT contain additional leading or trailing directories.'
+lines = [504, 504]
+reason = 'duplicate'
+note = 'restates YZ-PL-032 (the path is exactly `<row name>/<column name>`)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL”'
+lines = [31, 31]
+reason = 'boilerplate'
+
+
+[[skip]]
+version = '0.6'
+quote = 'Implementations may be expected (MUST) or encouraged (SHOULD) to support the reading of the data, but writing will usually be optional (MAY).'
+lines = [36, 37]
+reason = 'boilerplate'
+note = 'Defines "transitional" metadata; the keywords describe how transitional sections are worded, not a requirement.'
+
+
+[[skip]]
+version = '0.6'
+quote = 'All features of the Zarr format including codecs, chunk grids, chunk key encodings, data types and storage transformers MAY be used with OME-Zarr unless explicitly disallowed in this specification.'
+lines = [49, 50]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The length of "axes" MUST be equal to the number of dimensions of the arrays that contain the image data.'
+lines = [261, 261]
+reason = 'duplicate'
+note = 'restates YZ-DS-005'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The matrix MUST be stored as a 2D nested array (an array of arrays of numbers)'
+lines = [974, 974]
+reason = 'duplicate'
+note = 'restates YZ-CT-030 (the same sentence continues with its quote)'
+
+[[skip]]
+version = '0.6'
+quote = '''The transformation MUST take as `input` points in the array coordinate system corresponding to dataset's `path` field.'''
+lines = [1321, 1322]
+reason = 'duplicate'
+note = 'restates YZ-CT-006 (the input names the array coordinate system by the dataset path)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The `output` of the transformation MUST be the "[intrinsic](#spec:hint:multiscales-intrinsic-coordinate-system)" coordinate system.'
+lines = [1326, 1326]
+reason = 'duplicate'
+note = 'restates YZ-CT-010 (the intrinsic coordinate system is defined as the one all dataset outputs reference) and YZ-CT-007'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The transformation MUST be one of the following:'
+lines = [1335, 1335]
+reason = 'duplicate'
+note = 'restates YZ-CT-005'
+
+
+[[skip]]
+version = '0.6'
+quote = 'each `multiscales` object MAY contain the field `coordinateTransformations`,'
+lines = [1356, 1356]
+reason = 'duplicate'
+note = 'optional field whose constraints are YZ-CT-012, YZ-CT-013 and YZ-CT-014'
+
+
+[[skip]]
+version = '0.6'
+quote = 'Transformations in the array MUST have<br>`"inputAxes": List[number]`, <br> and `"outputAxes": List[number]`'
+lines = [420, 420]
+reason = 'duplicate'
+note = 'restates YZ-CT-036 (in the transformation table)'
+
+
+[[skip]]
+version = '0.6'
+quote = '**Inside `multiscales > coordinateTransformations`**: Additional transformations for single multiscale images MAY be stored here.'
+lines = [455, 455]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = '- One of `input` or `output` MUST reference the "[intrinsic](#spec:hint:multiscales-intrinsic-coordinate-system)" coordinate system by `name` (`path` MAY be omitted or null). - The other MUST reference'
+lines = [456, 457]
+reason = 'duplicate'
+note = 'restates YZ-CT-012 (stated again in the multiscales section)'
+
+
+[[skip]]
+version = '0.6'
+quote = '- The other MUST reference a named coordinate system in the same multiscales group (by `name`, `path` MAY be omitted or null), or in a child [labels](#labels-md) group (by `name` and `path`).'
+lines = [457, 457]
+reason = 'duplicate'
+note = 'restates YZ-CT-013 (stated again in the multiscales section)'
+
+
+[[skip]]
+version = '0.6'
+quote = '- When referencing a child labels group, the transformation MUST be [`identity`](#identity-md), [`scale`](#scale-md), or [`translation`](#translation-md).'
+lines = [458, 458]
+reason = 'duplicate'
+note = 'restates YZ-CT-014 (stated again in the multiscales section)'
+
+
+[[skip]]
+version = '0.6'
+quote = '- Both `input` and `output` MUST specify a coordinate system `name`.'
+lines = [461, 461]
+reason = 'duplicate'
+note = 'restates YZ-SC-005 (stated again in the scene section)'
+
+
+[[skip]]
+version = '0.6'
+quote = '''`path` is required when referencing a coordinate system in a multiscale image subgroup; it MAY be omitted or null when referencing a coordinate system defined in the scene's own `coordinateSystems`.'''
+lines = [462, 463]
+reason = 'duplicate'
+note = 'restates YZ-SC-006 (the MAY is its converse; stated again in the scene section)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'any two coordinate systems in the metadata MUST be linked by a path of one or more coordinate transformations'
+lines = [483, 483]
+reason = 'duplicate'
+note = 'restates YZ-CT-042 (spells out what "connected" means)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'closed-form, implementations MAY estimate an inverse, or MAY output a warning'
+lines = [504, 504]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'the transformation MAY be applied along the dropped dimension by iterating over all possible values of the dropped dimension.'
+lines = [797, 797]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The translation parameters stored as a JSON array of numbers. The array MUST have length `N`.'
+lines = [812, 813]
+reason = 'duplicate'
+note = 'restates YZ-CT-004'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The scale parameters are stored as a JSON array of numbers. The array MUST have length `N`.'
+lines = [840, 841]
+reason = 'duplicate'
+note = 'restates YZ-CT-004'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The matrix MUST be stored as 2D nested array (an array of arrays of numbers)'
+lines = [885, 885]
+reason = 'duplicate'
+note = 'restates YZ-CT-025 (the same sentence continues with its quote)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'but implementations MAY approximate their inverses.'
+lines = [1049, 1049]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The interpolation attributes MAY be provided.'
+lines = [1071, 1071]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The axis ordering of the displacements/coordinates array MUST satisfy the constraints of [multiscale image groups](#multiscales-md).'
+lines = [1105, 1105]
+reason = 'duplicate'
+note = 'restates YZ-CT-031 and YZ-AX-005 (the field is a multiscale image, so the usual axes ordering applies)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'and MUST not coincide with a channel or custom axis in the input coordinate system.'
+lines = [1105, 1105]
+reason = 'duplicate'
+note = 'restates YZ-CT-033 (N+1 dimensions: the vector axis is an additional one)'
+
+
+[[skip]]
+version = '0.6'
+quote = '''The axis MUST specify ``type: "displacement"`` or ``type: "coordinate"`` in the multiscale image's [axes metadata](#axes-md).'''
+lines = [1105, 1105]
+reason = 'duplicate'
+note = 'restates YZ-CT-032 (whose current quote is implied by a list lead-in; this one has the keyword)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'This multiscales (containing the vector field) MUST have three dimensions,'
+lines = [1132, 1132]
+reason = 'illustration'
+note = 'about the example; the general rule is YZ-CT-033'
+
+
+[[skip]]
+version = '0.6'
+quote = '`input` and `output` fields MAY be omitted for the `forward` and `inverse` transformations,'
+lines = [1236, 1236]
+reason = 'permission'
+note = 'the exception for wrapper transforms in YZ-CT-011'
+
+
+[[skip]]
+version = '0.6'
+quote = 'MAY make use of the [minimum specification]'
+lines = [366, 366]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'MAY contain a `series` attribute. If so:'
+lines = [373, 373]
+reason = 'duplicate'
+note = 'restates YZ-BF-004: a MAY that offers a choice, whose value constraint is YZ-BF-004 (and YZ-BF-002)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'MAY use the `series` attribute in the `OME` group to determine a list of valid groups to display;'
+lines = [382, 382]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'MAY choose to show all images within the collection or offer the user a choice of images'
+lines = [383, 383]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'MAY ignore other groups or arrays under the root of the hierarchy.'
+lines = [384, 384]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'Additionally, an arbitrary number of key-value pairs MAY be present for each label value,'
+lines = [1520, 1520]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = 'Next, the `image-label` object MAY contain the following keys: a `properties` key, and a `source` key.'
+lines = [1515, 1515]
+reason = 'duplicate'
+note = 'the values are constrained by YZ-IL-009 (`properties`) and YZ-IL-012 (`source`)'
+
+
+[[skip]]
+version = '0.6'
+quote = '- The image group MAY contain an additional coordinate transformation'
+lines = [1479, 1479]
+reason = 'permission'
+
+
+[[skip]]
+version = '0.6'
+quote = '- This transformation, if specified, MUST be one of [`identity`](#identity-md), '
+lines = [1482, 1482]
+reason = 'duplicate'
+note = 'restates YZ-CT-014; this wording also allows a sequence of a scale and a translation, which yaozarrs accepts (see the notes on YZ-CT-014, ome/ngff#639)'
+
+
+[[skip]]
+version = '0.6'
+quote = '# Multiscale metadata, which MAY contain a coordinate transformation'
+lines = [1534, 1534]
+reason = 'illustration'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The `path` MUST NOT contain additional leading or trailing directories.'
+lines = [1646, 1646]
+reason = 'duplicate'
+note = 'restates YZ-PL-032 (the path is exactly `<row name>/<column name>`)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The `path` MUST follow [Zarr node name naming conventions]'
+lines = [1681, 1681]
+reason = 'duplicate'
+note = 'spelled out by the lines that follow ("Specifically:"): YZ-WL-011 and YZ-WL-010'
+
+
+[[skip]]
+version = '0.6'
+quote = 'The `path` MUST NOT be an empty string and MUST NOT contain `/` characters;'
+lines = [1683, 1683]
+reason = 'duplicate'
+note = 'restates YZ-WL-010: its character set excludes `/`, and its notes cover the empty path (yaozarrs reports both as YZ-WL-010 or YZ-WL-011)'
+
+
+[[skip]]
+version = '0.6'
+quote = 'It MAY contain the field `coordinateSystems`,'
+lines = [1714, 1714]
+reason = 'duplicate'
+note = 'the value is constrained by YZ-SC-003'
+
+
+[[skip]]
+version = '0.6'
+quote = 'If `name` refers to a coordinate system in the `scene` object, the `path` value MAY be omitted or null.'
+lines = [1727, 1728]
+reason = 'permission'
+
+[[skip]]
+version = '0.4'
+quote = 'Some implementations MAY represent overlapping labels by using a specially assigned value'
+lines = [485, 486]
+reason = 'permission'
