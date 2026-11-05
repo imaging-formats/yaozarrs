@@ -13,14 +13,13 @@ name = "yaozarrs"
 dynamic = ["version"]
 description = "Yet another ome-zarr model."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "BSD-3-Clause" }
 authors = [{ name = "Talley Lambert", email = "talley.lambert@gmail.com" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -38,13 +37,13 @@ dependencies = [
 [project.optional-dependencies]
 io = ["fsspec[http,s3]>=2025.0"]
 storage = ["yaozarrs[io,write-zarr]"]
-write-zarr = ["zarr>=2.18", "zarr>=3.1.0; python_version>='3.11'"]
+write-zarr = ["zarr>=3.1.0"]
 write-tensorstore = [
     "tensorstore>=0.1.79; python_version>='3.14'",
     "tensorstore>=0.1.71; python_version>='3.13'",
     "tensorstore>=0.1.66",
 ]
-write-zarrs = ["zarrs>=0.1.5; python_version>='3.11'"]
+write-zarrs = ["zarrs>=0.1.5"]
 
 [dependency-groups]
 test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
@@ -54,7 +53,7 @@ test-full = [
     "numpy>=2.1.0; python_version >= '3.13'",          # needed for creating test data to write
     "numpy>=2",                                        # needed for creating test data to write
     "yaozarrs[storage,write-tensorstore,write-zarrs]",
-    "ome-zarr>=0.16,<0.17; python_version > '3.10'",
+    "ome-zarr>=0.16,<0.17",
 ]
 docs = [
     "griffe-fieldz>=0.4.0",

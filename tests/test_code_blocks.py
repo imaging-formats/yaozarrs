@@ -24,9 +24,7 @@ BLOCK = re.compile(
 )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11) or sys.platform == "win32", reason="requires python3.11+"
-)
+@pytest.mark.skipif(sys.platform == "win32", reason="skipped on windows")
 @pytest.mark.parametrize("path", FILES, ids=lambda p: str(p.relative_to(ROOT)))
 def test_code_blocks(
     path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
