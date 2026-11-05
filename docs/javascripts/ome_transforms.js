@@ -676,7 +676,7 @@ class OmeTransformGraph extends LitElement {
 
   constructor() {
     super();
-    this.example = 'mosaic';
+    this.example = 'image';
     this.selected = null;
   }
 
