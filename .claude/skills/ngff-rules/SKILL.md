@@ -27,14 +27,13 @@ The pieces are:
   use). The tests and the docs script use them.
 - `src/yaozarrs/_rules/__init__.py`: `rule_error(code, msg)` (raise it inside a pydantic
   validator), `warn_rule(code, msg, stacklevel)`, `rewrap_error(e, prefix, suffix, code)`
-  (add context to an error's message and keep its code), `error_code(e)`, and
-  `RuleCodes` (field metadata that gives pydantic's own errors, such as a missing field
-  or a wrong type, a rule code; see "Field-shape rules" below).
-- `scripts/ngff_rules.py`: `fetch`, `check [--fix]`, `relocate`, `coverage`,
-  `uncited`, and `docs`.
+  (add context to an error's message and keep its code), and `error_code(e)`.
+- `scripts/ngff_rules.py`: `fetch`, `check [--fix]`, `relocate`, `coverage`, `site`,
+  `uncited`, `docs`, and `review`.
 - `src/yaozarrs/_rules/skipped.toml`: spec lines with a keyword that deliberately have
   no rule, each with a `reason` (see "Every statement is catalogued" below).
-- `tests/spec_sources/`: vendored spec files and cited JSON schemas at the pinned commits.
+- `tests/spec_sources/`: vendored spec files and cited JSON schemas at the pinned
+  commits (each file name includes its commit).
 - `tests/test_rules.py`: integrity tests, and the coverage test. The coverage test runs
   every example against every version module and expects it to fire exactly in the
   versions whose spec states the rule, except for the `KNOWN_GAPS` and
@@ -70,10 +69,7 @@ json = '''
 Rules checked by the storage validator (`validate_zarr_store`) use a `store` example
 instead of `model`/`json`. It is a JSON object that maps v0.5 metadata file paths to
 their contents (`{"zarr.json": {...}, "s0/zarr.json": {...}}`); no chunk data is
-needed. In code, storage checks pass the code to
-`result.add_error(StorageErrorType.<type>, "<code>", loc, msg)`. Several storage
-`type`s can share one code: `type` is the specific failure, `code` is the spec
-statement.
+needed.
 
 `example` is written in the v0.5 format. `example_for` in `scripts/ngff_rules.py`
 derives the other versions: `to_v04_store`, `to_v06_store`, and the `Multiscale` and
@@ -117,42 +113,6 @@ lists the keywords still missing.
   itself), `duplicate` (restates a requirement that has a rule: name its code in
   `note`), `illustration` (the keyword is in an example, a diagram, a code comment, or
   a version history table). Skip quotes are checked and line-fixed like rule quotes.
-
-## Field-shape rules
-
-Statements about a field's presence or value type ("MUST contain the field X", "whose
-value MUST be a string") are enforced by the pydantic model itself. To give those errors
-a code, add one `RuleCodes` to the field's `Annotated` metadata, mapping pydantic error
-types to codes:
-
-```python
-id: Annotated[
-    NonNegativeInt,
-    RuleCodes(missing="YZ-PL-009", int="YZ-PL-010", greater_than_equal="YZ-PL-010"),
-] = Field(...)
-```
-
-- Keys are pydantic error types (`missing`, `string_pattern_mismatch`, `too_short`,
-  `literal_error`, `listItemsNotUnique`, ...), or the shorthands `int`, `str`, `list`,
-  `object`. Only map the errors the statement covers. A constraint from a JSON schema
-  (e.g. `MinLen(1)` from `minItems`) gets its own rule citing that schema. If neither
-  the prose nor a schema states it, leave that error untagged and say so in `notes`.
-- Use exactly one `RuleCodes` per field, at the top level of the type
-  (`Annotated[X | None, RuleCodes(...)]`, not `Annotated[X, RuleCodes(...)] | None`).
-  pydantic < 2.6 keeps only one metadata object of each type.
-- Only errors on the field itself or on its items are tagged; errors inside a nested
-  model are tagged by that model. Don't tag fields of models used as members of a
-  non-discriminated union (e.g. a transformation's `type` in v0.4 or v0.5): pydantic
-  reports errors from every member, so a valid `translation` would be reported as
-  breaking the `scale` member's rule. Discriminated unions (v0.6 transformations) are
-  fine, and `union_tag_invalid` can be tagged.
-- Presence and value type are separate statements, so separate codes
-  (`well-path-present`, `well-path-string`). If a statement has no RFC 2119 keyword in a
-  version (e.g. 0.4's "whose value is a string"), cite it with `implied = true` (see
-  invariant 3).
-  `src/yaozarrs/_common/` (including `_axis.py`) is shared by several versions, so
-  a tag there applies to all of them (record any overreach in `KNOWN_OVERREACH`).
-- Don't tag `version` fields: their `Literal` selects the model for a version.
 
 ## Invariants (never break these)
 
@@ -235,7 +195,8 @@ comments on) an issue when it fails. Also check before every release:
 1. `uv run python scripts/ngff_rules.py site` compares each pin with the submodule
    commit on `ome/ngff` main, and exits 1 if any moved.
 2. For a moved pin, update that version's `sha` (and `ref`, if the branch changed),
-   run `fetch` (`git rm` the old vendored file if its name changed), then `check --fix`.
+   run `fetch` (it downloads the new files and deletes the old ones; stage both with
+   `git add -A tests/spec_sources`), then `check --fix`.
    Read the upstream diff (`<old sha>...<new sha>`), and investigate every quote that
    is no longer found: a reworded statement keeps its code, a changed meaning gets a
    new one (see step 3 below).
@@ -276,8 +237,7 @@ comments on) an issue when it fails. Also check before every release:
    run `check --fix`.
 3. In the validator, `raise rule_error("<code>", msg)` or
    `warn_rule("<code>", msg, stacklevel=...)`. Keep existing message text, because
-   tests and users match on it. For an error that pydantic raises itself, add the code
-   to the field's `RuleCodes` instead (see "Field-shape rules").
+   tests and users match on it.
 4. Add an `example` to `rule_examples.toml`: the model class name plus a minimal failing JSON document, or a
    `store` for storage checks. Then run `scripts/ngff_rules.py coverage` to confirm where
    it fires. An example should trigger only its own rule, apart from errors that can't

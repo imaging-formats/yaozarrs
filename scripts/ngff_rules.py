@@ -34,7 +34,7 @@ from pydantic import ValidationError
 from yaozarrs import v04, v05, v06, validate_zarr_store
 from yaozarrs._errors import StorageValidationError, StorageValidationWarning
 from yaozarrs._rules import RULES, Rule, RuleWarning, SpecDoc
-from yaozarrs._rules._registry import REGISTRY_FILE, SPEC_DOCS, TRACKED_VERSIONS
+from yaozarrs._rules._registry import REGISTRY_FILE, SPEC_DOCS
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 ROOT = Path(__file__).resolve().parent.parent
 SPEC_SOURCES = ROOT / "tests" / "spec_sources"
 DOCS_DIR = ROOT / "docs" / "rules"
+TRACKED = tuple(SPEC_DOCS)  # the tracked spec versions, in order
 SKIPPED_FILE = REGISTRY_FILE.parent / "skipped.toml"
 
 # yaozarrs model module for each spec version it implements
@@ -110,10 +111,12 @@ def spec_text(doc: SpecDoc) -> str:
 def check_quote(doc: SpecDoc, quote: str, lines: tuple[int, int]) -> str | None:
     """Return a problem description, or None if `quote` is at `lines` of `doc`."""
     spans = find_quote(spec_text(doc), quote)
-    if lines in spans:
+    if spans == [lines]:
         return None
     if not spans:
         return "quote not found"
+    if len(spans) > 1:
+        return f"quote found {len(spans)} times, at {spans}: extend it to be unique"
     return f"quote found at {spans}, not at {lines}"
 
 
@@ -171,14 +174,20 @@ def _citations(version: str) -> list[tuple[str, tuple[int, int]]]:
 
 def _heading(lines: list[str], n: int) -> str:
     """The heading of the section that contains line `n` (1-based)."""
-    for i in range(n - 1, -1, -1):
-        line = lines[i].strip()
-        if line.startswith("#"):
-            return line.lstrip("#").strip()
+    heading, fence = "", ""
+    for i, raw in enumerate(lines[:n]):
+        line = raw.strip()
+        if line.startswith(("```", "~~~")):  # (a `#` in a code block isn't a heading)
+            fence = "" if line[:3] == fence else (fence or line[:3])
+            continue
+        if fence:
+            continue
         nxt = lines[i + 1].strip() if i + 1 < len(lines) else ""
-        if line and nxt and set(nxt) <= {"-", "="} and len(nxt) >= 3:
-            return line
-    return ""
+        if line.startswith("#"):
+            heading = line.lstrip("#").strip()
+        elif line and nxt and set(nxt) <= {"-", "="} and len(nxt) >= 3:
+            heading = line
+    return heading
 
 
 def uncited(version: str) -> list[tuple[int, str, str]]:
@@ -222,8 +231,11 @@ _V2_DTYPES = {
     "int8": "|i1",
     "uint8": "|u1",
     **{f"{k}{n}": f"<{k[0]}{n // 8}" for k in ("int", "uint") for n in (16, 32, 64)},
+    "float16": "<f2",
     "float32": "<f4",
     "float64": "<f8",
+    "complex64": "<c8",
+    "complex128": "<c16",
 }
 
 
@@ -369,11 +381,26 @@ def coverage(rule: Rule) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _unlink(text: str) -> str:
+    """`text` without its links to anchors in the spec (they'd be broken here)."""
+    return re.sub(r"\[([^\]]*)\]\(#[^)]*\)", r"\1", text)
+
+
+def _bold(text: str) -> str:
+    """`text` in bold, line by line (bold can't span list items or blank lines)."""
+    out = []
+    for line in text.split("\n"):
+        m = re.match(r"(\s*(?:[-*+]|\d+\.|:)?\s*)(.*?)(\s*)$", line)
+        assert m
+        out.append(f"{m[1]}**{m[2]}**{m[3]}" if m[2] else line)
+    return "\n".join(out)
+
+
 def _excerpt(lines: list[str], span: tuple[int, int], quote: str) -> list[str]:
     """The spec lines at `span`, with `quote` in bold, as a Markdown blockquote."""
     text = "\n".join(lines[span[0] - 1 : span[1]]).strip()
     pattern = r"\s+".join(map(re.escape, quote.split()))
-    text = re.sub(pattern, lambda m: f"**{m[0]}**", text, count=1)
+    text = _unlink(re.sub(pattern, lambda m: _bold(m[0]), text, count=1))
     return [f"> {line}".rstrip() for line in text.splitlines()]
 
 
@@ -491,7 +518,16 @@ def cmd_fetch(_: argparse.Namespace) -> int:
     """Download the pinned spec sources into `tests/spec_sources/`."""
     SPEC_SOURCES.mkdir(parents=True, exist_ok=True)
     cited = {src.doc for rule in RULES.values() for src in rule.sources}
-    for doc in sorted({*SPEC_DOCS.values(), *cited}, key=lambda d: d.cache_name):
+    docs = sorted({*SPEC_DOCS.values(), *cited}, key=lambda d: d.cache_name)
+    # (each file name includes its commit, so a moved pin leaves the old file behind)
+    for stale in sorted(
+        {p.name for p in SPEC_SOURCES.glob("*.*")}
+        - {d.cache_name for d in docs}
+        - {"README.md"}
+    ):
+        (SPEC_SOURCES / stale).unlink()
+        print(f"removed: {stale}")
+    for doc in docs:
         dest = SPEC_SOURCES / doc.cache_name
         if dest.exists():
             print(f"exists: {dest.relative_to(ROOT)}")
@@ -519,6 +555,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     # tomlkit preserves comments and formatting; it is only in the `dev` group
     import tomlkit
 
+    unfixed = 0
     doc = tomlkit.parse(REGISTRY_FILE.read_text(encoding="utf-8"))
     for code, entry in doc["rules"].items():  # type: ignore[union-attr]
         for src in entry.get("sources", []):
@@ -530,6 +567,7 @@ def cmd_check(args: argparse.Namespace) -> int:
                 if len(spans) == 1:
                     src["lines"][version] = list(spans[0])
                 else:
+                    unfixed += 1
                     print(f"{code} [{version}]: cannot fix, quote found at {spans}")
     REGISTRY_FILE.write_text(tomlkit.dumps(doc), encoding="utf-8")
     skipped = tomlkit.parse(SKIPPED_FILE.read_text(encoding="utf-8"))
@@ -538,16 +576,17 @@ def cmd_check(args: argparse.Namespace) -> int:
         if len(spans) == 1:
             skip["lines"] = list(spans[0])
         else:
+            unfixed += 1
             print(f"skip {skip['quote'][:40]!r}: cannot fix, quote found at {spans}")
     SKIPPED_FILE.write_text(tomlkit.dumps(skipped), encoding="utf-8")
     print("updated line numbers where the quote was found exactly once")
-    return 0
+    return 1 if unfixed else 0
 
 
 def cmd_uncited(args: argparse.Namespace) -> int:
     """List spec lines with a keyword that no rule or skip entry covers."""
     total = 0
-    for version in args.versions or TRACKED_VERSIONS:
+    for version in args.versions or TRACKED:
         found = uncited(version)
         total += len(found)
         print(f"== {version}: {len(found)} uncited")
@@ -565,10 +604,10 @@ def cmd_relocate(args: argparse.Namespace) -> int:
         prose = [src for src in rule.sources if not src.is_schema]
         if not prose or rule.removed:
             continue
-        src = prose[-1]
-        spans = find_quote(text, src.quote)
-        status = f"found at {spans}" if spans else "NOT FOUND (changed or removed?)"
-        print(f"{rule.code} ({src.doc.version} quote): {status}")
+        for src in (s for s in prose if s.doc.version == prose[-1].doc.version):
+            spans = find_quote(text, src.quote)
+            status = f"found at {spans}" if spans else "NOT FOUND (changed or removed?)"
+            print(f"{rule.code} ({src.doc.version} quote): {status}")
     return 0
 
 
@@ -622,7 +661,8 @@ def _versions(rule: Rule) -> str:
     if rule.introduced is None:
         return "—"
     if rule.removed:
-        return f"{rule.introduced} to {rule.removed}"
+        versions = sorted({s.doc.version for s in rule.sources}, key=TRACKED.index)
+        return f"{', '.join(versions)} (removed in {rule.removed})"
     return f"{rule.introduced}+"
 
 
@@ -706,7 +746,7 @@ def render_rule(rule: Rule, checked: list[str]) -> str:
             lines += [
                 f"### {src.doc.version}",
                 "",
-                f"> {' '.join(src.quote.split())}",
+                f"> {_unlink(' '.join(src.quote.split()))}",
                 "",
                 *(
                     ["*Stated without an RFC 2119 keyword; see Notes.*", ""]
@@ -723,14 +763,15 @@ def render_rule(rule: Rule, checked: list[str]) -> str:
 
 def render_index(checked: dict[str, list[str]]) -> str:
     """Markdown table of all rules."""
-    tracked = ", ".join(TRACKED_VERSIONS)
+    tracked = ", ".join(TRACKED)
     lines = [
         "# Rule codes",
         "",
-        "Every error or warning that yaozarrs raises for a spec violation carries a "
-        "code that identifies one normative statement in the "
-        "[NGFF specification](https://ngff.openmicroscopy.org/). Each code links to "
-        "the exact text in the spec that supports it, for each spec version.",
+        "Each code identifies one normative statement in the "
+        "[NGFF specification](https://ngff.openmicroscopy.org/), and links to the "
+        "exact text in the spec that states it, for each spec version. yaozarrs "
+        "errors and warnings for spec violations carry these codes once they are "
+        "tagged: *Reported in* shows where yaozarrs reports each one.",
         "",
         "- `YZ-<AREA>-<NNN>` codes refer to statements in the NGFF spec or its JSON "
         "schemas.",

@@ -19,7 +19,7 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - name: Compare the pins with the published site
         shell: bash # (with pipefail, so `tee` keeps the exit code)
-        run: uv run python scripts/ngff_rules.py site | tee site.txt
+        run: uv run --no-dev python scripts/ngff_rules.py site 2>&1 | tee site.txt
         env:
           GITHUB_TOKEN: ${{ github.token }}
 

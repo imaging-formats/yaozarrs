@@ -624,18 +624,12 @@ slug = 'transform-length-matches-axes'
 level = 'MUST'
 summary = '`scale` and `translation` arrays must have one entry per axis.'
 introduced = '0.4'
+removed = '0.6'
+notes = 'In 0.6, YZ-CT-060 replaces this rule: it applies to every `scale` and `translation`, against the dimensionality of its input and output.'
 
 [[rules.YZ-CT-004.sources]]
 quote = 'The length of the `scale` and `translation` array MUST be the same as the length of "axes".'
 lines = { "0.4" = [380, 380], "0.5" = [314, 314] }
-
-[[rules.YZ-CT-004.sources]]
-quote = 'Input and output dimensionality MUST be identical and MUST equal the length of the `translation` array (N).'
-lines = { "0.6" = [807, 808] }
-
-[[rules.YZ-CT-004.sources]]
-quote = 'Input and output dimensionality MUST be identical and MUST equal the length of the `scale` array (N).'
-lines = { "0.6" = [834, 835] }
 
 [rules.YZ-CT-005]
 slug = 'dataset-transform-type'
@@ -742,7 +736,7 @@ slug = 'label-transform-type'
 level = 'MUST'
 summary = 'A transformation to a coordinate system in a child labels group must be `identity`, `scale`, or `translation`.'
 introduced = '0.6'
-notes = 'yaozarrs also accepts a sequence of a scale and a translation, which the labels section of the spec allows (see ome/ngff#639).'
+notes = 'yaozarrs also accepts a sequence of a scale and a translation, which the labels section of the spec allows (YZ-CT-061; see ome/ngff#639).'
 
 [[rules.YZ-CT-014.sources]]
 quote = 'When referencing a coordinate system in a child labels group, the transformation MUST be one of [`identity`](#identity-md), [`scale`](#scale-md), or [`translation`](#translation-md).'
@@ -1230,6 +1224,46 @@ notes = 'If a `displacement` or `coordinate` axis counts as a custom axis, YZ-AX
 [[rules.YZ-CT-058.sources]]
 quote = 'In that array, the array dimension corresponding to the coordinate/displacement axis MUST be inserted after a time axis (if present) and before the spatial axes'
 lines = { "0.6" = [1105, 1105] }
+
+[rules.YZ-CT-059]
+slug = 'scale-translation-same-ndim'
+level = 'MUST'
+summary = 'The input and output of a `scale` or `translation` must have the same dimensionality.'
+introduced = '0.6'
+
+[[rules.YZ-CT-059.sources]]
+quote = 'Input and output dimensionality MUST be identical and MUST equal the length of the `translation` array'
+lines = { "0.6" = [807, 808] }
+
+[[rules.YZ-CT-059.sources]]
+quote = 'Input and output dimensionality MUST be identical and MUST equal the length of the `scale` array'
+lines = { "0.6" = [834, 835] }
+
+[rules.YZ-CT-060]
+slug = 'transform-length-matches-ndim'
+level = 'MUST'
+summary = 'The `scale` or `translation` array must have one entry per dimension of its input and output.'
+introduced = '0.6'
+supersedes = ['YZ-CT-004']
+
+[[rules.YZ-CT-060.sources]]
+quote = 'MUST equal the length of the `translation` array (N).'
+lines = { "0.6" = [808, 808] }
+
+[[rules.YZ-CT-060.sources]]
+quote = 'MUST equal the length of the `scale` array (N).'
+lines = { "0.6" = [835, 835] }
+
+[rules.YZ-CT-061]
+slug = 'labels-parent-transform-type'
+level = 'MUST'
+summary = 'A transformation from an image to the label images in its `labels` group, if present, must be `identity`, `scale`, `translation`, or a `sequence` of a scale and a translation.'
+introduced = '0.6'
+notes = 'This disagrees with YZ-CT-014, which does not allow a `sequence` (see [ome/ngff#639](https://github.com/ome/ngff/issues/639)). yaozarrs accepts a sequence of a scale and a translation.'
+
+[[rules.YZ-CT-061.sources]]
+quote = '''This transformation, if specified, MUST be one of [`identity`](#identity-md), ['scale'](#scale-md), a ['translation'](#translation-md) or a ['sequence'](#sequence-md) of a scale and a translation transformation.'''
+lines = { "0.6" = [1482, 1483] }
 
 # ------------------------------------------------------------------------------
 # YZ-OM
@@ -2575,8 +2609,8 @@ quote = 'whose value again MUST be an integer specifying the pixel value for tha
 lines = { "0.5" = [436, 436], "0.6" = [1519, 1519] }
 
 [[rules.YZ-IL-011.sources]]
-quote = "`label-value` key whose value MUST be an integer specifying the pixel value for that label. Additionally, an arbitrary number"
-lines = {"0.4" = [490, 491]}
+quote = "Each property object MUST contain the `label-value` key whose value MUST be an integer"
+lines = {"0.4" = [489, 490]}
 
 [rules.YZ-IL-012]
 slug = 'image-label-source-object'
@@ -2613,9 +2647,9 @@ summary = '`image-label` `colors`, if present, must have at least one entry.'
 introduced = '0.5'
 
 [[rules.YZ-IL-014.sources]]
-quote = '"required": [ "label-value" ] }, "minItems": 1, "uniqueItems": true }, "properties": {'
+quote = '"minItems": 1, "uniqueItems": true }, "properties": {'
 schema = 'label.schema'
-lines = { "0.5" = [54, 61], "0.6" = [54, 61] }
+lines = { "0.5" = [58, 61], "0.6" = [58, 61] }
 
 [rules.YZ-IL-015]
 slug = 'image-label-colors-unique'
@@ -2624,9 +2658,9 @@ summary = '`image-label` `colors` must not contain identical entries.'
 introduced = '0.5'
 
 [[rules.YZ-IL-015.sources]]
-quote = '"required": [ "label-value" ] }, "minItems": 1, "uniqueItems": true }, "properties": {'
+quote = '"uniqueItems": true }, "properties": {'
 schema = 'label.schema'
-lines = { "0.5" = [54, 61], "0.6" = [54, 61] }
+lines = { "0.5" = [59, 61], "0.6" = [59, 61] }
 
 [rules.YZ-IL-016]
 slug = 'image-label-properties-nonempty'
@@ -2635,9 +2669,9 @@ summary = '`image-label` `properties`, if present, must have at least one entry.
 introduced = '0.5'
 
 [[rules.YZ-IL-016.sources]]
-quote = '"required": [ "label-value" ] }, "minItems": 1, "uniqueItems": true }, "source": {'
+quote = '"minItems": 1, "uniqueItems": true }, "source": {'
 schema = 'label.schema'
-lines = { "0.5" = [72, 79], "0.6" = [72, 79] }
+lines = { "0.5" = [76, 79], "0.6" = [76, 79] }
 
 [rules.YZ-IL-017]
 slug = 'image-label-properties-unique'
@@ -2646,9 +2680,9 @@ summary = '`image-label` `properties` must not contain identical entries.'
 introduced = '0.5'
 
 [[rules.YZ-IL-017.sources]]
-quote = '"required": [ "label-value" ] }, "minItems": 1, "uniqueItems": true }, "source": {'
+quote = '"uniqueItems": true }, "source": {'
 schema = 'label.schema'
-lines = { "0.5" = [72, 79], "0.6" = [72, 79] }
+lines = { "0.5" = [77, 79], "0.6" = [77, 79] }
 
 [rules.YZ-IL-018]
 slug = 'label-colors-display'

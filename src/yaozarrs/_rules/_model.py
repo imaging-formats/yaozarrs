@@ -37,11 +37,11 @@ class SpecDoc:
     @property
     def cache_name(self) -> str:
         """File name of the vendored copy in `tests/spec_sources/`."""
-        repo = self.repo.replace("/", "-")
+        # (with the commit, so that moving a pin can't leave an old copy in place)
+        stem = f"{self.repo.replace('/', '-')}-{self.ref}-{self.sha[:9]}"
         if self.path.endswith(".schema"):
-            return f"{repo}-{self.ref}-{self.path.rsplit('/', 1)[-1]}"
-        suffix = self.path.rsplit(".", 1)[-1]
-        return f"{repo}-{self.ref}.{suffix}"
+            return f"{stem}-{self.path.rsplit('/', 1)[-1]}"
+        return f"{stem}.{self.path.rsplit('.', 1)[-1]}"
 
     def line_url(self, lines: tuple[int, int]) -> str:
         """GitHub permalink to `lines` of this file, at the pinned commit."""
@@ -136,7 +136,7 @@ class Rule:
 
     @property
     def example(self) -> Example | None:
-        """Minimal failing example (v0.5 format); None if yaozarrs doesn't check it."""
+        """Minimal failing example (v0.5 format); None if the code is never reported."""
         return _load_examples().get(self.code, (None, {}))[0]
 
     @property

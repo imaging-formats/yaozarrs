@@ -35,11 +35,11 @@ __all__ = [
 ]
 
 
-class RuleWarning(ValidationWarning, UserWarning):
+class RuleWarning(ValidationWarning):
     r"""A warning tied to a rule code.
 
     The message starts with `[<code>]`, so it can be filtered with e.g.
-    `warnings.filterwarnings("ignore", message=r"\\[YZ-PL-002\\]")`.
+    `warnings.filterwarnings("ignore", message=r"\[YZ-PL-002\]")`.
     """
 
     def __init__(self, code: str, msg: str) -> None:
@@ -67,7 +67,10 @@ def rule_error(code: str, msg: str) -> PydanticCustomError:
 
 def error_code(e: Exception) -> str | None:
     """Return the rule code of error `e`, if it has one."""
-    return e.type if isinstance(e, PydanticCustomError) else None
+    # (yaozarrs raises other custom errors too, e.g. `listItemsNotUnique`)
+    if isinstance(e, PydanticCustomError) and e.type in RULES:
+        return e.type
+    return None
 
 
 def rewrap_error(

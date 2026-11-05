@@ -474,14 +474,6 @@ reason = 'permission'
 
 [[skip]]
 version = '0.6'
-quote = '- This transformation, if specified, MUST be one of [`identity`](#identity-md), '
-lines = [1482, 1482]
-reason = 'duplicate'
-note = 'restates YZ-CT-014; this wording also allows a sequence of a scale and a translation, which yaozarrs accepts (see the notes on YZ-CT-014, ome/ngff#639)'
-
-
-[[skip]]
-version = '0.6'
 quote = '# Multiscale metadata, which MAY contain a coordinate transformation'
 lines = [1534, 1534]
 reason = 'illustration'

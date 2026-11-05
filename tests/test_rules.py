@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
+import tempfile
 import warnings
 from pathlib import Path
 from typing import get_args
@@ -12,19 +14,21 @@ from typing import get_args
 import pytest
 from packaging.version import Version
 
+from yaozarrs import validate_zarr_store
 from yaozarrs._rules import (
     RULES,
     Rule,
     RuleWarning,
     SpecSource,
+    _model,
     error_code,
     get_rule,
     rewrap_error,
     rule_error,
     warn_rule,
 )
-from yaozarrs._rules._model import Level, _load_examples
-from yaozarrs._rules._registry import TRACKED_VERSIONS
+from yaozarrs._rules._model import Example, Level, _load_examples
+from yaozarrs._rules._registry import SPEC_DOCS
 
 ROOT = Path(__file__).parent.parent
 _spec = importlib.util.spec_from_file_location(
@@ -36,6 +40,7 @@ sys.modules["ngff_rules"] = ngff_rules  # (for its dataclasses)
 _spec.loader.exec_module(ngff_rules)
 
 # RFC 2119 keywords that have the same strength as each level
+TRACKED_VERSIONS = tuple(SPEC_DOCS)
 SYNONYMS = {
     "MUST": "MUST|REQUIRED|SHALL",
     "SHOULD": "SHOULD|RECOMMENDED",
@@ -71,13 +76,18 @@ def test_rule_fields(rule: Rule) -> None:
         assert rule.severity is not None
         return
 
-    assert rule.level in get_args(Level) and rule.introduced
-    assert rule.sources or not rule.checkable
-    versions = [Version(s.doc.version) for s in rule.sources]
-    assert Version(rule.introduced) <= versions[0]
+    assert rule.level in get_args(Level)
+    # sources for exactly the tracked versions from `introduced` up to `removed`
+    assert rule.introduced in TRACKED_VERSIONS
     if rule.removed:
         assert Version(rule.introduced) < Version(rule.removed)
-        assert all(v < Version(rule.removed) for v in versions)
+    stated = [
+        v
+        for v in TRACKED_VERSIONS
+        if Version(rule.introduced) <= Version(v)
+        and not (rule.removed and Version(v) >= Version(rule.removed))
+    ]
+    assert {s.doc.version for s in rule.sources} == set(stated)
     for src in rule.sources:
         assert src.doc.version in TRACKED_VERSIONS
         if src.is_schema:
@@ -113,6 +123,11 @@ def test_tracked_versions_ordered() -> None:
 )
 def test_quote_at_lines(src: SpecSource) -> None:
     assert ngff_rules.check_quote(src.doc, src.quote, src.lines) is None
+
+
+def test_quote_must_be_unique() -> None:
+    problem = ngff_rules.check_quote(SPEC_DOCS["0.5"], "MUST", (1, 1))
+    assert problem and "times" in problem
 
 
 def _src_codes() -> set[str]:
@@ -225,7 +240,7 @@ def test_schema_source() -> None:
     assert "?plain=1" not in src.permalink
     v4 = next(s for s in get_rule("YZ-PL-037").sources if s.doc.version == "0.4")
     assert v4.doc.path == "schemas/plate.schema"
-    assert v4.doc.cache_name == "ome-ngff-spec-0.4-plate.schema"
+    assert v4.doc.cache_name == f"ome-ngff-spec-0.4-{v4.doc.sha[:9]}-plate.schema"
 
 
 def test_rule_warning_filterable() -> None:
@@ -261,3 +276,85 @@ def test_docs_render() -> None:
     pytest.importorskip("fsspec")  # coverage of store examples
     docs = ngff_rules.expected_docs()
     assert set(docs) == {"index.md"} | {f"{c}.md" for c in RULES}
+    for name, page in docs.items():
+        # links to anchors in the spec would be broken here; other pages must exist
+        assert "](#" not in page, name
+        for target in re.findall(r"\]\(([^):]+\.md)\)", page):
+            assert target in docs, (name, target)
+    removed = next(r for r in RULES.values() if r.removed)
+    assert f"(removed in {removed.removed})" in docs[f"{removed.code}.md"]
+
+
+def test_heading_ignores_code_blocks() -> None:
+    lines = ["# Section", "", "```python", "# not a heading", "```", "text"]
+    assert ngff_rules._heading(lines, 6) == "Section"
+
+
+def test_review_bold_per_line() -> None:
+    assert ngff_rules._bold("- one MUST\n- two") == "- **one MUST**\n- **two**"
+
+
+# ---------------------------------------------------------------------------
+# example conversion (each version's format), with a stand-in example
+# ---------------------------------------------------------------------------
+
+MULTISCALE = {
+    "axes": [{"name": "y", "type": "space"}, {"name": "x", "type": "space"}],
+    "datasets": [
+        {
+            "path": "s0",
+            "coordinateTransformations": [{"type": "scale", "scale": [1, 1]}],
+        }
+    ],
+}
+ARRAY = {
+    "zarr_format": 3,
+    "node_type": "array",
+    "shape": [4, 4],
+    "data_type": "uint8",
+    "chunk_grid": {"name": "regular", "configuration": {"chunk_shape": [4, 4]}},
+    "chunk_key_encoding": {"name": "default"},
+    "fill_value": 0,
+    "codecs": [{"name": "bytes", "configuration": {"endian": "little"}}],
+    "dimension_names": ["y", "x"],
+}
+
+
+def _with_example(monkeypatch: pytest.MonkeyPatch, example: Example) -> Rule:
+    rule = get_rule("YZ-AX-001")
+    monkeypatch.setattr(_model, "_load_examples", lambda: {rule.code: (example, {})})
+    return rule
+
+
+@pytest.mark.parametrize("version", ngff_rules.MODULES)
+def test_model_example_conversion(
+    monkeypatch: pytest.MonkeyPatch, version: str
+) -> None:
+    # a valid v0.5 document converts to a valid document of every version
+    valid = Example(model="Multiscale", json=json.dumps(MULTISCALE))
+    rule = _with_example(monkeypatch, valid)
+    assert ngff_rules.emitted_codes(rule, version) == set()
+    # and an invalid one stays invalid
+    bad = {**MULTISCALE, "axes": [MULTISCALE["axes"][0]] * 2}
+    rule = _with_example(monkeypatch, Example(model="Multiscale", json=json.dumps(bad)))
+    assert ngff_rules.emitted_codes(rule, version)
+
+
+@pytest.mark.parametrize("version", ngff_rules.MODULES)
+def test_store_example_conversion(
+    monkeypatch: pytest.MonkeyPatch, version: str
+) -> None:
+    pytest.importorskip("fsspec")
+    ome = {"version": "0.5", "multiscales": [MULTISCALE]}
+    group = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
+    files = {"zarr.json": group, "s0/zarr.json": ARRAY}
+    rule = _with_example(monkeypatch, Example(store=json.dumps(files)))
+    example = ngff_rules.example_for(rule, version)
+    assert example and example.store
+    assert ngff_rules._store_codes(example.files) == set()
+    # (validate it directly too: no codes could also mean an unexpected error)
+    with tempfile.TemporaryDirectory(suffix=".zarr") as tmp:
+        for path, content in example.files.items():
+            Path(tmp, path).parent.mkdir(parents=True, exist_ok=True)
+            Path(tmp, path).write_text(json.dumps(content), encoding="utf-8")
+        validate_zarr_store(tmp)

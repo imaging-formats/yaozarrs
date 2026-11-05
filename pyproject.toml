@@ -7,6 +7,10 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.targets.wheel]
+# (only the scripts and tests use it; the sdist keeps it)
+exclude = ["src/yaozarrs/_rules/skipped.toml"]
+
 # https://peps.python.org/pep-0621/
 [project]
 name = "yaozarrs"
