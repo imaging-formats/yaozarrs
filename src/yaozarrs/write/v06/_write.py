@@ -36,7 +36,6 @@ Notes specific to v0.6:
 from __future__ import annotations
 
 import posixpath
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, overload
 
@@ -47,6 +46,7 @@ from yaozarrs.v06._storage import (
     _components,
     _find_coordinate_system,
     _fmt,
+    _label_edges,
     _multiscale_graph,
 )
 from yaozarrs.v06._transforms import check_transform_ndim
@@ -55,7 +55,10 @@ from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
     PlateBuilderBase,
+    _BuilderBase,
     _check_image_args,
+    _check_label_dtypes,
+    _Default,
     _prepare_image,
     _write_bioformats2raw,
     _write_image,
@@ -98,15 +101,14 @@ if TYPE_CHECKING:
 
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
     """A v0.6 `Image` model, with its array data (one array per dataset)."""
-    # (an image added to a SceneBuilder: its dataset specs and array options)
-    AddedImage: TypeAlias = tuple[Image, ShapeAndDTypeOrPyramid, dict[str, Any]]
-
-
-class _Default(Enum):
-    """Sentinel for a per-image setting that defaults to the builder's."""
-
-    BUILDER = "builder"
-    """Use the setting passed to the `SceneBuilder`."""
+    LabelsWithDatasets: TypeAlias = Mapping[str, tuple[LabelImage, ArrayOrPyramid]]
+    """The label images of an image, with their data: `{name: (LabelImage, data)}`."""
+    LabelsWithSpecs: TypeAlias = Mapping[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]]
+    """The label images of an image, with the (shape, dtype) of their datasets."""
+    # (an image added to a SceneBuilder: its dataset specs, array options and labels)
+    AddedImage: TypeAlias = tuple[
+        Image, ShapeAndDTypeOrPyramid, dict[str, Any], LabelsWithSpecs
+    ]
 
 
 # ######################## Public API ##########################################
@@ -550,6 +552,7 @@ def write_scene(
     scene: Scene,
     images: Mapping[str, ImageWithDatasets],
     *,
+    labels: Mapping[str, LabelsWithDatasets] | None = None,
     extra_attributes: dict[str, Any] | None = None,
     writer: ZarrWriter = "auto",
     overwrite: bool = False,
@@ -576,9 +579,11 @@ def write_scene(
     transformation `input`/`output` with a `path` must name one of `images`, with a
     coordinate system of that `name`, the transformation's dimensions must fit the
     coordinate systems it links, and the coordinate systems of the scene and its
-    images must form one connected graph.  A reference to a multiscale image *inside*
-    one of `images` (such as one of its labels) is allowed, but not checked, as that
-    image isn't written here; nor is the graph, in that case.
+    images must form one connected graph.  Label images given in `labels` are checked
+    (and can be referenced) like the images.  A reference to any other multiscale
+    image *inside* one of `images` (such as a label image you write afterwards with a
+    [`LabelsBuilder`][yaozarrs.write.v06.LabelsBuilder]) is allowed, but not checked,
+    as that image isn't written here; nor is the graph, in that case.
 
     `chunks`, `shards` and `compression` apply to every image.  If the images have
     different numbers of dimensions, use `chunks="auto"` (the default) or `None`, or
@@ -606,6 +611,11 @@ def write_scene(
     images : Mapping[str, ImageWithDatasets]
         Mapping of `{path -> (image_model, [datasets, ...])}`.  Each path (e.g.
         "tile_0", or "tiles/0") becomes an Image subgroup of the scene group.
+    labels : Mapping[str, Mapping[str, tuple[LabelImage, ArrayOrPyramid]]] | None
+        Label images to write alongside the images, as `{image path -> {label name ->
+        (LabelImage, datasets)}}` (see `write_image`).  Each one is written to
+        `dest/{image path}/labels/{label name}/`, and the scene may refer to it there.
+        Default is None.
     extra_attributes : dict[str, Any] | None, optional
         Additional attributes to write alongside "ome" in the scene's zarr.json.
     writer : "zarr" | "tensorstore" | "auto" | CreateArrayFunc, optional
@@ -633,8 +643,9 @@ def write_scene(
         If given a model from another OME-Zarr version (e.g. a v05.Image).
     ValueError
         If the scene references an image (or coordinate system) that isn't in
-        `images`, if its coordinate systems aren't all connected, or if any image
-        has mismatched datasets/metadata.
+        `images`, if its coordinate systems aren't all connected, if any image (or
+        label image) has mismatched datasets/metadata, or if `labels` names an image
+        that isn't in `images`.
     NotImplementedError
         If any Image has multiple multiscales.
     FileExistsError
@@ -695,16 +706,29 @@ def write_scene(
         overwrite=overwrite,
         compression=compression,
     )
+    labels = labels or {}
+    if unknown := sorted(set(labels) - set(images)):
+        raise ValueError(
+            f"labels: {unknown} are not among the scene's images ({sorted(images)})"
+        )
     # (check everything first, so a bad image doesn't leave a partial scene behind)
     seen: list[str] = []
     for path, (image_model, datasets) in images.items():
-        builder._check_image(path, image_model, datasets, others=seen)
+        builder._check_image(
+            path, image_model, datasets, others=seen, labels=labels.get(path)
+        )
         seen.append(path)
-    _check_scene(scene, {path: image for path, (image, _) in images.items()})
+    all_images: dict[str, Image] = {}
+    for path, (image, _) in images.items():
+        all_images[path] = image
+        all_images.update(_label_paths(path, labels.get(path)))
+    _check_scene(scene, all_images)
 
     builder._ensure_initialized()
     for path, (image_model, datasets) in images.items():
-        builder.write_image(path, image_model, datasets, progress=progress)
+        builder.write_image(
+            path, image_model, datasets, labels=labels.get(path), progress=progress
+        )
 
     return builder.root_path
 
@@ -1209,7 +1233,7 @@ class LabelsBuilder(LabelsBuilderBase[LabelImage]):
         )
 
 
-class SceneBuilder:
+class SceneBuilder(_BuilderBase):
     """Builder for OME-Zarr v0.6 scene hierarchies.
 
     A scene group holds [`Scene`][yaozarrs.v06.Scene] metadata, describing the
@@ -1219,9 +1243,9 @@ class SceneBuilder:
     This builder supports two workflows:
 
     1. **Immediate write** (simpler): Use `write_image()` to write each image with
-       its data immediately.  Each image is checked against the scene's references to
-       it (that the coordinate systems they name exist) as it is written; that every
-       referenced image gets written is up to you.
+       its data (and labels) immediately.  Each image is checked against the scene's
+       references to it (that the coordinate systems they name exist) as it is
+       written; that every referenced image gets written is up to you.
     2. **Prepare-only** (flexible): Use `add_image()` to register all images, then
        `prepare()` to create the hierarchy with empty arrays.  `prepare()` checks the
        scene as a whole first (as [`write_scene`][yaozarrs.write.v06.write_scene]
@@ -1301,6 +1325,8 @@ class SceneBuilder:
     >>> arrays["b/0"][:] = np.zeros((32, 32), dtype=np.uint16)
     """
 
+    _image_type = Image
+
     def __init__(
         self,
         dest: str | PathLike,
@@ -1314,20 +1340,22 @@ class SceneBuilder:
         compression: CompressionName = "blosc-zstd",
     ) -> None:
         _check_model(scene, Scene, "scene: ")
-        self._dest = Path(dest)
+        super().__init__(
+            Path(dest),
+            writer=writer,
+            chunks=chunks,
+            shards=shards,
+            overwrite=overwrite,
+            compression=compression,
+        )
         self._scene = scene
         self._extra_attributes = extra_attributes
-        self._writer: ZarrWriter = writer
-        self._chunks: ShapeLike | Literal["auto"] | None = chunks
-        self._shards = shards
-        self._overwrite = overwrite
-        self._compression: CompressionName = compression
 
         # For prepare-only workflow: {path: (image, dataset_specs, array_options)}
         self._images: dict[str, AddedImage] = {}
-        # For immediate write workflow: {path: image}
-        self._initialized = False
+        # For immediate write workflow: {path: image}, and {label path: label image}
         self._written_images: dict[str, Image] = {}
+        self._written_labels: dict[str, LabelImage] = {}
 
     @property
     def root_path(self) -> Path:
@@ -1340,6 +1368,7 @@ class SceneBuilder:
         image: Image,
         datasets: ArrayOrPyramid,
         *,
+        labels: LabelsWithDatasets | None = None,
         chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
         shards: ShapeLike | _Default | None = _Default.BUILDER,
         compression: CompressionName | _Default = _Default.BUILDER,
@@ -1359,6 +1388,10 @@ class SceneBuilder:
         datasets : ArrayOrPyramid
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
+        labels : Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None, optional
+            Label images to write alongside the image, as `{label name ->
+            (LabelImage, datasets)}` (see `write_image`).  They are written to
+            `{path}/labels/{label name}/`, with this image's array settings.
         chunks : tuple[int, ...] | "auto" | None, optional
             Chunk shape for this image's arrays.  Default is the builder's.
         shards : tuple[int, ...] | None, optional
@@ -1382,23 +1415,28 @@ class SceneBuilder:
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        self._check_image(path, image, datasets, chunks=chunks, shards=shards)
+        self._check_image(
+            path, image, datasets, chunks=chunks, shards=shards, labels=labels
+        )
+        label_images = _label_paths(path, labels)
         # (only the references to this image: the others may not be written yet)
-        _check_scene(self._scene, {path: image}, complete=False)
+        _check_scene(self._scene, {path: image, **label_images}, complete=False)
 
         self._ensure_initialized()
         _ensure_parent_groups(self._dest, path)
-        _write_image(
-            self._dest / path,
+        self._write(
             image,
             datasets,
-            image_type=Image,
-            writer=self._writer,
-            overwrite=self._overwrite,
+            path,
+            labels=labels,
+            labels_builder_type=LabelsBuilder,
             progress=progress,
-            **self._array_options(chunks, shards, compression),
+            chunks=chunks,
+            shards=shards,
+            compression=compression,
         )
         self._written_images[path] = image
+        self._written_labels.update(label_images)
         return self
 
     def add_image(
@@ -1407,6 +1445,7 @@ class SceneBuilder:
         image: Image,
         datasets: ShapeAndDTypeOrPyramid,
         *,
+        labels: LabelsWithSpecs | None = None,
         chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
         shards: ShapeLike | _Default | None = _Default.BUILDER,
         compression: CompressionName | _Default = _Default.BUILDER,
@@ -1426,6 +1465,10 @@ class SceneBuilder:
             Shape and dtype specification(s) for each resolution level, as
             `(shape, dtype)` tuples. For a single dataset, pass the tuple
             directly without wrapping in a list.
+        labels : Mapping[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]] | None
+            Label images to create alongside the image, as `{label name ->
+            (LabelImage, specs)}`.  Their arrays are created at
+            `{path}/labels/{label name}/`, with this image's array settings.
         chunks : tuple[int, ...] | "auto" | None, optional
             Chunk shape for this image's arrays.  Default is the builder's.
         shards : tuple[int, ...] | None, optional
@@ -1447,10 +1490,10 @@ class SceneBuilder:
             If the Image has multiple multiscales.
         """
         _, specs = self._check_image(
-            path, image, datasets, chunks=chunks, shards=shards
+            path, image, datasets, chunks=chunks, shards=shards, labels=labels
         )
         options = self._array_options(chunks, shards, compression)
-        self._images[path] = (image, specs, options)
+        self._images[path] = (image, specs, options, labels or {})
         return self
 
     def prepare(self) -> tuple[Path, dict[str, Any]]:
@@ -1464,9 +1507,9 @@ class SceneBuilder:
         -------
         tuple[Path, dict[str, Any]]
             A tuple of (root_path, arrays) where `arrays` maps composite keys
-            like `"tile_0/0"` (image path / dataset path) to array objects. The
-            array type depends on the configured writer (zarr.Array or
-            tensorstore.TensorStore).
+            like `"tile_0/0"` (image path / dataset path) to array objects, and
+            `"tile_0/labels/cells/0"` for label images. The array type depends on
+            the configured writer (zarr.Array or tensorstore.TensorStore).
 
         Raises
         ------
@@ -1481,24 +1524,30 @@ class SceneBuilder:
         """
         if not self._images:
             raise ValueError("No images added. Use add_image() before prepare().")
-        added = {path: image for path, (image, *_) in self._images.items()}
-        _check_scene(self._scene, {**self._written_images, **added})
+        added: dict[str, Image] = {}
+        for path, (image, _, _, labels) in self._images.items():
+            added[path] = image
+            added.update(_label_paths(path, labels))
+        _check_scene(
+            self._scene, {**self._written_images, **self._written_labels, **added}
+        )
 
         self._ensure_initialized()
         all_arrays: dict[str, Any] = {}
-        for path, (image, specs, options) in self._images.items():
+        for path, (image, specs, options, labels) in self._images.items():
             _ensure_parent_groups(self._dest, path)
-            _, arrays = _prepare_image(
-                self._dest / path,
-                image,
-                specs,
-                image_type=Image,
-                writer=self._writer,
-                overwrite=self._overwrite,
-                **options,
-            )
-            for dataset_path, arr in arrays.items():
-                all_arrays[f"{path}/{dataset_path}"] = arr
+            all_arrays.update(self._prepare(image, specs, path, **options))
+            if labels:
+                builder = LabelsBuilder(
+                    self._dest / path / "labels",
+                    writer=self._writer,
+                    overwrite=self._overwrite,
+                    **options,
+                )
+                for name, (label_image, label_specs) in labels.items():
+                    builder.add_label(name, label_image, label_specs)
+                for key, arr in builder.prepare()[1].items():
+                    all_arrays[f"{path}/labels/{key}"] = arr
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
@@ -1506,21 +1555,6 @@ class SceneBuilder:
         return f"<{self.__class__.__name__}: {total_images} images>"
 
     # ------------------ Internal methods ------------------
-
-    def _array_options(
-        self,
-        chunks: ShapeLike | Literal["auto"] | _Default | None,
-        shards: ShapeLike | _Default | None,
-        compression: CompressionName | _Default,
-    ) -> dict[str, Any]:
-        """Resolve per-image array settings, falling back to the builder's."""
-        return {
-            "chunks": self._chunks if chunks is _Default.BUILDER else chunks,
-            "shards": self._shards if shards is _Default.BUILDER else shards,
-            "compression": (
-                self._compression if compression is _Default.BUILDER else compression
-            ),
-        }
 
     def _check_image(
         self,
@@ -1530,8 +1564,9 @@ class SceneBuilder:
         others: Iterable[str] | None = None,
         chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
         shards: ShapeLike | _Default | None = _Default.BUILDER,
+        labels: Mapping[str, tuple[Any, Any]] | None = None,
     ) -> tuple[Any, Sequence[Any]]:
-        """Check an image (and its path) before anything of it is written.
+        """Check an image (its path, and its labels) before anything of it is written.
 
         `others` are the paths it mustn't clash with (default: those already added).
         """
@@ -1545,15 +1580,28 @@ class SceneBuilder:
                 raise ValueError(
                     f"Image '{path}' can't be nested in (or contain) image '{other}'."
                 )
-        options = self._array_options(chunks, shards, self._compression)
-        return _check_image_args(
+        options = self._array_options(chunks, shards)
+        result = _check_image_args(
             image,
             datasets,
-            Image,
+            self._image_type,
             f"Image '{path}': ",
             options["chunks"],
             options["shards"],
         )
+        for name, (label_image, label_datasets) in (labels or {}).items():
+            _check_image_path(f"{path}/labels/{name}")
+            context = f"Image '{path}', label '{name}': "
+            _, label_seq = _check_image_args(
+                label_image,
+                label_datasets,
+                LabelImage,
+                context,
+                options["chunks"],
+                options["shards"],
+            )
+            _check_label_dtypes(label_seq, context)
+        return result
 
     def _ensure_initialized(self) -> None:
         """Create the scene group (with the scene metadata) if not already done."""
@@ -1569,14 +1617,22 @@ class SceneBuilder:
         self._initialized = True
 
 
+def _label_paths(
+    path: str, labels: Mapping[str, tuple[LabelImage, Any]] | None
+) -> dict[str, LabelImage]:
+    """The label images of the image at `path`, by their path in the scene."""
+    return {
+        f"{path}/labels/{name}": label for name, (label, _) in (labels or {}).items()
+    }
+
+
 def _check_image_path(path: str) -> None:
-    # (the path of each node below the scene group: Zarr node names must be
-    # non-empty, not only periods, and not start with "__")
-    # (and "zarr.json" would collide with a group's own metadata)
-    parts = path.split("/")
+    # (each part is the name of a node below the scene group: Zarr node names must be
+    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
+    # collide with a group's own metadata)
     if any(
         not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
-        for p in parts
+        for p in path.split("/")
     ):
         raise ValueError(
             f"Invalid image path {path!r}: each part must be a valid Zarr node name "
@@ -1590,9 +1646,10 @@ def _check_scene(
     """Check a scene's references against its `images` (before writing them).
 
     Each `input`/`output` with a `path` must name a coordinate system of the image at
-    that path.  If `complete`, every referenced image must be in `images` (or be a
-    multiscale image inside one, such as one of its labels, which isn't checked), and
-    the graph of coordinate systems must be connected.  Where both ends of a
+    that path.  `images` may include label images, by their path in the scene (e.g.
+    "a/labels/cells").  If `complete`, every referenced image must be in `images` (or
+    be another multiscale image inside one, which isn't checked), and the graph of
+    coordinate systems must be connected.  Where both ends of a
     transformation are known, its dimensions must fit them.
     """
     defs = scene.scene
@@ -1646,11 +1703,12 @@ def _check_scene(
     if not complete or not resolved_all:
         return
     for path, ms_idx in entries:
-        ms_nodes, ms_edges = _multiscale_graph(
-            path, ms_idx, images[path].multiscales[ms_idx]
-        )
+        multiscale = images[path].multiscales[ms_idx]
+        ms_nodes, ms_edges = _multiscale_graph(path, ms_idx, multiscale)
         nodes |= ms_nodes
         edges += ms_edges
+        # (an image's own transformations into the label images the scene references)
+        edges += _label_edges(path, ms_idx, multiscale, dict(images))
     # The coordinate systems defined in the multiscales metadata and the `scene`
     # metadata combined with the coordinate transformations form a transformations
     # graph. ... The graph MUST be connected

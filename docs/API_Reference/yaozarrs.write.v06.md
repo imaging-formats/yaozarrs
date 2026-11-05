@@ -24,9 +24,10 @@ for how to use them.
 - **The scene metadata is written as given.**  Unlike plate metadata, which
   `write_plate` can generate for you, a [`Scene`][yaozarrs.v06.Scene] says how
   *your* images relate to each other, so you write it yourself.  `write_scene`
-  checks it against the images before anything is written: every image it refers
-  to must be there, with the coordinate systems it names, and the scene's
-  transformations must connect them all.
+  checks it against the images (and their `labels`) before anything is written:
+  every image it refers to must be there, with the coordinate systems it names,
+  and the scene's transformations must connect them all.  (A reference to a label
+  image you don't pass in isn't checked, and neither is the graph, in that case.)
 - **Transformation parameters stored in Zarr aren't written for you.**  An
   `affine` or `rotation` may keep its matrix in a Zarr array (referenced by
   `path`) instead of in the JSON, and `displacements` and `coordinates` always keep
@@ -51,7 +52,19 @@ See also the [types shared by both write modules](../writing.md#types).
         heading: "ImageWithDatasets"
         show_root_heading: true
 
-::: yaozarrs.write.v06._write._Default
+::: yaozarrs.write.v06._write.LabelsWithDatasets
+      options:
+        heading_level: 3
+        heading: "LabelsWithDatasets"
+        show_root_heading: true
+
+::: yaozarrs.write.v06._write.LabelsWithSpecs
+      options:
+        heading_level: 3
+        heading: "LabelsWithSpecs"
+        show_root_heading: true
+
+::: yaozarrs.write._common._builders._Default
       options:
         heading_level: 3
         heading: "_Default"
