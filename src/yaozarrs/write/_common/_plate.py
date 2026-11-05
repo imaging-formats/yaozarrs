@@ -22,17 +22,22 @@ def _row_name_to_index(row_name: str) -> int:
             f"Row name must be uppercase letters (A-Z, AA-ZZ, etc.), got: {row_name}"
         )
 
-    # Convert like Excel columns: A=0, B=1, ..., Z=25, AA=26, AB=27, etc.
     index = 0
     for char in row_name:
         index = index * 26 + (ord(char) - ord("A") + 1)
     return index - 1
 
 
+def _row_index_to_name(index: int) -> str:
+    """Convert row index to name, the inverse of `_row_name_to_index` (up to "ZZ")."""
+    if index < 26:
+        return chr(ord("A") + index)
+    return chr(ord("A") + index // 26 - 1) + chr(ord("A") + index % 26)
+
+
 def _column_name_to_index(col_name: str) -> int:
     """Convert column name to index (1=0, 2=1, 10=9, etc.)."""
     try:
-        # Try parsing as integer (handles "1", "2", "10", "1", etc.)
         return int(col_name) - 1
     except ValueError:  # pragma: no cover
         raise ValueError(
@@ -70,46 +75,29 @@ def _autogenerate_plate_metadata(
 
     Parameters
     ----------
-    fov_paths : Mapping[tuple[str, str, str], ImageWithAny]
-        Images mapping with (row, col, fov) keys.
+    fov_paths : Iterable[tuple[str, str, str]]
+        `(row, col, fov)` keys (e.g. those of an images mapping).
 
     Returns
     -------
     dict[str, Any]
         Dictionary with 'rows', 'columns', 'wells' keys for PlateDef.
     """
-    # Extract unique row and column names
-    rows_set: set[str] = set()
+    row_names: set[str] = set()
     col_names: set[str] = set()
     wells_set: set[tuple[str, str]] = set()
     for row, col, _fov in fov_paths:
-        rows_set.add(row)
+        row_names.add(row)
         col_names.add(col)
         wells_set.add((row, col))
 
-    # Find the maximum row and column to fill in all intermediates
-    max_row_idx = max(_row_name_to_index(r) for r in rows_set)
+    max_row_idx = max(_row_name_to_index(r) for r in row_names)
     max_col_idx = max(_column_name_to_index(c) for c in col_names)
     width = _column_name_width(col_names)
 
-    # Create all rows from A to max_row (e.g., A, B, C, D if max is D)
-    rows = []
-    for idx in range(max_row_idx + 1):
-        # Convert index back to row name (0=A, 1=B, etc.)
-        if idx < 26:
-            row_name = chr(ord("A") + idx)
-        else:
-            # Handle AA, AB, etc. (Excel-style)
-            first = chr(ord("A") + (idx // 26) - 1)
-            second = chr(ord("A") + (idx % 26))
-            row_name = first + second
-        rows.append({"name": row_name})
-
-    # Create all columns from 1 to max_col (e.g., 1, 2, 3, 4, 5 if max is 5),
-    # zero-padded like the given names (e.g. 01, 02, ... 12)
+    rows = [{"name": _row_index_to_name(i)} for i in range(max_row_idx + 1)]
     columns = [{"name": str(i + 1).zfill(width)} for i in range(max_col_idx + 1)]
-
-    # Create well objects only for wells that have images
+    # (only the wells that have images)
     wells = [
         {
             "path": f"{row}/{col}",
@@ -148,25 +136,19 @@ def _merge_plate_metadata(
     ValueError
         If user-provided metadata conflicts with images dict.
     """
-    # Auto-generate base metadata from images
+    # (generated even for a given Plate: this also checks the images' row and
+    # column names)
     auto_metadata = _autogenerate_plate_metadata(images)
 
-    # If user provided a full Plate object, validate and return
     if isinstance(user_plate, plate_type):
         _validate_plate_matches_images(user_plate, images)
         return user_plate
     if user_plate is not None and not isinstance(user_plate, Mapping):
         _check_model(user_plate, plate_type, "plate: ")  # (raises)
 
-    # If user provided a dict, merge with auto-generated
     merged = {**auto_metadata, **cast("Mapping[str, Any]", user_plate or {})}
-
-    # Construct Plate object from merged metadata
     plate = plate_type.model_validate({"plate": merged})
-
-    # Validate that all images have valid coordinates
     _validate_plate_matches_images(plate, images)
-
     return plate
 
 
@@ -209,12 +191,10 @@ def _validate_plate_matches_images(
     ValueError
         If any image coordinates don't match plate metadata.
     """
-    # Get valid row and column names from plate
     valid_rows = {row.name for row in plate.plate.rows}
     valid_cols = {col.name for col in plate.plate.columns}
     valid_wells = {well.path for well in plate.plate.wells}
 
-    # Check all images have valid coordinates
     for row, col, _fov in images.keys():
         if row not in valid_rows:  # pragma: no cover
             raise ValueError(

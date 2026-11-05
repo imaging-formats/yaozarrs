@@ -7,11 +7,18 @@ model classes (as class attributes) and its own public docstrings.
 from __future__ import annotations
 
 import json
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeGuard, TypeVar, cast
 
 from ._arrays import _get_create_func, _resolve_chunks, _write_to_array
-from ._groups import _create_zarr3_group, _update_zarr3_group
+from ._groups import (
+    _create_zarr3_group,
+    _ensure_parent_groups,
+    _rewrite_zarr3_group,
+    _update_zarr3_group,
+    _write_group_json,
+)
 from ._models import _check_model
 from ._plate import (
     _autogenerate_plate_metadata,
@@ -25,7 +32,7 @@ Image = TypeVar("Image")
 LabelImage = TypeVar("LabelImage")
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
     from os import PathLike
 
     from pydantic import BaseModel
@@ -47,15 +54,15 @@ if TYPE_CHECKING:
     ImageWithAny: TypeAlias = ImageWithDatasets[Any] | ImageWithShapeSpecs[Any]
 
 
+class _Default(Enum):
+    """Sentinel for a per-image setting that defaults to the builder's."""
+
+    BUILDER = "builder"
+
+
 def _is_shape_and_dtype(obj: Any) -> TypeGuard[ShapeAndDType]:
     """Check if object is a (shape, dtype) tuple."""
-    if (
-        isinstance(obj, tuple)
-        and len(obj) == 2
-        and isinstance(obj[0], tuple)  # shape is first element
-    ):
-        return True
-    return False
+    return isinstance(obj, tuple) and len(obj) == 2 and isinstance(obj[0], tuple)
 
 
 def _check_image_args(
@@ -77,9 +84,8 @@ def _check_image_args(
         raise NotImplementedError(f"{context}Image must have exactly one multiscale")
 
     multiscale = image.multiscales[0]
-    if hasattr(datasets, "shape") and hasattr(datasets, "dtype"):
-        datasets_seq = [datasets]
-    elif _is_shape_and_dtype(datasets):
+    is_array = hasattr(datasets, "shape") and hasattr(datasets, "dtype")
+    if is_array or _is_shape_and_dtype(datasets):
         datasets_seq = [datasets]
     else:
         datasets_seq = datasets
@@ -140,11 +146,7 @@ def _prepare_image(
         image, datasets, image_type, chunks=chunks, shards=shards
     )
     datasets_seq = cast("Sequence[ShapeAndDType]", specs)
-
-    # Get create function
     create_func = _get_create_func(writer)
-
-    # Create zarr group with Image metadata
     dest_path = Path(dest)
     _create_zarr3_group(dest_path, image, overwrite, extra_attributes=extra_attributes)
 
@@ -152,13 +154,11 @@ def _prepare_image(
     # coordinate system, i.e. one per array dimension)
     dimension_names = [ax.name for ax in multiscale.axes]
 
-    # Create arrays for each dataset
+    import numpy as np
+
     arrays = {}
     for (shape, dtype_spec), dataset_meta in zip(datasets_seq, multiscale.datasets):
-        # Convert dtype to np.dtype to ensure compatibility with all backends
-        import numpy as np
-
-        dtype = np.dtype(dtype_spec)
+        dtype = np.dtype(dtype_spec)  # (an np.dtype, which every backend accepts)
         arrays[dataset_meta.path] = create_func(
             path=dest_path / dataset_meta.path,
             shape=shape,
@@ -200,10 +200,7 @@ def _write_image(
         )
         _check_label_dtypes(label_seq, context)
 
-    # Extract specs from arrays for prepare_image
     specs: list[ShapeAndDType] = [(arr.shape, arr.dtype) for arr in datasets_seq]
-
-    # Create arrays using prepare_image
     dest_path, arrays = _prepare_image(
         dest,
         image,
@@ -217,11 +214,9 @@ def _write_image(
         compression=compression,
     )
 
-    # Write data to arrays
     for data_array, dataset_meta in zip(datasets_seq, multiscale.datasets):
         _write_to_array(arrays[dataset_meta.path], data_array, progress=progress)
 
-    # Write labels if provided
     if labels:
         if labels_builder_type is None:  # pragma: no cover
             raise TypeError("labels_builder_type is required to write labels")
@@ -256,10 +251,7 @@ def _write_plate(
     progress: bool = False,
 ) -> Path:
     """Write a Plate group with data; see `vNN.write_plate`."""
-    # Merge user-provided plate metadata with auto-generated
     plate_obj = _merge_plate_metadata(images, plate, builder_type._plate_type)
-
-    # Use PlateBuilder to handle the writing
     builder = builder_type(
         dest,
         plate=plate_obj,
@@ -280,7 +272,6 @@ def _write_plate(
     for (row, col), fields_data in wells_data.items():
         builder._check_fields(row, col, fields_data)
 
-    # Write each well with all its fields
     for (row, col), fields_data in wells_data.items():
         builder.write_well(row=row, col=col, images=fields_data, progress=progress)
 
@@ -330,10 +321,110 @@ def _write_bioformats2raw(
     return builder.root_path
 
 
-class Bf2RawBuilderBase(Generic[Image]):
-    """Builder for bioformats2raw layout hierarchies (see `vNN.Bf2RawBuilder`)."""
+class _BuilderBase:
+    """The array settings of a builder, and writing/preparing its images with them."""
 
     _image_type: ClassVar[type[Any]]
+
+    def __init__(
+        self,
+        dest: str | PathLike,
+        *,
+        writer: ZarrWriter,
+        chunks: ShapeLike | Literal["auto"] | None,
+        shards: ShapeLike | None,
+        overwrite: bool,
+        compression: CompressionName,
+    ) -> None:
+        self._dest = Path(dest)
+        self._writer: ZarrWriter = writer
+        self._chunks: ShapeLike | Literal["auto"] | None = chunks
+        self._shards = shards
+        self._overwrite = overwrite
+        self._compression: CompressionName = compression
+        self._initialized = False
+
+    def _array_options(
+        self,
+        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
+        shards: ShapeLike | _Default | None = _Default.BUILDER,
+        compression: CompressionName | _Default = _Default.BUILDER,
+    ) -> dict[str, Any]:
+        """Resolve per-image array settings, falling back to the builder's."""
+        return {
+            "chunks": self._chunks if chunks is _Default.BUILDER else chunks,
+            "shards": self._shards if shards is _Default.BUILDER else shards,
+            "compression": (
+                self._compression if compression is _Default.BUILDER else compression
+            ),
+        }
+
+    def _check_datasets(self, image: Any, datasets: Any, context: str) -> Sequence[Any]:
+        """`_check_image_args`, with the builder's settings; return the datasets."""
+        _, datasets_seq = _check_image_args(
+            image, datasets, self._image_type, context, self._chunks, self._shards
+        )
+        return datasets_seq
+
+    def _write(
+        self,
+        image: Any,
+        datasets: Any,
+        *path: str,
+        progress: bool,
+        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
+        shards: ShapeLike | _Default | None = _Default.BUILDER,
+        compression: CompressionName | _Default = _Default.BUILDER,
+    ) -> None:
+        """Write `image` and its data at `path`, below the root."""
+        _write_image(
+            self._dest.joinpath(*path),
+            image,
+            datasets,
+            image_type=self._image_type,
+            writer=self._writer,
+            overwrite=self._overwrite,
+            progress=progress,
+            **self._array_options(chunks, shards, compression),
+        )
+
+    def _prepare(
+        self,
+        image: Any,
+        specs: Any,
+        *path: str,
+        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
+        shards: ShapeLike | _Default | None = _Default.BUILDER,
+        compression: CompressionName | _Default = _Default.BUILDER,
+    ) -> dict[str, Any]:
+        """Create `image` (no data) at `path`; return its arrays, by path below root."""
+        _, arrays = _prepare_image(
+            self._dest.joinpath(*path),
+            image,
+            specs,
+            image_type=self._image_type,
+            writer=self._writer,
+            overwrite=self._overwrite,
+            **self._array_options(chunks, shards, compression),
+        )
+        prefix = "/".join(path)
+        return {f"{prefix}/{dataset_path}": arr for dataset_path, arr in arrays.items()}
+
+    def _ensure_initialized(self) -> None:
+        """Create the root directory, if not already done.
+
+        (Its zarr.json, which lists the wells or labels, is rewritten as each one is
+        written.)
+        """
+        if self._initialized:
+            return
+        self._dest.mkdir(parents=True, exist_ok=True)
+        self._initialized = True
+
+
+class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
+    """Builder for bioformats2raw layout hierarchies (see `vNN.Bf2RawBuilder`)."""
+
     _bf2raw_type: ClassVar[type[Any]]
     _series_type: ClassVar[type[Any]]
 
@@ -349,21 +440,20 @@ class Bf2RawBuilderBase(Generic[Image]):
         overwrite: bool = False,
         compression: CompressionName = "blosc-zstd",
     ) -> None:
-        self._dest = Path(dest)
+        super().__init__(
+            dest,
+            writer=writer,
+            chunks=chunks,
+            shards=shards,
+            overwrite=overwrite,
+            compression=compression,
+        )
         self._ome_xml = ome_xml
         self._extra_attributes = extra_attributes
-        self._writer: ZarrWriter = writer
-        self._chunks: ShapeLike | Literal["auto"] | None = chunks
-        self._shards = shards
-        self._overwrite = overwrite
-        self._compression: CompressionName = compression
-        self._indent = 2
 
         # For prepare-only workflow: {series_name: (image, dataset_specs)}
         self._series: dict[str, ImageWithShapeSpecs] = {}
-
         # For immediate write workflow
-        self._initialized = False
         self._written_series: list[str] = []
 
     @property
@@ -410,35 +500,10 @@ class Bf2RawBuilderBase(Generic[Image]):
             If the Image has multiple multiscales.
         """
         self._validate_series_name(name)
-        _check_image_args(
-            image,
-            datasets,
-            self._image_type,
-            f"Series '{name}': ",
-            self._chunks,
-            self._shards,
-        )
-
-        # Initialize root structure if needed
+        self._check_datasets(image, datasets, f"Series '{name}': ")
         self._ensure_initialized()
-
-        # Update OME/zarr.json with this series
         self._update_ome_series(name)
-
-        # Write the series using the existing write_image function
-        _write_image(
-            self._dest / name,
-            image,
-            datasets,
-            image_type=self._image_type,
-            writer=self._writer,
-            chunks=self._chunks,
-            shards=self._shards,
-            overwrite=self._overwrite,
-            compression=self._compression,
-            progress=progress,
-        )
-
+        self._write(image, datasets, name, progress=progress)
         return self
 
     def add_series(
@@ -479,14 +544,7 @@ class Bf2RawBuilderBase(Generic[Image]):
             If the Image has multiple multiscales.
         """
         self._validate_series_name(name)
-        _, datasets_seq = _check_image_args(
-            image,
-            datasets,
-            self._image_type,
-            f"Series '{name}': ",
-            self._chunks,
-            self._shards,
-        )
+        datasets_seq = self._check_datasets(image, datasets, f"Series '{name}': ")
         self._series[name] = (image, datasets_seq)
         return self
 
@@ -520,42 +578,14 @@ class Bf2RawBuilderBase(Generic[Image]):
         if not self._series:  # pragma: no cover
             raise ValueError("No series added. Use add_series() before prepare().")
 
-        # Create root zarr.json with bioformats2raw.layout
-        bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
-        _create_zarr3_group(
-            self._dest,
-            bf2raw,
-            self._overwrite,
-            extra_attributes=self._extra_attributes,
-        )
-
-        # Create OME/zarr.json with series list
-        ome_path = self._dest / "OME"
+        self._create_root_group()
         series_model = self._series_type(series=list(self._series))
-        _create_zarr3_group(ome_path, series_model, self._overwrite)
+        _create_zarr3_group(self._dest / "OME", series_model, self._overwrite)
+        self._write_ome_xml()
 
-        # Write METADATA.ome.xml if provided
-        if self._ome_xml is not None:
-            (ome_path / "METADATA.ome.xml").write_text(self._ome_xml)
-
-        # Create arrays for each series using prepare_image
         all_arrays: dict[str, Any] = {}
         for series_name, (image_model, dataset_specs) in self._series.items():
-            _root_path, series_arrays = _prepare_image(
-                self._dest / series_name,
-                image_model,
-                dataset_specs,
-                image_type=self._image_type,
-                chunks=self._chunks,
-                shards=self._shards,
-                writer=self._writer,
-                overwrite=self._overwrite,
-                compression=self._compression,
-            )
-            # Flatten into all_arrays with "series/dataset" keys
-            for dataset_path, arr in series_arrays.items():
-                all_arrays[f"{series_name}/{dataset_path}"] = arr
-
+            all_arrays.update(self._prepare(image_model, dataset_specs, series_name))
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
@@ -568,59 +598,43 @@ class Bf2RawBuilderBase(Generic[Image]):
         if name in self._series:
             raise ValueError(f"Series '{name}' already added via add_series().")
 
-    def _ensure_initialized(self) -> None:
-        """Create root structure if not already done."""
-        if self._initialized:
-            return
-
-        # Create root zarr.json with bioformats2raw.layout
+    def _create_root_group(self) -> None:
+        """Create the root group, with the `bioformats2raw.layout` metadata."""
         bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
         _create_zarr3_group(
-            self._dest,
-            bf2raw,
-            self._overwrite,
-            extra_attributes=self._extra_attributes,
+            self._dest, bf2raw, self._overwrite, extra_attributes=self._extra_attributes
         )
 
-        # Create OME directory and write METADATA.ome.xml if provided
-        ome_path = self._dest / "OME"
-        ome_path.mkdir(parents=True, exist_ok=True)
+    def _write_ome_xml(self) -> None:
         if self._ome_xml is not None:
-            (ome_path / "METADATA.ome.xml").write_text(self._ome_xml)
+            (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
 
+    def _ensure_initialized(self) -> None:
+        """Create the root group and the OME directory, if not already done.
+
+        (OME/zarr.json is written along with the first series, so that it lists it.)
+        """
+        if self._initialized:
+            return
+        self._create_root_group()
+        (self._dest / "OME").mkdir(parents=True, exist_ok=True)
+        self._write_ome_xml()
         self._initialized = True
 
     def _update_ome_series(self, series_name: str) -> None:
-        """Update OME/zarr.json with new series name."""
+        """Add `series_name` to the series list in OME/zarr.json."""
         if series_name in self._written_series:
             # already added ... this is an internal method, don't need to raise
             return  # pragma: no cover
 
         self._written_series.append(series_name)
         series_model = self._series_type(series=self._written_series)
-        zarr_json_path = self._dest / "OME" / "zarr.json"
-        # Preserve existing extra attributes if present
-        existing_extra: dict[str, Any] = {}
-        if zarr_json_path.exists():
-            existing = json.loads(zarr_json_path.read_text())
-            existing_extra = {
-                k: v for k, v in existing.get("attributes", {}).items() if k != "ome"
-            }
-        zarr_json = {
-            "zarr_format": 3,
-            "node_type": "group",
-            "attributes": {
-                "ome": series_model.model_dump(mode="json", exclude_none=True),
-                **existing_extra,
-            },
-        }
-        zarr_json_path.write_text(json.dumps(zarr_json, indent=self._indent))
+        _rewrite_zarr3_group(self._dest / "OME", series_model)
 
 
-class PlateBuilderBase(Generic[Image]):
+class PlateBuilderBase(_BuilderBase, Generic[Image]):
     """Builder for Plate hierarchies (see `vNN.PlateBuilder`)."""
 
-    _image_type: ClassVar[type[Any]]
     _plate_type: ClassVar[type[Any]]
     _well_type: ClassVar[type[Any]]
     _well_def_type: ClassVar[type[Any]]
@@ -638,26 +652,26 @@ class PlateBuilderBase(Generic[Image]):
         overwrite: bool = False,
         compression: CompressionName = "blosc-zstd",
     ) -> None:
-        self._dest = Path(dest)
+        super().__init__(
+            dest,
+            writer=writer,
+            chunks=chunks,
+            shards=shards,
+            overwrite=overwrite,
+            compression=compression,
+        )
         if plate is not None:
             _check_model(plate, self._plate_type, "plate: ")
-        self._user_plate = plate  # Store user-provided plate (if any)
+        self._user_plate = plate
         self._extra_attributes = extra_attributes
-        self._writer: ZarrWriter = writer
-        self._chunks: ShapeLike | Literal["auto"] | None = chunks
-        self._shards = shards
-        self._overwrite = overwrite
-        self._compression: CompressionName = compression
         # (a plate already at `dest` is added to, not replaced)
         self._existing_plate = self._load_existing_plate()
 
         # For prepare-only workflow: {well_path: {fov: (Image, specs)}}
         self._wells: dict[str, dict[str, ImageWithShapeSpecs]] = {}
-
         # For immediate write workflow
-        self._initialized = False
         self._plate_written = False
-        # Track written wells: {(row, col): {fov: (Image, datasets)}}
+        # {(row, col): {fov: (Image, datasets)}}
         self._written_wells_data: dict[
             tuple[str, str], dict[str, ImageWithDatasets]
         ] = {}
@@ -710,43 +724,20 @@ class PlateBuilderBase(Generic[Image]):
         NotImplementedError
             If any Image has multiple multiscales.
         """
-        # Validate well hasn't been used
         self._validate_well_coordinates(row, col)
-
-        # Check and normalize fields (convert single arrays to sequences)
         normalized_fields = self._check_fields(row, col, images)
-
-        # Initialize plate structure if needed (after the checks, so nothing is
-        # created for a well that would be rejected)
+        # (after the checks, so nothing is created for a well that would be rejected)
         self._ensure_initialized()
 
-        # Track this well's data before writing
         self._written_wells_data[(row, col)] = cast(
             "dict[str, ImageWithDatasets]", normalized_fields
         )
-
-        # Update plate metadata with the new well
         self._update_plate_metadata()
 
-        # Create the well subgroup (and the row group above it)
-        well_group_path = self._create_well_group(f"{row}/{col}", list(images))
-
-        # Write each field of view
+        well_path = f"{row}/{col}"
+        self._create_well_group(well_path, list(images))
         for fov, (image_model, datasets_seq) in normalized_fields.items():
-            field_path = well_group_path / fov
-            _write_image(
-                field_path,
-                image_model,
-                datasets_seq,
-                image_type=self._image_type,
-                writer=self._writer,
-                chunks=self._chunks,
-                shards=self._shards,
-                overwrite=self._overwrite,
-                compression=self._compression,
-                progress=progress,
-            )
-
+            self._write(image_model, datasets_seq, well_path, fov, progress=progress)
         return self
 
     def add_well(
@@ -789,17 +780,12 @@ class PlateBuilderBase(Generic[Image]):
         NotImplementedError
             If any Image has multiple multiscales.
         """
-        # Validate well hasn't been used
         self._validate_well_coordinates(row, col)
-
-        # Check and normalize all fields before accepting
-        well_path = f"{row}/{col}"
         normalized_fields = cast(
             "dict[str, ImageWithShapeSpecs[Image]]",
             self._check_fields(row, col, images),
         )
-
-        self._wells[well_path] = normalized_fields
+        self._wells[f"{row}/{col}"] = normalized_fields
         return self
 
     def prepare(self) -> tuple[Path, dict[str, Any]]:
@@ -833,46 +819,18 @@ class PlateBuilderBase(Generic[Image]):
         if not self._wells:
             raise ValueError("No wells added. Use add_well() before prepare().")
 
-        # Generate plate metadata from registered wells
         plate = _merge_plate_metadata(
             self._get_images_dict(), self._user_plate, self._plate_type
         )
-
-        # Create plate zarr.json
         _create_zarr3_group(
-            self._dest,
-            plate,
-            self._overwrite,
-            extra_attributes=self._extra_attributes,
+            self._dest, plate, self._overwrite, extra_attributes=self._extra_attributes
         )
 
-        # Create arrays for each well/field combination
         all_arrays: dict[str, Any] = {}
-
         for well_path, fields in self._wells.items():
-            well_group_path = self._create_well_group(well_path, list(fields))
-
-            # Create arrays for each field
+            self._create_well_group(well_path, list(fields))
             for fov, (image_model, datasets) in fields.items():
-                field_path = well_group_path / fov
-
-                _field_path, field_arrays = _prepare_image(
-                    field_path,
-                    image_model,
-                    datasets,
-                    image_type=self._image_type,
-                    chunks=self._chunks,
-                    shards=self._shards,
-                    writer=self._writer,
-                    overwrite=self._overwrite,
-                    compression=self._compression,
-                )
-
-                # Flatten into all_arrays with "well/field/dataset" keys
-                for dataset_path, arr in field_arrays.items():
-                    composite_key = f"{well_path}/{fov}/{dataset_path}"
-                    all_arrays[composite_key] = arr
-
+                all_arrays.update(self._prepare(image_model, datasets, well_path, fov))
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
@@ -885,14 +843,8 @@ class PlateBuilderBase(Generic[Image]):
         """Check a well's fields before anything is written; normalize datasets."""
         normalized: dict[str, tuple[Image, Sequence[Any]]] = {}
         for fov, (image_model, datasets) in images.items():
-            _, datasets_seq = _check_image_args(
-                image_model,
-                datasets,
-                self._image_type,
-                f"Well '{row}/{col}', field '{fov}': ",
-                self._chunks,
-                self._shards,
-            )
+            context = f"Well '{row}/{col}', field '{fov}': "
+            datasets_seq = self._check_datasets(image_model, datasets, context)
             normalized[fov] = (image_model, datasets_seq)
         # (the well metadata validates the field names)
         self._generate_well_metadata(list(images))
@@ -900,9 +852,7 @@ class PlateBuilderBase(Generic[Image]):
 
     def _validate_well_coordinates(self, row: str, col: str) -> None:
         """Validate that well coordinates haven't been used yet."""
-        # Check if already written or added
-        well_coords = (row, col)
-        if well_coords in self._written_wells_data:
+        if (row, col) in self._written_wells_data:
             raise ValueError(f"Well ({row}, {col}) already written via write_well().")
         well_path = f"{row}/{col}"
         if well_path in self._wells:
@@ -913,8 +863,6 @@ class PlateBuilderBase(Generic[Image]):
             raise FileExistsError(
                 f"Well ({row}, {col}) already exists in {self._dest}."
             )
-
-        # If user provided a plate, validate against it
         if self._user_plate is not None:
             valid_well_paths = [well.path for well in self._user_plate.plate.wells]
             if well_path not in valid_well_paths:
@@ -922,19 +870,6 @@ class PlateBuilderBase(Generic[Image]):
                     f"Well path '{well_path}' not found in plate metadata. "
                     f"Valid wells are: {valid_well_paths}"
                 )
-
-    def _ensure_initialized(self) -> None:
-        """Create plate root directory if not already done.
-
-        Note: Plate zarr.json is created/updated by _update_plate_metadata(),
-        not here. This allows starting with zero wells.
-        """
-        if self._initialized:
-            return
-
-        # Create root directory
-        self._dest.mkdir(parents=True, exist_ok=True)
-        self._initialized = True
 
     def _load_existing_plate(self) -> BaseModel | None:
         """Return the Plate already at `dest`, if there is one (and no `overwrite`)."""
@@ -945,17 +880,11 @@ class PlateBuilderBase(Generic[Image]):
         return self._plate_type.model_validate(ome) if "plate" in ome else None
 
     def _get_images_dict(self) -> dict[tuple[str, str, str], ImageWithAny]:
-        """Convert internal well storage to images dict format.
-
-        Combines both `_written_wells_data` (immediate write workflow) and
-        `_wells` (prepare-only workflow) into a single images dict.
-        """
+        """Return the written and added wells' fields, keyed by `(row, col, fov)`."""
         images_dict: dict[tuple[str, str, str], ImageWithAny] = {}
-        # From immediate write workflow
         for (row, col), fields in self._written_wells_data.items():
             for fov, image_data in fields.items():
                 images_dict[(row, col, fov)] = image_data
-        # From prepare-only workflow
         for well_path, fields in self._wells.items():
             row, col = well_path.split("/")
             for fov, image_data in fields.items():
@@ -963,79 +892,36 @@ class PlateBuilderBase(Generic[Image]):
         return images_dict
 
     def _generate_current_plate_metadata(self) -> Any:
-        """Generate plate metadata from currently written wells.
+        """Return the given Plate, or one generated from the wells written so far.
 
-        If user provided a Plate, use that. Otherwise, auto-generate from
-        written wells (similar to write_plate auto-generation).
+        (A plate already at `dest` is extended with those wells.)
         """
         if self._user_plate is not None:
             return self._user_plate
         if self._existing_plate is not None:
             new = _autogenerate_plate_metadata(self._get_images_dict())
             return _extend_plate_metadata(self._existing_plate, new)
-        return _merge_plate_metadata(
-            self._get_images_dict(), self._user_plate, self._plate_type
-        )
+        return _merge_plate_metadata(self._get_images_dict(), None, self._plate_type)
 
     def _update_plate_metadata(self) -> None:
-        """Update plate zarr.json with current wells.
-
-        Similar to Bf2RawBuilder._update_ome_series(), this regenerates
-        the plate metadata from currently written wells and rewrites zarr.json.
-        """
+        """(Re)write the plate's zarr.json, with the wells written so far."""
         # (a given Plate doesn't change: rewriting it after every well is O(n^2))
         if self._user_plate is not None and self._plate_written:
             return
         plate = self._generate_current_plate_metadata()
-        zarr_json = {
-            "zarr_format": 3,
-            "node_type": "group",
-            "attributes": {
-                "ome": plate.model_dump(mode="json", exclude_none=True),
-                **(self._extra_attributes or {}),
-            },
-        }
-        (self._dest / "zarr.json").write_text(json.dumps(zarr_json, indent=2))
+        ome = plate.model_dump(mode="json", exclude_none=True)
+        attributes = {"ome": ome, **(self._extra_attributes or {})}
+        _write_group_json(self._dest, attributes, indent=2)
         self._plate_written = True
 
-    def _create_well_group(self, well_path: str, field_names: list[str]) -> Path:
-        """Create the group for well ``well_path`` ("A/1") and the row group above it.
-
-        The row group ("A/") is created first if it is not already there; Zarr v3 has
-        no implicit groups, so it needs a ``zarr.json`` of its own for a reader to
-        resolve plate -> row -> well. Returns the path of the well group.
-        """
-        row_path = self._dest / well_path.split("/")[0]
-        row_path.mkdir(parents=True, exist_ok=True)
-        row_json = row_path / "zarr.json"
-        if not row_json.exists():
-            # Not _create_zarr3_group: that treats an existing path as something to
-            # replace, and the row directory already exists once any sibling well
-            # does. A row has no metadata to overwrite, so writing it is idempotent.
-            row_json.write_text(json.dumps({"zarr_format": 3, "node_type": "group"}))
-
-        well_group_path = self._dest / well_path
+    def _create_well_group(self, well_path: str, field_names: list[str]) -> None:
+        """Create the group for well `well_path` ("A/1"), and the row group above it."""
+        _ensure_parent_groups(self._dest, well_path)
         well_metadata = self._generate_well_metadata(field_names)
-        _create_zarr3_group(well_group_path, well_metadata, self._overwrite)
-        return well_group_path
+        _create_zarr3_group(self._dest / well_path, well_metadata, self._overwrite)
 
     def _generate_well_metadata(self, field_names: list[str]) -> BaseModel:
-        """Generate Well metadata from field names.
-
-        Parameters
-        ----------
-        well_path : str
-            Well path like "A/1"
-        field_names : list[str]
-            List of field of view identifiers like ["0", "1"]
-
-        Returns
-        -------
-        Well
-            Well metadata with images list populated.
-        """
-        # Auto-generate Well metadata
-        # Sort field_names for consistent ordering
+        """Generate Well metadata listing the (sorted) `field_names`."""
         images = [
             self._field_of_view_type(path=fov, acquisition=None)
             for fov in sorted(field_names)
@@ -1044,10 +930,9 @@ class PlateBuilderBase(Generic[Image]):
         return self._well_type(well=self._well_def_type(images=images))
 
 
-class LabelsBuilderBase(Generic[LabelImage]):
+class LabelsBuilderBase(_BuilderBase, Generic[LabelImage]):
     """Builder for labels groups within an Image (see `vNN.LabelsBuilder`)."""
 
-    _image_type: ClassVar[type[Any]]
     _labels_group_type: ClassVar[type[Any]]
 
     def __init__(
@@ -1060,21 +945,18 @@ class LabelsBuilderBase(Generic[LabelImage]):
         overwrite: bool = False,
         compression: CompressionName = "blosc-zstd",
     ) -> None:
-        self._dest = Path(dest)
-        self._writer: ZarrWriter = writer
-        self._chunks: ShapeLike | Literal["auto"] | None = chunks
-        self._shards = shards
-        self._overwrite = overwrite
-        self._compression: CompressionName = compression
-
+        super().__init__(
+            dest,
+            writer=writer,
+            chunks=chunks,
+            shards=shards,
+            overwrite=overwrite,
+            compression=compression,
+        )
         # For prepare-only workflow: {label_name: (LabelImage, specs)}
         self._labels: dict[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]] = {}
-
         # For immediate write workflow
-        self._initialized = False
         self._written_labels: list[str] = []
-
-        # Load existing labels from labels/zarr.json if it exists
         self._preexisting_labels: list[str] = self._load_existing_labels()
 
     @property
@@ -1121,37 +1003,13 @@ class LabelsBuilderBase(Generic[LabelImage]):
             If the LabelImage has multiple multiscales.
         """
         self._validate_label_name(name)
-        _, datasets_seq = _check_image_args(
-            label_image,
-            datasets,
-            self._image_type,
-            f"Label '{name}': ",
-            self._chunks,
-            self._shards,
-        )
-        _check_label_dtypes(datasets_seq, f"Label '{name}': ")
-
-        # Initialize labels group structure if needed
+        context = f"Label '{name}': "
+        datasets_seq = self._check_datasets(label_image, datasets, context)
+        _check_label_dtypes(datasets_seq, context)
         self._ensure_initialized()
-
-        # Update labels/zarr.json with this label
         self._update_labels_group(name)
-
-        # Write the label using the existing write_image function
-        # (LabelImage is a subclass of Image)
-        _write_image(
-            self._dest / name,
-            label_image,
-            datasets,
-            image_type=self._image_type,
-            writer=self._writer,
-            chunks=self._chunks,
-            shards=self._shards,
-            overwrite=self._overwrite,
-            compression=self._compression,
-            progress=progress,
-        )
-
+        # (`_image_type` is the Image model, of which LabelImage is a subclass)
+        self._write(label_image, datasets, name, progress=progress)
         return self
 
     def add_label(
@@ -1192,15 +1050,9 @@ class LabelsBuilderBase(Generic[LabelImage]):
             If the LabelImage has multiple multiscales.
         """
         self._validate_label_name(name)
-        _, specs_seq = _check_image_args(
-            label_image,
-            datasets,
-            self._image_type,
-            f"Label '{name}': ",
-            self._chunks,
-            self._shards,
-        )
-        _check_label_dtypes(specs_seq, f"Label '{name}': ")
+        context = f"Label '{name}': "
+        specs_seq = self._check_datasets(label_image, datasets, context)
+        _check_label_dtypes(specs_seq, context)
         self._labels[name] = (label_image, specs_seq)
         return self
 
@@ -1234,37 +1086,16 @@ class LabelsBuilderBase(Generic[LabelImage]):
         if not self._labels:  # pragma: no cover
             raise ValueError("No labels added. Use add_label() before prepare().")
 
-        # Merge existing labels with new labels
-        all_labels = list(self._preexisting_labels)
-        all_labels.extend([new for new in self._labels if new not in all_labels])
-
-        # Create or update labels/zarr.json with LabelsGroup metadata
-        # If labels group already exists, just update the metadata file with new labels
-        labels_group = self._labels_group_type(labels=all_labels)
-        if self._dest.exists() and (self._dest / "zarr.json").exists():
+        labels_group = self._labels_group_type(labels=self._all_labels(self._labels))
+        # (an existing labels group is added to, not replaced)
+        if (self._dest / "zarr.json").exists():
             _update_zarr3_group(self._dest, labels_group)
         else:
-            # Create new group
             _create_zarr3_group(self._dest, labels_group, self._overwrite)
 
-        # Create arrays for each label using prepare_image
         all_arrays: dict[str, Any] = {}
         for label_name, (label_image, datasets) in self._labels.items():
-            _label_path, label_arrays = _prepare_image(
-                self._dest / label_name,
-                label_image,
-                datasets,
-                image_type=self._image_type,
-                chunks=self._chunks,
-                shards=self._shards,
-                writer=self._writer,
-                overwrite=self._overwrite,
-                compression=self._compression,
-            )
-            # Flatten into all_arrays with "label_name/dataset" keys
-            for dataset_path, arr in label_arrays.items():
-                all_arrays[f"{label_name}/{dataset_path}"] = arr
-
+            all_arrays.update(self._prepare(label_image, datasets, label_name))
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
@@ -1291,64 +1122,23 @@ class LabelsBuilderBase(Generic[LabelImage]):
             raise ValueError(f"Label '{name}' already written via write_label().")
         if name in self._labels:  # pragma: no cover
             raise ValueError(f"Label '{name}' already added via add_label().")
-
-        # Check if label already exists in the labels group
         if name in self._preexisting_labels and not self._overwrite:
             raise ValueError(
                 f"Label '{name}' already exists in the labels group. "
                 f"Use overwrite=True to replace it."
             )
 
-    def _ensure_initialized(self) -> None:
-        """Create labels group directory if not already done.
-
-        Note: labels/zarr.json is created/updated by _update_labels_group(),
-        not here. This allows starting with zero labels.
-        """
-        if self._initialized:
-            return
-
-        # Create root directory
-        self._dest.mkdir(parents=True, exist_ok=True)
-        self._initialized = True
+    def _all_labels(self, new: Iterable[str]) -> list[str]:
+        """The labels already in the group, then those of `new` that aren't."""
+        existing = self._preexisting_labels
+        return [*existing, *(label for label in new if label not in existing)]
 
     def _update_labels_group(self, label_name: str) -> None:
-        """Update labels/zarr.json with new label name.
-
-        Similar to Bf2RawBuilder._update_ome_series(), this regenerates
-        the LabelsGroup metadata from currently written labels and rewrites
-        zarr.json. Merges with existing labels from the group.
-        """
+        """Add `label_name` to the labels listed in labels/zarr.json."""
         if label_name in self._written_labels:
             # already added ... this is an internal method, don't need to raise
             return  # pragma: no cover
 
         self._written_labels.append(label_name)
-
-        # Merge existing labels with newly written labels
-        # If overwrite mode and label exists, it will be written to same path
-        # Otherwise, we add new labels to the list
-        all_labels = list(self._preexisting_labels)
-        for new_label in self._written_labels:
-            if new_label not in all_labels:
-                all_labels.append(new_label)
-            # If label exists and we're in overwrite mode, it's already in the list
-
-        labels_group = self._labels_group_type(labels=all_labels)
-        zarr_json_path = self._dest / "zarr.json"
-        # Preserve existing extra attributes if present
-        existing_extra: dict[str, Any] = {}
-        if zarr_json_path.exists():
-            existing = json.loads(zarr_json_path.read_text())
-            existing_extra = {
-                k: v for k, v in existing.get("attributes", {}).items() if k != "ome"
-            }
-        zarr_json = {
-            "zarr_format": 3,
-            "node_type": "group",
-            "attributes": {
-                "ome": labels_group.model_dump(mode="json", exclude_none=True),
-                **existing_extra,
-            },
-        }
-        zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
+        labels = self._all_labels(self._written_labels)
+        _rewrite_zarr3_group(self._dest, self._labels_group_type(labels=labels))
