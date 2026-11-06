@@ -449,14 +449,7 @@
       "additionalProperties": true,
       "properties": {
         "label-value": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "number"
-            }
-          ]
+          "type": "integer"
         },
         "rgba": {
           "anyOf": [
