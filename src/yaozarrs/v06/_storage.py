@@ -9,9 +9,15 @@ and metadata consistency.  The traversal itself is shared
 from __future__ import annotations
 
 import posixpath
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
-from yaozarrs._common._storage import StorageValidator, _build_fs_path, _invalid_ctx
+from yaozarrs._common._storage import (
+    StorageValidator,
+    _build_fs_path,
+    _invalid_ctx,
+    _shape_problem,
+    _StoredParameters,
+)
 from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._validate import validate_ome_object, validate_ome_uri
 from yaozarrs._zarr import ZarrArray, ZarrGroup
@@ -503,7 +509,7 @@ class StorageValidatorV06(StorageValidator):
             is_matrix = isinstance(sub, (AffineTransformation, RotationTransformation))
             if not (is_matrix or isinstance(sub, _FIELDS)) or sub.path is None:
                 continue
-            node = self._find_parameters(holder, sub, sub_loc, in_scene, result)
+            node = self._find_parameters_v06(holder, sub, sub_loc, in_scene, result)
             if node is None:
                 continue
             # (the same parameters for the same dimensionality are checked once, e.g.
@@ -521,39 +527,18 @@ class StorageValidatorV06(StorageValidator):
                 )
         return result
 
-    def _find_parameters(
+    def _find_parameters_v06(
         self,
         holder: ZarrGroup,
-        t: Any,
+        t: _StoredParameters,
         loc: Loc,
         in_scene: bool,
         result: ValidationResult,
     ) -> ZarrGroup | ZarrArray | None:
         """Return the node at `t.path`, or add an error or warning."""
-        # (the spec only says "a location in this container": a path is resolved
-        # against the group whose metadata holds the transformation, as in the spec's
-        # examples. Like ngff-zarr, which refuses them on read and write, we reject a
-        # leading "/" and empty, "." or ".." segments: nothing defines what they'd
-        # point to)
-        path: str = t.path
-        ctx: dict = {"path": path}
-        if path.startswith("/") or any(p in ("", ".", "..") for p in path.split("/")):
-            result.add_error(
-                StorageErrorType.transform_parameters_invalid,
-                (*loc, "path"),
-                f"Path '{path}' (for {t.type}) must be a relative path inside the "
-                "group, with no empty, '.' or '..' segments",
-                ctx=ctx,
-            )
+        if (node := self._find_parameters(holder, t, loc, result)) is None:
             return None
-        if (node := holder.get(path)) is None:
-            result.add_error(
-                StorageErrorType.transform_parameters_not_found,
-                (*loc, "path"),
-                f"Path '{path}' (for {t.type}) not found",
-                ctx={**ctx, "fs_path": _build_fs_path(holder, path)},
-            )
-            return None
+        path = t.path or ""  # (set: `_find_parameters` found a node)
         if in_scene and path.split("/", 1)[0] != "coordinateTransformations":
             # For transformations that store data or parameters in a Zarr array, those
             # Zarr arrays SHOULD be stored in a Zarr group on the same level as images
@@ -563,7 +548,7 @@ class StorageValidatorV06(StorageValidator):
                 (*loc, "path"),
                 f"Parameters of {t.type} at '{path}' SHOULD be stored in the scene's "
                 "'coordinateTransformations' group",
-                ctx=ctx,
+                ctx={"path": path},
             )
         return node
 
@@ -583,19 +568,11 @@ class StorageValidatorV06(StorageValidator):
         expected: tuple[int | None, int | None] = (
             (n_out, None if n_in is None else n_in + 1) if is_affine else (n_in, n_in)
         )
-        shape = node.metadata.shape if isinstance(node, ZarrArray) else None
-        problem = None
-        if shape is None:
-            problem = "is not a Zarr array"
-        elif len(shape) != 2:
-            problem = f"has {len(shape)} dimensions, not 2"
-        elif not is_affine and shape[0] != shape[1]:
+        problem = _shape_problem(node, (None, None))
+        shape = cast("ZarrArray", node).metadata.shape if not problem else None
+        if shape is not None and not is_affine and shape[0] != shape[1]:
             problem = f"has shape {list(shape)}, which is not square"
-        elif any(
-            e is not None and e != s for e, s in zip(expected, shape, strict=False)
-        ):
-            want = "x".join("?" if e is None else str(e) for e in expected)
-            problem = f"has shape {list(shape)}, expected {want}"
+        problem = problem or _shape_problem(node, expected)
         if problem:
             result.add_error(
                 StorageErrorType.transform_parameters_invalid,

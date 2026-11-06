@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -9,8 +10,9 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from pydantic import ValidationError
 
-from yaozarrs._zarr import open_group
+from yaozarrs._zarr import _CachedMapper, open_group
 
 try:
     import zarr
@@ -28,7 +30,7 @@ try:
 except ImportError:
     connection_exceptions = ()
 
-from yaozarrs import validate_zarr_store
+from yaozarrs import v04, v05, validate_zarr_store
 from yaozarrs._errors import (
     ErrorDetails,
     StorageErrorType,
@@ -699,3 +701,146 @@ def test_validate_complex_ome_zarr_broken(
     assert len(err.value.errors()) == 14
 
     print(err.value)
+
+
+# ---------------------------------------------------------------------------
+# v0.4/v0.5 scale/translation "stored either as a list of floats (`scale`) or as
+# binary data at a location in this container (`path`)"
+# ---------------------------------------------------------------------------
+
+YX = [{"name": "y", "type": "space"}, {"name": "x", "type": "space"}]
+VERSIONS = pytest.mark.parametrize("mod", [v04, v05], ids=["v04", "v05"])
+
+
+@VERSIONS
+def test_transform_at_path_model(mod: Any) -> None:
+    ds = {"path": "0", "coordinateTransformations": [{"type": "scale", "path": "s"}]}
+    ms = mod.Multiscale(axes=YX, datasets=[ds])
+    (scale,) = ms.datasets[0].coordinateTransformations
+    assert scale.ndim is None
+    assert ms.model_dump(exclude_unset=True)["datasets"] == [ds]
+    # (an inline vector dumps as before, without `path`)
+    assert mod.ScaleTransformation(scale=[1, 2]).model_dump() == {
+        "type": "scale",
+        "scale": [1.0, 2.0],
+    }
+    for bad in ({"type": "scale"}, {"type": "scale", "scale": [1, 1], "path": "s"}):
+        with pytest.raises(ValidationError, match="requires exactly one of"):
+            mod.Dataset(path="0", coordinateTransformations=[bad])
+    # (the union is discriminated: one error, under the class name; and without
+    # `type`, as `DimSpec` writes them, the values tell which it is)
+    with pytest.raises(ValidationError) as e:
+        mod.Dataset(
+            path="0", coordinateTransformations=[{"type": "scale", "scale": [1]}]
+        )
+    (err,) = e.value.errors()
+    assert err["loc"] == (
+        "coordinateTransformations",
+        0,
+        "ScaleTransformation",
+        "scale",
+    )
+    ts = [{"scale": [1, 1]}, {"translation": [0, 0]}]
+    ds = mod.Dataset(path="0", coordinateTransformations=ts)
+    assert [t.type for t in ds.coordinateTransformations] == ["scale", "translation"]
+
+
+def _node_files(version: str, node: Any, dims: Any = None) -> dict[str, Any]:
+    """Metadata files of a group (`node`: its OME attributes) or array (its shape)."""
+    node = list(node) if isinstance(node, tuple) else node
+    if isinstance(node, dict):  # a group
+        if version == "0.4":
+            return {".zgroup": {"zarr_format": 2}, ".zattrs": node}
+        attrs = {"ome": {"version": "0.5", **node}} if node else {}
+        return {
+            "zarr.json": {"zarr_format": 3, "node_type": "group", "attributes": attrs}
+        }
+    if version == "0.4":
+        meta = {"zarr_format": 2, "shape": node, "chunks": node, "dtype": "<f8"}
+        extra = {"compressor": None, "fill_value": 0, "order": "C", "filters": None}
+        return {".zarray": {**meta, **extra}}
+    codecs = [{"name": "bytes", "configuration": {"endian": "little"}}]
+    meta = {"zarr_format": 3, "node_type": "array", "shape": node, "codecs": codecs}
+    grid = {"name": "regular", "configuration": {"chunk_shape": node}}
+    extra = {"data_type": "float64", "chunk_grid": grid, "fill_value": 0}
+    extra["chunk_key_encoding"] = {"name": "default"}
+    return {
+        "zarr.json": {**meta, **extra, **({"dimension_names": dims} if dims else {})}
+    }
+
+
+def _vector_store(
+    root: Path, version: str, vec: Any = (2,), *, path: str = "vec", where: str = "ds"
+) -> None:
+    """A YX image with its scale (`where="ds"`) or a translation of the multiscale
+    (`"ms"`) stored at `path`. `vec` is that array's shape, or {} for a group."""
+    stored = {"type": "scale" if where == "ds" else "translation", "path": path}
+    inline = {"type": "scale", "scale": [1, 1]}
+    ds = {
+        "path": "s0",
+        "coordinateTransformations": [stored if where == "ds" else inline],
+    }
+    ms: dict[str, Any] = {"axes": YX, "datasets": [ds]}
+    if where == "ms":
+        ms["coordinateTransformations"] = [inline, stored]
+    if version == "0.4":
+        ms["version"] = "0.4"
+    for name, node in {"": {"multiscales": [ms]}, "s0": [8, 8], "vec": vec}.items():
+        (root / name).mkdir(parents=True, exist_ok=True)
+        dims = ["y", "x"] if name == "s0" else None
+        for file, meta in _node_files(version, node, dims).items():
+            (root / name / file).write_text(json.dumps(meta))
+
+
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+@pytest.mark.parametrize(
+    "vec, where, problem",
+    [
+        ([2], "ds", None),
+        ([2], "ms", None),
+        ([3], "ds", "has shape [3], expected 2"),
+        ([3], "ms", "has shape [3], expected 2"),
+        ({}, "ds", "is not a Zarr array"),
+    ],
+)
+def test_vector_at_path_storage(
+    tmp_path: Path, version: str, vec: Any, where: str, problem: str | None
+) -> None:
+    _vector_store(tmp_path, version, vec, where=where)
+    if problem is None:
+        validate_zarr_store(tmp_path)
+        return
+    with pytest.raises(StorageValidationError, match=re.escape(problem)) as e:
+        validate_zarr_store(tmp_path)
+    loc = ("datasets", 0, "coordinateTransformations", 0, "path")
+    if where == "ms":
+        loc = ("coordinateTransformations", 1, "path")
+    prefix = ("ome", "multiscales", 0) if version == "0.5" else ("multiscales", 0)
+    assert [tuple(err["loc"]) for err in e.value.errors()] == [(*prefix, *loc)]
+
+
+# ("binary data at a location in this container": not necessarily a Zarr array in
+# this group, so a path that doesn't resolve to one only warns)
+@pytest.mark.parametrize("version", ["0.4", "0.5"])
+@pytest.mark.parametrize("path", ["../vec", "nope"])
+def test_unresolved_vector_path_warns(tmp_path: Path, version: str, path: str) -> None:
+    _vector_store(tmp_path, version, path=path)
+    with pytest.warns(StorageValidationWarning, match="isn't checked"):
+        validate_zarr_store(tmp_path)
+
+
+def test_vector_data_is_not_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _vector_store(tmp_path, "0.5")
+    read: list[str] = []
+    for name in ("get", "getitems"):
+        real = getattr(_CachedMapper, name)
+
+        def spy(self: Any, key: Any, *args: Any, _real: Any = real) -> Any:
+            read.extend([key] if isinstance(key, str) else key)
+            return _real(self, key, *args)
+
+        monkeypatch.setattr(_CachedMapper, name, spy)
+    validate_zarr_store(tmp_path)
+    assert {k for k in read if k.startswith("vec/")} == {"vec/zarr.json"}

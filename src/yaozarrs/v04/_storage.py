@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from yaozarrs._common._storage import Loc
-    from yaozarrs._zarr import ZarrArray
+    from yaozarrs._zarr import ZarrArray, ZarrGroup
 
 # Reusable TypeAdapter for validating v04 OME-ZARR metadata
 _OME_VALIDATOR = TypeAdapter(OMEZarrGroupJSON)
@@ -46,6 +46,17 @@ class StorageValidatorV04(StorageValidator):
     Well = Well
     Bf2Raw = Bf2Raw
     Series = Series
+
+    def _visit_multiscale_no_prefetch(
+        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
+    ) -> ValidationResult:
+        result = super()._visit_multiscale_no_prefetch(
+            zarr_group, multiscale, loc_prefix
+        )
+        # (a scale or translation vector may be stored in a Zarr array, at `path`)
+        return result.merge(
+            self._validate_vectors_at_path(zarr_group, multiscale, loc_prefix)
+        )
 
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
         # Convert mappingproxy to dict for discriminator
