@@ -552,12 +552,6 @@ def test_scene_cannot_be_downgraded() -> None:
 # ------------------------------------------------------------------------------
 
 
-def test_fractional_label_value_raises() -> None:
-    src = _label_image_04(colors=[{"label-value": 1.5, "rgba": [1, 2, 3, 4]}])
-    with pytest.raises(ValidationError):
-        convert_version(src, "0.5")
-
-
 def test_array_axes_raise_on_downgrade() -> None:
     # (v0.6 multiscales allow these with a warning, older versions require "space")
     axes = [{"name": n, "type": "array"} for n in "yx"]

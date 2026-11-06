@@ -39,11 +39,13 @@ class Bf2Raw(_OMEDocument):
         default="0.5",
         description="OME-NGFF specification version",
     )
-    bioformats2raw_layout: Literal[3] = Field(
-        default=3,
-        alias="bioformats2raw.layout",
-        description="Layout version marker added by bioformats2raw (currently 3)",
-    )
+    bioformats2raw_layout: Annotated[
+        Literal[3],
+        Field(
+            alias="bioformats2raw.layout",
+            description="Layout version marker added by bioformats2raw (currently 3)",
+        ),
+    ] = 3
 
 
 class Series(_OMEDocument):

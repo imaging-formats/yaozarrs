@@ -9,6 +9,10 @@
   string literals (i.e. it may not branch on version: "fork, don't flag").
 - `yaozarrs.write._common` is the same for the writers: no version modules, and no
   version string literals.
+- A field alias goes inside `Annotated` (`x: Annotated[int, Field(alias="x-y")]`),
+  never in an assigned `Field` (`x: int = Field(alias="x-y")`): type checkers
+  (PEP 681) take the latter's alias as the `__init__` parameter name, so `Model(x=1)`
+  is flagged.
 """
 
 from __future__ import annotations
@@ -90,3 +94,16 @@ def test_common_has_no_version_literals(path: Path) -> None:
         and VERSION_LITERAL.fullmatch(node.value)
     ]
     assert not literals, f"{_module_name(path)} contains version literals: {literals}"
+
+
+@pytest.mark.parametrize("path", PY_FILES, ids=[_module_name(p) for p in PY_FILES])
+def test_no_alias_in_assigned_field(path: Path) -> None:
+    bad = [
+        node.lineno
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.value, ast.Call)
+        and getattr(node.value.func, "id", None) == "Field"
+        and any(kw.arg == "alias" for kw in node.value.keywords)
+    ]
+    assert not bad, f"{_module_name(path)}: move `alias` into `Annotated` (lines {bad})"
