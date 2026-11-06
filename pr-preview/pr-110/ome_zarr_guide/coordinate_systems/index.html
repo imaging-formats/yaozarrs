@@ -1070,7 +1070,7 @@ this: <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symb
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> handles it
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>Multiscale.from_dims</code></a> handles it
 for you.  Read on when you need to place images relative to each other,
 line up labels, register images, or just want to understand what you're
 looking at.</p>
@@ -1099,7 +1099,7 @@ here), and the order of the axes is the order of the numbers in each point.</p>
 <ul>
 <li><strong>In an image</strong> (required): each multiscale lists its coordinate systems under
   <code>coordinateSystems</code>.  This replaces the <code>axes</code> field of v0.5.</li>
-<li><strong>In a scene</strong> (optional): a <a href="../#working-with-scenes">scene</a>
+<li><strong>In a scene</strong> (optional): a <a data-preview href="../#working-with-scenes">scene</a>
   may define its own, e.g. a shared "stage" or "world" coordinate system that
   several images are placed into.</li>
 </ul>
@@ -1236,9 +1236,9 @@ to you.  (The spec's examples mostly use <code>physical</code> or <code>intrinsi
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> uses <code>"intrinsic"</code>
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>Multiscale.from_dims</code></a> uses <code>"intrinsic"</code>
 unless you pass <code>coordinate_system=...</code>).</p>
-<p>The rules for these dataset transformations are listed under <a href="../#coordinate-transformations">Coordinate
+<p>The rules for these dataset transformations are listed under <a data-preview href="../#coordinate-transformations">Coordinate
 Transformations</a> in the guide.</p>
 <h3 id="where-is-a-pixel">Where is a pixel?<a class="headerlink" href="#where-is-a-pixel" title="Link to this section">#</a></h3>
 <p>Level <code>1</code> above has a translation of <code>0.25</code> because of this convention:</p>
@@ -1265,9 +1265,9 @@ center is, and toggle the translation to see what happens without it.</p>
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a> adds this
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>Multiscale.from_dims</code></a> adds this
 translation to every downsampled level, using the <code>scale_factor</code> of each
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.DimSpec"><code>DimSpec</code></a>.  That's right for common downsampling
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.DimSpec" data-preview><code>DimSpec</code></a>.  That's right for common downsampling
 methods like binning; if your pyramid was made differently, adjust it.</p>
 </div>
 <hr />
@@ -1308,7 +1308,7 @@ system for the corrected geometry:</p>
   system (by <code>name</code>).</li>
 <li>The other side <strong>MUST</strong> be either another coordinate system of the same
   multiscale (by <code>name</code>), or the coordinate system of a label image in the
-  image's <code>labels</code> group (by <code>name</code> and <code>path</code>, see <a href="../#lining-labels-up-with-the-image-v06">lining labels up with
+  image's <code>labels</code> group (by <code>name</code> and <code>path</code>, see <a data-preview href="../#lining-labels-up-with-the-image-v06">lining labels up with
   the image</a>).</li>
 <li>A transformation to a label image <strong>MUST</strong> be an <code>identity</code>, <code>scale</code>,
   <code>translation</code>, or a <code>sequence</code> of a scale and a translation.</li>
@@ -1320,7 +1320,7 @@ intrinsic coordinate system: there are no chains like
 <hr />
 <h2 id="between-images-scenes">Between images: scenes<a class="headerlink" href="#between-images-scenes" title="Link to this section">#</a></h2>
 <p>Transformations between <em>different</em> images live in a
-<a href="../#working-with-scenes">scene</a>: a group whose <code>zarr.json</code> has a
+<a data-preview href="../#working-with-scenes">scene</a>: a group whose <code>zarr.json</code> has a
 <code>scene</code> object, with the images as subgroups.  Scene transformations refer to
 each image's coordinate systems by <code>name</code> <em>and</em> <code>path</code> (the image's path within
 the scene), and to the scene's own coordinate systems by <code>name</code> alone:</p>
@@ -1424,13 +1424,13 @@ same coordinate system):</p>
 <p>Things that need the rest of the hierarchy (that a <code>path</code> points to a real
 image, that the graph is connected across a scene, that an <code>affine</code> stored in a
 Zarr array has the right shape...) are checked by
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store"><code>yaozarrs.validate_zarr_store</code></a>.</p>
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>yaozarrs.validate_zarr_store</code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Disconnected coordinate systems in a single image</p>
 <p>The "connected graph" rule is about the multiscales and the scene metadata
 <em>combined</em>, so a scene could link two coordinate systems of an image that
 the image itself doesn't.  For that reason, when
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store"><code>validate_zarr_store</code></a> checks an image on
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>validate_zarr_store</code></a> checks an image on
 its own (not as part of a scene), it only <em>warns</em> about coordinate
 systems that aren't linked to anything; inside a scene, it's an error.</p>
 </div>

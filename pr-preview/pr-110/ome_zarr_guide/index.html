@@ -1290,7 +1290,7 @@ or more of these under <code>coordinateSystems</code>.  (The <em>why</em> is exp
 <li><strong><code>longName</code></strong> (optional): a longer name or description of the axis.</li>
 <li><strong>More suggested <code>type</code>s</strong>: besides <code>space</code>, <code>time</code> and <code>channel</code>, the
   spec now lists <code>array</code>, <code>coordinate</code> and <code>displacement</code> (the latter two
-  are used by <a href="coordinate_systems/#transformation-types">vector fields</a>).
+  are used by <a data-preview href="coordinate_systems/#transformation-types">vector fields</a>).
   Other strings are still allowed for custom types.</li>
 <li>Axis names <strong>MUST</strong> be non-empty, and unique <em>within their coordinate
   system</em>.</li>
@@ -1359,7 +1359,7 @@ to physical coordinates, but now it explicitly says <em>where</em> it maps from 
 to: its <code>input</code> is the dataset's array (by <code>path</code>), and its <code>output</code> is a
 coordinate system of the multiscale (by <code>name</code>).  Every dataset maps into
 the <em>same</em> coordinate system, which the spec calls the image's
-<a href="coordinate_systems/#the-intrinsic-coordinate-system">"intrinsic" coordinate
+<a data-preview href="coordinate_systems/#the-intrinsic-coordinate-system">"intrinsic" coordinate
 system</a>.</p>
 <p><strong>Scale Transformation:</strong></p>
 <p><strong>Spec JSON:</strong></p>
@@ -1449,9 +1449,9 @@ translation, wrap both in a single <code>sequence</code> transformation (scale f
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt;" href="../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>v06.Multiscale.from_dims</code></a> builds
+  &lt;/span&gt;" href="../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>v06.Multiscale.from_dims</code></a> builds
 the coordinate system and every level's transformation for you (see
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.DimSpec"><code>DimSpec</code></a>).</p>
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.DimSpec" data-preview><code>DimSpec</code></a>).</p>
 </div>
 <div class="admonition info">
 <p class="admonition-title"><code>dimension_names</code> are no longer required</p>
@@ -1756,7 +1756,7 @@ optional transformation, but doesn't have to.)</p>
 </div>
 </details>
 <h3 id="lining-labels-up-with-the-image-v06">Lining labels up with the image (v0.6)<a class="headerlink" href="#lining-labels-up-with-the-image-v06" title="Link to this section">#</a></h3>
-<p>By default, a label image's <a href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
+<p>By default, a label image's <a data-preview href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
 system</a> is "usually
 understood to be the same" as its image's.  In v0.6, you can also link the two
 when they <em>aren't</em> the same.  Say a
@@ -2332,7 +2332,7 @@ contain <code>coordinateSystems</code> of its own.  Here, two tiles are placed i
 <p>Each <code>input</code> and <code>output</code> refers to a coordinate system by <code>name</code>:</p>
 <ul>
 <li>With a <code>path</code>, it's a coordinate system of the image at that <code>path</code>
-  (relative to the scene group).  Here, <code>physical</code> is the <a href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
+  (relative to the scene group).  Here, <code>physical</code> is the <a data-preview href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
   system</a> of each tile.</li>
 <li>Without a <code>path</code>, it's one of the scene's own <code>coordinateSystems</code> (here,
   <code>stage</code>).</li>
@@ -2365,7 +2365,7 @@ shifted by 270 µm along x, is that point's position on the stage".</p>
 </code></pre></div>
 <details class="example">
 <summary>Writing it (with data)</summary>
-<p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;write_scene&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.write_scene"><code>write_scene</code></a> writes the scene group and
+<p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;write_scene&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.write_scene" data-preview><code>write_scene</code></a> writes the scene group and
 all of its images at once, after checking that the scene and the images fit
 together:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -2389,7 +2389,7 @@ together:</p>
 <span class="n">write_scene</span><span class="p">(</span><span class="s2">"mosaic.zarr"</span><span class="p">,</span> <span class="n">scene</span><span class="p">,</span> <span class="p">{</span><span class="s2">"tile_0"</span><span class="p">:</span> <span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">data</span><span class="p">),</span> <span class="s2">"tile_1"</span><span class="p">:</span> <span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">data</span><span class="p">)})</span>
 </code></pre></div>
 <p>For bigger scenes (or to write data piece by piece), see
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;SceneBuilder&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.SceneBuilder"><code>SceneBuilder</code></a>.</p>
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;SceneBuilder&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.SceneBuilder" data-preview><code>SceneBuilder</code></a>.</p>
 </details>
 <div class="admonition warning">
 <p class="admonition-title">Scene rules</p>
@@ -2512,7 +2512,7 @@ the images.</p>
 </tbody>
 </table>
 <p>To convert metadata models between v0.4, v0.5 and v0.6, see
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.convert_version"><code>yaozarrs.convert_version</code></a>.</p>
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.convert_version" data-preview><code>yaozarrs.convert_version</code></a>.</p>
 <hr />
 <h2 id="additional-resources">Additional Resources<a class="headerlink" href="#additional-resources" title="Link to this section">#</a></h2>
 <ul>
