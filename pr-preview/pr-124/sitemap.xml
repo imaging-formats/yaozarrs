@@ -37,13 +37,13 @@
         <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-003/</loc>
       </url>
       <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-004/</loc>
+      </url>
+      <url>
         <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-005/</loc>
       </url>
       <url>
         <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-006/</loc>
-      </url>
-      <url>
-        <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-007/</loc>
       </url>
       <url>
         <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-AX-001/</loc>
@@ -746,6 +746,9 @@
       </url>
       <url>
         <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-WL-015/</loc>
+      </url>
+      <url>
+        <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-WL-016/</loc>
       </url>
       <url>
         <loc>https://imaging-formats.github.io/yaozarrs/rules/YZ-ZR-001/</loc>

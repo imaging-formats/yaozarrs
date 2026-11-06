@@ -12,7 +12,7 @@
         <meta name="author" content="Talley Lambert">
       
       
-        <link rel="canonical" href="https://imaging-formats.github.io/yaozarrs/rules/YZ-007/">
+        <link rel="canonical" href="https://imaging-formats.github.io/yaozarrs/rules/YZ-004/">
       
       
       
@@ -26,7 +26,7 @@
     
     
       
-        <title>YZ-007: transform-path-relative - YAOZARRS ‼️</title>
+        <title>YZ-004: version-prerelease - YAOZARRS ‼️</title>
       
     
     
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              YZ-007: transform-path-relative
+              YZ-004: version-prerelease
             
           </span>
         </div>
@@ -637,9 +637,9 @@
   
 
 
-<h1 id="yz-007-transform-path-relative">YZ-007: <code>transform-path-relative</code><a class="headerlink" href="#yz-007-transform-path-relative" title="Link to this section">#</a></h1>
+<h1 id="yz-004-version-prerelease">YZ-004: <code>version-prerelease</code><a class="headerlink" href="#yz-004-version-prerelease" title="Link to this section">#</a></h1>
 <blockquote>
-<p>The <code>path</code> of a transformation's parameters must be a relative path with no empty, <code>.</code> or <code>..</code> segments.</p>
+<p>The document declares a pre-release of a spec version.</p>
 </blockquote>
 <table>
 <thead>
@@ -655,7 +655,7 @@
 </tr>
 <tr>
 <td><strong>yaozarrs severity</strong></td>
-<td>error</td>
+<td>warning</td>
 </tr>
 <tr>
 <td><strong>Status</strong></td>
@@ -672,7 +672,7 @@
 </tbody>
 </table>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
-<p>The 0.6 spec only says "a location in this container". Like ngff-zarr, yaozarrs rejects paths whose meaning nothing defines.</p>
+<p>The 0.6 schema accepts the release candidate <code>0.6rc0</code>. <code>0.6.dev4</code> isn't in the schema, but much of the 0.6 data written so far uses it.</p>
 
 
 

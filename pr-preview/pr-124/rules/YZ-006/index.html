@@ -26,7 +26,7 @@
     
     
       
-        <title>YZ-006: version-unsupported - YAOZARRS ‼️</title>
+        <title>YZ-006: transform-path-relative - YAOZARRS ‼️</title>
       
     
     
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              YZ-006: version-unsupported
+              YZ-006: transform-path-relative
             
           </span>
         </div>
@@ -583,6 +583,11 @@
                       
                     
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -594,6 +599,25 @@
   
     
   
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Notes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -613,9 +637,9 @@
   
 
 
-<h1 id="yz-006-version-unsupported">YZ-006: <code>version-unsupported</code><a class="headerlink" href="#yz-006-version-unsupported" title="Link to this section">#</a></h1>
+<h1 id="yz-006-transform-path-relative">YZ-006: <code>transform-path-relative</code><a class="headerlink" href="#yz-006-transform-path-relative" title="Link to this section">#</a></h1>
 <blockquote>
-<p>The document or store declares an OME-Zarr version that yaozarrs does not know.</p>
+<p>The <code>path</code> of a transformation's parameters must be a relative path with no empty, <code>.</code> or <code>..</code> segments.</p>
 </blockquote>
 <table>
 <thead>
@@ -647,6 +671,8 @@
 </tr>
 </tbody>
 </table>
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
+<p>The 0.6 spec only says "a location in this container". Like ngff-zarr, yaozarrs rejects paths whose meaning nothing defines.</p>
 
 
 
