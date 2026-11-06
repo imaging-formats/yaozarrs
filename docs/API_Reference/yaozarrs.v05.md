@@ -1,8 +1,8 @@
 # <code class="doc-symbol-module"></code> `yaozarrs.v05`
 
-Specification: <https://ngff.openmicroscopy.org/0.5/>
+Specification: <https://ngff.openmicroscopy.org/specifications/0.5/>
 
-Schema: <https://github.com/ome/ngff/tree/8cbba216e37407bd2d4bd5c7128ab13bd0a6404e>
+Schema: <https://github.com/ome/ngff-spec/tree/6ecbc9d3c88f856540926ceba04eb734659de2d0/schemas>
 
 
 ## Images

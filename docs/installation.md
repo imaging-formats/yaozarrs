@@ -60,7 +60,7 @@ This brings in [`fsspec`](https://github.com/fsspec/filesystem_spec) (but not za
 ## Writing support
 
 If you want to use the convenience functions in
-[`yaozarrs.write`](./API_Reference/yaozarrs.write.v05.md), to create
+[`yaozarrs.write`](./writing.md), to create
 complete OME-Zarr stores with array data, you will need to pick a zarr-array
 library:
 
@@ -106,4 +106,4 @@ library:
 - ### Custom backend
 
     If you don't want to use either of the provided backends, you can
-    [implement your own array-writing functionality](./API_Reference/yaozarrs.write.v05.md#custom-writers)
+    [implement your own array-writing functionality](./writing.md#custom-writers)

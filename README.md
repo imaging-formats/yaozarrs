@@ -343,7 +343,7 @@ yaozarrs.validate_zarr_store(HTTPStore(url))
 A mapping holds only what's inside the store, so a label's `image-source` or a
 `Series`' parent group that lies outside it is skipped with a warning rather
 than checked. See [Doing the IO
-yourself](https://imaging-formats.github.io/yaozarrs/#doing-the-io-yourself) in
+yourself](https://imaging-formats.github.io/yaozarrs/#do-the-io-yourself) in
 the docs.
 
 ### Layer 3: array data
@@ -356,7 +356,7 @@ whichever backend you choose:
 - `tensorstore`: `pip install "yaozarrs[write-tensorstore]"`
 - your own: any function that creates an array and returns an object supporting
   numpy-style assignment (see
-  [custom writers](https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs.write.v05/#custom-writers))
+  [custom writers](https://imaging-formats.github.io/yaozarrs/writing/#custom-writers))
 
 #### Write OME-Zarr stores
 
@@ -397,7 +397,7 @@ up front, or want more control over how it's written, use the builders
   by chunk, or in parallel). `prepare_image()` does the same for a single
   image.
 
-See the [writing docs](https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs.write.v05/)
+See the [writing docs](https://imaging-formats.github.io/yaozarrs/writing/)
 for details.
 
 #### Open zarr arrays using zarr-python or tensorstore

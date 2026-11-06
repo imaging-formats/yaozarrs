@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 __all__ = ["ConversionWarning", "convert_version"]
 
-Version: TypeAlias = Literal["0.4", "0.5", "0.6"]
 
 _PACKAGES = {"0.4": v04, "0.5": v05, "0.6": v06}
 _ORDER = tuple(_PACKAGES)
@@ -375,7 +374,10 @@ def convert_version(obj: _Attributes, version: _05, *, coordinate_system: str = 
 def convert_version(obj: _Attributes, version: _06, *, coordinate_system: str = ...) -> v06.OMEAttributes: ...  # noqa: E501
 # fmt: on
 def convert_version(
-    obj: Any, version: Version, *, coordinate_system: str = "intrinsic"
+    obj: Any,
+    version: Literal["0.4", "0.5", "0.6"],
+    *,
+    coordinate_system: str = "intrinsic",
 ) -> Any:
     """Convert an OME-Zarr metadata model to another version of the spec.
 
