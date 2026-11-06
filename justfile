@@ -65,3 +65,8 @@ clean: clean-cov
     rm -rf *.egg-info/
     find . -type d -name __pycache__ -exec rm -rf {} +
     find . -type f -name "*.pyc" -delete
+
+# Build the docs (including the generated rule pages)
+docs:
+    uv run --group docs python scripts/ngff_rules.py docs
+    uv run --group docs zensical build --clean

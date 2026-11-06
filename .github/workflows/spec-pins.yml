@@ -1,0 +1,49 @@
+name: Spec pins
+
+# The pinned NGFF specs (rules.toml) must be the commits ngff.openmicroscopy.org
+# publishes. If one moved, open (or update) an issue.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-spec-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Compare the pins with the published site
+        shell: bash # (with pipefail, so `tee` keeps the exit code)
+        run: uv run --no-dev python scripts/ngff_rules.py site 2>&1 | tee site.txt
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Open or update an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="NGFF spec pin check failed"
+          output=$(cat site.txt 2>/dev/null || echo "(no output: see the run)")
+          body=$(cat <<EOF
+          \`scripts/ngff_rules.py site\` failed in $RUN_URL:
+
+          \`\`\`
+          $output
+          \`\`\`
+
+          If a pin moved, see "Workflow: the published spec changed" in \`.claude/skills/ngff-rules/SKILL.md\`.
+          EOF
+          )
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

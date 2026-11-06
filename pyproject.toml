@@ -7,6 +7,10 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.targets.wheel]
+# (only the scripts and tests use it; the sdist keeps it)
+exclude = ["src/yaozarrs/_rules/skipped.toml"]
+
 # https://peps.python.org/pep-0621/
 [project]
 name = "yaozarrs"
@@ -46,7 +50,7 @@ write-tensorstore = [
 write-zarrs = ["zarrs>=0.1.5"]
 
 [dependency-groups]
-test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
+test = ["packaging>=23.0", "pytest>=7.4.0", "pytest-cov>=4.0.0"]
 test-full = [
     { include-group = "test" },
     "numpy>=2.3.2; python_version >= '3.14'",          # needed for creating test data to write
@@ -56,6 +60,7 @@ test-full = [
     "ome-zarr>=0.16,<0.17",
 ]
 docs = [
+    "fsspec>=2025.0",  # for rule coverage of store examples
     "griffe-fieldz>=0.4.0",
     "mkdocstrings-python>=2.0.1",
     "ruff>=0.14.8",
@@ -73,6 +78,7 @@ dev = [
     "pytest-xdist>=3.8.0",
     "rich>=14.1.0",
     "ruff>=0.13.1",
+    "tomlkit>=0.13.2",
     # bump me when running `prek autoupdate`
     "ty==0.0.85",
 ]
