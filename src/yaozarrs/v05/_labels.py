@@ -88,7 +88,10 @@ class LabelImage(Image):
         but contain integer segmentation masks instead of intensity data.
     """
 
-    image_label: ImageLabel = Field(
-        alias="image-label",
-        description="Label-specific metadata (colors, properties, source link)",
-    )
+    image_label: Annotated[
+        ImageLabel,
+        Field(
+            alias="image-label",
+            description="Label-specific metadata (colors, properties, source link)",
+        ),
+    ]
