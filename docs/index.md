@@ -27,7 +27,7 @@ writing functions added via [optional extras](./installation.md).
 
 ## API Quick Reference
 
-### Metadata Creation
+### Create metadata
 
 You can create OME-Zarr metadata objects using the pydantic models in
 `yaozarrs.v04`, `yaozarrs.v05` and `yaozarrs.v06` modules.  Pick a top-level object (e.g.
@@ -218,7 +218,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
 === "`DimSpec` Convenience"
 
     For the common case of creating multiscale images, you can use the
-    [`yaozarrs.DimSpec`][] convenience class to simplify axis and transformation
+    [`yaozarrs.DimSpec`][]{ data-preview } convenience class to simplify axis and transformation
     creation.  It hides the differences between versions: the same code works
     for `v04`, `v05` and `v06`.
 
@@ -252,7 +252,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
 
 ------------
 
-### Validation of existing objects
+### Validate metadata
 
 If you have an existing JSON file, string, or python object, you can
 validate it and cast it to the appropriate typed `yaozarrs` model:
@@ -267,15 +267,10 @@ yaozarrs.validate_ome_json(json_str)  # (1)!
 
 # validate any python object (e.g. dict)
 yaozarrs.validate_ome_object(dict_obj)  # (2)!
-
-# validate entire Zarr hierarchy (both metadata and structure) at any URI
-yaozarrs.validate_zarr_store(uri)  # (3)!
 ```
 
-1. [`yaozarrs.validate_ome_json`][]
-2. [`yaozarrs.validate_ome_object`][]
-3. [`yaozarrs.validate_zarr_store`][]. Requires the `yaozarrs[io]`
-   extra to support remote URIs.
+1. [`yaozarrs.validate_ome_json`][]{ data-preview }
+2. [`yaozarrs.validate_ome_object`][]{ data-preview }
 
 ???note "Keys the spec doesn't define"
 
@@ -284,6 +279,38 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
     so yaozarrs keeps them: they're in each model's `model_extra`, and
     `model_dump()` / `model_dump_json()` write them back out. So a misspelled
     *optional* key is (unfortunately) kept as an unknown key, not reported.
+
+### Convert between versions
+
+[`yaozarrs.convert_version`][]{ data-preview } converts any metadata model to another version of
+the spec, keeping its kind (an `Image` stays an `Image`):
+
+```python
+from yaozarrs import DimSpec, convert_version, v04
+
+dims = [DimSpec(name="y", size=64), DimSpec(name="x", size=64)]
+image = v04.Image(multiscales=[v04.Multiscale.from_dims(dims)])
+
+print(type(convert_version(image, "0.6")))
+# <class 'yaozarrs.v06._image.Image'>
+```
+
+Metadata that the target version can't express is dropped with a
+`ConversionWarning`.  This converts metadata only: no store is read or written.
+
+### Open and validate a store
+
+[`yaozarrs.validate_zarr_store`][]{ data-preview } validates an entire Zarr hierarchy (both
+metadata and structure) at any URI.  Local paths need `fsspec`, and remote URIs
+need the [`yaozarrs[io]` extra](./installation.md#structural-validation){ data-preview }.
+
+<!-- no-test -->
+
+```python
+import yaozarrs
+
+yaozarrs.validate_zarr_store(uri)
+```
 
 ???tip "Storage Validation Errors"
 
@@ -303,7 +330,7 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
     ```
 
     ```txt
-    yaozarrs.StorageValidationError: 14 validation error(s) for StorageValidationError
+    yaozarrs.StorageValidationError: 13 validation error(s) for StorageValidationError
     ome.plate.wells.0.well.images.0.multiscales.0.datasets.0.path
     Dataset path '0' not found in zarr group [type=dataset_path_not_found, fs_path='broken_v05.ome.zarr/A/1/0/0', expected='zarr array']
 
@@ -331,9 +358,6 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
     ome.plate.wells.4.well.images.0.multiscales.0.datasets.0.path
     Dataset path '0' exists but is not a zarr array [type=dataset_not_array, fs_path='broken_v05.ome.zarr/B/2/0/0', expected='array', found='group']
 
-    ome.plate.wells.4.well.images.1.multiscales.0.datasets.0.path.dimension_names
-    Array dimension_names ['wrong', 'names', 'here'] don't match axes names ['c', 'y', 'x'] [type=dimension_names_mismatch, expected=['c', 'y', 'x'], actual=['wrong', 'names', 'here']]
-
     ome.plate.wells.5.well.images.0.labels
     Found 'labels' path but it is a <class 'yaozarrs._zarr.ZarrArray'>, not a zarr group [type=labels_not_group, expected='group', found='ZarrArray']
 
@@ -357,7 +381,96 @@ yaozarrs.validate_zarr_store(uri)  # (3)!
         For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found
     ```
 
-### Doing the IO yourself
+[`yaozarrs.open_group`][]{ data-preview } returns a small wrapper around a zarr group with
+minimal functionality: [`yaozarrs.ZarrGroup`][]{ data-preview }.  This class is used behind
+the scenes for structural validation, but can also be used directly.
+
+<!-- no-test -->
+
+```python
+import yaozarrs
+
+# Open a Zarr group at any URI
+group = yaozarrs.open_group(uri)
+print(group.ome_metadata())  # (1)!
+child = group["0"]  # (2)!
+```
+
+1. [`ZarrGroup.ome_metadata`][yaozarrs._zarr.ZarrGroup.ome_metadata] attempts to
+   extract and validate OME-Zarr metadata from the opened group, returning the
+   appropriate typed yaozarrs model (e.g. `yaozarrs.v05.Image`, etc..).
+2. Access arrays and sub-groups using standard dictionary-like syntax. Returns
+   [`ZarrArray`][yaozarrs._zarr.ZarrArray] or [`ZarrGroup`][yaozarrs._zarr.ZarrGroup]
+
+You can also get a tree view of the hierarchy programmatically with
+[`ZarrGroup.tree()`][yaozarrs._zarr.ZarrGroup.tree]{ data-preview }:
+
+<!-- no-test -->
+
+```python
+print(group.tree(depth=2))
+```
+
+### From the command line
+
+`yaozarrs validate` checks that a store is valid OME-Zarr, both its metadata and its
+structure.  The store can be any URI (a local path, an http(s) URL, or an s3 URL).
+
+!!!important
+    Requires `fsspec`, or `pip install "yaozarrs[io]"` for http(s) and s3 URLs.
+
+=== "with uvx"
+
+    ```sh
+    uvx "yaozarrs[io]" validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+    ```
+
+=== "from installed package"
+
+    ```sh
+    yaozarrs validate https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+    ```
+
+```sh
+✓ Valid OME-Zarr store
+  Version: 0.5
+  Type: Image
+```
+
+`yaozarrs tree` shows the hierarchy of any OME-Zarr store:
+
+=== "with uvx"
+
+    ```sh
+    uvx "yaozarrs[io]" tree https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+    ```
+
+=== "from installed package"
+
+    ```sh
+    yaozarrs tree https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
+    ```
+
+```
+🖼️ 6001240_labels.zarr
+├── zarr.json  <- v05.Image
+├── 📦 0 (uint16, (2, 236, 275, 271))
+├── 📦 1 (uint16, (2, 236, 137, 135))
+├── 📦 2 (uint16, (2, 236, 68, 67))
+└── 🏷️ labels
+    ├── zarr.json  <- v05.LabelsGroup
+    └── 🖼️ 0
+        ├── zarr.json  <- v05.LabelImage
+        ├── 📦 0 (int8, (1, 236, 275, 271))
+        ├── 📦 1 (int8, (1, 236, 137, 135))
+        ├── 📦 2 (int8, (1, 236, 68, 67))
+        └── 📦 3 (int8, (1, 236, 34, 33))
+```
+
+Use `--depth` / `-d` to limit traversal depth, and `--max-per-level` / `-n` to
+cap the number of children shown at each level.
+
+### Do the IO yourself
 
 Validation never reads array data, and only the parts that compare documents need to
 read anything at all:
@@ -419,140 +532,13 @@ yaozarrs.validate_zarr_store(store)
     Anything that needs a URI (`store_path`, `to_zarr_python()` and
     `to_tensorstore()`) raises a `TypeError` for these stores.
 
-### Writing OME-Zarr Stores
-
-See [Writing OME-Zarr](./writing.md) for functions to write OME-Zarr v0.5 and
-v0.6 stores from your metadata objects, with either `zarr-python`,
-`tensorstore`, or custom backends.
-
-<!-- no-test -->
-
-```python
-import numpy as np
-
-from yaozarrs import write
-
-# write a 5D image with single pyramid level
-data = np.zeros((10, 3, 9, 64, 64), dtype=np.uint16)
-root_path = write.v06.write_image("example.ome.zarr", image, data)
-
-# other high level write functions
-write.v06.write_plate(...)
-write.v06.write_bioformats2raw(...)
-write.v06.write_scene(...)  # v0.6 only
-
-# low-level prepare/builder functions
-write.v06.prepare_image(...)
-write.v06.LabelsBuilder(...)
-write.v06.PlateBuilder(...)
-write.v06.Bf2RawBuilder(...)
-write.v06.SceneBuilder(...)  # v0.6 only
-
-# write.v05 has the same functions (for v05 models), except for scenes
-```
-
-### CLI validation
-
-The CLI command provides a quick way to validate any zarr store as an OME-Zarr
-store.  Here, "store" refers to any URI (local path, http(s) url, or s3 url.
-
-!!!important
-    Requires `fsspec`. install with `pip install yaozarrs[io]`
-
-=== "with uvx"
-
-    ```sh
-    uvx "yaozarrs[io]" validate https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
-    ```
-
-=== "from installed package"
-
-    ```sh
-    yaozarrs validate https://raw.githubusercontent.com/imaging-formats/yaozarrs/refs/heads/main/tests/data/broken/broken_v05.ome.zarr/
-    ```
-
-```sh
-✓ Valid OME-Zarr store
-  Version: 0.5
-  Type: Image
-```
-
-### CLI tree view
-
-Visualize the hierarchy of any OME-Zarr store with `yaozarrs tree`:
-
-=== "with uvx"
-
-    ```sh
-    uvx "yaozarrs[io]" tree https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
-    ```
-
-=== "from installed package"
-
-    ```sh
-    yaozarrs tree https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr
-    ```
-
-```
-🖼️ 6001240_labels.zarr
-├── zarr.json  <- v05.Image
-├── 📦 0 (uint16, (2, 236, 275, 271))
-├── 📦 1 (uint16, (2, 236, 137, 135))
-├── 📦 2 (uint16, (2, 236, 68, 67))
-└── 🏷️ labels
-    ├── zarr.json  <- v05.LabelsGroup
-    └── 🖼️ 0
-        ├── zarr.json  <- v05.LabelImage
-        ├── 📦 0 (int8, (1, 236, 275, 271))
-        ├── 📦 1 (int8, (1, 236, 137, 135))
-        ├── 📦 2 (int8, (1, 236, 68, 67))
-        └── 📦 3 (int8, (1, 236, 34, 33))
-```
-
-Use `--depth` / `-d` to limit traversal depth, and `--max-per-level` / `-n` to
-cap the number of children shown at each level.
-
-### Loading OME-Zarr Stores
-
-[`yaozarrs.open_group`][] returns a small wrapper around a zarr group with
-minimal functionality: [`yaozarrs.ZarrGroup`][].  Requires the [`yaozarrs[io]`
-extra](./installation.md#structural-validation) to support remote URIs.  This
-class is used behind the scenes for structural validation, but can also be used
-directly.
-
-<!-- no-test -->
-
-```python
-import yaozarrs
-
-# Open a Zarr group at any URI
-group = yaozarrs.open_group(uri)
-print(group.ome_metadata())  # (1)!
-child = group["0"]  # (2)!
-```
-
-1. [`ZarrGroup.ome_metadata`][yaozarrs._zarr.ZarrGroup.ome_metadata] attempts to
-   extract and validate OME-Zarr metadata from the opened group, returning the
-   appropriate typed yaozarrs model (e.g. `yaozarrs.v05.Image`, etc..).
-2. Access arrays and sub-groups using standard dictionary-like syntax. Returns
-   [`ZarrArray`][yaozarrs._zarr.ZarrArray] or [`ZarrGroup`][yaozarrs._zarr.ZarrGroup]
-
-You can also get a tree view of the hierarchy programmatically with
-[`ZarrGroup.tree()`][yaozarrs._zarr.ZarrGroup.tree]:
-
-<!-- no-test -->
-
-```python
-print(group.tree(depth=2))
-```
-
-#### Access array data
+### Read array data
 
 This package does *not* depend on `zarr` or `tensorstore`, even for validating
 OME-Zarr stores. (It uses a minimal representation of a zarr group internally,
 backed by `fsspec`.)  If you *would* like to actually open arrays, you can use
-either [`ZarrArray.to_tensorstore`][yaozarrs._zarr.ZarrArray.to_tensorstore] or
-[`ZarrArray.to_zarr_python`][yaozarrs._zarr.ZarrArray.to_zarr_python] to cast an
+either [`ZarrArray.to_tensorstore`][yaozarrs._zarr.ZarrArray.to_tensorstore]{ data-preview } or
+[`ZarrArray.to_zarr_python`][yaozarrs._zarr.ZarrArray.to_zarr_python]{ data-preview } to cast an
 array node to a full zarr array using your preferred backend.
 
 !!!important
@@ -571,6 +557,43 @@ array = group["0"]
 # read bytes using tensorstore or zarr-python:
 ts_array = array.to_tensorstore()  # isinstance(ts_array, tensorstore.TensorStore)
 zarr_array = array.to_zarr_python()  # isinstance(zarr_array, zarr.Array)
+```
+
+### Write a store
+
+See [Writing OME-Zarr](./writing.md) for functions to write OME-Zarr v0.5 and
+v0.6 stores from your metadata objects, with either `zarr-python`,
+`tensorstore`, or custom backends.
+
+<!-- no-test -->
+
+```python
+import numpy as np
+
+from yaozarrs import DimSpec, v06, write
+
+dims = [
+    DimSpec(name="z", scale=0.3, unit="micrometer"),
+    DimSpec(name="y", scale=0.1, unit="micrometer"),
+    DimSpec(name="x", scale=0.1, unit="micrometer"),
+]
+image = v06.Image(multiscales=[v06.Multiscale.from_dims(dims)])
+data = np.zeros((9, 64, 64), dtype=np.uint16)
+root_path = write.v06.write_image("example.ome.zarr", image, data)
+
+# other high level write functions
+write.v06.write_plate(...)
+write.v06.write_bioformats2raw(...)
+write.v06.write_scene(...)  # v0.6 only
+
+# low-level prepare/builder functions
+write.v06.prepare_image(...)
+write.v06.LabelsBuilder(...)
+write.v06.PlateBuilder(...)
+write.v06.Bf2RawBuilder(...)
+write.v06.SceneBuilder(...)  # v0.6 only
+
+# write.v05 has the same functions (for v05 models), except for scenes
 ```
 
 ## Principles
@@ -632,7 +655,7 @@ like.
 
 ## See Also
 
-[ome-zarr-models-py](https://github.com/ome-zarr-models/ome-zarr-models-py) is
+[ome-zarr-models-py](https://github.com/ome-zarr-py/ome-zarr-models-py) is
 another set of Pydantic models for OME-Zarr. It has garnered broad community
 support, and aligns well with many use cases.  It should also be
 considered for OME-Zarr metadata validation and manipulation in Python!

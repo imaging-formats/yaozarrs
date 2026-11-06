@@ -343,7 +343,7 @@ yaozarrs.validate_zarr_store(HTTPStore(url))
 A mapping holds only what's inside the store, so a label's `image-source` or a
 `Series`' parent group that lies outside it is skipped with a warning rather
 than checked. See [Doing the IO
-yourself](https://imaging-formats.github.io/yaozarrs/#doing-the-io-yourself) in
+yourself](https://imaging-formats.github.io/yaozarrs/#do-the-io-yourself) in
 the docs.
 
 ### Layer 3: array data

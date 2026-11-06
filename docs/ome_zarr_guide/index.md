@@ -267,7 +267,7 @@ optional `discrete` and `longName`, and moves axes into named coordinate systems
         - **`longName`** (optional): a longer name or description of the axis.
         - **More suggested `type`s**: besides `space`, `time` and `channel`, the
           spec now lists `array`, `coordinate` and `displacement` (the latter two
-          are used by [vector fields](coordinate_systems.md#transformation-types)).
+          are used by [vector fields](coordinate_systems.md#transformation-types){ data-preview }).
           Other strings are still allowed for custom types.
         - Axis names **MUST** be non-empty, and unique *within their coordinate
           system*.
@@ -347,7 +347,7 @@ as well as stage positions and spatial offsets for registration.
     coordinate system of the multiscale (by `name`).  Every dataset maps into
     the *same* coordinate system, which the spec calls the image's
     ["intrinsic" coordinate
-    system](coordinate_systems.md#the-intrinsic-coordinate-system).
+    system](coordinate_systems.md#the-intrinsic-coordinate-system){ data-preview }.
 
     **Scale Transformation:**
 
@@ -443,9 +443,9 @@ as well as stage positions and spatial offsets for registration.
 
     !!! tip "Use `Multiscale.from_dims`"
         Writing all of this by hand gets tedious.
-        [`v06.Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] builds
+        [`v06.Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } builds
         the coordinate system and every level's transformation for you (see
-        [`DimSpec`][yaozarrs.DimSpec]).
+        [`DimSpec`][yaozarrs.DimSpec]{ data-preview }).
 
     !!! info "`dimension_names` are no longer required"
         v0.5 required `dimension_names` in each array's `zarr.json`; v0.6 does
@@ -794,7 +794,7 @@ They are represented as a special group named "labels/" within an image group.
 ### Lining labels up with the image (v0.6)
 
 By default, a label image's [intrinsic coordinate
-system](coordinate_systems.md#the-intrinsic-coordinate-system) is "usually
+system](coordinate_systems.md#the-intrinsic-coordinate-system){ data-preview } is "usually
 understood to be the same" as its image's.  In v0.6, you can also link the two
 when they *aren't* the same.  Say a
 segmentation tool wrote labels for a crop of the image, with the corner of the
@@ -1420,7 +1420,7 @@ Each `input` and `output` refers to a coordinate system by `name`:
 
 - With a `path`, it's a coordinate system of the image at that `path`
   (relative to the scene group).  Here, `physical` is the [intrinsic coordinate
-  system](coordinate_systems.md#the-intrinsic-coordinate-system) of each tile.
+  system](coordinate_systems.md#the-intrinsic-coordinate-system){ data-preview } of each tile.
 - Without a `path`, it's one of the scene's own `coordinateSystems` (here,
   `stage`).
 
@@ -1455,7 +1455,7 @@ scene = v06.Scene(
 ```
 
 ??? example "Writing it (with data)"
-    [`write_scene`][yaozarrs.write.v06.write_scene] writes the scene group and
+    [`write_scene`][yaozarrs.write.v06.write_scene]{ data-preview } writes the scene group and
     all of its images at once, after checking that the scene and the images fit
     together:
 
@@ -1482,7 +1482,7 @@ scene = v06.Scene(
     ```
 
     For bigger scenes (or to write data piece by piece), see
-    [`SceneBuilder`][yaozarrs.write.v06.SceneBuilder].
+    [`SceneBuilder`][yaozarrs.write.v06.SceneBuilder]{ data-preview }.
 
 !!! warning "Scene rules"
     - In a scene, both `input` and `output` **MUST** have a `name`.  A `path`
@@ -1548,7 +1548,7 @@ scene = v06.Scene(
 | **v0.6** | Axes move into named coordinate systems, transformations get an explicit `input`/`output`, many more transformation types, and scenes ([RFC-5](https://ngff.openmicroscopy.org/rfc/5/index.html)) |
 
 To convert metadata models between v0.4, v0.5 and v0.6, see
-[`yaozarrs.convert_version`][].
+[`yaozarrs.convert_version`][]{ data-preview }.
 
 ---
 

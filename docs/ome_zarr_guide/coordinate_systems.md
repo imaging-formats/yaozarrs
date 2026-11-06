@@ -11,7 +11,7 @@ title: Coordinate Systems & Transformations
     how they appear in the metadata.
 
     If you only need a single image with a pixel size, you can mostly skip
-    this: [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] handles it
+    this: [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } handles it
     for you.  Read on when you need to place images relative to each other,
     line up labels, register images, or just want to understand what you're
     looking at.
@@ -45,7 +45,7 @@ Coordinate systems are defined in two places:
 
 - **In an image** (required): each multiscale lists its coordinate systems under
   `coordinateSystems`.  This replaces the `axes` field of v0.5.
-- **In a scene** (optional): a [scene](index.md#working-with-scenes)
+- **In a scene** (optional): a [scene](index.md#working-with-scenes){ data-preview }
   may define its own, e.g. a shared "stage" or "world" coordinate system that
   several images are placed into.
 
@@ -174,11 +174,11 @@ viewing and processing unless a use case dictates otherwise".
 
 Here, the intrinsic coordinate system is called `physical`, but the name is up
 to you.  (The spec's examples mostly use `physical` or `intrinsic`;
-[`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] uses `"intrinsic"`
+[`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } uses `"intrinsic"`
 unless you pass `coordinate_system=...`).
 
 The rules for these dataset transformations are listed under [Coordinate
-Transformations](index.md#coordinate-transformations) in the guide.
+Transformations](index.md#coordinate-transformations){ data-preview } in the guide.
 
 ### Where is a pixel?
 
@@ -205,9 +205,9 @@ center is, and toggle the translation to see what happens without it.
 <ome-pixel-grid></ome-pixel-grid>
 
 !!! tip "yaozarrs does this for you"
-    [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims] adds this
+    [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } adds this
     translation to every downsampled level, using the `scale_factor` of each
-    [`DimSpec`][yaozarrs.DimSpec].  That's right for common downsampling
+    [`DimSpec`][yaozarrs.DimSpec]{ data-preview }.  That's right for common downsampling
     methods like binning; if your pyramid was made differently, adjust it.
 
 ---
@@ -253,7 +253,7 @@ system for the corrected geometry:
     - The other side **MUST** be either another coordinate system of the same
       multiscale (by `name`), or the coordinate system of a label image in the
       image's `labels` group (by `name` and `path`, see [lining labels up with
-      the image](index.md#lining-labels-up-with-the-image-v06)).
+      the image](index.md#lining-labels-up-with-the-image-v06){ data-preview }).
     - A transformation to a label image **MUST** be an `identity`, `scale`,
       `translation`, or a `sequence` of a scale and a translation.
 
@@ -266,7 +266,7 @@ system for the corrected geometry:
 ## Between images: scenes
 
 Transformations between *different* images live in a
-[scene](index.md#working-with-scenes): a group whose `zarr.json` has a
+[scene](index.md#working-with-scenes){ data-preview }: a group whose `zarr.json` has a
 `scene` object, with the images as subgroups.  Scene transformations refer to
 each image's coordinate systems by `name` *and* `path` (the image's path within
 the scene), and to the scene's own coordinate systems by `name` alone:
@@ -384,13 +384,13 @@ image = v06.Image(multiscales=[v06.Multiscale.model_validate(data)])
 Things that need the rest of the hierarchy (that a `path` points to a real
 image, that the graph is connected across a scene, that an `affine` stored in a
 Zarr array has the right shape...) are checked by
-[`yaozarrs.validate_zarr_store`][].
+[`yaozarrs.validate_zarr_store`][]{ data-preview }.
 
 !!! note "Disconnected coordinate systems in a single image"
     The "connected graph" rule is about the multiscales and the scene metadata
     *combined*, so a scene could link two coordinate systems of an image that
     the image itself doesn't.  For that reason, when
-    [`validate_zarr_store`][yaozarrs.validate_zarr_store] checks an image on
+    [`validate_zarr_store`][yaozarrs.validate_zarr_store]{ data-preview } checks an image on
     its own (not as part of a scene), it only *warns* about coordinate
     systems that aren't linked to anything; inside a scene, it's an error.
 
