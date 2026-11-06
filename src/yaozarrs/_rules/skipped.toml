@@ -341,7 +341,7 @@ version = '0.6'
 quote = 'The translation parameters stored as a JSON array of numbers. The array MUST have length `N`.'
 lines = [812, 813]
 reason = 'duplicate'
-note = 'restates YZ-CT-004'
+note = 'restates YZ-CT-060'
 
 
 [[skip]]
@@ -349,7 +349,7 @@ version = '0.6'
 quote = 'The scale parameters are stored as a JSON array of numbers. The array MUST have length `N`.'
 lines = [840, 841]
 reason = 'duplicate'
-note = 'restates YZ-CT-004'
+note = 'restates YZ-CT-060'
 
 
 [[skip]]

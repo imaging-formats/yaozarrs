@@ -44,8 +44,13 @@ class RuleWarning(ValidationWarning):
 
     def __init__(self, code: str, msg: str) -> None:
         self.code = code
+        self.msg = msg
         self.url = rule_url(code)
         super().__init__(f"[{code}] {msg}\n  See {self.url}")
+
+    def __reduce__(self) -> tuple[type[RuleWarning], tuple[str, str]]:
+        # (for pickle and copy: `args` holds the formatted message, not these)
+        return type(self), (self.code, self.msg)
 
 
 def get_rule(code: str) -> Rule:
@@ -83,6 +88,11 @@ def rewrap_error(
     msg = f"{prefix}{msg}{suffix}"
     if code := code or old:
         return rule_error(code, msg)
+    if isinstance(e, PydanticCustomError):  # keep a non-rule error's type and context
+        template = f"{prefix}{e.message_template}{suffix}"
+        return PydanticCustomError(
+            cast("LiteralString", e.type), cast("LiteralString", template), e.context
+        )
     return ValueError(msg)
 
 

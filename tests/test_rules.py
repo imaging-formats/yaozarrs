@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
+import pickle
 import re
 import sys
 import tempfile
@@ -13,6 +15,7 @@ from typing import get_args
 
 import pytest
 from packaging.version import Version
+from pydantic_core import PydanticCustomError
 
 from yaozarrs import validate_zarr_store
 from yaozarrs._rules import (
@@ -167,6 +170,9 @@ def test_skip_entries(skip: object) -> None:
     if skip.reason == "duplicate":
         cited = re.findall(r"YZ-(?:[A-Z]{2}-)?\d{3}", skip.note)
         assert cited and all(c in RULES for c in cited), skip.note
+        # (the rules it restates are stated in this version too)
+        for code in cited:
+            assert skip.version in {s.doc.version for s in RULES[code].sources}, code
 
 
 @pytest.mark.parametrize("version", TRACKED_VERSIONS)
@@ -255,6 +261,13 @@ def test_rule_warning_filterable() -> None:
     assert kept.message.url == get_rule("YZ-AX-007").url
 
 
+def test_rule_warning_pickles() -> None:
+    warning = RuleWarning("YZ-AX-007", "msg")
+    for clone in (pickle.loads(pickle.dumps(warning)), copy.copy(warning)):
+        assert isinstance(clone, RuleWarning)
+        assert (clone.code, clone.msg, str(clone)) == ("YZ-AX-007", "msg", str(warning))
+
+
 def test_rule_error() -> None:
     err = rule_error("YZ-CT-004", "bad {braces}")
     assert error_code(err) == "YZ-CT-004"
@@ -270,6 +283,13 @@ def test_rewrap_error_keeps_code() -> None:
     assert error_code(rewrap_error(original, code="YZ-CT-041")) == "YZ-CT-041"
     plain = rewrap_error(ValueError("bad"), "a: ")
     assert str(plain) == "a: bad" and error_code(plain) is None
+    # a custom error without a rule code keeps its type and context
+    custom = PydanticCustomError("listItemsNotUnique", "{n} duplicates", {"n": 2})
+    rewrapped = rewrap_error(custom, "a: ")
+    assert isinstance(rewrapped, PydanticCustomError)
+    assert rewrapped.type == "listItemsNotUnique"
+    assert rewrapped.context == {"n": 2}
+    assert str(rewrapped) == "a: 2 duplicates"
 
 
 def test_docs_render() -> None:
