@@ -11,7 +11,7 @@ There are two kinds:
 
 - `YZ-<AREA>-NNN` (e.g. `YZ-WL-002`): a spec rule, citing the spec's prose or JSON
   schemas.
-- `YZ-NNN` (e.g. `YZ-007`): a check yaozarrs adds, with no source in the spec.
+- `YZ-NNN` (e.g. `YZ-006`): a check yaozarrs adds, with no source in the spec.
 
 The codes belong to yaozarrs: they aren't part of the NGFF spec (see
 <https://github.com/ome/ngff/issues/646>). If official codes are adopted later, a spec
@@ -60,7 +60,7 @@ and its example, in `rule_examples.toml`:
 
 ```toml
 [YZ-AX-001.example]
-model = 'Multiscale'   # class name in yaozarrs.v04 / yaozarrs.v05
+model = 'Multiscale'   # class name in yaozarrs.v04 / v05 / v06
 json = '''
 {"axes": [...], "datasets": [...]}
 '''

@@ -497,10 +497,10 @@ note = 'spelled out by the lines that follow ("Specifically:"): YZ-WL-011 and YZ
 
 [[skip]]
 version = '0.6'
-quote = 'The `path` MUST NOT be an empty string and MUST NOT contain `/` characters;'
+quote = 'and MUST NOT contain `/` characters;'
 lines = [1683, 1683]
 reason = 'duplicate'
-note = 'restates YZ-WL-010: its character set excludes `/`, and its notes cover the empty path (yaozarrs reports both as YZ-WL-010 or YZ-WL-011)'
+note = 'restates YZ-WL-010 (its character set excludes `/`)'
 
 
 [[skip]]

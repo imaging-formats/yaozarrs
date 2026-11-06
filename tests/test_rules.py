@@ -156,6 +156,15 @@ def test_every_statement_catalogued(version: str) -> None:
     assert not found, "\n".join(f"L{n}: {text}" for n, _, text in found)
 
 
+def test_uncited_checks_levels(monkeypatch: pytest.MonkeyPatch) -> None:
+    # a MUST or SHOULD counts only if a rule of that level (or a skip) quotes it
+    real = ngff_rules._citations
+    as_may = [(q, lines, "MAY" if lvl else None) for q, lines, lvl in real("0.5")]
+    monkeypatch.setattr(ngff_rules, "_citations", lambda version: as_may)
+    found = ngff_rules.uncited("0.5")
+    assert found and all("(only quoted by MAY rules)" in text for *_, text in found)
+
+
 @pytest.mark.parametrize(
     "skip",
     ngff_rules.load_skips(),

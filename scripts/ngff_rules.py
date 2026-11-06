@@ -125,6 +125,12 @@ def check_quote(doc: SpecDoc, quote: str, lines: tuple[int, int]) -> str | None:
 # ---------------------------------------------------------------------------
 
 KEYWORD = re.compile(r"\b(MUST|SHOULD|MAY|REQUIRED|RECOMMENDED|OPTIONAL|SHALL)\b")
+# the level each keyword states
+KEYWORD_LEVEL = {
+    **dict.fromkeys(("MUST", "REQUIRED", "SHALL"), "MUST"),
+    **dict.fromkeys(("SHOULD", "RECOMMENDED"), "SHOULD"),
+    **dict.fromkeys(("MAY", "OPTIONAL"), "MAY"),
+}
 # why a keyword in the spec has no rule
 SKIP_REASONS = {
     "permission": "a MAY that only grants permission: nothing can violate it",
@@ -160,15 +166,15 @@ def load_skips() -> list[Skip]:
     ]
 
 
-def _citations(version: str) -> list[tuple[str, tuple[int, int]]]:
-    """(quote, lines) of each rule source and skip entry for `version`'s spec prose."""
-    cited = [
-        (src.quote, src.lines)
+def _citations(version: str) -> list[tuple[str, tuple[int, int], str | None]]:
+    """(quote, lines, rule level) of each rule source and skip entry (level None)."""
+    cited: list[tuple[str, tuple[int, int], str | None]] = [
+        (src.quote, src.lines, rule.level)
         for rule in RULES.values()
         for src in rule.sources
         if src.doc.version == version and not src.is_schema
     ]
-    cited += [(s.quote, s.lines) for s in load_skips() if s.version == version]
+    cited += [(s.quote, s.lines, None) for s in load_skips() if s.version == version]
     return cited
 
 
@@ -191,23 +197,34 @@ def _heading(lines: list[str], n: int) -> str:
 
 
 def uncited(version: str) -> list[tuple[int, str, str]]:
-    """(line, section, context) of each keyword that no rule or skip entry quotes."""
+    """(line, section, context) of each keyword that no rule or skip entry quotes.
+
+    A MUST or SHOULD that only rules of other levels quote counts as uncited too (a
+    MAY inside a MUST rule's quote is fine: see the MAY policy in the skill).
+    """
     text = spec_text(SPEC_DOCS[version])
     norm, line_of = _normalized(text)
     # a quote counts only at its recorded lines (`check` reports any that moved)
     quoted = [
-        (start, end)
-        for quote, lines in _citations(version)
+        (start, end, level)
+        for quote, lines, level in _citations(version)
         for start, end, at in _quote_spans(norm, line_of, quote)
         if at == lines
     ]
     found = []
     for m in KEYWORD.finditer(norm):
-        if not any(start <= m.start() < end for start, end in quoted):
-            n = line_of[m.start()]
-            context = f"{norm[max(0, m.start() - 60) : m.start()]}<<{m[0]}>>"
-            context += norm[m.end() : m.end() + 40]
-            found.append((n, _heading(text.splitlines(), n), context.strip()))
+        levels = {lvl for start, end, lvl in quoted if start <= m.start() < end}
+        level = KEYWORD_LEVEL[m[0]]
+        if not levels:
+            why = ""
+        elif level != "MAY" and None not in levels and level not in levels:
+            why = f"(only quoted by {'/'.join(sorted(map(str, levels)))} rules) "
+        else:
+            continue
+        n = line_of[m.start()]
+        context = f"{norm[max(0, m.start() - 60) : m.start()]}<<{m[0]}>>"
+        context += norm[m.end() : m.end() + 40]
+        found.append((n, _heading(text.splitlines(), n), why + context.strip()))
     return found
 
 
@@ -532,7 +549,7 @@ def cmd_fetch(_: argparse.Namespace) -> int:
         if dest.exists():
             print(f"exists: {dest.relative_to(ROOT)}")
             continue
-        dest.write_text(_download(doc.raw_url), encoding="utf-8")
+        dest.write_text(_download(doc.raw_url), encoding="utf-8", newline="\n")
         print(f"fetched: {dest.relative_to(ROOT)}")
     return 0
 
@@ -740,12 +757,14 @@ def render_rule(rule: Rule, checked: list[str]) -> str:
             lines += [intro, "", "```json", body, "```", ""]
     if rule.sources:
         lines += ["## Spec text", ""]
+        version = None
         for src in reversed(rule.sources):
             start, end = src.lines
             where = f"L{start}" if start == end else f"L{start}-L{end}"
+            if src.doc.version != version:  # (one heading per version)
+                version = src.doc.version
+                lines += [f"### {version}", ""]
             lines += [
-                f"### {src.doc.version}",
-                "",
                 f"> {_unlink(' '.join(src.quote.split()))}",
                 "",
                 *(

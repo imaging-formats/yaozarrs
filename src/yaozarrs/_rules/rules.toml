@@ -942,6 +942,7 @@ slug = 'coordinates-vector-length'
 level = 'MUST'
 summary = 'The `coordinate` axis of a field must have length `M`, the number of output axes.'
 introduced = '0.6'
+notes = 'The spec contradicts itself here: this calls the vector axis the last axis, but the same section also says it goes before the spatial axes (YZ-CT-058).'
 
 [[rules.YZ-CT-034.sources]]
 quote = 'For `coordinates` transformations, the length of the array along the `coordinate` dimension (last axis) MUST equal `M`,'
@@ -952,6 +953,7 @@ slug = 'displacements-vector-length'
 level = 'MUST'
 summary = 'The `displacement` axis of a field must have length `N`, the number of input (and output) axes.'
 introduced = '0.6'
+notes = 'The spec contradicts itself here: this calls the vector axis the last axis, but the same section also says it goes before the spatial axes (YZ-CT-058).'
 
 [[rules.YZ-CT-035.sources]]
 quote = 'For `displacements` transformations, the length of the array along the `displacement` dimension (last axis) MUST equal `N`,'
@@ -1219,7 +1221,7 @@ slug = 'field-vector-axis-position'
 level = 'MUST'
 summary = 'The `coordinate` or `displacement` axis of a field must come after the time axis (if present) and before the spatial axes.'
 introduced = '0.6'
-notes = 'If a `displacement` or `coordinate` axis counts as a custom axis, YZ-AX-005 already requires this position.'
+notes = 'If a `displacement` or `coordinate` axis counts as a custom axis, YZ-AX-005 already requires this position. The spec contradicts itself here: the same section calls the vector axis the last axis (YZ-CT-034, YZ-CT-035).'
 
 [[rules.YZ-CT-058.sources]]
 quote = 'In that array, the array dimension corresponding to the coordinate/displacement axis MUST be inserted after a time axis (if present) and before the spatial axes'
@@ -2088,7 +2090,7 @@ level = 'MUST'
 summary = 'A field of view `path` must only use the characters `a-z`, `A-Z`, `0-9`, `-`, `_`, and `.`.'
 introduced = '0.6'
 supersedes = ['YZ-WL-001']
-notes = 'Replaces the alphanumeric rule (YZ-WL-001) of earlier versions. An empty `path` or one with `/` fails this rule as well.'
+notes = 'Replaces the alphanumeric rule (YZ-WL-001) of earlier versions. A `path` with `/` fails this rule as well (an empty `path` is YZ-WL-016).'
 
 [[rules.YZ-WL-010.sources]]
 quote = 'The `path` MUST only use characters in the sets `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`.'
@@ -2154,6 +2156,16 @@ lines = { "0.4" = [587, 588], "0.5" = [533, 534] }
 [[rules.YZ-WL-015.sources]]
 quote = 'The `path` MUST be case-sensitive,'
 lines = { "0.6" = [1680, 1680] }
+
+[rules.YZ-WL-016]
+slug = 'field-path-nonempty'
+level = 'MUST'
+summary = 'A field of view `path` must not be an empty string.'
+introduced = '0.6'
+
+[[rules.YZ-WL-016.sources]]
+quote = 'The `path` MUST NOT be an empty string'
+lines = { "0.6" = [1683, 1683] }
 
 # ------------------------------------------------------------------------------
 # YZ-BF
@@ -2369,11 +2381,12 @@ slug = 'labels-paths-exist'
 level = 'MUST'
 summary = 'Each path listed in `labels` must point to a label image group.'
 introduced = '0.4'
-notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too."
+notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too. In 0.5 and 0.6, the keyword in the quoted sentence is the `labels` key's (YZ-LB-001): that each path points to a label image is implied by \"paths to the labeled multiscale image(s)\"."
 
 [[rules.YZ-LB-002.sources]]
 quote = 'MUST contain a JSON object with the key `labels`, whose value is a JSON array of paths to the labeled multiscale image(s).'
 lines = { "0.5" = [400, 401], "0.6" = [1492, 1493] }
+implied = true
 
 [[rules.YZ-LB-002.sources]]
 quote = "contains the key `labels` containing the paths to label objects which can be found underneath the group"
@@ -3107,18 +3120,18 @@ summary = 'A label image must have the same number of `multiscales` as its image
 severity = 'error'
 notes = "The spec doesn't state this directly, but it is needed to pair each label multiscale with an image multiscale for YZ-IL-002."
 
-[rules.YZ-005]
+[rules.YZ-004]
 slug = 'version-prerelease'
 summary = 'The document declares a pre-release of a spec version.'
 severity = 'warning'
 notes = "The 0.6 schema accepts the release candidate `0.6rc0`. `0.6.dev4` isn't in the schema, but much of the 0.6 data written so far uses it."
 
-[rules.YZ-006]
+[rules.YZ-005]
 slug = 'version-unsupported'
 summary = 'The document or store declares an OME-Zarr version that yaozarrs does not know.'
 severity = 'error'
 
-[rules.YZ-007]
+[rules.YZ-006]
 slug = 'transform-path-relative'
 summary = "The `path` of a transformation's parameters must be a relative path with no empty, `.` or `..` segments."
 severity = 'error'

@@ -50,7 +50,7 @@ write-tensorstore = [
 write-zarrs = ["zarrs>=0.1.5"]
 
 [dependency-groups]
-test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
+test = ["packaging>=23.0", "pytest>=7.4.0", "pytest-cov>=4.0.0"]
 test-full = [
     { include-group = "test" },
     "numpy>=2.3.2; python_version >= '3.14'",          # needed for creating test data to write
