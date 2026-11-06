@@ -126,3 +126,79 @@ img.auto-screenshot {
 }
 
 /* END SYNTAX HIGHLIGHTING */
+
+/* The rule-code tables (docs/rules/index.md, from scripts/ngff_rules.py docs):
+   full width, compact, and only the summary (under the name) wraps. */
+.md-typeset .rule-table table:not([class]) {
+	display: table;
+	width: 100%;
+}
+.md-typeset .rule-table table:not([class]) :is(th, td) {
+	padding: 0.7em 1em;
+}
+.md-typeset .rule-table table:not([class]) :is(th, td):not(:nth-child(2)),
+.md-typeset .rule-table table:not([class]) td:nth-child(2) > a:first-child {
+	white-space: nowrap;
+}
+
+/* the filters above them (docs/javascripts/rule_filter.js), like ruff's rules page */
+.md-typeset .rule-filter {
+	margin: 1.5em 0;
+	padding-bottom: 1em;
+	border-bottom: 1px solid var(--md-default-fg-color--lightest);
+	font-size: 0.75rem;
+}
+.md-typeset .rule-filter__fields {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 0.8em 1.2em;
+}
+.md-typeset .rule-filter__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4em;
+	flex: 1 1 8em;
+	min-width: 0;
+}
+.md-typeset .rule-filter__field:first-child {
+	flex: 3 1 16em;
+}
+.md-typeset .rule-filter__label {
+	font-weight: 700;
+}
+.md-typeset .rule-filter :is(input, select, button) {
+	box-sizing: border-box;
+	height: 2.4em;
+	padding: 0 0.7em;
+	border: 1px solid var(--md-default-fg-color--lighter);
+	border-radius: 0.2em;
+	background-color: var(--md-default-bg-color);
+	color: var(--md-default-fg-color);
+	font: inherit;
+}
+.md-typeset .rule-filter button {
+	cursor: pointer;
+}
+.md-typeset .rule-filter button:disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+.md-typeset .rule-filter__count {
+	margin: 0.8em 0 0;
+	color: var(--md-default-fg-color--light);
+}
+.md-typeset .rule-filter .rule-filter__field select {
+	width: 100%;
+	/* our own arrow, with room around it (a chevron in the text color) */
+	appearance: none;
+	padding-right: 2.2em;
+	background-image:
+		linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	background-position:
+		calc(100% - 1.15em) 55%,
+		calc(100% - 0.8em) 55%;
+	background-size: 0.35em 0.35em;
+	background-repeat: no-repeat;
+}

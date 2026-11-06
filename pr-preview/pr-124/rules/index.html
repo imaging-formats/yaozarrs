@@ -203,6 +203,8 @@
           
             
               
+                
+              
               <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
@@ -578,7 +580,9 @@
             
             
               
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" hidden>
                 <div class="md-sidebar__scrollwrap">
                   
                     
@@ -653,7 +657,7 @@
 
 
 <h1 id="rule-codes">Rule codes<a class="headerlink" href="#rule-codes" title="Link to this section">#</a></h1>
-<p>Each code identifies one normative statement in the <a href="https://ngff.openmicroscopy.org/">NGFF specification</a>, and links to the exact text in the spec that states it, for each spec version. yaozarrs errors and warnings for spec violations carry these codes once they are tagged: <em>Reported in</em> shows where yaozarrs reports each one.</p>
+<p>Each code identifies one normative statement in the <a href="https://ngff.openmicroscopy.org/">NGFF specification</a>, and links to the exact text in the spec that states it, for each spec version. yaozarrs errors and warnings for spec violations carry these codes once they are tagged.</p>
 <ul>
 <li><code>YZ-&lt;AREA&gt;-&lt;NNN&gt;</code> codes refer to statements in the NGFF spec or its JSON schemas.</li>
 <li><code>YZ-&lt;NNN&gt;</code> codes are checks that yaozarrs adds beyond the spec.</li>
@@ -663,2275 +667,1534 @@
 <p class="admonition-title">Note</p>
 <p>These codes are assigned by yaozarrs; they are not (yet) part of the NGFF specification itself (see <a href="https://github.com/ome/ngff/issues/646">ome/ngff#646</a>). If official codes are adopted, each spec rule will record its official code. Spec versions audited so far: 0.4, 0.5, 0.6. Every RFC 2119 keyword in those versions is inside the quote of a rule here, or of an entry (with a reason) in <code>skipped.toml</code>.</p>
 </div>
-<p><em>Reported</em> means yaozarrs reports the rule's code for its example. A rule whose code isn't reported may still be enforced, under another code or none.</p>
+<p><em>Checked in</em> lists the spec versions in which yaozarrs reports a rule's code when a document breaks the rule. If none are listed, yaozarrs may still reject such a document, but not under this code (yet).</p>
+<script type="application/json" id="rule-data">{"versions":["0.4","0.5","0.6"],"areas":{"AX":"axes","CS":"coordinateSystems","MS":"multiscales","DS":"datasets","CT":"coordinateTransformations","SC":"scene","LB":"labels","IL":"image-label","PL":"plate","WL":"well","BF":"bioformats2raw","OM":"omero","ZR":"zarr / storage layout","GN":"general","YZ":"yaozarrs checks"},"rules":{"YZ-AX-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-003":{"level":"MAY","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-004":{"level":"MAY","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-006":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-007":{"level":"MUST","versions":["0.5"],"area":"AX"},"YZ-AX-008":{"level":"MUST","versions":["0.5"],"area":"AX"},"YZ-AX-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-010":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-011":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-012":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-013":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-014":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-015":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-016":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-017":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-CS-001":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-002":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-003":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-004":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-005":{"level":"SHOULD","versions":["0.6"],"area":"CS"},"YZ-MS-001":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-002":{"level":"MUST","versions":["0.4","0.5"],"area":"MS"},"YZ-MS-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-004":{"level":"MUST","versions":["0.6"],"area":"MS"},"YZ-MS-005":{"level":"MUST","versions":["0.4","0.5"],"area":"MS"},"YZ-MS-006":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-007":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-008":{"level":"SHOULD","versions":["0.4"],"area":"MS"},"YZ-DS-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-008":{"level":"MUST","versions":["0.6"],"area":"DS"},"YZ-DS-009":{"level":"MUST","versions":["0.4","0.5"],"area":"DS"},"YZ-DS-010":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-012":{"level":"SHOULD","versions":["0.6"],"area":"DS"},"YZ-CT-001":{"level":"MUST","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-002":{"level":"MAY","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-003":{"level":"MUST","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-004":{"level":"MUST","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-005":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-006":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-007":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-008":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-009":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-010":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-011":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-012":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-013":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-014":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-015":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-016":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-017":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-018":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-019":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-020":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-021":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-022":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-023":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-024":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-025":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-026":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-027":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-028":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-029":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-030":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-031":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-032":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-033":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-034":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-035":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-036":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-037":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-038":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-039":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-040":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-041":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-042":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-043":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-044":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-045":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-046":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"CT"},"YZ-CT-047":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"CT"},"YZ-CT-048":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-049":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-050":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-051":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-052":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-053":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-054":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-055":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-056":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-057":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-058":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-059":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-060":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-061":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-OM-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-PL-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-002":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-003":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-010":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-013":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-014":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-015":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-016":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-017":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-018":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-019":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-020":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-021":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-022":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-023":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-024":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-025":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-026":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-027":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-028":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-029":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-030":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-031":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-032":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-033":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-034":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-035":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-036":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-037":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-038":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-039":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-040":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-041":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-042":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-043":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-044":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-045":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-046":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-047":{"level":"SHOULD","versions":["0.4"],"area":"PL"},"YZ-PL-048":{"level":"MUST","versions":["0.5"],"area":"PL"},"YZ-PL-049":{"level":"MUST","versions":["0.4","0.5"],"area":"PL"},"YZ-PL-050":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-051":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-052":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-WL-001":{"level":"MUST","versions":["0.4","0.5"],"area":"WL"},"YZ-WL-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-010":{"level":"MUST","versions":["0.6"],"area":"WL"},"YZ-WL-011":{"level":"MUST","versions":["0.6"],"area":"WL"},"YZ-WL-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-013":{"level":"SHOULD","versions":["0.4","0.5"],"area":"WL"},"YZ-WL-014":{"level":"MUST","versions":["0.4","0.5"],"area":"WL"},"YZ-WL-015":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-016":{"level":"MUST","versions":["0.6"],"area":"WL"},"YZ-BF-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-006":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-010":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-013":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-LB-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-LB-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-LB-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-LB-004":{"level":"MUST","versions":["0.5","0.6"],"area":"LB"},"YZ-LB-005":{"level":"SHOULD","versions":["0.5","0.6"],"area":"LB"},"YZ-LB-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-IL-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-003":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-010":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-013":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-014":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-015":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-016":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-017":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-018":{"level":"SHOULD","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-019":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-020":{"level":"SHOULD","versions":["0.4","0.5"],"area":"IL"},"YZ-IL-021":{"level":"MUST","versions":["0.4","0.5"],"area":"IL"},"YZ-IL-022":{"level":"MUST","versions":["0.4"],"area":"IL"},"YZ-IL-023":{"level":"SHOULD","versions":["0.4"],"area":"IL"},"YZ-SC-001":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-002":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-003":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-004":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-005":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-006":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-007":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-008":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-009":{"level":"SHOULD","versions":["0.6"],"area":"SC"},"YZ-SC-010":{"level":"SHOULD","versions":["0.6"],"area":"SC"},"YZ-GN-001":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-GN-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"GN"},"YZ-GN-003":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-GN-004":{"level":"MUST","versions":["0.6"],"area":"GN"},"YZ-GN-005":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-GN-006":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-ZR-001":{"level":"MUST","versions":["0.4"],"area":"ZR"},"YZ-ZR-002":{"level":"MUST","versions":["0.5","0.6"],"area":"ZR"},"YZ-ZR-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-007":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-008":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-009":{"level":"MUST","versions":["0.6"],"area":"ZR"},"YZ-001":{"level":null,"versions":[],"area":"YZ"},"YZ-002":{"level":null,"versions":[],"area":"YZ"},"YZ-003":{"level":null,"versions":[],"area":"YZ"},"YZ-004":{"level":null,"versions":[],"area":"YZ"},"YZ-005":{"level":null,"versions":[],"area":"YZ"},"YZ-006":{"level":null,"versions":[],"area":"YZ"}}}</script>
+
 <h2 id="spec-rules">Spec rules<a class="headerlink" href="#spec-rules" title="Link to this section">#</a></h2>
+<div class="rule-table">
 <table>
 <thead>
 <tr>
 <th>Code</th>
-<th>Name</th>
-<th>Level</th>
-<th>Severity</th>
+<th>Rule</th>
 <th>Versions</th>
-<th>Reported in</th>
-<th>Summary</th>
+<th>Checked in</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="YZ-AX-001/">YZ-AX-001</a></td>
-<td><code>axis-name-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-001</code></td>
+<td><a href="YZ-AX-001/"><code>axis-name-unique</code></a><br>Axis names must be unique within <code>axes</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Axis names must be unique within <code>axes</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-002/">YZ-AX-002</a></td>
-<td><code>axes-space-count</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-002</code></td>
+<td><a href="YZ-AX-002/"><code>axes-space-count</code></a><br><code>axes</code> must contain 2 or 3 axes of type <code>space</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>axes</code> must contain 2 or 3 axes of type <code>space</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-003/">YZ-AX-003</a></td>
-<td><code>axes-time-at-most-one</code></td>
-<td>MAY</td>
-<td>error</td>
+<td><code>YZ-AX-003</code></td>
+<td><a href="YZ-AX-003/"><code>axes-time-at-most-one</code></a><br><code>axes</code> may contain at most one axis of type <code>time</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>axes</code> may contain at most one axis of type <code>time</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-004/">YZ-AX-004</a></td>
-<td><code>axes-channel-at-most-one</code></td>
-<td>MAY</td>
-<td>error</td>
+<td><code>YZ-AX-004</code></td>
+<td><a href="YZ-AX-004/"><code>axes-channel-at-most-one</code></a><br><code>axes</code> may contain at most one axis of type <code>channel</code> (or of a null/custom type).</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>axes</code> may contain at most one axis of type <code>channel</code> (or of a null/custom type).</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-005/">YZ-AX-005</a></td>
-<td><code>axes-type-order</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-005</code></td>
+<td><a href="YZ-AX-005/"><code>axes-type-order</code></a><br>Axes must be ordered by type: <code>time</code> (if present), then <code>channel</code> or custom (if present), then <code>space</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Axes must be ordered by type: <code>time</code> (if present), then <code>channel</code> or custom (if present), then <code>space</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-006/">YZ-AX-006</a></td>
-<td><code>axis-unit-recognized</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-AX-006</code></td>
+<td><a href="YZ-AX-006/"><code>axis-unit-recognized</code></a><br>An axis <code>unit</code> should be one of the UDUNITS-2 units in the spec.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An axis <code>unit</code> should be one of the UDUNITS-2 units in the spec.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-007/">YZ-AX-007</a></td>
-<td><code>dimension-names-present</code></td>
-<td>MUST</td>
-<td>warning</td>
-<td>0.5 (removed in 0.6)</td>
+<td><code>YZ-AX-007</code></td>
+<td><a href="YZ-AX-007/"><code>dimension-names-present</code></a><br>Each multiscale array's <code>zarr.json</code> must include <code>dimension_names</code>.</td>
+<td>0.5</td>
 <td>—</td>
-<td>Each multiscale array's <code>zarr.json</code> must include <code>dimension_names</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-008/">YZ-AX-008</a></td>
-<td><code>dimension-names-match-axes</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.5 (removed in 0.6)</td>
+<td><code>YZ-AX-008</code></td>
+<td><a href="YZ-AX-008/"><code>dimension-names-match-axes</code></a><br>An array's <code>dimension_names</code> must match the names in <code>axes</code>.</td>
+<td>0.5</td>
 <td>—</td>
-<td>An array's <code>dimension_names</code> must match the names in <code>axes</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-009/">YZ-AX-009</a></td>
-<td><code>axis-name-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-009</code></td>
+<td><a href="YZ-AX-009/"><code>axis-name-present</code></a><br>Each axis must have a <code>name</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each axis must have a <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-010/">YZ-AX-010</a></td>
-<td><code>axis-name-nonempty-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-010</code></td>
+<td><a href="YZ-AX-010/"><code>axis-name-nonempty-string</code></a><br>An axis <code>name</code> must be a non-empty string.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>An axis <code>name</code> must be a non-empty string.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-011/">YZ-AX-011</a></td>
-<td><code>axis-long-name-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-011</code></td>
+<td><a href="YZ-AX-011/"><code>axis-long-name-string</code></a><br>An axis <code>longName</code>, if present, must be a string.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>An axis <code>longName</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-012/">YZ-AX-012</a></td>
-<td><code>axis-discrete-boolean</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-012</code></td>
+<td><a href="YZ-AX-012/"><code>axis-discrete-boolean</code></a><br>An axis <code>discrete</code>, if present, must be a boolean.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>An axis <code>discrete</code>, if present, must be a boolean.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-013/">YZ-AX-013</a></td>
-<td><code>multiscale-axes-min-count</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-AX-013</code></td>
+<td><a href="YZ-AX-013/"><code>multiscale-axes-min-count</code></a><br>A coordinate system inside <code>multiscales</code> must have at least 2 axes.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A coordinate system inside <code>multiscales</code> must have at least 2 axes.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-014/">YZ-AX-014</a></td>
-<td><code>axis-type-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-AX-014</code></td>
+<td><a href="YZ-AX-014/"><code>axis-type-present</code></a><br>Each axis should have a <code>type</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each axis should have a <code>type</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-015/">YZ-AX-015</a></td>
-<td><code>axis-type-known</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-AX-015</code></td>
+<td><a href="YZ-AX-015/"><code>axis-type-known</code></a><br>An axis <code>type</code> should be one of the types defined in the spec; other values are allowed for custom types.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An axis <code>type</code> should be one of the types defined in the spec; other values are allowed for custom types.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-016/">YZ-AX-016</a></td>
-<td><code>axis-unit-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-AX-016</code></td>
+<td><a href="YZ-AX-016/"><code>axis-unit-present</code></a><br>Each axis should have a <code>unit</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each axis should have a <code>unit</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-AX-017/">YZ-AX-017</a></td>
-<td><code>axes-spatial-zyx-order</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-AX-017</code></td>
+<td><a href="YZ-AX-017/"><code>axes-spatial-zyx-order</code></a><br>Three spatial axes, two in the image plane and one stacking axis, should be ordered <code>zyx</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Three spatial axes, two in the image plane and one stacking axis, should be ordered <code>zyx</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CS-001/">YZ-CS-001</a></td>
-<td><code>coordinate-system-name-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CS-001</code></td>
+<td><a href="YZ-CS-001/"><code>coordinate-system-name-present</code></a><br>A coordinate system must contain <code>name</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A coordinate system must contain <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CS-002/">YZ-CS-002</a></td>
-<td><code>coordinate-system-name-nonempty-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CS-002</code></td>
+<td><a href="YZ-CS-002/"><code>coordinate-system-name-nonempty-string</code></a><br>A coordinate system <code>name</code> must be a non-empty string.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A coordinate system <code>name</code> must be a non-empty string.</td>
 </tr>
 <tr>
-<td><a href="YZ-CS-003/">YZ-CS-003</a></td>
-<td><code>coordinate-system-name-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CS-003</code></td>
+<td><a href="YZ-CS-003/"><code>coordinate-system-name-unique</code></a><br>Coordinate system names must be unique within a <code>coordinateSystems</code> array.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Coordinate system names must be unique within a <code>coordinateSystems</code> array.</td>
 </tr>
 <tr>
-<td><a href="YZ-CS-004/">YZ-CS-004</a></td>
-<td><code>coordinate-system-axes-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CS-004</code></td>
+<td><a href="YZ-CS-004/"><code>coordinate-system-axes-present</code></a><br>A coordinate system must contain <code>axes</code>, an array.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A coordinate system must contain <code>axes</code>, an array.</td>
 </tr>
 <tr>
-<td><a href="YZ-CS-005/">YZ-CS-005</a></td>
-<td><code>analysis-same-coordinate-system</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CS-005</code></td>
+<td><a href="YZ-CS-005/"><code>analysis-same-coordinate-system</code></a><br>Analysis tasks should ensure that their inputs are in, or can be transformed to, the same coordinate system.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Analysis tasks should ensure that their inputs are in, or can be transformed to, the same coordinate system.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-001/">YZ-MS-001</a></td>
-<td><code>multiscales-name</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-MS-001</code></td>
+<td><a href="YZ-MS-001/"><code>multiscales-name</code></a><br>Each "multiscales" dictionary should contain the field "name".</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each "multiscales" dictionary should contain the field "name".</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-002/">YZ-MS-002</a></td>
-<td><code>multiscales-axes-present</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-MS-002</code></td>
+<td><a href="YZ-MS-002/"><code>multiscales-axes-present</code></a><br>Each "multiscales" entry must contain <code>axes</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>Each "multiscales" entry must contain <code>axes</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-003/">YZ-MS-003</a></td>
-<td><code>multiscales-datasets-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-MS-003</code></td>
+<td><a href="YZ-MS-003/"><code>multiscales-datasets-present</code></a><br>Each "multiscales" entry must contain <code>datasets</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each "multiscales" entry must contain <code>datasets</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-004/">YZ-MS-004</a></td>
-<td><code>multiscales-coordinate-systems-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-MS-004</code></td>
+<td><a href="YZ-MS-004/"><code>multiscales-coordinate-systems-present</code></a><br>Each <code>multiscales</code> entry must contain <code>coordinateSystems</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Each <code>multiscales</code> entry must contain <code>coordinateSystems</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-005/">YZ-MS-005</a></td>
-<td><code>multiscale-transforms-follow-dataset-rules</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-MS-005</code></td>
+<td><a href="YZ-MS-005/"><code>multiscale-transforms-follow-dataset-rules</code></a><br>Transformations in <code>multiscales</code> <code>coordinateTransformations</code> must follow the same rules (allowed types, order, etc.) as those of <code>datasets</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>Transformations in <code>multiscales</code> <code>coordinateTransformations</code> must follow the same rules (allowed types, order, etc.) as those of <code>datasets</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-006/">YZ-MS-006</a></td>
-<td><code>multiscales-type</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-MS-006</code></td>
+<td><a href="YZ-MS-006/"><code>multiscales-type</code></a><br>Each "multiscales" dictionary should contain the field "type", the downscaling method.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each "multiscales" dictionary should contain the field "type", the downscaling method.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-007/">YZ-MS-007</a></td>
-<td><code>multiscales-metadata</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-MS-007</code></td>
+<td><a href="YZ-MS-007/"><code>multiscales-metadata</code></a><br>Each "multiscales" dictionary should contain the field "metadata", with information about the downscaling method.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each "multiscales" dictionary should contain the field "metadata", with information about the downscaling method.</td>
 </tr>
 <tr>
-<td><a href="YZ-MS-008/">YZ-MS-008</a></td>
-<td><code>multiscales-version</code></td>
-<td>SHOULD</td>
-<td>warning</td>
-<td>0.4 (removed in 0.5)</td>
+<td><code>YZ-MS-008</code></td>
+<td><a href="YZ-MS-008/"><code>multiscales-version</code></a><br>Each "multiscales" dictionary should contain the field "version", the version of its metadata.</td>
+<td>0.4</td>
 <td>—</td>
-<td>Each "multiscales" dictionary should contain the field "version", the version of its metadata.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-001/">YZ-DS-001</a></td>
-<td><code>datasets-resolution-order</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-001</code></td>
+<td><a href="YZ-DS-001/"><code>datasets-resolution-order</code></a><br><code>datasets</code> must be ordered from highest to lowest resolution.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>datasets</code> must be ordered from highest to lowest resolution.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-002/">YZ-DS-002</a></td>
-<td><code>datasets-same-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-002</code></td>
+<td><a href="YZ-DS-002/"><code>datasets-same-ndim</code></a><br>All <code>datasets</code> must have the same number of dimensions.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>All <code>datasets</code> must have the same number of dimensions.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-003/">YZ-DS-003</a></td>
-<td><code>datasets-max-5d</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-003</code></td>
+<td><a href="YZ-DS-003/"><code>datasets-max-5d</code></a><br><code>datasets</code> must not have more than 5 dimensions.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>datasets</code> must not have more than 5 dimensions.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-004/">YZ-DS-004</a></td>
-<td><code>dataset-path-is-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-004</code></td>
+<td><a href="YZ-DS-004/"><code>dataset-path-is-array</code></a><br>Each <code>datasets</code> "path" must point to a Zarr array, relative to the image group.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each <code>datasets</code> "path" must point to a Zarr array, relative to the image group.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-005/">YZ-DS-005</a></td>
-<td><code>array-ndim-matches-axes</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-005</code></td>
+<td><a href="YZ-DS-005/"><code>array-ndim-matches-axes</code></a><br>Each multiscale array must have one dimension per axis.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each multiscale array must have one dimension per axis.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-006/">YZ-DS-006</a></td>
-<td><code>dataset-path-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-006</code></td>
+<td><a href="YZ-DS-006/"><code>dataset-path-present</code></a><br>Each entry in <code>datasets</code> must contain <code>path</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each entry in <code>datasets</code> must contain <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-007/">YZ-DS-007</a></td>
-<td><code>dataset-transforms-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-007</code></td>
+<td><a href="YZ-DS-007/"><code>dataset-transforms-present</code></a><br>Each entry in <code>datasets</code> must contain <code>coordinateTransformations</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each entry in <code>datasets</code> must contain <code>coordinateTransformations</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-008/">YZ-DS-008</a></td>
-<td><code>datasets-same-dtype</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-008</code></td>
+<td><a href="YZ-DS-008/"><code>datasets-same-dtype</code></a><br>All arrays referred to by <code>datasets</code> must have the same data type.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>All arrays referred to by <code>datasets</code> must have the same data type.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-009/">YZ-DS-009</a></td>
-<td><code>dataset-transform-scale-translation-only</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-DS-009</code></td>
+<td><a href="YZ-DS-009/"><code>dataset-transform-scale-translation-only</code></a><br>Dataset transformations must be of type <code>scale</code> or <code>translation</code> only.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>Dataset transformations must be of type <code>scale</code> or <code>translation</code> only.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-010/">YZ-DS-010</a></td>
-<td><code>array-dimension-order-matches-axes</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-010</code></td>
+<td><a href="YZ-DS-010/"><code>array-dimension-order-matches-axes</code></a><br>The dimensions of each multiscale array must be in the order of <code>axes</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>The dimensions of each multiscale array must be in the order of <code>axes</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-011/">YZ-DS-011</a></td>
-<td><code>dataset-scale-fallback-factor</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-DS-011</code></td>
+<td><a href="YZ-DS-011/"><code>dataset-scale-fallback-factor</code></a><br>For an axis without physical scale information, the dataset <code>scale</code> must be the scaling factor relative to the first resolution (1.0 if not downsampled).</td>
 <td>0.4+</td>
 <td>—</td>
-<td>For an axis without physical scale information, the dataset <code>scale</code> must be the scaling factor relative to the first resolution (1.0 if not downsampled).</td>
 </tr>
 <tr>
-<td><a href="YZ-DS-012/">YZ-DS-012</a></td>
-<td><code>dataset-path-treated-as-input-path</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-DS-012</code></td>
+<td><a href="YZ-DS-012/"><code>dataset-path-treated-as-input-path</code></a><br>Implementations should treat a dataset's <code>path</code> as the <code>path</code> of its transformation's <code>input</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Implementations should treat a dataset's <code>path</code> as the <code>path</code> of its transformation's <code>input</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-001/">YZ-CT-001</a></td>
-<td><code>scale-exactly-one</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-CT-001</code></td>
+<td><a href="YZ-CT-001/"><code>scale-exactly-one</code></a><br><code>coordinateTransformations</code> must contain exactly one <code>scale</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td><code>coordinateTransformations</code> must contain exactly one <code>scale</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-002/">YZ-CT-002</a></td>
-<td><code>translation-at-most-one</code></td>
-<td>MAY</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-CT-002</code></td>
+<td><a href="YZ-CT-002/"><code>translation-at-most-one</code></a><br><code>coordinateTransformations</code> may contain at most one <code>translation</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td><code>coordinateTransformations</code> may contain at most one <code>translation</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-003/">YZ-CT-003</a></td>
-<td><code>translation-after-scale</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-CT-003</code></td>
+<td><a href="YZ-CT-003/"><code>translation-after-scale</code></a><br>A <code>translation</code> must be listed after the <code>scale</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>A <code>translation</code> must be listed after the <code>scale</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-004/">YZ-CT-004</a></td>
-<td><code>transform-length-matches-axes</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-CT-004</code></td>
+<td><a href="YZ-CT-004/"><code>transform-length-matches-axes</code></a><br><code>scale</code> and <code>translation</code> arrays must have one entry per axis.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td><code>scale</code> and <code>translation</code> arrays must have one entry per axis.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-005/">YZ-CT-005</a></td>
-<td><code>dataset-transform-type</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-005</code></td>
+<td><a href="YZ-CT-005/"><code>dataset-transform-type</code></a><br>A dataset must have a single transformation: a <code>scale</code>, an <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A dataset must have a single transformation: a <code>scale</code>, an <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-006/">YZ-CT-006</a></td>
-<td><code>dataset-transform-input-path</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-006</code></td>
+<td><a href="YZ-CT-006/"><code>dataset-transform-input-path</code></a><br>The <code>input</code> of a dataset's transformation must specify a <code>path</code> matching the dataset's.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>input</code> of a dataset's transformation must specify a <code>path</code> matching the dataset's.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-007/">YZ-CT-007</a></td>
-<td><code>dataset-transform-output-name</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-007</code></td>
+<td><a href="YZ-CT-007/"><code>dataset-transform-output-name</code></a><br>The <code>output</code> of a dataset's transformation must name a coordinate system.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>output</code> of a dataset's transformation must name a coordinate system.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-008/">YZ-CT-008</a></td>
-<td><code>dataset-transform-input-name-omitted</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-008</code></td>
+<td><a href="YZ-CT-008/"><code>dataset-transform-input-name-omitted</code></a><br>The <code>input</code> of a dataset's transformation should not have a <code>name</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>input</code> of a dataset's transformation should not have a <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-009/">YZ-CT-009</a></td>
-<td><code>dataset-transform-output-path-omitted</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-009</code></td>
+<td><a href="YZ-CT-009/"><code>dataset-transform-output-path-omitted</code></a><br>The <code>output</code> of a dataset's transformation should not have a <code>path</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>output</code> of a dataset's transformation should not have a <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-010/">YZ-CT-010</a></td>
-<td><code>dataset-transform-same-output</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-010</code></td>
+<td><a href="YZ-CT-010/"><code>dataset-transform-same-output</code></a><br>Every dataset of a multiscale must output to the same coordinate system.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Every dataset of a multiscale must output to the same coordinate system.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-011/">YZ-CT-011</a></td>
-<td><code>transform-input-output-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-011</code></td>
+<td><a href="YZ-CT-011/"><code>transform-input-output-present</code></a><br>A transformation must have an <code>input</code> and an <code>output</code>, unless it is part of a wrapper transformation.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A transformation must have an <code>input</code> and an <code>output</code>, unless it is part of a wrapper transformation.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-012/">YZ-CT-012</a></td>
-<td><code>multiscale-transform-references-intrinsic</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-012</code></td>
+<td><a href="YZ-CT-012/"><code>multiscale-transform-references-intrinsic</code></a><br>One of the <code>input</code> or <code>output</code> of a multiscale's transformation must be the intrinsic coordinate system.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>One of the <code>input</code> or <code>output</code> of a multiscale's transformation must be the intrinsic coordinate system.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-013/">YZ-CT-013</a></td>
-<td><code>multiscale-transform-other-reference</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-013</code></td>
+<td><a href="YZ-CT-013/"><code>multiscale-transform-other-reference</code></a><br>The other end of a multiscale's transformation must name a coordinate system in the same multiscale, or in a child labels group.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The other end of a multiscale's transformation must name a coordinate system in the same multiscale, or in a child labels group.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-014/">YZ-CT-014</a></td>
-<td><code>label-transform-type</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-014</code></td>
+<td><a href="YZ-CT-014/"><code>label-transform-type</code></a><br>A transformation to a coordinate system in a child labels group must be <code>identity</code>, <code>scale</code>, or <code>translation</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A transformation to a coordinate system in a child labels group must be <code>identity</code>, <code>scale</code>, or <code>translation</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-015/">YZ-CT-015</a></td>
-<td><code>transform-params-match-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-015</code></td>
+<td><a href="YZ-CT-015/"><code>transform-params-match-ndim</code></a><br>A transformation's parameters must be compatible with the dimensionality of its input and output.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A transformation's parameters must be compatible with the dimensionality of its input and output.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-016/">YZ-CT-016</a></td>
-<td><code>map-axis-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-016</code></td>
+<td><a href="YZ-CT-016/"><code>map-axis-present</code></a><br>A <code>mapAxis</code> transformation must have a <code>mapAxis</code> field.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>mapAxis</code> transformation must have a <code>mapAxis</code> field.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-017/">YZ-CT-017</a></td>
-<td><code>map-axis-length</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-017</code></td>
+<td><a href="YZ-CT-017/"><code>map-axis-length</code></a><br>The length of <code>mapAxis</code> must equal the number of input and output axes.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The length of <code>mapAxis</code> must equal the number of input and output axes.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-018/">YZ-CT-018</a></td>
-<td><code>map-axis-valid-index</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-018</code></td>
+<td><a href="YZ-CT-018/"><code>map-axis-valid-index</code></a><br>Each value in <code>mapAxis</code> must be a valid index into the input axes.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Each value in <code>mapAxis</code> must be a valid index into the input axes.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-019/">YZ-CT-019</a></td>
-<td><code>map-axis-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-019</code></td>
+<td><a href="YZ-CT-019/"><code>map-axis-unique</code></a><br>Each index must appear exactly once in <code>mapAxis</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Each index must appear exactly once in <code>mapAxis</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-020/">YZ-CT-020</a></td>
-<td><code>project-axis-created-outputs-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-020</code></td>
+<td><a href="YZ-CT-020/"><code>project-axis-created-outputs-unique</code></a><br>The values in <code>createdOutputs</code> must be unique.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The values in <code>createdOutputs</code> must be unique.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-021/">YZ-CT-021</a></td>
-<td><code>project-axis-dropped-inputs-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-021</code></td>
+<td><a href="YZ-CT-021/"><code>project-axis-dropped-inputs-unique</code></a><br>The values in <code>droppedInputs</code> must be unique.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The values in <code>droppedInputs</code> must be unique.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-022/">YZ-CT-022</a></td>
-<td><code>scale-nonzero</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-022</code></td>
+<td><a href="YZ-CT-022/"><code>scale-nonzero</code></a><br>Values in a <code>scale</code> array should be non-zero.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Values in a <code>scale</code> array should be non-zero.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-023/">YZ-CT-023</a></td>
-<td><code>affine-matrix-stored</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-023</code></td>
+<td><a href="YZ-CT-023/"><code>affine-matrix-stored</code></a><br>An <code>affine</code> must have its matrix either inline or in a Zarr array at <code>path</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>An <code>affine</code> must have its matrix either inline or in a Zarr array at <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-024/">YZ-CT-024</a></td>
-<td><code>affine-path-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-024</code></td>
+<td><a href="YZ-CT-024/"><code>affine-path-array</code></a><br>The <code>path</code> of an <code>affine</code> must point to a 2D Zarr array of shape <code>(M)x(N+1)</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>path</code> of an <code>affine</code> must point to a 2D Zarr array of shape <code>(M)x(N+1)</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-025/">YZ-CT-025</a></td>
-<td><code>affine-inline-shape</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-025</code></td>
+<td><a href="YZ-CT-025/"><code>affine-inline-shape</code></a><br>An inline <code>affine</code> matrix must have <code>M</code> rows of length <code>N+1</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>An inline <code>affine</code> matrix must have <code>M</code> rows of length <code>N+1</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-026/">YZ-CT-026</a></td>
-<td><code>rotation-same-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-026</code></td>
+<td><a href="YZ-CT-026/"><code>rotation-same-ndim</code></a><br>The input and output of a <code>rotation</code> must have the same dimensionality.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The input and output of a <code>rotation</code> must have the same dimensionality.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-027/">YZ-CT-027</a></td>
-<td><code>rotation-orthonormal</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-027</code></td>
+<td><a href="YZ-CT-027/"><code>rotation-orthonormal</code></a><br>A <code>rotation</code> matrix must have determinant 1, with orthonormal rows and columns.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>rotation</code> matrix must have determinant 1, with orthonormal rows and columns.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-028/">YZ-CT-028</a></td>
-<td><code>rotation-matrix-stored</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-028</code></td>
+<td><a href="YZ-CT-028/"><code>rotation-matrix-stored</code></a><br>A <code>rotation</code> must have its matrix either inline or in a Zarr array at <code>path</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>rotation</code> must have its matrix either inline or in a Zarr array at <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-029/">YZ-CT-029</a></td>
-<td><code>rotation-path-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-029</code></td>
+<td><a href="YZ-CT-029/"><code>rotation-path-array</code></a><br>The <code>path</code> of a <code>rotation</code> must point to a 2D Zarr array of shape <code>N x N</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>path</code> of a <code>rotation</code> must point to a 2D Zarr array of shape <code>N x N</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-030/">YZ-CT-030</a></td>
-<td><code>rotation-inline-shape</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-030</code></td>
+<td><a href="YZ-CT-030/"><code>rotation-inline-shape</code></a><br>An inline <code>rotation</code> matrix must be <code>N x N</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>An inline <code>rotation</code> matrix must be <code>N x N</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-031/">YZ-CT-031</a></td>
-<td><code>field-path-multiscale</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-031</code></td>
+<td><a href="YZ-CT-031/"><code>field-path-multiscale</code></a><br>The <code>path</code> of a <code>coordinates</code> or <code>displacements</code> transformation must point to a multiscale image group.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>path</code> of a <code>coordinates</code> or <code>displacements</code> transformation must point to a multiscale image group.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-032/">YZ-CT-032</a></td>
-<td><code>field-vector-axis</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-032</code></td>
+<td><a href="YZ-CT-032/"><code>field-vector-axis</code></a><br>A coordinate or displacement field must have one axis of type <code>coordinate</code> or <code>displacement</code>, with <code>discrete: true</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A coordinate or displacement field must have one axis of type <code>coordinate</code> or <code>displacement</code>, with <code>discrete: true</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-033/">YZ-CT-033</a></td>
-<td><code>field-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-033</code></td>
+<td><a href="YZ-CT-033/"><code>field-ndim</code></a><br>A field for an input with <code>N</code> axes must have <code>N+1</code> dimensions.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A field for an input with <code>N</code> axes must have <code>N+1</code> dimensions.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-034/">YZ-CT-034</a></td>
-<td><code>coordinates-vector-length</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-034</code></td>
+<td><a href="YZ-CT-034/"><code>coordinates-vector-length</code></a><br>The <code>coordinate</code> axis of a field must have length <code>M</code>, the number of output axes.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>coordinate</code> axis of a field must have length <code>M</code>, the number of output axes.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-035/">YZ-CT-035</a></td>
-<td><code>displacements-vector-length</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-035</code></td>
+<td><a href="YZ-CT-035/"><code>displacements-vector-length</code></a><br>The <code>displacement</code> axis of a field must have length <code>N</code>, the number of input (and output) axes.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>displacement</code> axis of a field must have length <code>N</code>, the number of input (and output) axes.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-036/">YZ-CT-036</a></td>
-<td><code>by-dimension-item-fields</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-036</code></td>
+<td><a href="YZ-CT-036/"><code>by-dimension-item-fields</code></a><br><code>transformations</code> of a <code>byDimension</code> must be an array of objects with <code>inputAxes</code>, <code>outputAxes</code>, and <code>transformation</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td><code>transformations</code> of a <code>byDimension</code> must be an array of objects with <code>inputAxes</code>, <code>outputAxes</code>, and <code>transformation</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-037/">YZ-CT-037</a></td>
-<td><code>by-dimension-output-axes</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-037</code></td>
+<td><a href="YZ-CT-037/"><code>by-dimension-output-axes</code></a><br>Every output axis of a <code>byDimension</code> must appear in exactly one <code>outputAxes</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Every output axis of a <code>byDimension</code> must appear in exactly one <code>outputAxes</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-038/">YZ-CT-038</a></td>
-<td><code>by-dimension-axes-length</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-038</code></td>
+<td><a href="YZ-CT-038/"><code>by-dimension-axes-length</code></a><br><code>inputAxes</code> and <code>outputAxes</code> must have the same length as the parameter arrays of their transformation.</td>
 <td>0.6+</td>
 <td>—</td>
-<td><code>inputAxes</code> and <code>outputAxes</code> must have the same length as the parameter arrays of their transformation.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-039/">YZ-CT-039</a></td>
-<td><code>bijection-not-closed-form-invertible</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-039</code></td>
+<td><a href="YZ-CT-039/"><code>bijection-not-closed-form-invertible</code></a><br>Each direction of a <code>bijection</code> should be a type that is not closed-form invertible.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Each direction of a <code>bijection</code> should be a type that is not closed-form invertible.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-040/">YZ-CT-040</a></td>
-<td><code>bijection-same-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-040</code></td>
+<td><a href="YZ-CT-040/"><code>bijection-same-ndim</code></a><br>The input and output of a <code>bijection</code> must have the same dimensionality.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The input and output of a <code>bijection</code> must have the same dimensionality.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-041/">YZ-CT-041</a></td>
-<td><code>bijection-directions-match</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-041</code></td>
+<td><a href="YZ-CT-041/"><code>bijection-directions-match</code></a><br>The forward and inverse of a <code>bijection</code> must match its input and output dimensionality.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The forward and inverse of a <code>bijection</code> must match its input and output dimensionality.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-042/">YZ-CT-042</a></td>
-<td><code>transform-graph-connected</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-042</code></td>
+<td><a href="YZ-CT-042/"><code>transform-graph-connected</code></a><br>The coordinate systems and transformations of the metadata must form a connected graph.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The coordinate systems and transformations of the metadata must form a connected graph.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-043/">YZ-CT-043</a></td>
-<td><code>transform-parameters-location</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-043</code></td>
+<td><a href="YZ-CT-043/"><code>transform-parameters-location</code></a><br>In a scene, arrays with transformation parameters should be in a group called <code>coordinateTransformations</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>In a scene, arrays with transformation parameters should be in a group called <code>coordinateTransformations</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-044/">YZ-CT-044</a></td>
-<td><code>scale-positive</code></td>
-<td>MUST</td>
-<td>warning</td>
+<td><code>YZ-CT-044</code></td>
+<td><a href="YZ-CT-044/"><code>scale-positive</code></a><br>Values in a <code>scale</code> array must be greater than 0.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Values in a <code>scale</code> array must be greater than 0.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-045/">YZ-CT-045</a></td>
-<td><code>project-axis-fields</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-045</code></td>
+<td><a href="YZ-CT-045/"><code>project-axis-fields</code></a><br>A <code>projectAxis</code> transformation must have <code>droppedInputs</code> or <code>createdOutputs</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>projectAxis</code> transformation must have <code>droppedInputs</code> or <code>createdOutputs</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-046/">YZ-CT-046</a></td>
-<td><code>transform-type-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-046</code></td>
+<td><a href="YZ-CT-046/"><code>transform-type-present</code></a><br>Each coordinate transformation must contain <code>type</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each coordinate transformation must contain <code>type</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-047/">YZ-CT-047</a></td>
-<td><code>transform-type-known</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-047</code></td>
+<td><a href="YZ-CT-047/"><code>transform-type-known</code></a><br>The <code>type</code> of a coordinate transformation must be one of the types the spec defines.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>The <code>type</code> of a coordinate transformation must be one of the types the spec defines.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-048/">YZ-CT-048</a></td>
-<td><code>transform-prefer-least-expressive</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-048</code></td>
+<td><a href="YZ-CT-048/"><code>transform-prefer-least-expressive</code></a><br>A transformation should be stored as its least expressive equivalent (e.g. a <code>scale</code>, a <code>rotation</code>, or a sequence of such, rather than an <code>affine</code>).</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A transformation should be stored as its least expressive equivalent (e.g. a <code>scale</code>, a <code>rotation</code>, or a sequence of such, rather than an <code>affine</code>).</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-049/">YZ-CT-049</a></td>
-<td><code>reader-parse-basic-transforms</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-049</code></td>
+<td><a href="YZ-CT-049/"><code>reader-parse-basic-transforms</code></a><br>Conforming readers must parse <code>identity</code>, <code>scale</code>, and <code>translation</code> transformations, and <code>sequence</code>s of them.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Conforming readers must parse <code>identity</code>, <code>scale</code>, and <code>translation</code> transformations, and <code>sequence</code>s of them.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-050/">YZ-CT-050</a></td>
-<td><code>reader-parse-matrix-transforms</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-050</code></td>
+<td><a href="YZ-CT-050/"><code>reader-parse-matrix-transforms</code></a><br>Conforming readers should parse <code>mapAxis</code>, <code>affine</code>, and <code>rotation</code> transformations, and <code>byDimension</code>s of the transformations they support.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Conforming readers should parse <code>mapAxis</code>, <code>affine</code>, and <code>rotation</code> transformations, and <code>byDimension</code>s of the transformations they support.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-051/">YZ-CT-051</a></td>
-<td><code>reader-warn-unsupported-transform</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-051</code></td>
+<td><a href="YZ-CT-051/"><code>reader-warn-unsupported-transform</code></a><br>Conforming readers should warn about transformations they cannot parse or display.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Conforming readers should warn about transformations they cannot parse or display.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-052/">YZ-CT-052</a></td>
-<td><code>reader-transform-points</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-052</code></td>
+<td><a href="YZ-CT-052/"><code>reader-transform-points</code></a><br>Conforming readers should be able to apply transformations to points.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Conforming readers should be able to apply transformations to points.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-053/">YZ-CT-053</a></td>
-<td><code>reader-transform-images</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-053</code></td>
+<td><a href="YZ-CT-053/"><code>reader-transform-images</code></a><br>Conforming readers should be able to apply transformations to images.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Conforming readers should be able to apply transformations to images.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-054/">YZ-CT-054</a></td>
-<td><code>implementation-closed-form-inverse</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-054</code></td>
+<td><a href="YZ-CT-054/"><code>implementation-closed-form-inverse</code></a><br>Implementations should be able to compute and apply the inverse of transformations that are invertible in closed form.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Implementations should be able to compute and apply the inverse of transformations that are invertible in closed form.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-055/">YZ-CT-055</a></td>
-<td><code>field-regular-grid</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-055</code></td>
+<td><a href="YZ-CT-055/"><code>field-regular-grid</code></a><br>The array of a <code>coordinates</code> or <code>displacements</code> transformation must be a regular grid of vectors.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The array of a <code>coordinates</code> or <code>displacements</code> transformation must be a regular grid of vectors.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-056/">YZ-CT-056</a></td>
-<td><code>field-smooth-coordinate-systems</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-056</code></td>
+<td><a href="YZ-CT-056/"><code>field-smooth-coordinate-systems</code></a><br><code>coordinates</code> and <code>displacements</code> transformations must only be used between coordinate systems defined in smooth, regularly sampled coordinate arrays.</td>
 <td>0.6+</td>
 <td>—</td>
-<td><code>coordinates</code> and <code>displacements</code> transformations must only be used between coordinate systems defined in smooth, regularly sampled coordinate arrays.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-057/">YZ-CT-057</a></td>
-<td><code>consumer-interpolation-communicate</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-CT-057</code></td>
+<td><a href="YZ-CT-057/"><code>consumer-interpolation-communicate</code></a><br>Consumers should tell users when they use a different interpolation method than the one a field transformation specifies.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Consumers should tell users when they use a different interpolation method than the one a field transformation specifies.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-058/">YZ-CT-058</a></td>
-<td><code>field-vector-axis-position</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-058</code></td>
+<td><a href="YZ-CT-058/"><code>field-vector-axis-position</code></a><br>The <code>coordinate</code> or <code>displacement</code> axis of a field must come after the time axis (if present) and before the spatial axes.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>coordinate</code> or <code>displacement</code> axis of a field must come after the time axis (if present) and before the spatial axes.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-059/">YZ-CT-059</a></td>
-<td><code>scale-translation-same-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-059</code></td>
+<td><a href="YZ-CT-059/"><code>scale-translation-same-ndim</code></a><br>The input and output of a <code>scale</code> or <code>translation</code> must have the same dimensionality.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The input and output of a <code>scale</code> or <code>translation</code> must have the same dimensionality.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-060/">YZ-CT-060</a></td>
-<td><code>transform-length-matches-ndim</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-060</code></td>
+<td><a href="YZ-CT-060/"><code>transform-length-matches-ndim</code></a><br>The <code>scale</code> or <code>translation</code> array must have one entry per dimension of its input and output.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>scale</code> or <code>translation</code> array must have one entry per dimension of its input and output.</td>
 </tr>
 <tr>
-<td><a href="YZ-CT-061/">YZ-CT-061</a></td>
-<td><code>labels-parent-transform-type</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-CT-061</code></td>
+<td><a href="YZ-CT-061/"><code>labels-parent-transform-type</code></a><br>A transformation from an image to the label images in its <code>labels</code> group, if present, must be <code>identity</code>, <code>scale</code>, <code>translation</code>, or a <code>sequence</code> of a scale and a translation.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A transformation from an image to the label images in its <code>labels</code> group, if present, must be <code>identity</code>, <code>scale</code>, <code>translation</code>, or a <code>sequence</code> of a scale and a translation.</td>
 </tr>
 <tr>
-<td><a href="YZ-OM-001/">YZ-OM-001</a></td>
-<td><code>omero-channel-color-hex</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-OM-001</code></td>
+<td><a href="YZ-OM-001/"><code>omero-channel-color-hex</code></a><br>An omero channel <code>color</code> must be a string of 6 hexadecimal digits.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An omero channel <code>color</code> must be a string of 6 hexadecimal digits.</td>
 </tr>
 <tr>
-<td><a href="YZ-OM-002/">YZ-OM-002</a></td>
-<td><code>omero-channels-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-OM-002</code></td>
+<td><a href="YZ-OM-002/"><code>omero-channels-present</code></a><br><code>omero</code> metadata, if present, must contain <code>channels</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>omero</code> metadata, if present, must contain <code>channels</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-OM-003/">YZ-OM-003</a></td>
-<td><code>omero-channel-color-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-OM-003</code></td>
+<td><a href="YZ-OM-003/"><code>omero-channel-color-present</code></a><br>Each omero channel must contain <code>color</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each omero channel must contain <code>color</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-OM-004/">YZ-OM-004</a></td>
-<td><code>omero-channel-window-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-OM-004</code></td>
+<td><a href="YZ-OM-004/"><code>omero-channel-window-present</code></a><br>Each omero channel must contain <code>window</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each omero channel must contain <code>window</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-OM-005/">YZ-OM-005</a></td>
-<td><code>omero-window-min-max-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-OM-005</code></td>
+<td><a href="YZ-OM-005/"><code>omero-window-min-max-present</code></a><br>An omero channel <code>window</code> must contain <code>min</code> and <code>max</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An omero channel <code>window</code> must contain <code>min</code> and <code>max</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-OM-006/">YZ-OM-006</a></td>
-<td><code>omero-window-start-end-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-OM-006</code></td>
+<td><a href="YZ-OM-006/"><code>omero-window-start-end-present</code></a><br>An omero channel <code>window</code> must contain <code>start</code> and <code>end</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An omero channel <code>window</code> must contain <code>start</code> and <code>end</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-001/">YZ-PL-001</a></td>
-<td><code>acquisition-id-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-001</code></td>
+<td><a href="YZ-PL-001/"><code>acquisition-id-unique</code></a><br>Acquisition <code>id</code>s must be unique within a plate.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Acquisition <code>id</code>s must be unique within a plate.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-002/">YZ-PL-002</a></td>
-<td><code>plate-column-names-case-collision</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-PL-002</code></td>
+<td><a href="YZ-PL-002/"><code>plate-column-names-case-collision</code></a><br>Plate column names should not differ only by case.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate column names should not differ only by case.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-003/">YZ-PL-003</a></td>
-<td><code>plate-row-names-case-collision</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-PL-003</code></td>
+<td><a href="YZ-PL-003/"><code>plate-row-names-case-collision</code></a><br>Plate row names should not differ only by case.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate row names should not differ only by case.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-004/">YZ-PL-004</a></td>
-<td><code>well-row-index-valid</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-004</code></td>
+<td><a href="YZ-PL-004/"><code>well-row-index-valid</code></a><br>A well's <code>rowIndex</code> must be an index into the plate's <code>rows</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A well's <code>rowIndex</code> must be an index into the plate's <code>rows</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-005/">YZ-PL-005</a></td>
-<td><code>well-column-index-valid</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-005</code></td>
+<td><a href="YZ-PL-005/"><code>well-column-index-valid</code></a><br>A well's <code>columnIndex</code> must be an index into the plate's <code>columns</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A well's <code>columnIndex</code> must be an index into the plate's <code>columns</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-006/">YZ-PL-006</a></td>
-<td><code>well-path-matches-indices</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-006</code></td>
+<td><a href="YZ-PL-006/"><code>well-path-matches-indices</code></a><br>A well's <code>path</code>, <code>rowIndex</code>, and <code>columnIndex</code> must agree.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A well's <code>path</code>, <code>rowIndex</code>, and <code>columnIndex</code> must agree.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-007/">YZ-PL-007</a></td>
-<td><code>well-path-is-well-group</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-007</code></td>
+<td><a href="YZ-PL-007/"><code>well-path-is-well-group</code></a><br>Each plate well <code>path</code> must point to a well group.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each plate well <code>path</code> must point to a well group.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-008/">YZ-PL-008</a></td>
-<td><code>plate-acquisitions-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-008</code></td>
+<td><a href="YZ-PL-008/"><code>plate-acquisitions-array</code></a><br>Plate <code>acquisitions</code>, if present, must be a list of objects.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>acquisitions</code>, if present, must be a list of objects.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-009/">YZ-PL-009</a></td>
-<td><code>acquisition-id-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-009</code></td>
+<td><a href="YZ-PL-009/"><code>acquisition-id-present</code></a><br>Each acquisition must contain <code>id</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each acquisition must contain <code>id</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-010/">YZ-PL-010</a></td>
-<td><code>acquisition-id-nonnegative-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-010</code></td>
+<td><a href="YZ-PL-010/"><code>acquisition-id-nonnegative-integer</code></a><br>An acquisition <code>id</code> must be an integer greater than or equal to 0.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An acquisition <code>id</code> must be an integer greater than or equal to 0.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-011/">YZ-PL-011</a></td>
-<td><code>acquisition-name-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-011</code></td>
+<td><a href="YZ-PL-011/"><code>acquisition-name-string</code></a><br>An acquisition <code>name</code>, if present, must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An acquisition <code>name</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-012/">YZ-PL-012</a></td>
-<td><code>acquisition-maximumfieldcount-positive</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-012</code></td>
+<td><a href="YZ-PL-012/"><code>acquisition-maximumfieldcount-positive</code></a><br>An acquisition <code>maximumfieldcount</code>, if present, must be a positive integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An acquisition <code>maximumfieldcount</code>, if present, must be a positive integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-013/">YZ-PL-013</a></td>
-<td><code>acquisition-description-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-013</code></td>
+<td><a href="YZ-PL-013/"><code>acquisition-description-string</code></a><br>An acquisition <code>description</code>, if present, must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An acquisition <code>description</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-014/">YZ-PL-014</a></td>
-<td><code>acquisition-times-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-014</code></td>
+<td><a href="YZ-PL-014/"><code>acquisition-times-integer</code></a><br>An acquisition <code>starttime</code> or <code>endtime</code>, if present, must be an integer epoch timestamp.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An acquisition <code>starttime</code> or <code>endtime</code>, if present, must be an integer epoch timestamp.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-015/">YZ-PL-015</a></td>
-<td><code>plate-columns-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-015</code></td>
+<td><a href="YZ-PL-015/"><code>plate-columns-present</code></a><br>A plate must contain <code>columns</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate must contain <code>columns</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-016/">YZ-PL-016</a></td>
-<td><code>plate-columns-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-016</code></td>
+<td><a href="YZ-PL-016/"><code>plate-columns-array</code></a><br>Plate <code>columns</code> must be a list of objects.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>columns</code> must be a list of objects.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-017/">YZ-PL-017</a></td>
-<td><code>column-name-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-017</code></td>
+<td><a href="YZ-PL-017/"><code>column-name-present</code></a><br>Each plate column must contain <code>name</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each plate column must contain <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-018/">YZ-PL-018</a></td>
-<td><code>column-name-alphanumeric</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-018</code></td>
+<td><a href="YZ-PL-018/"><code>column-name-alphanumeric</code></a><br>A plate column <code>name</code> must contain only alphanumeric characters.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate column <code>name</code> must contain only alphanumeric characters.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-019/">YZ-PL-019</a></td>
-<td><code>column-name-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-019</code></td>
+<td><a href="YZ-PL-019/"><code>column-name-unique</code></a><br>Plate column names must be unique.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate column names must be unique.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-020/">YZ-PL-020</a></td>
-<td><code>plate-field-count-positive</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-020</code></td>
+<td><a href="YZ-PL-020/"><code>plate-field-count-positive</code></a><br>Plate <code>field_count</code>, if present, must be a positive integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>field_count</code>, if present, must be a positive integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-021/">YZ-PL-021</a></td>
-<td><code>plate-name-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-021</code></td>
+<td><a href="YZ-PL-021/"><code>plate-name-string</code></a><br>Plate <code>name</code>, if present, must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>name</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-022/">YZ-PL-022</a></td>
-<td><code>plate-rows-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-022</code></td>
+<td><a href="YZ-PL-022/"><code>plate-rows-present</code></a><br>A plate must contain <code>rows</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate must contain <code>rows</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-023/">YZ-PL-023</a></td>
-<td><code>plate-rows-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-023</code></td>
+<td><a href="YZ-PL-023/"><code>plate-rows-array</code></a><br>Plate <code>rows</code> must be a list of objects.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>rows</code> must be a list of objects.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-024/">YZ-PL-024</a></td>
-<td><code>row-name-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-024</code></td>
+<td><a href="YZ-PL-024/"><code>row-name-present</code></a><br>Each plate row must contain <code>name</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each plate row must contain <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-025/">YZ-PL-025</a></td>
-<td><code>row-name-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-025</code></td>
+<td><a href="YZ-PL-025/"><code>row-name-string</code></a><br>A plate row <code>name</code> must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate row <code>name</code> must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-026/">YZ-PL-026</a></td>
-<td><code>row-name-alphanumeric</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-026</code></td>
+<td><a href="YZ-PL-026/"><code>row-name-alphanumeric</code></a><br>A plate row <code>name</code> must contain only alphanumeric characters.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate row <code>name</code> must contain only alphanumeric characters.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-027/">YZ-PL-027</a></td>
-<td><code>row-name-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-027</code></td>
+<td><a href="YZ-PL-027/"><code>row-name-unique</code></a><br>Plate row names must be unique.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate row names must be unique.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-028/">YZ-PL-028</a></td>
-<td><code>plate-wells-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-028</code></td>
+<td><a href="YZ-PL-028/"><code>plate-wells-present</code></a><br>A plate must contain <code>wells</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate must contain <code>wells</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-029/">YZ-PL-029</a></td>
-<td><code>plate-wells-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-029</code></td>
+<td><a href="YZ-PL-029/"><code>plate-wells-array</code></a><br>Plate <code>wells</code> must be a list of objects.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>wells</code> must be a list of objects.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-030/">YZ-PL-030</a></td>
-<td><code>well-path-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-030</code></td>
+<td><a href="YZ-PL-030/"><code>well-path-present</code></a><br>Each plate well must contain <code>path</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each plate well must contain <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-031/">YZ-PL-031</a></td>
-<td><code>well-path-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-031</code></td>
+<td><a href="YZ-PL-031/"><code>well-path-string</code></a><br>A plate well <code>path</code> must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate well <code>path</code> must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-032/">YZ-PL-032</a></td>
-<td><code>well-path-row-column</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-032</code></td>
+<td><a href="YZ-PL-032/"><code>well-path-row-column</code></a><br>A plate well <code>path</code> must have the form <code>&lt;row name&gt;/&lt;column name&gt;</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate well <code>path</code> must have the form <code>&lt;row name&gt;/&lt;column name&gt;</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-033/">YZ-PL-033</a></td>
-<td><code>well-indices-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-033</code></td>
+<td><a href="YZ-PL-033/"><code>well-indices-present</code></a><br>Each plate well must contain <code>rowIndex</code> and <code>columnIndex</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each plate well must contain <code>rowIndex</code> and <code>columnIndex</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-034/">YZ-PL-034</a></td>
-<td><code>well-row-index-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-034</code></td>
+<td><a href="YZ-PL-034/"><code>well-row-index-integer</code></a><br>A plate well <code>rowIndex</code> must be an integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate well <code>rowIndex</code> must be an integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-035/">YZ-PL-035</a></td>
-<td><code>well-column-index-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-035</code></td>
+<td><a href="YZ-PL-035/"><code>well-column-index-integer</code></a><br>A plate well <code>columnIndex</code> must be an integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate well <code>columnIndex</code> must be an integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-036/">YZ-PL-036</a></td>
-<td><code>column-name-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-036</code></td>
+<td><a href="YZ-PL-036/"><code>column-name-string</code></a><br>A plate column <code>name</code> must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate column <code>name</code> must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-037/">YZ-PL-037</a></td>
-<td><code>plate-columns-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-037</code></td>
+<td><a href="YZ-PL-037/"><code>plate-columns-nonempty</code></a><br>Plate <code>columns</code> must have at least one entry.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>columns</code> must have at least one entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-038/">YZ-PL-038</a></td>
-<td><code>plate-rows-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-038</code></td>
+<td><a href="YZ-PL-038/"><code>plate-rows-nonempty</code></a><br>Plate <code>rows</code> must have at least one entry.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>rows</code> must have at least one entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-039/">YZ-PL-039</a></td>
-<td><code>plate-wells-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-039</code></td>
+<td><a href="YZ-PL-039/"><code>plate-wells-nonempty</code></a><br>Plate <code>wells</code> must have at least one entry.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>wells</code> must have at least one entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-040/">YZ-PL-040</a></td>
-<td><code>plate-wells-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-040</code></td>
+<td><a href="YZ-PL-040/"><code>plate-wells-unique</code></a><br>Plate <code>wells</code> must not contain identical entries.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate <code>wells</code> must not contain identical entries.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-041/">YZ-PL-041</a></td>
-<td><code>plate-column-defined</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-041</code></td>
+<td><a href="YZ-PL-041/"><code>plate-column-defined</code></a><br>Every column in the physical plate must be defined in <code>columns</code>, even if it has no wells.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Every column in the physical plate must be defined in <code>columns</code>, even if it has no wells.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-042/">YZ-PL-042</a></td>
-<td><code>plate-row-defined</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-042</code></td>
+<td><a href="YZ-PL-042/"><code>plate-row-defined</code></a><br>Every row in the physical plate must be defined in <code>rows</code>, even if it has no wells.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Every row in the physical plate must be defined in <code>rows</code>, even if it has no wells.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-043/">YZ-PL-043</a></td>
-<td><code>column-name-case-sensitive</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-043</code></td>
+<td><a href="YZ-PL-043/"><code>column-name-case-sensitive</code></a><br>Plate column names must be case-sensitive.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate column names are case-sensitive.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-044/">YZ-PL-044</a></td>
-<td><code>row-name-case-sensitive</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-044</code></td>
+<td><a href="YZ-PL-044/"><code>row-name-case-sensitive</code></a><br>Plate row names must be case-sensitive.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Plate row names are case-sensitive.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-045/">YZ-PL-045</a></td>
-<td><code>well-indices-zero-based</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-PL-045</code></td>
+<td><a href="YZ-PL-045/"><code>well-indices-zero-based</code></a><br>A plate well <code>rowIndex</code> and <code>columnIndex</code> must be 0-based.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate well <code>rowIndex</code> and <code>columnIndex</code> must be 0-based.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-046/">YZ-PL-046</a></td>
-<td><code>acquisition-maximumfieldcount-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-PL-046</code></td>
+<td><a href="YZ-PL-046/"><code>acquisition-maximumfieldcount-present</code></a><br>Each acquisition should contain <code>maximumfieldcount</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each acquisition should contain <code>maximumfieldcount</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-047/">YZ-PL-047</a></td>
-<td><code>plate-version-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
-<td>0.4 (removed in 0.5)</td>
+<td><code>YZ-PL-047</code></td>
+<td><a href="YZ-PL-047/"><code>plate-version-present</code></a><br>The <code>plate</code> object should contain <code>version</code>.</td>
+<td>0.4</td>
 <td>—</td>
-<td>The <code>plate</code> object should contain <code>version</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-048/">YZ-PL-048</a></td>
-<td><code>plate-version-required</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.5 (removed in 0.6)</td>
+<td><code>YZ-PL-048</code></td>
+<td><a href="YZ-PL-048/"><code>plate-version-required</code></a><br>The <code>plate</code> object must contain <code>version</code>.</td>
+<td>0.5</td>
 <td>—</td>
-<td>The <code>plate</code> object must contain <code>version</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-049/">YZ-PL-049</a></td>
-<td><code>plate-version-string</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-PL-049</code></td>
+<td><a href="YZ-PL-049/"><code>plate-version-string</code></a><br>A plate <code>version</code>, if present, must be a string.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>A plate <code>version</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-050/">YZ-PL-050</a></td>
-<td><code>acquisition-name-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-PL-050</code></td>
+<td><a href="YZ-PL-050/"><code>acquisition-name-present</code></a><br>Each acquisition should contain <code>name</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each acquisition should contain <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-051/">YZ-PL-051</a></td>
-<td><code>plate-field-count-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-PL-051</code></td>
+<td><a href="YZ-PL-051/"><code>plate-field-count-present</code></a><br>A plate should contain <code>field_count</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate should contain <code>field_count</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-PL-052/">YZ-PL-052</a></td>
-<td><code>plate-name-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-PL-052</code></td>
+<td><a href="YZ-PL-052/"><code>plate-name-present</code></a><br>A plate should contain <code>name</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A plate should contain <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-001/">YZ-WL-001</a></td>
-<td><code>field-path-alphanumeric</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-WL-001</code></td>
+<td><a href="YZ-WL-001/"><code>field-path-alphanumeric</code></a><br>A field of view <code>path</code> must contain only alphanumeric characters.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>A field of view <code>path</code> must contain only alphanumeric characters.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-002/">YZ-WL-002</a></td>
-<td><code>field-path-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-002</code></td>
+<td><a href="YZ-WL-002/"><code>field-path-unique</code></a><br>Field of view <code>path</code>s must be unique within a well.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Field of view <code>path</code>s must be unique within a well.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-003/">YZ-WL-003</a></td>
-<td><code>field-path-is-image-group</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-003</code></td>
+<td><a href="YZ-WL-003/"><code>field-path-is-image-group</code></a><br>Each well image <code>path</code> must point to an image (field of view) group.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each well image <code>path</code> must point to an image (field of view) group.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-004/">YZ-WL-004</a></td>
-<td><code>well-images-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-004</code></td>
+<td><a href="YZ-WL-004/"><code>well-images-present</code></a><br>A well must contain <code>images</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A well must contain <code>images</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-005/">YZ-WL-005</a></td>
-<td><code>well-images-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-005</code></td>
+<td><a href="YZ-WL-005/"><code>well-images-array</code></a><br>Well <code>images</code> must be a list of objects.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Well <code>images</code> must be a list of objects.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-006/">YZ-WL-006</a></td>
-<td><code>field-path-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-006</code></td>
+<td><a href="YZ-WL-006/"><code>field-path-present</code></a><br>Each well image (field of view) must contain <code>path</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each well image (field of view) must contain <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-007/">YZ-WL-007</a></td>
-<td><code>field-acquisition-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-007</code></td>
+<td><a href="YZ-WL-007/"><code>field-acquisition-integer</code></a><br>A field of view <code>acquisition</code>, if present, must be an integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A field of view <code>acquisition</code>, if present, must be an integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-008/">YZ-WL-008</a></td>
-<td><code>field-acquisition-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-008</code></td>
+<td><a href="YZ-WL-008/"><code>field-acquisition-present</code></a><br>If a plate has multiple acquisitions, each field of view must have an <code>acquisition</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>If a plate has multiple acquisitions, each field of view must have an <code>acquisition</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-009/">YZ-WL-009</a></td>
-<td><code>field-acquisition-matches-plate</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-009</code></td>
+<td><a href="YZ-WL-009/"><code>field-acquisition-matches-plate</code></a><br>A field of view's <code>acquisition</code> must match an acquisition in the plate.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A field of view's <code>acquisition</code> must match an acquisition in the plate.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-010/">YZ-WL-010</a></td>
-<td><code>field-path-characters</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-010</code></td>
+<td><a href="YZ-WL-010/"><code>field-path-characters</code></a><br>A field of view <code>path</code> must only use the characters <code>a-z</code>, <code>A-Z</code>, <code>0-9</code>, <code>-</code>, <code>_</code>, and <code>.</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A field of view <code>path</code> must only use the characters <code>a-z</code>, <code>A-Z</code>, <code>0-9</code>, <code>-</code>, <code>_</code>, and <code>.</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-011/">YZ-WL-011</a></td>
-<td><code>field-path-node-name</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-011</code></td>
+<td><a href="YZ-WL-011/"><code>field-path-node-name</code></a><br>A field of view <code>path</code> must not consist only of periods, or start with <code>__</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A field of view <code>path</code> must not consist only of periods, or start with <code>__</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-012/">YZ-WL-012</a></td>
-<td><code>well-images-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-012</code></td>
+<td><a href="YZ-WL-012/"><code>well-images-nonempty</code></a><br>Well <code>images</code> must have at least one entry.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Well <code>images</code> must have at least one entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-013/">YZ-WL-013</a></td>
-<td><code>well-version-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-WL-013</code></td>
+<td><a href="YZ-WL-013/"><code>well-version-present</code></a><br>The <code>well</code> object should contain <code>version</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>The <code>well</code> object should contain <code>version</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-014/">YZ-WL-014</a></td>
-<td><code>well-version-string</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-WL-014</code></td>
+<td><a href="YZ-WL-014/"><code>well-version-string</code></a><br>A well <code>version</code>, if present, must be a string.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>A well <code>version</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-015/">YZ-WL-015</a></td>
-<td><code>field-path-case-sensitive</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-015</code></td>
+<td><a href="YZ-WL-015/"><code>field-path-case-sensitive</code></a><br>Field of view <code>path</code>s must be case-sensitive.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Field of view <code>path</code>s are case-sensitive.</td>
 </tr>
 <tr>
-<td><a href="YZ-WL-016/">YZ-WL-016</a></td>
-<td><code>field-path-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-WL-016</code></td>
+<td><a href="YZ-WL-016/"><code>field-path-nonempty</code></a><br>A field of view <code>path</code> must not be an empty string.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A field of view <code>path</code> must not be an empty string.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-001/">YZ-BF-001</a></td>
-<td><code>bf2raw-numbered-image-groups</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-001</code></td>
+<td><a href="YZ-BF-001/"><code>bf2raw-numbered-image-groups</code></a><br>Without <code>series</code> metadata, bioformats2raw images must be groups numbered consecutively from 0.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Without <code>series</code> metadata, bioformats2raw images must be groups numbered consecutively from 0.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-002/">YZ-BF-002</a></td>
-<td><code>bf2raw-series-paths</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-002</code></td>
+<td><a href="YZ-BF-002/"><code>bf2raw-series-paths</code></a><br>Each path in the OME group's "series" must point to an image group.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each path in the OME group's "series" must point to an image group.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-003/">YZ-BF-003</a></td>
-<td><code>bf2raw-layout-3</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-003</code></td>
+<td><a href="YZ-BF-003/"><code>bf2raw-layout-3</code></a><br>The top of a bioformats2raw hierarchy must have <code>"bioformats2raw.layout": 3</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>The top of a bioformats2raw hierarchy must have <code>"bioformats2raw.layout": 3</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-004/">YZ-BF-004</a></td>
-<td><code>bf2raw-series-strings</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-004</code></td>
+<td><a href="YZ-BF-004/"><code>bf2raw-series-strings</code></a><br>"series" must be a list of strings.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>"series" must be a list of strings.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-005/">YZ-BF-005</a></td>
-<td><code>bf2raw-plate-key-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-005</code></td>
+<td><a href="YZ-BF-005/"><code>bf2raw-plate-key-present</code></a><br>A bioformats2raw top-level group that represents a plate must also have the <code>plate</code> key.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A bioformats2raw top-level group that represents a plate must also have the <code>plate</code> key.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-006/">YZ-BF-006</a></td>
-<td><code>bf2raw-ome-xml-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-BF-006</code></td>
+<td><a href="YZ-BF-006/"><code>bf2raw-ome-xml-present</code></a><br>A bioformats2raw collection should have OME metadata for all of its images in <code>OME/METADATA.ome.xml</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A bioformats2raw collection should have OME metadata for all of its images in <code>OME/METADATA.ome.xml</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-007/">YZ-BF-007</a></td>
-<td><code>bf2raw-ome-xml-valid</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-007</code></td>
+<td><a href="YZ-BF-007/"><code>bf2raw-ome-xml-valid</code></a><br><code>OME/METADATA.ome.xml</code> must adhere to the OME-XML specification.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>OME/METADATA.ome.xml</code> must adhere to the OME-XML specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-008/">YZ-BF-008</a></td>
-<td><code>bf2raw-ome-xml-metadata-only</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-008</code></td>
+<td><a href="YZ-BF-008/"><code>bf2raw-ome-xml-metadata-only</code></a><br><code>OME/METADATA.ome.xml</code> must use <code>&lt;MetadataOnly/&gt;</code> elements, not <code>&lt;BinData/&gt;</code>, <code>&lt;BinaryOnly/&gt;</code> or <code>&lt;TiffData/&gt;</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>OME/METADATA.ome.xml</code> must use <code>&lt;MetadataOnly/&gt;</code> elements, not <code>&lt;BinData/&gt;</code>, <code>&lt;BinaryOnly/&gt;</code> or <code>&lt;TiffData/&gt;</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-009/">YZ-BF-009</a></td>
-<td><code>bf2raw-plate-image-location</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-009</code></td>
+<td><a href="YZ-BF-009/"><code>bf2raw-plate-image-location</code></a><br>If a bioformats2raw collection has <code>plate</code> metadata, its images must be at the locations the plate defines.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>If a bioformats2raw collection has <code>plate</code> metadata, its images must be at the locations the plate defines.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-010/">YZ-BF-010</a></td>
-<td><code>bf2raw-plate-series</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-BF-010</code></td>
+<td><a href="YZ-BF-010/"><code>bf2raw-plate-series</code></a><br>A bioformats2raw plate should also provide matching <code>series</code> metadata.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A bioformats2raw plate should also provide matching <code>series</code> metadata.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-011/">YZ-BF-011</a></td>
-<td><code>bf2raw-series-order</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-011</code></td>
+<td><a href="YZ-BF-011/"><code>bf2raw-series-order</code></a><br>The order of the <code>series</code> paths must match the order of the <code>Image</code> elements in <code>OME/METADATA.ome.xml</code>, if that file is provided.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>The order of the <code>series</code> paths must match the order of the <code>Image</code> elements in <code>OME/METADATA.ome.xml</code>, if that file is provided.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-012/">YZ-BF-012</a></td>
-<td><code>bf2raw-image-per-ome-xml-image</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-BF-012</code></td>
+<td><a href="YZ-BF-012/"><code>bf2raw-image-per-ome-xml-image</code></a><br>Each bioformats2raw <code>multiscales</code> group must represent exactly one OME-XML <code>Image</code>, in the order of the <code>series</code> index or the group numbers.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each bioformats2raw <code>multiscales</code> group must represent exactly one OME-XML <code>Image</code>, in the order of the <code>series</code> index or the group numbers.</td>
 </tr>
 <tr>
-<td><a href="YZ-BF-013/">YZ-BF-013</a></td>
-<td><code>bf2raw-reader-show-all-images</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-BF-013</code></td>
+<td><a href="YZ-BF-013/"><code>bf2raw-reader-show-all-images</code></a><br>Readers should make users aware that a bioformats2raw collection has more than one image, rather than only opening the first.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Readers should make users aware that a bioformats2raw collection has more than one image, rather than only opening the first.</td>
 </tr>
 <tr>
-<td><a href="YZ-LB-001/">YZ-LB-001</a></td>
-<td><code>labels-group-metadata</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-LB-001</code></td>
+<td><a href="YZ-LB-001/"><code>labels-group-metadata</code></a><br>A "labels" group must be a group whose metadata contains the key <code>labels</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A "labels" group must be a group whose metadata contains the key <code>labels</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-LB-002/">YZ-LB-002</a></td>
-<td><code>labels-paths-exist</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-LB-002</code></td>
+<td><a href="YZ-LB-002/"><code>labels-paths-exist</code></a><br>Each path listed in <code>labels</code> must point to a label image group.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each path listed in <code>labels</code> must point to a label image group.</td>
 </tr>
 <tr>
-<td><a href="YZ-LB-003/">YZ-LB-003</a></td>
-<td><code>label-pixels-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-LB-003</code></td>
+<td><a href="YZ-LB-003/"><code>label-pixels-integer</code></a><br>Label image arrays must have an integer data type.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Label image arrays must have an integer data type.</td>
 </tr>
 <tr>
-<td><a href="YZ-LB-004/">YZ-LB-004</a></td>
-<td><code>labels-intermediate-groups-no-metadata</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-LB-004</code></td>
+<td><a href="YZ-LB-004/"><code>labels-intermediate-groups-no-metadata</code></a><br>Intermediate groups between a "labels" group and its label images must not contain metadata.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>Intermediate groups between a "labels" group and its label images must not contain metadata.</td>
 </tr>
 <tr>
-<td><a href="YZ-LB-005/">YZ-LB-005</a></td>
-<td><code>labels-list-all-label-images</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-LB-005</code></td>
+<td><a href="YZ-LB-005/"><code>labels-list-all-label-images</code></a><br>All label images in a "labels" group should be listed in its <code>labels</code> metadata.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>All label images in a "labels" group should be listed in its <code>labels</code> metadata.</td>
 </tr>
 <tr>
-<td><a href="YZ-LB-006/">YZ-LB-006</a></td>
-<td><code>labels-parent-image-multiscales</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-LB-006</code></td>
+<td><a href="YZ-LB-006/"><code>labels-parent-image-multiscales</code></a><br>The image group that contains a "labels" group must implement the multiscales specification.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>The image group that contains a "labels" group must implement the multiscales specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-001/">YZ-IL-001</a></td>
-<td><code>label-image-multiscales</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-001</code></td>
+<td><a href="YZ-IL-001/"><code>label-image-multiscales</code></a><br>A label image must implement the multiscales specification.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A label image must implement the multiscales specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-002/">YZ-IL-002</a></td>
-<td><code>label-datasets-count-matches-image</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-002</code></td>
+<td><a href="YZ-IL-002/"><code>label-datasets-count-matches-image</code></a><br>A label image must have the same number of <code>datasets</code> (scale levels) as its image.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A label image must have the same number of <code>datasets</code> (scale levels) as its image.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-003/">YZ-IL-003</a></td>
-<td><code>label-image-has-image-label</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-IL-003</code></td>
+<td><a href="YZ-IL-003/"><code>label-image-has-image-label</code></a><br>A label image should contain <code>image-label</code> metadata.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A label image should contain <code>image-label</code> metadata.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-004/">YZ-IL-004</a></td>
-<td><code>label-source-image-is-image-group</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-004</code></td>
+<td><a href="YZ-IL-004/"><code>label-source-image-is-image-group</code></a><br>An <code>image-label</code> <code>source.image</code> path must point to an image group.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An <code>image-label</code> <code>source.image</code> path must point to an image group.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-005/">YZ-IL-005</a></td>
-<td><code>image-label-colors-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-005</code></td>
+<td><a href="YZ-IL-005/"><code>image-label-colors-array</code></a><br><code>image-label</code> <code>colors</code> must be an array.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>image-label</code> <code>colors</code> must be an array.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-006/">YZ-IL-006</a></td>
-<td><code>label-color-value-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-006</code></td>
+<td><a href="YZ-IL-006/"><code>label-color-value-present</code></a><br>Each entry in <code>colors</code> must contain <code>label-value</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each entry in <code>colors</code> must contain <code>label-value</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-007/">YZ-IL-007</a></td>
-<td><code>label-color-value-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-007</code></td>
+<td><a href="YZ-IL-007/"><code>label-color-value-integer</code></a><br>A <code>colors</code> entry's <code>label-value</code> must be an integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A <code>colors</code> entry's <code>label-value</code> must be an integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-008/">YZ-IL-008</a></td>
-<td><code>label-color-rgba</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-008</code></td>
+<td><a href="YZ-IL-008/"><code>label-color-rgba</code></a><br>A <code>colors</code> entry's <code>rgba</code>, if present, must be an array of four integers from 0 to 255.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A <code>colors</code> entry's <code>rgba</code>, if present, must be an array of four integers from 0 to 255.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-009/">YZ-IL-009</a></td>
-<td><code>image-label-properties-array</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-009</code></td>
+<td><a href="YZ-IL-009/"><code>image-label-properties-array</code></a><br><code>image-label</code> <code>properties</code> must be an array of objects.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>image-label</code> <code>properties</code> must be an array of objects.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-010/">YZ-IL-010</a></td>
-<td><code>label-property-value-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-010</code></td>
+<td><a href="YZ-IL-010/"><code>label-property-value-present</code></a><br>Each entry in <code>properties</code> must contain <code>label-value</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>Each entry in <code>properties</code> must contain <code>label-value</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-011/">YZ-IL-011</a></td>
-<td><code>label-property-value-integer</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-011</code></td>
+<td><a href="YZ-IL-011/"><code>label-property-value-integer</code></a><br>A <code>properties</code> entry's <code>label-value</code> must be an integer.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A <code>properties</code> entry's <code>label-value</code> must be an integer.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-012/">YZ-IL-012</a></td>
-<td><code>image-label-source-object</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-012</code></td>
+<td><a href="YZ-IL-012/"><code>image-label-source-object</code></a><br><code>image-label</code> <code>source</code> must be an object.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>image-label</code> <code>source</code> must be an object.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-013/">YZ-IL-013</a></td>
-<td><code>image-label-source-image-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-013</code></td>
+<td><a href="YZ-IL-013/"><code>image-label-source-image-string</code></a><br><code>image-label</code> <code>source.image</code>, if present, must be a string.</td>
 <td>0.4+</td>
 <td>—</td>
-<td><code>image-label</code> <code>source.image</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-014/">YZ-IL-014</a></td>
-<td><code>image-label-colors-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-014</code></td>
+<td><a href="YZ-IL-014/"><code>image-label-colors-nonempty</code></a><br><code>image-label</code> <code>colors</code>, if present, must have at least one entry.</td>
 <td>0.5+</td>
 <td>—</td>
-<td><code>image-label</code> <code>colors</code>, if present, must have at least one entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-015/">YZ-IL-015</a></td>
-<td><code>image-label-colors-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-015</code></td>
+<td><a href="YZ-IL-015/"><code>image-label-colors-unique</code></a><br><code>image-label</code> <code>colors</code> must not contain identical entries.</td>
 <td>0.5+</td>
 <td>—</td>
-<td><code>image-label</code> <code>colors</code> must not contain identical entries.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-016/">YZ-IL-016</a></td>
-<td><code>image-label-properties-nonempty</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-016</code></td>
+<td><a href="YZ-IL-016/"><code>image-label-properties-nonempty</code></a><br><code>image-label</code> <code>properties</code>, if present, must have at least one entry.</td>
 <td>0.5+</td>
 <td>—</td>
-<td><code>image-label</code> <code>properties</code>, if present, must have at least one entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-017/">YZ-IL-017</a></td>
-<td><code>image-label-properties-unique</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-IL-017</code></td>
+<td><a href="YZ-IL-017/"><code>image-label-properties-unique</code></a><br><code>image-label</code> <code>properties</code> must not contain identical entries.</td>
 <td>0.5+</td>
 <td>—</td>
-<td><code>image-label</code> <code>properties</code> must not contain identical entries.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-018/">YZ-IL-018</a></td>
-<td><code>label-colors-display</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-IL-018</code></td>
+<td><a href="YZ-IL-018/"><code>label-colors-display</code></a><br>Readers should display labels using the colors in <code>colors</code>.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>Readers should display labels using the colors in <code>colors</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-019/">YZ-IL-019</a></td>
-<td><code>image-label-colors-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-IL-019</code></td>
+<td><a href="YZ-IL-019/"><code>image-label-colors-present</code></a><br>An <code>image-label</code> object should contain <code>colors</code>.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>An <code>image-label</code> object should contain <code>colors</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-020/">YZ-IL-020</a></td>
-<td><code>image-label-version-present</code></td>
-<td>SHOULD</td>
-<td>warning</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-IL-020</code></td>
+<td><a href="YZ-IL-020/"><code>image-label-version-present</code></a><br>An <code>image-label</code> object should contain <code>version</code>.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>An <code>image-label</code> object should contain <code>version</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-021/">YZ-IL-021</a></td>
-<td><code>image-label-version-string</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4, 0.5 (removed in 0.6)</td>
+<td><code>YZ-IL-021</code></td>
+<td><a href="YZ-IL-021/"><code>image-label-version-string</code></a><br>An <code>image-label</code> <code>version</code>, if present, must be a string.</td>
+<td>0.4-0.5</td>
 <td>—</td>
-<td>An <code>image-label</code> <code>version</code>, if present, must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-022/">YZ-IL-022</a></td>
-<td><code>label-colors-value-unique</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4 (removed in 0.5)</td>
+<td><code>YZ-IL-022</code></td>
+<td><a href="YZ-IL-022/"><code>label-colors-value-unique</code></a><br>The <code>label-value</code>s in <code>colors</code> must be unique.</td>
+<td>0.4</td>
 <td>—</td>
-<td>The <code>label-value</code>s in <code>colors</code> must be unique.</td>
 </tr>
 <tr>
-<td><a href="YZ-IL-023/">YZ-IL-023</a></td>
-<td><code>label-colors-duplicate-last</code></td>
-<td>SHOULD</td>
-<td>warning</td>
-<td>0.4 (removed in 0.5)</td>
+<td><code>YZ-IL-023</code></td>
+<td><a href="YZ-IL-023/"><code>label-colors-duplicate-last</code></a><br>Readers that accept duplicate <code>label-value</code>s in <code>colors</code> should use only the last entry.</td>
+<td>0.4</td>
 <td>—</td>
-<td>Readers that accept duplicate <code>label-value</code>s in <code>colors</code> should use only the last entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-001/">YZ-SC-001</a></td>
-<td><code>scene-transforms-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-001</code></td>
+<td><a href="YZ-SC-001/"><code>scene-transforms-present</code></a><br>A <code>scene</code> must contain <code>coordinateTransformations</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>scene</code> must contain <code>coordinateTransformations</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-002/">YZ-SC-002</a></td>
-<td><code>scene-transforms-valid</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-002</code></td>
+<td><a href="YZ-SC-002/"><code>scene-transforms-valid</code></a><br>A <code>scene</code>'s <code>coordinateTransformations</code> must be an array of valid transformations.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>scene</code>'s <code>coordinateTransformations</code> must be an array of valid transformations.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-003/">YZ-SC-003</a></td>
-<td><code>scene-coordinate-systems-valid</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-003</code></td>
+<td><a href="YZ-SC-003/"><code>scene-coordinate-systems-valid</code></a><br>A <code>scene</code>'s <code>coordinateSystems</code>, if present, must be an array of valid coordinate systems.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A <code>scene</code>'s <code>coordinateSystems</code>, if present, must be an array of valid coordinate systems.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-004/">YZ-SC-004</a></td>
-<td><code>scene-transform-input-output</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-004</code></td>
+<td><a href="YZ-SC-004/"><code>scene-transform-input-output</code></a><br>Transformations in a <code>scene</code> must have an <code>input</code> and an <code>output</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Transformations in a <code>scene</code> must have an <code>input</code> and an <code>output</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-005/">YZ-SC-005</a></td>
-<td><code>scene-transform-reference-name</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-005</code></td>
+<td><a href="YZ-SC-005/"><code>scene-transform-reference-name</code></a><br>The <code>input</code> and <code>output</code> of a transformation in a <code>scene</code> must contain <code>name</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>input</code> and <code>output</code> of a transformation in a <code>scene</code> must contain <code>name</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-006/">YZ-SC-006</a></td>
-<td><code>scene-transform-reference-path</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-006</code></td>
+<td><a href="YZ-SC-006/"><code>scene-transform-reference-path</code></a><br>A reference in a <code>scene</code> to a coordinate system in an image must have both <code>path</code> and <code>name</code>, so one without <code>path</code> must be in the scene's <code>coordinateSystems</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A reference in a <code>scene</code> to a coordinate system in an image must have both <code>path</code> and <code>name</code>, so one without <code>path</code> must be in the scene's <code>coordinateSystems</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-007/">YZ-SC-007</a></td>
-<td><code>scene-transform-reference-resolves</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-007</code></td>
+<td><a href="YZ-SC-007/"><code>scene-transform-reference-resolves</code></a><br>A reference in a <code>scene</code> must resolve to a coordinate system in the multiscale image subgroup at <code>path</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A reference in a <code>scene</code> must resolve to a coordinate system in the multiscale image subgroup at <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-008/">YZ-SC-008</a></td>
-<td><code>scene-transform-reference-keys</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-SC-008</code></td>
+<td><a href="YZ-SC-008/"><code>scene-transform-reference-keys</code></a><br>The <code>input</code> and <code>output</code> of a transformation in a <code>scene</code> must contain only <code>name</code> and <code>path</code>.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The <code>input</code> and <code>output</code> of a transformation in a <code>scene</code> may only contain <code>name</code> and <code>path</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-009/">YZ-SC-009</a></td>
-<td><code>scene-default-coordinate-system</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-SC-009</code></td>
+<td><a href="YZ-SC-009/"><code>scene-default-coordinate-system</code></a><br>Readers that pick a default coordinate system for a <code>scene</code> should use the scene's first <code>coordinateSystems</code> entry, if present.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>Readers that pick a default coordinate system for a <code>scene</code> should use the scene's first <code>coordinateSystems</code> entry, if present.</td>
 </tr>
 <tr>
-<td><a href="YZ-SC-010/">YZ-SC-010</a></td>
-<td><code>scene-reference-coordinate-system-first</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-SC-010</code></td>
+<td><a href="YZ-SC-010/"><code>scene-reference-coordinate-system-first</code></a><br>A coordinate system that is a common reference for the others in a <code>scene</code> should be the scene's first <code>coordinateSystems</code> entry.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>A coordinate system that is a common reference for the others in a <code>scene</code> should be the scene's first <code>coordinateSystems</code> entry.</td>
 </tr>
 <tr>
-<td><a href="YZ-GN-001/">YZ-GN-001</a></td>
-<td><code>ome-version-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-GN-001</code></td>
+<td><a href="YZ-GN-001/"><code>ome-version-present</code></a><br>The <code>ome</code> object must contain a <code>version</code> key.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>The <code>ome</code> object must contain a <code>version</code> key.</td>
 </tr>
 <tr>
-<td><a href="YZ-GN-002/">YZ-GN-002</a></td>
-<td><code>json-no-comments</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-GN-002</code></td>
+<td><a href="YZ-GN-002/"><code>json-no-comments</code></a><br>JSON metadata must not contain comments.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>JSON metadata must not contain comments.</td>
 </tr>
 <tr>
-<td><a href="YZ-GN-003/">YZ-GN-003</a></td>
-<td><code>ome-key-present</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-GN-003</code></td>
+<td><a href="YZ-GN-003/"><code>ome-key-present</code></a><br>The group <code>attributes</code> must contain the key <code>ome</code>.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>The group <code>attributes</code> must contain the key <code>ome</code>.</td>
 </tr>
 <tr>
-<td><a href="YZ-GN-004/">YZ-GN-004</a></td>
-<td><code>ome-value-object</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-GN-004</code></td>
+<td><a href="YZ-GN-004/"><code>ome-value-object</code></a><br>The value of the <code>ome</code> key must be a JSON object.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>The value of the <code>ome</code> key must be a JSON object.</td>
 </tr>
 <tr>
-<td><a href="YZ-GN-005/">YZ-GN-005</a></td>
-<td><code>ome-version-consistent</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-GN-005</code></td>
+<td><a href="YZ-GN-005/"><code>ome-version-consistent</code></a><br>The OME-Zarr metadata version must be the same throughout a hierarchy.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>The OME-Zarr metadata version must be the same throughout a hierarchy.</td>
 </tr>
 <tr>
-<td><a href="YZ-GN-006/">YZ-GN-006</a></td>
-<td><code>ome-version-string</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-GN-006</code></td>
+<td><a href="YZ-GN-006/"><code>ome-version-string</code></a><br>The <code>version</code> of the <code>ome</code> object must be a string.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>The <code>version</code> of the <code>ome</code> object must be a string.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-001/">YZ-ZR-001</a></td>
-<td><code>zarr-v2-hierarchy</code></td>
-<td>MUST</td>
-<td>error</td>
-<td>0.4 (removed in 0.5)</td>
+<td><code>YZ-ZR-001</code></td>
+<td><a href="YZ-ZR-001/"><code>zarr-v2-hierarchy</code></a><br>Arrays must be stored in a hierarchy as defined by the Zarr v2 specification.</td>
+<td>0.4</td>
 <td>—</td>
-<td>Arrays must be stored in a hierarchy as defined by the Zarr v2 specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-002/">YZ-ZR-002</a></td>
-<td><code>zarr-v3-hierarchy</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-ZR-002</code></td>
+<td><a href="YZ-ZR-002/"><code>zarr-v3-hierarchy</code></a><br>OME-Zarr must be stored in the Zarr format as defined by the Zarr v3 specification.</td>
 <td>0.5+</td>
 <td>—</td>
-<td>OME-Zarr must be stored in the Zarr format as defined by the Zarr v3 specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-003/">YZ-ZR-003</a></td>
-<td><code>metadata-in-group-attributes</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-ZR-003</code></td>
+<td><a href="YZ-ZR-003/"><code>metadata-in-group-attributes</code></a><br>OME-Zarr metadata must be stored as attributes of the corresponding Zarr groups.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>OME-Zarr metadata must be stored as attributes of the corresponding Zarr groups.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-004/">YZ-ZR-004</a></td>
-<td><code>hcs-groups-above-images</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-ZR-004</code></td>
+<td><a href="YZ-ZR-004/"><code>hcs-groups-above-images</code></a><br>A high-content screening dataset must have three groups above the images: the well, the well row, and the plate.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A high-content screening dataset must have three groups above the images: the well, the well row, and the plate.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-005/">YZ-ZR-005</a></td>
-<td><code>hcs-well-group-implements-well</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-ZR-005</code></td>
+<td><a href="YZ-ZR-005/"><code>hcs-well-group-implements-well</code></a><br>In a high-content screening dataset, the group above the images must implement the well specification.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>In a high-content screening dataset, the group above the images must implement the well specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-006/">YZ-ZR-006</a></td>
-<td><code>hcs-plate-group-implements-plate</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-ZR-006</code></td>
+<td><a href="YZ-ZR-006/"><code>hcs-plate-group-implements-plate</code></a><br>In a high-content screening dataset, the group above the well rows must implement the plate specification.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>In a high-content screening dataset, the group above the well rows must implement the plate specification.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-007/">YZ-ZR-007</a></td>
-<td><code>hcs-empty-row-absent</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-ZR-007</code></td>
+<td><a href="YZ-ZR-007/"><code>hcs-empty-row-absent</code></a><br>A well row group should not be present if there are no images in the well row.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A well row group should not be present if there are no images in the well row.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-008/">YZ-ZR-008</a></td>
-<td><code>hcs-empty-well-absent</code></td>
-<td>SHOULD</td>
-<td>warning</td>
+<td><code>YZ-ZR-008</code></td>
+<td><a href="YZ-ZR-008/"><code>hcs-empty-well-absent</code></a><br>A well group should not be present if there are no images in the well.</td>
 <td>0.4+</td>
 <td>—</td>
-<td>A well group should not be present if there are no images in the well.</td>
 </tr>
 <tr>
-<td><a href="YZ-ZR-009/">YZ-ZR-009</a></td>
-<td><code>scene-group-implements-scene</code></td>
-<td>MUST</td>
-<td>error</td>
+<td><code>YZ-ZR-009</code></td>
+<td><a href="YZ-ZR-009/"><code>scene-group-implements-scene</code></a><br>In a scene dataset, the group above the images must implement the scene specification.</td>
 <td>0.6+</td>
 <td>—</td>
-<td>In a scene dataset, the group above the images must implement the scene specification.</td>
 </tr>
 </tbody>
 </table>
+</div>
 <h2 id="yaozarrs-checks">yaozarrs checks<a class="headerlink" href="#yaozarrs-checks" title="Link to this section">#</a></h2>
+<div class="rule-table">
 <table>
 <thead>
 <tr>
 <th>Code</th>
-<th>Name</th>
-<th>Severity</th>
-<th>Reported in</th>
-<th>Summary</th>
+<th>Rule</th>
+<th>Checked in</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="YZ-001/">YZ-001</a></td>
-<td><code>zarr-node-name-invalid</code></td>
-<td>error</td>
+<td><code>YZ-001</code></td>
+<td><a href="YZ-001/"><code>zarr-node-name-invalid</code></a><br>A path used as a Zarr node name violates the Zarr v3 node-name rules.</td>
 <td>—</td>
-<td>A path used as a Zarr node name violates the Zarr v3 node-name rules.</td>
 </tr>
 <tr>
-<td><a href="YZ-002/">YZ-002</a></td>
-<td><code>zarr-node-name-risky</code></td>
-<td>warning</td>
+<td><code>YZ-002</code></td>
+<td><a href="YZ-002/"><code>zarr-node-name-risky</code></a><br>A path used as a Zarr node name contains characters outside <code>[A-Za-z0-9._-]</code>, which can cause problems on some filesystems or in URLs.</td>
 <td>—</td>
-<td>A path used as a Zarr node name contains characters outside <code>[A-Za-z0-9._-]</code>, which can cause problems on some filesystems or in URLs.</td>
 </tr>
 <tr>
-<td><a href="YZ-003/">YZ-003</a></td>
-<td><code>label-multiscales-count-matches-image</code></td>
-<td>error</td>
+<td><code>YZ-003</code></td>
+<td><a href="YZ-003/"><code>label-multiscales-count-matches-image</code></a><br>A label image must have the same number of <code>multiscales</code> as its image.</td>
 <td>—</td>
-<td>A label image must have the same number of <code>multiscales</code> as its image.</td>
 </tr>
 <tr>
-<td><a href="YZ-004/">YZ-004</a></td>
-<td><code>version-prerelease</code></td>
-<td>warning</td>
+<td><code>YZ-004</code></td>
+<td><a href="YZ-004/"><code>version-prerelease</code></a><br>The document declares a pre-release of a spec version.</td>
 <td>—</td>
-<td>The document declares a pre-release of a spec version.</td>
 </tr>
 <tr>
-<td><a href="YZ-005/">YZ-005</a></td>
-<td><code>version-unsupported</code></td>
-<td>error</td>
+<td><code>YZ-005</code></td>
+<td><a href="YZ-005/"><code>version-unsupported</code></a><br>The document or store declares an OME-Zarr version that yaozarrs does not know.</td>
 <td>—</td>
-<td>The document or store declares an OME-Zarr version that yaozarrs does not know.</td>
 </tr>
 <tr>
-<td><a href="YZ-006/">YZ-006</a></td>
-<td><code>transform-path-relative</code></td>
-<td>error</td>
+<td><code>YZ-006</code></td>
+<td><a href="YZ-006/"><code>transform-path-relative</code></a><br>The <code>path</code> of a transformation's parameters must be a relative path with no empty, <code>.</code> or <code>..</code> segments.</td>
 <td>—</td>
-<td>The <code>path</code> of a transformation's parameters must be a relative path with no empty, <code>.</code> or <code>..</code> segments.</td>
 </tr>
 </tbody>
 </table>
+</div>
+
+  
 
 
 
@@ -2941,8 +2204,13 @@
 
 
 
+  
+  
 
 
+
+
+  
 
 
 
@@ -2961,6 +2229,8 @@
         <footer class="md-footer">
   
     
+      
+        
       
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
@@ -3023,6 +2293,8 @@
       <script src="../assets/javascripts/bundle.d31f0ffa.min.js"></script>
       
         <script src="../javascripts/yaozarrs-animation.js"></script>
+      
+        <script src="../javascripts/rule_filter.js"></script>
       
         <script src="../javascripts/ome_explorer.js" type="module"></script>
       
