@@ -14,6 +14,8 @@ not_in_nav = """
 [[project.extra_javascript]]
 path = "javascripts/yaozarrs-animation.js"
 [[project.extra_javascript]]
+path = "javascripts/rule_filter.js"
+[[project.extra_javascript]]
 path = "javascripts/ome_explorer.js"
 type = "module"
 

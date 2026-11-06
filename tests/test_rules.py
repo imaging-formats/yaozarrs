@@ -80,6 +80,8 @@ def test_rule_fields(rule: Rule) -> None:
         return
 
     assert rule.level in get_args(Level)
+    # (the docs index shows the summary, not the level)
+    assert re.search(rf"\b{rule.level}\b", rule.summary, re.IGNORECASE), rule.summary
     # sources for exactly the tracked versions from `introduced` up to `removed`
     assert rule.introduced in TRACKED_VERSIONS
     if rule.removed:

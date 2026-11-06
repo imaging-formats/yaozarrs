@@ -1862,7 +1862,7 @@ lines = { "0.4" = [544, 545], "0.5" = [490, 491], "0.6" = [1629, 1630] }
 [rules.YZ-PL-043]
 slug = 'column-name-case-sensitive'
 level = 'MUST'
-summary = 'Plate column names are case-sensitive.'
+summary = 'Plate column names must be case-sensitive.'
 introduced = '0.4'
 checkable = false
 notes = 'Says how names are compared (`A` and `a` are different names, see YZ-PL-019 and YZ-PL-002); no document can violate it.'
@@ -1874,7 +1874,7 @@ lines = { "0.4" = [531, 532], "0.5" = [477, 478], "0.6" = [1613, 1615] }
 [rules.YZ-PL-044]
 slug = 'row-name-case-sensitive'
 level = 'MUST'
-summary = 'Plate row names are case-sensitive.'
+summary = 'Plate row names must be case-sensitive.'
 introduced = '0.4'
 checkable = false
 notes = 'Says how names are compared (`A` and `a` are different names, see YZ-PL-027 and YZ-PL-003); no document can violate it.'
@@ -2144,7 +2144,7 @@ lines = { "0.4" = [593, 594], "0.5" = [539, 540] }
 [rules.YZ-WL-015]
 slug = 'field-path-case-sensitive'
 level = 'MUST'
-summary = 'Field of view `path`s are case-sensitive.'
+summary = 'Field of view `path`s must be case-sensitive.'
 introduced = '0.4'
 checkable = false
 notes = 'About how paths are compared: no document can break it.'
@@ -2860,7 +2860,7 @@ lines = { "0.6" = [1720, 1722] }
 [rules.YZ-SC-008]
 slug = 'scene-transform-reference-keys'
 level = 'MUST'
-summary = 'The `input` and `output` of a transformation in a `scene` may only contain `name` and `path`.'
+summary = 'The `input` and `output` of a transformation in a `scene` must contain only `name` and `path`.'
 introduced = '0.6'
 notes = 'The prose is silent; `scene.schema` sets `additionalProperties: false` here, unlike anywhere else.'
 

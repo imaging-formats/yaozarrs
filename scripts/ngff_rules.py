@@ -674,11 +674,13 @@ def cmd_coverage(_: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def _versions(rule: Rule) -> str:
+def _versions(rule: Rule, short: bool = False) -> str:
     if rule.introduced is None:
         return "—"
     if rule.removed:
         versions = sorted({s.doc.version for s in rule.sources}, key=TRACKED.index)
+        if short:  # e.g. 0.4-0.5
+            return "-".join(dict.fromkeys((versions[0], versions[-1])))
         return f"{', '.join(versions)} (removed in {rule.removed})"
     return f"{rule.introduced}+"
 
@@ -709,10 +711,17 @@ def _rendered_examples(rule: Rule, checked: list[str]) -> list[tuple[str, str]]:
     return out
 
 
-# what "reported" means, for the docs and the review checklist
+# what "Checked in" means, for the docs
+CHECKED_NOTE = (
+    "*Checked in* lists the spec versions in which yaozarrs reports a rule's code "
+    "when a document breaks the rule. If none are listed, yaozarrs may still reject "
+    "such a document, but not under this code (yet)."
+)
+# and for the review checklist, whose readers know about the examples
 REPORTED_NOTE = (
-    "*Reported* means yaozarrs reports the rule's code for its example. A rule "
-    "whose code isn't reported may still be enforced, under another code or none."
+    "*Code reported* means yaozarrs reports the rule's code for its example (in "
+    "`rule_examples.toml`). A rule whose code isn't reported may still be enforced, "
+    "under another code or none."
 )
 
 
@@ -733,7 +742,7 @@ def render_rule(rule: Rule, checked: list[str]) -> str:
         ("yaozarrs severity", rule.default_severity),
         ("Status", rule.status),
         ("Spec versions", _versions(rule)),
-        ("Reported by yaozarrs in", _checked_in(rule, checked)),
+        ("Checked in", _checked_in(rule, checked)),
     ]
     if rule.supersedes:
         meta.append(
@@ -780,17 +789,66 @@ def render_rule(rule: Rule, checked: list[str]) -> str:
     return "\n".join(lines)
 
 
+# what each code's area prefix covers (for the filter on the docs index)
+AREAS = {
+    "AX": "axes",
+    "CS": "coordinateSystems",
+    "MS": "multiscales",
+    "DS": "datasets",
+    "CT": "coordinateTransformations",
+    "SC": "scene",
+    "LB": "labels",
+    "IL": "image-label",
+    "PL": "plate",
+    "WL": "well",
+    "BF": "bioformats2raw",
+    "OM": "omero",
+    "ZR": "zarr / storage layout",
+    "GN": "general",
+}
+
+
+def _filter_data() -> str:
+    """JSON for `docs/javascripts/rule_filter.js`: each rule's level, versions, area."""
+    rules = {
+        r.code: {
+            "level": r.level,
+            "versions": sorted({s.doc.version for s in r.sources}, key=TRACKED.index),
+            "area": r.code.split("-")[1] if r.is_spec_rule else "YZ",
+        }
+        for r in RULES.values()
+    }
+    areas = {**AREAS, "YZ": "yaozarrs checks"}
+    data = {"versions": TRACKED, "areas": areas, "rules": rules}
+    # (`</` can't appear inside a <script>)
+    return json.dumps(data, separators=(",", ":")).replace("</", "<\\/")
+
+
 def render_index(checked: dict[str, list[str]]) -> str:
     """Markdown table of all rules."""
     tracked = ", ".join(TRACKED)
+
+    def code(r: Rule) -> str:  # (like ruff's rules page, only the name is a link)
+        return f"`{r.code}`"
+
+    def seen(r: Rule) -> str:
+        return ", ".join(checked[r.code]) or "—"
+
+    def about(r: Rule) -> str:  # (the name, with the summary under it)
+        return f"[`{r.slug}`]({r.code}.md)<br>{r.summary}"
+
     lines = [
+        "---",
+        "hide: [toc]",  # (the tables need the width)
+        "---",
+        "",
         "# Rule codes",
         "",
         "Each code identifies one normative statement in the "
         "[NGFF specification](https://ngff.openmicroscopy.org/), and links to the "
         "exact text in the spec that states it, for each spec version. yaozarrs "
         "errors and warnings for spec violations carry these codes once they are "
-        "tagged: *Reported in* shows where yaozarrs reports each one.",
+        "tagged.",
         "",
         "- `YZ-<AREA>-<NNN>` codes refer to statements in the NGFF spec or its JSON "
         "schemas.",
@@ -809,35 +867,41 @@ def render_index(checked: dict[str, list[str]]) -> str:
         "inside the quote of a rule here, or of an entry (with a reason) in "
         "`skipped.toml`.",
         "",
-        REPORTED_NOTE,
+        CHECKED_NOTE,
+        "",
+        f'<script type="application/json" id="rule-data">{_filter_data()}</script>',
         "",
         "## Spec rules",
         "",
-        "| Code | Name | Level | Severity | Versions | Reported in | Summary |",
-        "|---|---|---|---|---|---|---|",
-    ]
-    for r in RULES.values():
-        if r.is_spec_rule:
-            lines.append(
-                f"| [{r.code}]({r.code}.md) | `{r.slug}` | {r.level} | "
-                f"{r.default_severity} | {_versions(r)} | "
-                f"{', '.join(checked[r.code]) or '—'} | {r.summary} |"
-            )
-    lines += [
-        "",
+        # (the summary states the level: "must", "should", or "may")
+        *_rule_table(
+            ("Code", "Rule", "Versions", "Checked in"),
+            [
+                (code(r), about(r), _versions(r, short=True), seen(r))
+                for r in RULES.values()
+                if r.is_spec_rule
+            ],
+        ),
         "## yaozarrs checks",
         "",
-        "| Code | Name | Severity | Reported in | Summary |",
-        "|---|---|---|---|---|",
+        *_rule_table(
+            ("Code", "Rule", "Checked in"),
+            [
+                (code(r), about(r), seen(r))
+                for r in RULES.values()
+                if not r.is_spec_rule
+            ],
+        ),
     ]
-    for r in RULES.values():
-        if not r.is_spec_rule:
-            lines.append(
-                f"| [{r.code}]({r.code}.md) | `{r.slug}` | {r.default_severity} | "
-                f"{', '.join(checked[r.code]) or '—'} | {r.summary} |"
-            )
-    lines.append("")
     return "\n".join(lines)
+
+
+def _rule_table(header: tuple[str, ...], rows: list[tuple[str, ...]]) -> list[str]:
+    """A Markdown table, styled by `.rule-table` (`docs/stylesheets/extra.css`)."""
+    out = ['<div class="rule-table" markdown>', ""]
+    out += ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
+    out += ["| " + " | ".join(row) + " |" for row in rows]
+    return [*out, "", "</div>", ""]
 
 
 def expected_docs() -> dict[str, str]:
