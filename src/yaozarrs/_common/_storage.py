@@ -12,7 +12,7 @@ import posixpath
 import re
 import warnings
 from itertools import chain, product
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeAlias
 from urllib.parse import urljoin
 
 from pydantic import ValidationError
@@ -21,11 +21,40 @@ from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from yaozarrs._errors import ErrorDetails
 
 Loc: TypeAlias = tuple[int | str, ...]
+
+
+class _StoredParameters(Protocol):
+    """A transformation whose parameters may be stored in Zarr, at `path`."""
+
+    @property
+    def type(self) -> str: ...
+    @property
+    def path(self) -> str | None: ...
+
+
+# (structural types: this module can't import the version packages)
+class _VectorDataset(Protocol):
+    """A v0.4/v0.5 dataset, whose scale and translation may be stored at a `path`."""
+
+    @property
+    def coordinateTransformations(self) -> Sequence[_StoredParameters]: ...
+
+
+class _VectorMultiscale(Protocol):
+    """A v0.4/v0.5 multiscale, whose scales and translations may be stored at a path."""
+
+    @property
+    def axes(self) -> Sequence[object]: ...
+    @property
+    def datasets(self) -> Sequence[_VectorDataset]: ...
+    @property
+    def coordinateTransformations(self) -> Sequence[_StoredParameters] | None: ...
+
 
 _PROTOCOL = re.compile(r"^(?:file|https?|s3)://")
 
@@ -409,6 +438,93 @@ class StorageValidator:
                 self._validate_dataset_array(arr, dataset, multiscale, ds_loc)
             )
 
+        return result
+
+    def _find_parameters(
+        self,
+        holder: ZarrGroup,
+        t: _StoredParameters,
+        loc: Loc,
+        result: ValidationResult,
+        *,
+        unresolved: Literal["error", "warning"] = "error",
+    ) -> ZarrGroup | ZarrArray | None:
+        """Return the node at `t.path` (parameters stored in Zarr), or add an error.
+
+        A path that can't be resolved, or where there's no Zarr node, is reported as
+        `unresolved`: a warning where the spec doesn't say it has to be a Zarr node
+        in this group.
+        """
+        if t.path is None:
+            return None
+        report = result.add_error if unresolved == "error" else result.add_warning
+        unchecked = "" if unresolved == "error" else ", so it isn't checked"
+        # (the spec only says "a location in this container": a path is resolved
+        # against the group whose metadata holds the transformation, as in the spec's
+        # examples. Like ngff-zarr, which refuses them on read and write, we reject a
+        # leading "/" and empty, "." or ".." segments: nothing defines what they'd
+        # point to)
+        path: str = t.path
+        ctx: dict = {"path": path}
+        if path.startswith("/") or any(p in ("", ".", "..") for p in path.split("/")):
+            report(
+                StorageErrorType.transform_parameters_invalid,
+                (*loc, "path"),
+                f"Path '{path}' (for {t.type}) must be a relative path inside the "
+                f"group, with no empty, '.' or '..' segments{unchecked}",
+                ctx=ctx,
+            )
+            return None
+        if (node := holder.get(path)) is None:
+            report(
+                StorageErrorType.transform_parameters_not_found,
+                (*loc, "path"),
+                f"Path '{path}' (for {t.type}) not found{unchecked}",
+                ctx={**ctx, "fs_path": _build_fs_path(holder, path)},
+            )
+            return None
+        return node
+
+    def _validate_vectors_at_path(
+        self,
+        zarr_group: ZarrGroup,
+        multiscale: _VectorMultiscale,
+        loc_prefix: Loc,
+    ) -> ValidationResult:
+        """Check the arrays that v0.4/v0.5 `scale`/`translation` vectors are stored in.
+
+        A vector may be "stored ... as binary data at a location in this container
+        (`path`)", and "The length of the `scale` and `translation` array MUST be the
+        same as the length of "axes"". Only the arrays' metadata is read.
+        """
+        result = ValidationResult()
+        ndim = len(multiscale.axes)
+        transforms: list[tuple[Loc, _StoredParameters]] = [
+            ((*loc_prefix, "datasets", i, "coordinateTransformations", j), t)
+            for i, ds in enumerate(multiscale.datasets)
+            for j, t in enumerate(ds.coordinateTransformations)
+        ]
+        transforms += [
+            ((*loc_prefix, "coordinateTransformations", j), t)
+            for j, t in enumerate(multiscale.coordinateTransformations or ())
+        ]
+        for loc, t in transforms:
+            if t.path is None:  # (stored inline)
+                continue
+            # ("binary data at a location in this container": not necessarily a Zarr
+            # array in this group, so a path that doesn't resolve to one only warns)
+            node = self._find_parameters(
+                zarr_group, t, loc, result, unresolved="warning"
+            )
+            if node is None:
+                continue
+            if problem := _shape_problem(node, (ndim,)):
+                result.add_error(
+                    StorageErrorType.transform_parameters_invalid,
+                    (*loc, "path"),
+                    f"The {t.type} vector at '{t.path}' {problem} (one value per axis)",
+                    ctx={"path": t.path, "fs_path": _build_fs_path(zarr_group, t.path)},
+                )
         return result
 
     def visit_plate(
@@ -863,6 +979,21 @@ class StorageValidator:
                     )
 
         return result
+
+
+def _shape_problem(
+    node: ZarrGroup | ZarrArray, expected: Sequence[int | None]
+) -> str | None:
+    """What's wrong with `node` as an array of shape `expected` (None: any size)."""
+    shape = node.metadata.shape if isinstance(node, ZarrArray) else None
+    if shape is None:
+        return "is not a Zarr array"
+    if len(shape) != len(expected):
+        return f"has {len(shape)} dimensions, not {len(expected)}"
+    if any(e is not None and e != s for e, s in zip(expected, shape, strict=True)):
+        want = "x".join("?" if e is None else str(e) for e in expected)
+        return f"has shape {list(shape)}, expected {want}"
+    return None
 
 
 def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup | None:

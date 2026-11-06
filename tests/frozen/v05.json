@@ -310,7 +310,7 @@
         },
         "coordinateTransformations": {
           "items": {
-            "anyOf": [
+            "oneOf": [
               {
                 "$ref": "#/$defs/ScaleTransformation"
               },
@@ -609,7 +609,7 @@
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/ScaleTransformation"
                   },
@@ -1074,6 +1074,18 @@
     },
     "ScaleTransformation": {
       "additionalProperties": true,
+      "oneOf": [
+        {
+          "required": [
+            "scale"
+          ]
+        },
+        {
+          "required": [
+            "path"
+          ]
+        }
+      ],
       "properties": {
         "type": {
           "const": "scale",
@@ -1081,30 +1093,16 @@
           "type": "string"
         },
         "scale": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "number"
-              },
-              "minItems": 2,
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": null,
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "type": "array"
         },
         "path": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": null,
+          "type": "string"
         }
       },
       "type": "object"
@@ -1247,6 +1245,18 @@
     },
     "TranslationTransformation": {
       "additionalProperties": true,
+      "oneOf": [
+        {
+          "required": [
+            "translation"
+          ]
+        },
+        {
+          "required": [
+            "path"
+          ]
+        }
+      ],
       "properties": {
         "type": {
           "const": "translation",
@@ -1254,30 +1264,16 @@
           "type": "string"
         },
         "translation": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "number"
-              },
-              "minItems": 2,
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": null,
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "type": "array"
         },
         "path": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": null,
+          "type": "string"
         }
       },
       "type": "object"

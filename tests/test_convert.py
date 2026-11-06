@@ -567,6 +567,18 @@ def test_transform_at_path_raises_on_upgrade() -> None:
     assert down.multiscales[0].datasets[0].coordinateTransformations[0].path == "s"
 
 
+def test_downgrade_drops_a_stray_path_of_an_inline_scale() -> None:
+    # (v0.6 keeps an unknown `path` next to an inline scale; in v0.5 it would say where
+    # the vector is stored instead, so it's dropped)
+    ms = _multiscale_06()
+    ms["datasets"][0]["coordinateTransformations"][0]["path"] = "s"
+    src = v06.Multiscale.model_validate(ms)
+    with pytest.warns(ConversionWarning, match="scale key 'path'"):
+        down = convert_version(src, "0.5")
+    (scale,) = down.datasets[0].coordinateTransformations
+    assert scale.path is None and scale.scale is not None
+
+
 def test_array_axes_raise_on_downgrade() -> None:
     # (v0.6 multiscales allow these with a warning, older versions require "space")
     axes = [{"name": n, "type": "array"} for n in "yx"]

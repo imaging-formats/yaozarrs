@@ -51,6 +51,17 @@ class StorageValidatorV05(StorageValidator):
             self._validate_label_data_types(image_model, zarr_group, loc_prefix)
         )
 
+    def _visit_multiscale_no_prefetch(
+        self, zarr_group: ZarrGroup, multiscale: Multiscale, loc_prefix: Loc
+    ) -> ValidationResult:
+        result = super()._visit_multiscale_no_prefetch(
+            zarr_group, multiscale, loc_prefix
+        )
+        # (a scale or translation vector may be stored in a Zarr array, at `path`)
+        return result.merge(
+            self._validate_vectors_at_path(zarr_group, multiscale, loc_prefix)
+        )
+
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
         return validate_ome_object(dict(attrs), OMEAttributes, strict=self.strict).ome
 

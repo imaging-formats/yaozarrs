@@ -674,7 +674,7 @@ def test_transform_needs_values_or_path(transform: dict) -> None:
     transforms = (
         [transform] if transform["type"] == "scale" else [scale_tform(2), transform]
     )
-    with pytest.raises(ValidationError, match="must have exactly one of"):
+    with pytest.raises(ValidationError, match="requires exactly one of"):
         v05.Dataset(path="0", coordinateTransformations=transforms)
 
 
@@ -682,3 +682,24 @@ def test_inline_scale_dumps_without_path() -> None:
     scale = v05.ScaleTransformation(scale=[1.0, 2.0])
     assert scale.model_dump() == {"type": "scale", "scale": [1.0, 2.0]}
     assert scale.ndim == 2
+
+
+def test_transform_errors_name_their_class() -> None:
+    # (the union is discriminated: one error, under the transformation's class)
+    with pytest.raises(ValidationError) as e:
+        v05.Dataset(
+            path="0", coordinateTransformations=[{"type": "scale", "scale": [1]}]
+        )
+    (err,) = e.value.errors()
+    assert err["loc"] == (
+        "coordinateTransformations",
+        0,
+        "ScaleTransformation",
+        "scale",
+    )
+    # (a transformation without `type` is told apart by its values, as `DimSpec`
+    # writes them)
+    ds = v05.Dataset(
+        path="0", coordinateTransformations=[{"scale": [1, 1]}, {"translation": [0, 0]}]
+    )
+    assert [t.type for t in ds.coordinateTransformations] == ["scale", "translation"]

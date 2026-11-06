@@ -229,10 +229,21 @@ def _transform_06_05(ds: dict, ndim: int, dropped: list[str]) -> list[dict]:
     for step in transforms:
         if step is not transform:
             _report_lost_refs(step, {}, dropped)
+    # (v0.6 keeps an unknown `path` next to an inline scale/translation as an extra
+    # key; in v0.5 `path` would be where the vector is stored instead)
+    stray = [t for t in transforms if t["type"] in _VECTORS and "path" in t]
+    dropped.extend(f"{t['type']} key 'path'" for t in stray if t["path"] is not None)
     return [
-        {k: v for k, v in t.items() if k not in _V06_ONLY_TRANSFORM_KEYS}
+        {
+            k: v
+            for k, v in t.items()
+            if k not in _V06_ONLY_TRANSFORM_KEYS and not (k == "path" and t in stray)
+        }
         for t in transforms
     ]
+
+
+_VECTORS = ("scale", "translation")
 
 
 def _report_lost_refs(t: dict, implied: dict[str, str], dropped: list[str]) -> None:

@@ -1,11 +1,15 @@
 from collections.abc import Sequence
-from typing import Annotated, Literal, Self, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import (
     AfterValidator,
+    ConfigDict,
+    Discriminator,
     Field,
     SerializerFunctionWrapHandler,
+    Tag,
+    WithJsonSchema,
     model_serializer,
     model_validator,
 )
@@ -15,7 +19,7 @@ from yaozarrs._common._axis import AxesList
 from yaozarrs._common._image import (
     check_resolution_order,
     check_transform_lengths,
-    require_values_or_path,
+    require_inline_or_path,
 )
 from yaozarrs._common._node_names import SuggestDatasetPath
 from yaozarrs._common._omero import Omero
@@ -31,6 +35,16 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
 ]
 
 
+# (in the JSON schema, these fields aren't nullable: a transformation has exactly one
+# of them, which the models' `oneOf` says)
+_VECTOR_SCHEMA = WithJsonSchema(
+    {"type": "array", "items": {"type": "number"}, "minItems": 2}
+)
+_PATH_SCHEMA = WithJsonSchema({"type": "string"})
+# a scale or translation vector, inline (or None: stored at `path`)
+_Vector: TypeAlias = Annotated[Annotated[list[float], MinLen(2)] | None, _VECTOR_SCHEMA]
+
+
 class ScaleTransformation(_BaseModel):
     """Maps array indices to physical coordinates via scaling.
 
@@ -42,17 +56,22 @@ class ScaleTransformation(_BaseModel):
         `[0.5, 0.5]` means each pixel is 0.5 units wide in physical space.
     """
 
+    # (in the JSON schema too: exactly one of `scale` or `path`)
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={"oneOf": [{"required": ["scale"]}, {"required": ["path"]}]}
+    )
+
     type: Literal["scale"] = "scale"
     # "scale vector, stored either as a list of floats (`scale`) or as binary
     # data at a location in this container (`path`)"
-    scale: Annotated[list[float], MinLen(2)] | None = Field(
+    scale: _Vector = Field(
         default=None,
         description=(
             "Scaling factor for each dimension in physical units per pixel "
             "(or see `path`)"
         ),
     )
-    path: str | None = Field(
+    path: Annotated[str | None, _PATH_SCHEMA] = Field(
         default=None,
         description="Path to a Zarr array in this container holding the scale vector "
         "(instead of `scale`)",
@@ -60,7 +79,7 @@ class ScaleTransformation(_BaseModel):
 
     @model_validator(mode="after")
     def _values_or_path(self) -> Self:
-        require_values_or_path(self, "scale")
+        require_inline_or_path(self, "scale", "vector")
         return self
 
     @property
@@ -77,16 +96,23 @@ class TranslationTransformation(_BaseModel):
     after the scale transformation.
     """
 
+    # (in the JSON schema too: exactly one of `translation` or `path`)
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={
+            "oneOf": [{"required": ["translation"]}, {"required": ["path"]}]
+        }
+    )
+
     type: Literal["translation"] = "translation"
     # "translation vector, stored either as a list of floats (`translation`) or as
     # binary data at a location in this container (`path`)"
-    translation: Annotated[list[float], MinLen(2)] | None = Field(
+    translation: _Vector = Field(
         default=None,
         description=(
             "Translation offset for each dimension in physical units (or see `path`)"
         ),
     )
-    path: str | None = Field(
+    path: Annotated[str | None, _PATH_SCHEMA] = Field(
         default=None,
         description="Path to a Zarr array in this container holding the translation "
         "vector (instead of `translation`)",
@@ -94,7 +120,7 @@ class TranslationTransformation(_BaseModel):
 
     @model_validator(mode="after")
     def _values_or_path(self) -> Self:
-        require_values_or_path(self, "translation")
+        require_inline_or_path(self, "translation", "vector")
         return self
 
     @property
@@ -103,7 +129,27 @@ class TranslationTransformation(_BaseModel):
         return None if self.translation is None else len(self.translation)
 
 
-CoordinateTransformation = ScaleTransformation | TranslationTransformation
+def _transform_tag(v: Any) -> str | None:
+    """The union member for a transformation: by its `type`, else by its values."""
+    if isinstance(v, dict):
+        # (`type` may be omitted, e.g. by `DimSpec`: then the values say which it is)
+        kind = v.get("type", "translation" if "translation" in v else "scale")
+    else:
+        kind = getattr(v, "type", None)
+    return _TRANSFORM_TAGS.get(kind, kind) if isinstance(kind, str) else None
+
+
+_TRANSFORM_TAGS = {
+    "scale": "ScaleTransformation",
+    "translation": "TranslationTransformation",
+}
+# (discriminated, so that errors are reported for the one member a transformation is,
+# under its class name)
+CoordinateTransformation: TypeAlias = Annotated[
+    Annotated[ScaleTransformation, Tag("ScaleTransformation")]
+    | Annotated[TranslationTransformation, Tag("TranslationTransformation")],
+    Discriminator(_transform_tag),
+]
 
 
 def _validate_transforms_list(
