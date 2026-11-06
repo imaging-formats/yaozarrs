@@ -6,6 +6,19 @@ from collections.abc import Sequence
 from typing import Any
 
 
+def require_values_or_path(t: Any, field: str) -> None:
+    """Check that a v0.4/v0.5 `scale` or `translation` has exactly one of its forms.
+
+    The vector is "stored either as a list of floats (`<field>`) or as binary data at a
+    location in this container (`path`)".
+    """
+    if (getattr(t, field) is None) == (t.path is None):
+        raise ValueError(
+            f"A {t.type} transformation must have exactly one of '{field}' (a list "
+            "of numbers) or 'path' (a Zarr array holding them)."
+        )
+
+
 def check_transform_lengths(
     datasets: Sequence[Any], transforms: Sequence[Any] | None, ndim: int
 ) -> None:
@@ -14,16 +27,17 @@ def check_transform_lengths(
     The length of the scale and translation array MUST be the same as the length of
     "axes".
     """
+    # (a transformation stored at a `path` has no length to check here)
     for i, ds in enumerate(datasets):
         for j, t in enumerate(ds.coordinateTransformations):
-            if t.ndim != ndim:
+            if t.ndim is not None and t.ndim != ndim:
                 raise ValueError(
                     f"at datasets.[{i}].coordinateTransformations[{j}]:\n"
                     f"  The length of the transformation ({t.ndim}) does "
                     f"not match the number of axes ({ndim})."
                 )
     for j, t in enumerate(transforms or ()):
-        if t.ndim != ndim:
+        if t.ndim is not None and t.ndim != ndim:
             raise ValueError(
                 f"at coordinateTransformations[{j}]:\n"
                 f"  The length of the transformation ({t.ndim}) "

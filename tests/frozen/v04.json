@@ -1030,16 +1030,32 @@
           "type": "string"
         },
         "scale": {
-          "items": {
-            "type": "number"
-          },
-          "minItems": 2,
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
-      "required": [
-        "scale"
-      ],
       "type": "object"
     },
     "Series": {
@@ -1193,16 +1209,32 @@
           "type": "string"
         },
         "translation": {
-          "items": {
-            "type": "number"
-          },
-          "minItems": 2,
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
-      "required": [
-        "translation"
-      ],
       "type": "object"
     },
     "Well": {

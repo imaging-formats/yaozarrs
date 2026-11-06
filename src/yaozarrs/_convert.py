@@ -72,10 +72,25 @@ def _upgrade_05_06(doc: dict, coordinate_system: str, dropped: list[str]) -> dic
     )
 
 
+def _require_inline(transforms: list[dict]) -> None:
+    """Fail for a v0.5 scale/translation stored at a `path`: v0.6 has no such form."""
+    for t in transforms:
+        if t.get("path") is not None:
+            raise ValueError(
+                f"Cannot convert a {t['type']} transformation stored in a Zarr array "
+                f"(path {t['path']!r}) to v0.6, which only stores {t['type']} values "
+                "inline."
+            )
+        t.pop("path", None)  # (a `null` path, from the dump)
+
+
 def _multiscale_05_06(ms: dict, coordinate_system: str, dropped: list[str]) -> dict:
     ms = dict(ms)
     axes = ms.pop("axes")
     overall_transforms = ms.pop("coordinateTransformations", None) or []
+    _require_inline(overall_transforms)
+    for ds in ms["datasets"]:
+        _require_inline(ds["coordinateTransformations"])
     _drop_unknown_transform_keys(overall_transforms, _V05_TRANSFORM_KEYS, dropped)
     overall = _transform_params_05(overall_transforms)
     # (an unknown `coordinateSystems` key is overwritten: v0.6 formalized that key)

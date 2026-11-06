@@ -854,3 +854,51 @@ def test_transform_lengths_must_match(scale_len: int, translation_len: int) -> N
             axes=axes, datasets=datasets, coordinateTransformations=transforms
         )
     assert e.value.errors()[0]["loc"] == ("coordinateTransformations",)
+
+
+# "scale vector, stored either as a list of floats (`scale`) or as binary data at a
+# location in this container (`path`)"; likewise for translation
+@pytest.mark.parametrize(
+    "transforms",
+    [
+        [{"type": "scale", "path": "scale"}],
+        [scale_tform(2), {"type": "translation", "path": "translation"}],
+        [{"type": "scale", "path": "scale"}, translate_tform(2)],
+    ],
+)
+def test_transform_vector_at_path(transforms: list[dict]) -> None:
+    axes = [Y_AXIS, X_AXIS]
+    datasets = [
+        {"path": "0", "coordinateTransformations": transforms},
+        {"path": "1", "coordinateTransformations": [scale_tform(2)]},
+    ]
+    ms = v04.Multiscale(axes=axes, datasets=datasets)
+    at_path = [
+        t for t in ms.datasets[0].coordinateTransformations if t.path is not None
+    ]
+    assert at_path and all(t.ndim is None for t in at_path)
+    dumped = ms.model_dump(exclude_unset=True)["datasets"][0]
+    assert dumped["coordinateTransformations"] == transforms
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        {"type": "scale"},
+        {"type": "scale", "scale": [1, 1], "path": "scale"},
+        {"type": "translation"},
+        {"type": "translation", "translation": [0, 0], "path": "translation"},
+    ],
+)
+def test_transform_needs_values_or_path(transform: dict) -> None:
+    transforms = (
+        [transform] if transform["type"] == "scale" else [scale_tform(2), transform]
+    )
+    with pytest.raises(ValidationError, match="must have exactly one of"):
+        v04.Dataset(path="0", coordinateTransformations=transforms)
+
+
+def test_inline_scale_dumps_without_path() -> None:
+    scale = v04.ScaleTransformation(scale=[1.0, 2.0])
+    assert scale.model_dump() == {"type": "scale", "scale": [1.0, 2.0]}
+    assert scale.ndim == 2
