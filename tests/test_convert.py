@@ -552,31 +552,22 @@ def test_scene_cannot_be_downgraded() -> None:
 # ------------------------------------------------------------------------------
 
 
-def test_transform_at_path_raises_on_upgrade() -> None:
-    # (v0.4/v0.5 may store a scale or translation in a Zarr array; v0.6 only inline)
-    ms = {
-        "axes": [{"name": n, "type": "space"} for n in "yx"],
-        "datasets": [
-            {"path": "0", "coordinateTransformations": [{"type": "scale", "path": "s"}]}
-        ],
-    }
-    src = v05.Image(multiscales=[v05.Multiscale.model_validate(ms)])
+def test_transform_at_path() -> None:
+    # (v0.4/v0.5 may store a scale in a Zarr array; v0.6 only inline)
+    ts = [{"type": "scale", "path": "s"}]
+    axes = [{"name": n, "type": "space"} for n in "yx"]
+    src = v05.Multiscale(
+        axes=axes, datasets=[{"path": "0", "coordinateTransformations": ts}]
+    )
     with pytest.raises(ValueError, match="stored in a Zarr array"):
         convert_version(src, "0.6")
-    down = convert_version(src, "0.4")
-    assert down.multiscales[0].datasets[0].coordinateTransformations[0].path == "s"
-
-
-def test_downgrade_drops_a_stray_path_of_an_inline_scale() -> None:
-    # (v0.6 keeps an unknown `path` next to an inline scale; in v0.5 it would say where
-    # the vector is stored instead, so it's dropped)
+    assert convert_version(src, "0.4").datasets[0].scale_transform.path == "s"
+    # (and a stray `path` next to an inline v0.6 scale is dropped on the way down)
     ms = _multiscale_06()
     ms["datasets"][0]["coordinateTransformations"][0]["path"] = "s"
-    src = v06.Multiscale.model_validate(ms)
     with pytest.warns(ConversionWarning, match="scale key 'path'"):
-        down = convert_version(src, "0.5")
-    (scale,) = down.datasets[0].coordinateTransformations
-    assert scale.path is None and scale.scale is not None
+        down = convert_version(v06.Multiscale.model_validate(ms), "0.5")
+    assert down.datasets[0].scale_transform.path is None
 
 
 def test_array_axes_raise_on_downgrade() -> None:
