@@ -29,11 +29,11 @@ class LabelColor(_BaseModel):
     visualization purposes.
     """
 
-    # NOTE: the spec and schema disagree here: the prose says the value "MUST be an
-    # integer", while label.schema says "number".  We accept both, as the schema does,
-    # but keep integers as integers (as a float, a large label id would lose precision).
-    label_value: int | float = Field(
-        description="Label value from the segmentation image",
+    # "[the] `label-value` key whose value MUST be an integer specifying the pixel value
+    # for that label" (label.schema says "number", but the prose wins; as in v0.5 and
+    # v0.6, a float with no fractional part, like 2.0, is still read as an integer)
+    label_value: int = Field(
+        description="Integer label value from the segmentation image",
         alias="label-value",
     )
     rgba: Annotated[list[Int8bit], Len(min_length=4, max_length=4)] | None = Field(
