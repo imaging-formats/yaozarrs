@@ -6,15 +6,14 @@ title: Coordinate Systems & Transformations
 # Coordinate Systems & Transformations
 
 !!! tip "What you'll learn"
-    Since v0.6, OME-Zarr describes *where your pixels are* with **coordinate
-    systems** and **transformations**.  This page explains what they are, and
+    In v0.6, OME-Zarr describes *where your pixels are* with named **coordinate
+    systems** and **transformations** between them.  This page explains what they are, and
     how they appear in the metadata.
 
     If you only need a single image with a pixel size, you can mostly skip
     this: [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } handles it
     for you.  Read on when you need to place images relative to each other,
-    line up labels, register images, or just want to understand what you're
-    looking at.
+    line up labels, or register images.
 
 !!! tip ""
     This page is based on the [OME-Zarr v0.6
@@ -173,9 +172,8 @@ viewing and processing unless a use case dictates otherwise".
 ```
 
 Here, the intrinsic coordinate system is called `physical`, but the name is up
-to you.  (The spec's examples mostly use `physical` or `intrinsic`;
-[`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } uses `"intrinsic"`
-unless you pass `coordinate_system=...`).
+to you.  ([`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview }
+uses `"intrinsic"` unless you pass `coordinate_system=...`.)
 
 The rules for these dataset transformations are listed under [Coordinate
 Transformations](index.md#coordinate-transformations){ data-preview } in the guide.
@@ -192,8 +190,8 @@ Level `1` above has a translation of `0.25` because of this convention:
 
 So when you downsample by 2 (e.g. by averaging 2×2 blocks), the center of the
 first big pixel is *not* at the center of the first small pixel: it's halfway
-between the first two small pixels.  To keep the levels aligned, each level needs
-a translation of:
+between the first two small pixels.  For binning-style downsampling, each level
+needs a translation of:
 
 ```
 translation = (pixel size at this level - pixel size at level 0) / 2
@@ -252,10 +250,9 @@ system for the corrected geometry:
       system (by `name`).
     - The other side **MUST** be either another coordinate system of the same
       multiscale (by `name`), or the coordinate system of a label image in the
-      image's `labels` group (by `name` and `path`, see [lining labels up with
-      the image](index.md#lining-labels-up-with-the-image-v06){ data-preview }).
-    - A transformation to a label image **MUST** be an `identity`, `scale`,
-      `translation`, or a `sequence` of a scale and a translation.
+      image's `labels` group (by `name` and `path`).  Transformations to a
+      label image are limited to simple types (see [lining labels up with the
+      image](index.md#lining-labels-up-with-the-image-v06){ data-preview }).
 
     So within the image's own metadata, every transformation touches the
     intrinsic coordinate system: there are no chains like
@@ -268,35 +265,15 @@ system for the corrected geometry:
 Transformations between *different* images live in a
 [scene](index.md#working-with-scenes){ data-preview }: a group whose `zarr.json` has a
 `scene` object, with the images as subgroups.  Scene transformations refer to
-each image's coordinate systems by `name` *and* `path` (the image's path within
-the scene), and to the scene's own coordinate systems by `name` alone:
-
-```json
-{
-  "scene": {
-    "coordinateSystems": [{"name": "stage", "axes": [...]}],
-    "coordinateTransformations": [
-      {
-        "type": "translation",
-        "translation": [0.0, 270.0],
-        "input": {"path": "tile_1", "name": "physical"},
-        "output": {"name": "stage"}
-      }
-    ]
-  }
-}
-```
-
-See [Working with Scenes](index.md#working-with-scenes) for the
-details.
+each image's coordinate systems by `name` *and* `path`, and to the scene's own
+coordinate systems by `name` alone.
 
 ---
 
 ## Putting it together: the transformation graph
 
 If you draw every coordinate system as a dot, and every transformation as an
-arrow between two dots, you get a **graph**.  The spec has one firm rule about
-it:
+arrow between two dots, you get a **graph**.  This graph **MUST** be connected:
 
 !!! important "The graph MUST be connected"
     Any two coordinate systems (in the multiscales and scene metadata) **MUST**
@@ -319,10 +296,10 @@ its metadata, and which `zarr.json` it's stored in:
 
 v0.6 defines 12 types of transformations: `identity`, `scale`, `translation`,
 `sequence`, `mapAxis`, `affine`, `rotation`, `byDimension`, `projectAxis`,
-`bijection`, `displacements` and `coordinates`.  Readers **MUST** parse the
-first four (for `sequence`, sequences of those), and **SHOULD** parse
-`mapAxis`, `affine`, `rotation` and `byDimension`.  Actually *applying*
-transformations to points or images is a **SHOULD**.  See the
+`bijection`, `displacements` and `coordinates`.  Readers **MUST** parse
+`identity`, `scale`, `translation`, and `sequence`s of them, **SHOULD** parse
+`mapAxis`, `affine`, `rotation` and `byDimension`, and **SHOULD** be able to
+apply transformations to points and images.  See the
 [spec](https://ngff.openmicroscopy.org/specifications/0.6/index.html) for
 what each one does and its parameters.
 
@@ -401,9 +378,7 @@ Zarr array has the right shape...) are checked by
 - The coordinate systems, transformations and scene sections of the [v0.6
   specification](https://ngff.openmicroscopy.org/specifications/0.6/index.html)
 - [RFC-5: Coordinate Systems and
-  Transformations](https://ngff.openmicroscopy.org/rfc/5/index.html), with its
-  [reviews](https://ngff.openmicroscopy.org/rfc/5/reviews/index.html) and
-  [responses](https://ngff.openmicroscopy.org/rfc/5/responses/index.html)
+  Transformations](https://ngff.openmicroscopy.org/rfc/5/index.html)
 - The [ITK Software Guide](https://itk.org/ItkSoftwareGuide.pdf) (chapter 4),
   which the spec points to for a more formal definition of the pixel
   convention

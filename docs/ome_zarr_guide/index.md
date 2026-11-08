@@ -152,9 +152,6 @@ more than 5 dimensions**, and may store multiple resolution levels.
         └── ...
     ```
 
-    *The same layout as v0.5: what changed in v0.6 is the metadata inside
-    `zarr.json`.*
-
 === "v0.5"
 
     ```
@@ -201,8 +198,7 @@ more than 5 dimensions**, and may store multiple resolution levels.
 ### Axes
 
 Axes define the dimensions of your image data. Starting with v0.4, axes are
-**objects** with a `name`, and optional `type` and/or `unit` (v0.6 adds the
-optional `discrete` and `longName`, and moves axes into named coordinate systems):
+**objects** with a `name`, and optional `type` and/or `unit`:
 
 !!! important "Axis Constraints"
     Constraints for image axes in OME-Zarr are the same in v0.4, v0.5 and v0.6
@@ -221,8 +217,8 @@ optional `discrete` and `longName`, and moves axes into named coordinate systems
 
     In v0.6, the axes are no longer listed directly in the multiscale.  Instead,
     they belong to a named **coordinate system**, and each multiscale lists one
-    or more of these under `coordinateSystems`.  (The *why* is explained in
-    [Coordinate Systems & Transformations](coordinate_systems.md).)
+    or more of these under `coordinateSystems`.  (See [Coordinate Systems &
+    Transformations](coordinate_systems.md).)
 
     **Spec JSON:**
 
@@ -259,14 +255,14 @@ optional `discrete` and `longName`, and moves axes into named coordinate systems
     )
     ```
 
-    !!! info "What's new for axes in v0.6"
+    !!! info "Axis fields in v0.6"
         - **`discrete`** (optional): `true` if the axis may only be indexed by
           whole numbers (channels usually are), `false` if values *in between*
           samples are meaningful, so interpolating along it makes sense (space
           and time usually are).
         - **`longName`** (optional): a longer name or description of the axis.
-        - **More suggested `type`s**: besides `space`, `time` and `channel`, the
-          spec now lists `array`, `coordinate` and `displacement` (the latter two
+        - Besides `space`, `time` and `channel`, the spec also suggests the
+          `type`s `array`, `coordinate` and `displacement` (the latter two
           are used by [vector fields](coordinate_systems.md#transformation-types){ data-preview }).
           Other strings are still allowed for custom types.
         - Axis names **MUST** be non-empty, and unique *within their coordinate
@@ -335,9 +331,9 @@ optional `discrete` and `longName`, and moves axes into named coordinate systems
 ### Coordinate Transformations
 
 Starting in v0.4, **every dataset MUST include coordinate transformations** that
-map data coordinates to physical coordinates.  Coordinate transforms are where
-you would specify physical units (micrometers, seconds), multi-resolution scales,
-as well as stage positions and spatial offsets for registration.
+map data coordinates to physical coordinates.  This is where you specify the
+pixel size (in the units of the axes), the scale of each resolution level, and
+spatial offsets.
 
 === "v0.6"
 
@@ -442,7 +438,6 @@ as well as stage positions and spatial offsets for registration.
           if that axis isn't downsampled)
 
     !!! tip "Use `Multiscale.from_dims`"
-        Writing all of this by hand gets tedious.
         [`v06.Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]{ data-preview } builds
         the coordinate system and every level's transformation for you (see
         [`DimSpec`][yaozarrs.DimSpec]{ data-preview }).
@@ -452,10 +447,8 @@ as well as stage positions and spatial offsets for registration.
         not mention them.  (yaozarrs still writes them, as other Zarr tools find
         them useful.)
 
-    There's a lot more that v0.6 can express with coordinate systems and
-    transformations (rotations, affines, linking images to their labels or to
-    each other...).  See [Coordinate Systems &
-    Transformations](coordinate_systems.md).
+    For other transformation types, label links and scenes, see [Coordinate
+    Systems & Transformations](coordinate_systems.md).
 
 === "v0.5"
 
@@ -789,7 +782,8 @@ They are represented as a special group named "labels/" within an image group.
         ```
 
     !!! warning "Labels must use integer dtype"
-        Validation will fail if label arrays use float dtypes. Use `uint8`, `uint16`, `uint32`, or `int32`.
+        Validation will fail if label arrays use float dtypes. Use an integer
+        dtype (`uint8` through `int64`).
 
 ### Lining labels up with the image (v0.6)
 
@@ -1109,9 +1103,10 @@ Wells list the fields of view (images) they contain:
     ```
 
     !!! info "Field of view paths"
-        A field of view's `path` follows Zarr's rules for node names: letters,
-        digits, `-`, `_` and `.` are allowed, but a path **MUST NOT** be empty, consist only of
-        periods (like `.` or `..`), or start with `__`.
+        A field of view's `path` **MUST** use only letters, digits, `-`, `_`
+        and `.`, and **MUST NOT** be empty, contain `/`, consist only of periods
+        (like `.` or `..`), start with `__`, or repeat another `path` in the
+        well.
 
 === "v0.5"
 
@@ -1349,8 +1344,7 @@ other.  For example:
 - The same sample imaged from several angles (e.g. multiview light sheet)
 - Images from different instruments (or modalities), registered onto each other
 
-A scene group has no image data of its own.  Its `zarr.json` holds
-`scene` metadata, describing **transformations between the coordinate systems of
+A scene group's `zarr.json` holds `scene` metadata, describing **transformations between the coordinate systems of
 its images**, and each image is a normal multiscale image group inside it.
 
 !!! tip "Not sure what a coordinate system is?"
@@ -1424,7 +1418,7 @@ Each `input` and `output` refers to a coordinate system by `name`:
 - Without a `path`, it's one of the scene's own `coordinateSystems` (here,
   `stage`).
 
-So these two transformations say "a point in `tile_1`'s physical coordinates,
+The second transformation says "a point in `tile_1`'s physical coordinates,
 shifted by 270 µm along x, is that point's position on the stage".
 
 **yaozarrs Code:**
@@ -1489,20 +1483,19 @@ scene = v06.Scene(
       is required when the coordinate system belongs to an image, and may be
       left out when it's one of the scene's own.
     - All of the coordinate systems (the scene's and its images') **MUST** be
-      connected by transformations: there must be a path of one or more
-      transformations between *any* two of them (they don't all need to link
-      to each other directly).
+      [connected](coordinate_systems.md#putting-it-together-the-transformation-graph){ data-preview }
+      by transformations.
     - A transformation's parameters **MUST** fit the coordinate systems it
       links (e.g. a `translation` between two 2D coordinate systems has 2
       values).
 
-!!! tip "Which coordinate system is the 'main' one?"
+!!! tip "Default coordinate system"
     If a viewer picks a default coordinate system to display a scene in, the
     spec **RECOMMENDS** the *first* of the scene's own `coordinateSystems`.  Likewise, when
     writing a scene, if one coordinate system acts as the common reference for
     the others (like `stage` above), put it first.
 
-??? question "Do I need scene coordinate systems at all?"
+??? question "Linking images directly"
     A transformation may also link one image directly to another (both with a
     `path`), with no scene coordinate system in between.  This is natural for
     registration, where you map a "moving" image onto a "fixed" one:
@@ -1538,7 +1531,7 @@ scene = v06.Scene(
 | Metadata location | `.zattrs` | `zarr.json` | `zarr.json` |
 | OME namespace | N/A | `attributes.ome` | `attributes.ome` |
 | `dimension_names` | N/A | **MUST** | Not required |
-| Scenes | N/A | N/A | MAY |
+| Scenes | N/A | N/A | Yes |
 
 ### What changed in each version
 
