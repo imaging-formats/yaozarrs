@@ -68,13 +68,15 @@ class Plate(_OMEDocument):
         description="Plate layout and well organization",
     )
 
-    bioformats2raw_layout: Literal[3] | None = Field(
-        default=None,
-        alias="bioformats2raw.layout",
-        description=(
-            "Marker indicating this plate was created by bioformats2raw version 3"
+    bioformats2raw_layout: Annotated[
+        Literal[3] | None,
+        Field(
+            alias="bioformats2raw.layout",
+            description=(
+                "Marker indicating this plate was created by bioformats2raw version 3"
+            ),
         ),
-    )
+    ] = None
 
 
 class FieldOfView(_BaseModel):
