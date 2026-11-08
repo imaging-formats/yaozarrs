@@ -310,7 +310,7 @@
         },
         "coordinateTransformations": {
           "items": {
-            "anyOf": [
+            "oneOf": [
               {
                 "$ref": "#/$defs/ScaleTransformation"
               },
@@ -609,7 +609,7 @@
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/ScaleTransformation"
                   },
@@ -1074,6 +1074,18 @@
     },
     "ScaleTransformation": {
       "additionalProperties": true,
+      "oneOf": [
+        {
+          "required": [
+            "scale"
+          ]
+        },
+        {
+          "required": [
+            "path"
+          ]
+        }
+      ],
       "properties": {
         "type": {
           "const": "scale",
@@ -1081,16 +1093,18 @@
           "type": "string"
         },
         "scale": {
+          "default": null,
           "items": {
             "type": "number"
           },
           "minItems": 2,
           "type": "array"
+        },
+        "path": {
+          "default": null,
+          "type": "string"
         }
       },
-      "required": [
-        "scale"
-      ],
       "type": "object"
     },
     "Series": {
@@ -1231,6 +1245,18 @@
     },
     "TranslationTransformation": {
       "additionalProperties": true,
+      "oneOf": [
+        {
+          "required": [
+            "translation"
+          ]
+        },
+        {
+          "required": [
+            "path"
+          ]
+        }
+      ],
       "properties": {
         "type": {
           "const": "translation",
@@ -1238,16 +1264,18 @@
           "type": "string"
         },
         "translation": {
+          "default": null,
           "items": {
             "type": "number"
           },
           "minItems": 2,
           "type": "array"
+        },
+        "path": {
+          "default": null,
+          "type": "string"
         }
       },
-      "required": [
-        "translation"
-      ],
       "type": "object"
     },
     "Well": {

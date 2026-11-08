@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import TypeAdapter
 
-from yaozarrs._common._storage import StorageValidator
+from yaozarrs._common._storage import VectorsAtPathMixin
 from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._zarr import open_group
 from yaozarrs.v04._bf2raw import Bf2Raw, Series
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 _OME_VALIDATOR = TypeAdapter(OMEZarrGroupJSON)
 
 
-class StorageValidatorV04(StorageValidator):
+class StorageValidatorV04(VectorsAtPathMixin):
     """Storage validator for the OME-Zarr v0.4 spec."""
 
     __slots__ = ()

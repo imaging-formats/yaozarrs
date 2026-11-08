@@ -2,13 +2,25 @@ from collections.abc import Sequence
 from typing import Annotated, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import AfterValidator, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    Field,
+    model_validator,
+)
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._axis import AxesList
-from yaozarrs._common._image import check_resolution_order, check_transform_lengths
+from yaozarrs._common._image import (
+    check_resolution_order,
+    check_transform_lengths,
+)
 from yaozarrs._common._node_names import SuggestDatasetPath
 from yaozarrs._common._omero import Omero
+from yaozarrs._common._transforms import (
+    CoordinateTransformsList,
+    ScaleTransformation,
+    TranslationTransformation,
+)
 from yaozarrs._dim_spec import DimSpec, _axes_datasets
 from yaozarrs._types import UniqueList
 
@@ -18,103 +30,6 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Dataset",
     "ScaleTransformation",
     "TranslationTransformation",
-]
-
-
-class ScaleTransformation(_BaseModel):
-    """Maps array indices to physical coordinates via scaling.
-
-    Defines the pixel/voxel size in physical units for each dimension.
-    Every dataset must have exactly one scale transformation.
-
-    !!! note
-        Scale values represent physical size per pixel. For example, a scale of
-        `[0.5, 0.5]` means each pixel is 0.5 units wide in physical space.
-    """
-
-    type: Literal["scale"] = "scale"
-    scale: Annotated[list[float], MinLen(2)] = Field(
-        description="Scaling factor for each dimension in physical units per pixel"
-    )
-
-    @property
-    def ndim(self) -> int:
-        """Number of dimensions in this transformation."""
-        return len(self.scale)
-
-
-class TranslationTransformation(_BaseModel):
-    """Translates the coordinate system origin in physical space.
-
-    Specifies the physical coordinates of the origin (index [0, 0, ...]).
-    At most one translation may be present per dataset, and it must appear
-    after the scale transformation.
-    """
-
-    type: Literal["translation"] = "translation"
-    translation: Annotated[list[float], MinLen(2)] = Field(
-        description="Translation offset for each dimension in physical units"
-    )
-
-    @property
-    def ndim(self) -> int:
-        """Number of dimensions in this transformation."""
-        return len(self.translation)
-
-
-CoordinateTransformation = ScaleTransformation | TranslationTransformation
-
-
-def _validate_transforms_list(
-    transforms: list[CoordinateTransformation],
-) -> list[CoordinateTransformation]:
-    # [the list of transforms] MUST contain exactly one scale transformation that
-    # specifies the pixel size in physical units or time duration
-    scales = [t for t in transforms if isinstance(t, ScaleTransformation)]
-    if len(scales) != 1:
-        raise ValueError(
-            "There must be exactly one scale transformation in the list of transforms. "
-            f"Found {len(scales)}.\n\n"
-            "TIP:\n"
-            "If scaling information is not available or applicable for one of the axes,"
-            " the value MUST express the scaling factor between the current resolution "
-            "and the first resolution for the given axis, defaulting to 1.0 if there is"
-            " no downsampling along the axis"
-        )
-
-    # It MAY contain exactly one translation that specifies the offset from the origin
-    # in physical units.
-    translations = [t for t in transforms if isinstance(t, TranslationTransformation)]
-    if len(translations) > 1:
-        raise ValueError(
-            "There can be at most one translation transformation in the list of "
-            f"transforms. Found {len(translations)}."
-        )
-
-    # If translation is given it MUST be listed after scale to ensure that it is given
-    # in physical coordinates.
-    if translations and transforms.index(translations[0]) < transforms.index(scales[0]):
-        raise ValueError(
-            "If a translation transformation is given, it must be listed after "
-            "the scale transformation."
-        )
-
-    # The length of the scale and translation array MUST be the same as the length of
-    # "axes" (checked by Multiscale), so they must also match each other.
-    if len({t.ndim for t in transforms}) > 1:
-        lengths = ", ".join(f"{t.type} has {t.ndim}" for t in transforms)
-        raise ValueError(
-            "The scale and translation transformations must have the same length "
-            f"(one value per axis), but {lengths}."
-        )
-
-    return transforms
-
-
-CoordinateTransformsList: TypeAlias = Annotated[
-    list[CoordinateTransformation],
-    MinLen(1),
-    AfterValidator(_validate_transforms_list),
 ]
 
 
@@ -178,7 +93,14 @@ def _validate_datasets_list(datasets: list[Dataset]) -> list[Dataset]:
     # NOTE: this wording from the spec is a bit ambiguous,
     # since the "number of dimensions" of a dataset is not explicitly defined.
     # Here we interpret it to mean the dimensionality of the coordinate transformations
-    ndims = {dt.path: dt.coordinateTransformations[0].ndim for dt in datasets}
+    # (as far as the transformations show it: one stored at a `path` doesn't)
+    ndims = {
+        dt.path: n
+        for dt in datasets
+        if (n := next((t.ndim for t in dt.coordinateTransformations if t.ndim), None))
+    }
+    if not ndims:
+        return datasets
     if len(set(ndims.values())) != 1:
         raise ValueError(
             "All datasets must have the same number of dimensions. "
@@ -259,8 +181,13 @@ class Multiscale(_BaseModel):
         # The "paths" of the datasets MUST be ordered from the highest resolution to
         # the lowest resolution (i.e. largest to smallest)
         space = [i for i, ax in enumerate(self.axes) if ax.type == "space"]
+        # (as far as the scales are inline: one stored at a `path` can't be compared)
         check_resolution_order(
-            [tuple(ds.scale_transform.scale[i] for i in space) for ds in self.datasets]
+            [
+                tuple(scale[i] for i in space)
+                for ds in self.datasets
+                if (scale := ds.scale_transform.scale) is not None
+            ]
         )
         return self
 

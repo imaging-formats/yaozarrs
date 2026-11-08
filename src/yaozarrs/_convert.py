@@ -72,10 +72,25 @@ def _upgrade_05_06(doc: dict, coordinate_system: str, dropped: list[str]) -> dic
     )
 
 
+def _require_inline(transforms: list[dict]) -> None:
+    """Fail for a v0.5 scale/translation stored at a `path`: v0.6 has no such form."""
+    for t in transforms:
+        if t.get("path") is not None:
+            raise ValueError(
+                f"Cannot convert a {t['type']} transformation stored in a Zarr array "
+                f"(path {t['path']!r}) to v0.6, which only stores {t['type']} values "
+                "inline."
+            )
+        t.pop("path", None)  # (a `null` path, from the dump)
+
+
 def _multiscale_05_06(ms: dict, coordinate_system: str, dropped: list[str]) -> dict:
     ms = dict(ms)
     axes = ms.pop("axes")
     overall_transforms = ms.pop("coordinateTransformations", None) or []
+    _require_inline(overall_transforms)
+    for ds in ms["datasets"]:
+        _require_inline(ds["coordinateTransformations"])
     _drop_unknown_transform_keys(overall_transforms, _V05_TRANSFORM_KEYS, dropped)
     overall = _transform_params_05(overall_transforms)
     # (an unknown `coordinateSystems` key is overwritten: v0.6 formalized that key)
@@ -214,10 +229,21 @@ def _transform_06_05(ds: dict, ndim: int, dropped: list[str]) -> list[dict]:
     for step in transforms:
         if step is not transform:
             _report_lost_refs(step, {}, dropped)
+    # (v0.6 keeps an unknown `path` next to an inline scale/translation as an extra
+    # key; in v0.5 `path` would be where the vector is stored instead)
+    stray = [t for t in transforms if t["type"] in _VECTORS and "path" in t]
+    dropped.extend(f"{t['type']} key 'path'" for t in stray if t["path"] is not None)
     return [
-        {k: v for k, v in t.items() if k not in _V06_ONLY_TRANSFORM_KEYS}
+        {
+            k: v
+            for k, v in t.items()
+            if k not in _V06_ONLY_TRANSFORM_KEYS and not (k == "path" and t in stray)
+        }
         for t in transforms
     ]
+
+
+_VECTORS = ("scale", "translation")
 
 
 def _report_lost_refs(t: dict, implied: dict[str, str], dropped: list[str]) -> None:
@@ -415,7 +441,8 @@ def convert_version(
     TypeError
         If `obj` is not a model that can be converted.
     ValueError
-        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`).
+        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`,
+        or a v0.4/v0.5 scale or translation stored at a `path`, for v0.6).
     pydantic.ValidationError
         If the metadata is not valid in the target version (e.g. 6 axes in v0.5).
 
