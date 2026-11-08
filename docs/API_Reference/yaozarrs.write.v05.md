@@ -68,7 +68,7 @@ The general pattern is:
 All functions in this module eventually write zarr arrays.  You can control what
 backend is used to write arrays using the `writer` argument to each function,
 which takes a string literal (name of the backend), or a custom
-`CreateArrayFunc` function.  If you want to use builtin writers backends, you
+[`CreateArrayFunc`][yaozarrs.typing.CreateArrayFunc] function.  If you want to use builtin writers backends, you
 must install with the appropriate extras:
 
 - [zarr-python](https://github.com/zarr-developers/zarr-python): `pip install yaozarrs[write-zarr]`
@@ -93,7 +93,7 @@ You may also implement and pass in your own `writer` function.  See the
     This is an advanced feature, not needed for most users.  You can skip this
     section if you are happy using the built-in zarr or tensorstore implementations.
 
-::: yaozarrs.write.v05._write.CreateArrayFunc
+::: yaozarrs.typing.CreateArrayFunc
       options:
         heading_level: 3
         heading: "CreateArrayFunc"

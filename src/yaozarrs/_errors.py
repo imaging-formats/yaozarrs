@@ -19,6 +19,8 @@ class ValidationWarning(UserWarning):
 
 
 class ErrorDetails(TypedDict):
+    """Details of one storage validation error (or warning)."""
+
     type: str
     """
     The type of error that occurred, this is an identifier designed for

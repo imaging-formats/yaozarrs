@@ -11,7 +11,7 @@ from __future__ import annotations
 import copy
 import itertools
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from . import v04, v05, v06
 
@@ -21,8 +21,6 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 __all__ = ["ConversionWarning", "convert_version"]
-
-Version: TypeAlias = Literal["0.4", "0.5", "0.6"]
 
 _PACKAGES = {"0.4": v04, "0.5": v05, "0.6": v06}
 _ORDER = tuple(_PACKAGES)
@@ -322,86 +320,75 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
 # Public API
 # ------------------------------------------------------------------------------
 
-_Image: TypeAlias = "v04.Image | v05.Image | v06.Image"
-_LabelImage: TypeAlias = "v04.LabelImage | v05.LabelImage | v06.LabelImage"
-_LabelsGroup: TypeAlias = "v04.LabelsGroup | v05.LabelsGroup | v06.LabelsGroup"
-_Plate: TypeAlias = "v04.Plate | v05.Plate | v06.Plate"
-_Well: TypeAlias = "v04.Well | v05.Well | v06.Well"
-_Bf2Raw: TypeAlias = "v04.Bf2Raw | v05.Bf2Raw | v06.Bf2Raw"
-_Series: TypeAlias = "v04.Series | v05.Series | v06.Series"
-_Multiscale: TypeAlias = "v04.Multiscale | v05.Multiscale | v06.Multiscale"
-_Group: TypeAlias = "v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON"
-_Attributes: TypeAlias = "v05.OMEAttributes | v06.OMEAttributes"
-_04: TypeAlias = Literal["0.4"]
-_05: TypeAlias = Literal["0.5"]
-_06: TypeAlias = Literal["0.6"]
-
 
 # fmt: off
 # (LabelImage subclasses Image, so it must come first)
 @overload
-def convert_version(obj: _LabelImage, version: _04, *, coordinate_system: str = ...) -> v04.LabelImage: ...  # noqa: E501
+def convert_version(obj: v04.LabelImage | v05.LabelImage | v06.LabelImage, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.LabelImage: ...  # noqa: E501
 @overload
-def convert_version(obj: _LabelImage, version: _05, *, coordinate_system: str = ...) -> v05.LabelImage: ...  # noqa: E501
+def convert_version(obj: v04.LabelImage | v05.LabelImage | v06.LabelImage, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.LabelImage: ...  # noqa: E501
 @overload
-def convert_version(obj: _LabelImage, version: _06, *, coordinate_system: str = ...) -> v06.LabelImage: ...  # noqa: E501
+def convert_version(obj: v04.LabelImage | v05.LabelImage | v06.LabelImage, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.LabelImage: ...  # noqa: E501
 @overload
-def convert_version(obj: _Image, version: _04, *, coordinate_system: str = ...) -> v04.Image: ...  # noqa: E501
+def convert_version(obj: v04.Image | v05.Image | v06.Image, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.Image: ...  # noqa: E501
 @overload
-def convert_version(obj: _Image, version: _05, *, coordinate_system: str = ...) -> v05.Image: ...  # noqa: E501
+def convert_version(obj: v04.Image | v05.Image | v06.Image, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.Image: ...  # noqa: E501
 @overload
-def convert_version(obj: _Image, version: _06, *, coordinate_system: str = ...) -> v06.Image: ...  # noqa: E501
+def convert_version(obj: v04.Image | v05.Image | v06.Image, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Image: ...  # noqa: E501
 @overload
-def convert_version(obj: _LabelsGroup, version: _04, *, coordinate_system: str = ...) -> v04.LabelsGroup: ...  # noqa: E501
+def convert_version(obj: v04.LabelsGroup | v05.LabelsGroup | v06.LabelsGroup, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.LabelsGroup: ...  # noqa: E501
 @overload
-def convert_version(obj: _LabelsGroup, version: _05, *, coordinate_system: str = ...) -> v05.LabelsGroup: ...  # noqa: E501
+def convert_version(obj: v04.LabelsGroup | v05.LabelsGroup | v06.LabelsGroup, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.LabelsGroup: ...  # noqa: E501
 @overload
-def convert_version(obj: _LabelsGroup, version: _06, *, coordinate_system: str = ...) -> v06.LabelsGroup: ...  # noqa: E501
+def convert_version(obj: v04.LabelsGroup | v05.LabelsGroup | v06.LabelsGroup, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.LabelsGroup: ...  # noqa: E501
 @overload
-def convert_version(obj: _Plate, version: _04, *, coordinate_system: str = ...) -> v04.Plate: ...  # noqa: E501
+def convert_version(obj: v04.Plate | v05.Plate | v06.Plate, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.Plate: ...  # noqa: E501
 @overload
-def convert_version(obj: _Plate, version: _05, *, coordinate_system: str = ...) -> v05.Plate: ...  # noqa: E501
+def convert_version(obj: v04.Plate | v05.Plate | v06.Plate, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.Plate: ...  # noqa: E501
 @overload
-def convert_version(obj: _Plate, version: _06, *, coordinate_system: str = ...) -> v06.Plate: ...  # noqa: E501
+def convert_version(obj: v04.Plate | v05.Plate | v06.Plate, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Plate: ...  # noqa: E501
 @overload
-def convert_version(obj: _Well, version: _04, *, coordinate_system: str = ...) -> v04.Well: ...  # noqa: E501
+def convert_version(obj: v04.Well | v05.Well | v06.Well, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.Well: ...  # noqa: E501
 @overload
-def convert_version(obj: _Well, version: _05, *, coordinate_system: str = ...) -> v05.Well: ...  # noqa: E501
+def convert_version(obj: v04.Well | v05.Well | v06.Well, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.Well: ...  # noqa: E501
 @overload
-def convert_version(obj: _Well, version: _06, *, coordinate_system: str = ...) -> v06.Well: ...  # noqa: E501
+def convert_version(obj: v04.Well | v05.Well | v06.Well, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Well: ...  # noqa: E501
 @overload
-def convert_version(obj: _Bf2Raw, version: _04, *, coordinate_system: str = ...) -> v04.Bf2Raw: ...  # noqa: E501
+def convert_version(obj: v04.Bf2Raw | v05.Bf2Raw | v06.Bf2Raw, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.Bf2Raw: ...  # noqa: E501
 @overload
-def convert_version(obj: _Bf2Raw, version: _05, *, coordinate_system: str = ...) -> v05.Bf2Raw: ...  # noqa: E501
+def convert_version(obj: v04.Bf2Raw | v05.Bf2Raw | v06.Bf2Raw, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.Bf2Raw: ...  # noqa: E501
 @overload
-def convert_version(obj: _Bf2Raw, version: _06, *, coordinate_system: str = ...) -> v06.Bf2Raw: ...  # noqa: E501
+def convert_version(obj: v04.Bf2Raw | v05.Bf2Raw | v06.Bf2Raw, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Bf2Raw: ...  # noqa: E501
 @overload
-def convert_version(obj: _Series, version: _04, *, coordinate_system: str = ...) -> v04.Series: ...  # noqa: E501
+def convert_version(obj: v04.Series | v05.Series | v06.Series, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.Series: ...  # noqa: E501
 @overload
-def convert_version(obj: _Series, version: _05, *, coordinate_system: str = ...) -> v05.Series: ...  # noqa: E501
+def convert_version(obj: v04.Series | v05.Series | v06.Series, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.Series: ...  # noqa: E501
 @overload
-def convert_version(obj: _Series, version: _06, *, coordinate_system: str = ...) -> v06.Series: ...  # noqa: E501
+def convert_version(obj: v04.Series | v05.Series | v06.Series, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Series: ...  # noqa: E501
 @overload
-def convert_version(obj: _Multiscale, version: _04, *, coordinate_system: str = ...) -> v04.Multiscale: ...  # noqa: E501
+def convert_version(obj: v04.Multiscale | v05.Multiscale | v06.Multiscale, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.Multiscale: ...  # noqa: E501
 @overload
-def convert_version(obj: _Multiscale, version: _05, *, coordinate_system: str = ...) -> v05.Multiscale: ...  # noqa: E501
+def convert_version(obj: v04.Multiscale | v05.Multiscale | v06.Multiscale, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.Multiscale: ...  # noqa: E501
 @overload
-def convert_version(obj: _Multiscale, version: _06, *, coordinate_system: str = ...) -> v06.Multiscale: ...  # noqa: E501
+def convert_version(obj: v04.Multiscale | v05.Multiscale | v06.Multiscale, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Multiscale: ...  # noqa: E501
 @overload
-def convert_version(obj: v06.Scene, version: _06, *, coordinate_system: str = ...) -> v06.Scene: ...  # noqa: E501
+def convert_version(obj: v06.Scene, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.Scene: ...  # noqa: E501
 @overload
-def convert_version(obj: _Group | _Attributes, version: _04, *, coordinate_system: str = ...) -> v04.OMEZarrGroupJSON: ...  # noqa: E501
+def convert_version(obj: v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON | v05.OMEAttributes | v06.OMEAttributes, version: Literal["0.4"], *, coordinate_system: str = ...) -> v04.OMEZarrGroupJSON: ...  # noqa: E501
 @overload
-def convert_version(obj: _Group, version: _05, *, coordinate_system: str = ...) -> v05.OMEZarrGroupJSON: ...  # noqa: E501
+def convert_version(obj: v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.OMEZarrGroupJSON: ...  # noqa: E501
 @overload
-def convert_version(obj: _Group, version: _06, *, coordinate_system: str = ...) -> v06.OMEZarrGroupJSON: ...  # noqa: E501
+def convert_version(obj: v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.OMEZarrGroupJSON: ...  # noqa: E501
 @overload
-def convert_version(obj: _Attributes, version: _05, *, coordinate_system: str = ...) -> v05.OMEAttributes: ...  # noqa: E501
+def convert_version(obj: v05.OMEAttributes | v06.OMEAttributes, version: Literal["0.5"], *, coordinate_system: str = ...) -> v05.OMEAttributes: ...  # noqa: E501
 @overload
-def convert_version(obj: _Attributes, version: _06, *, coordinate_system: str = ...) -> v06.OMEAttributes: ...  # noqa: E501
+def convert_version(obj: v05.OMEAttributes | v06.OMEAttributes, version: Literal["0.6"], *, coordinate_system: str = ...) -> v06.OMEAttributes: ...  # noqa: E501
 # fmt: on
 def convert_version(
-    obj: Any, version: Version, *, coordinate_system: str = "intrinsic"
+    obj: Any,
+    version: Literal["0.4", "0.5", "0.6"],
+    *,
+    coordinate_system: str = "intrinsic",
 ) -> Any:
     """Convert an OME-Zarr metadata model to another version of the spec.
 

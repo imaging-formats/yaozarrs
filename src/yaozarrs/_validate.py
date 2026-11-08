@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 AnyOMEGroup: TypeAlias = (
     v04.OMEZarrGroupJSON | v05.OMEZarrGroupJSON | v06.OMEZarrGroupJSON
 )
+"""The zarr metadata document of an OME-Zarr group, in any version."""
 AnyOME: TypeAlias = (
     AnyOMEGroup
     | v05.OMEMetadata
@@ -37,6 +38,7 @@ AnyOME: TypeAlias = (
     | v06.OMEMetadata
     | v06.OMEAttributes
 )
+"""Any OME-Zarr metadata object that the `validate_ome_*` functions return."""
 T = TypeVar("T", bound=AnyOME)
 
 # OME version strings -> the package that models them

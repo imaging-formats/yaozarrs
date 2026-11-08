@@ -120,7 +120,9 @@ class Dataset(_BaseModel):
         return self
 
     @property
-    def transform(self) -> DatasetTransformation:
+    def transform(
+        self,
+    ) -> ScaleTransformation | IdentityTransformation | SequenceTransformation:
         """The transformation from this dataset's array to the intrinsic system."""
         return self.coordinateTransformations[0]
 

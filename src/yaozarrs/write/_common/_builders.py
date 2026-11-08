@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
     from pydantic import BaseModel
 
-    from ._arrays import (
+    from yaozarrs.typing import (
         ArrayLike,
         ArrayOrPyramid,
         CompressionName,
@@ -48,7 +48,8 @@ if TYPE_CHECKING:
         ZarrWriter,
     )
 
-    # (image, data) or (image, specs) pairs
+    # (image, data) or (image, specs) pairs.  Internal only: public signatures spell
+    # them out, since consumers can't import these.
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
     ImageWithShapeSpecs: TypeAlias = tuple[Image, ShapeAndDTypeOrPyramid]
     ImageWithAny: TypeAlias = ImageWithDatasets[Any] | ImageWithShapeSpecs[Any]
@@ -695,7 +696,7 @@ class PlateBuilderBase(_BuilderBase, Generic[Image]):
         self,
         row: str,
         col: str,
-        images: Mapping[str, ImageWithDatasets[Image]],
+        images: Mapping[str, tuple[Image, ArrayOrPyramid]],
         *,
         progress: bool = False,
     ) -> Self:
@@ -712,7 +713,7 @@ class PlateBuilderBase(_BuilderBase, Generic[Image]):
             Row name like "A", "B", etc.
         col : str
             Column name like "1", "2", etc.
-        images : Mapping[str, ImageWithDatasets]
+        images : Mapping[str, tuple[Image, ArrayOrPyramid]]
             Mapping of `{fov -> (image_model, datasets)}` where:
             - fov: Field of view identifier like "0", "1", etc.
             - datasets can be:
@@ -755,7 +756,7 @@ class PlateBuilderBase(_BuilderBase, Generic[Image]):
         *,
         row: str,
         col: str,
-        images: Mapping[str, ImageWithShapeSpecs[Image]],
+        images: Mapping[str, tuple[Image, ShapeAndDTypeOrPyramid]],
     ) -> Self:
         """Add a well for the prepare-only workflow.
 
@@ -770,7 +771,7 @@ class PlateBuilderBase(_BuilderBase, Generic[Image]):
             Row name like "A", "B", etc.
         col : str
             Column name like "1", "2", etc.
-        images : Mapping[str, ImageWithShapeSpecs]
+        images : Mapping[str, tuple[Image, ShapeAndDTypeOrPyramid]]
             Mapping of `{fov -> (image_model, specs)}` where specs provide the
             dtype and shape for each resolution level:
             - Single level: `(image, (shape, dtype))`

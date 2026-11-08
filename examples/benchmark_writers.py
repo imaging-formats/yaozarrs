@@ -31,7 +31,7 @@ from yaozarrs.v05 import (
 from yaozarrs.write.v05 import write_image
 
 if TYPE_CHECKING:
-    from yaozarrs.write.v05._write import ZarrWriter
+    from yaozarrs.typing import ZarrWriter
 
 # Test configuration
 SHAPE = (10, 3, 25, 1024, 1024)  # TCZYX

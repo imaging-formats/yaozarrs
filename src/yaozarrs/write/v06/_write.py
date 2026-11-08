@@ -50,7 +50,7 @@ from yaozarrs.v06._storage import (
     _multiscale_graph,
 )
 from yaozarrs.v06._transforms import check_transform_ndim
-from yaozarrs.write._common._arrays import CreateArrayFunc, _get_create_func
+from yaozarrs.write._common._arrays import _get_create_func
 from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
@@ -69,7 +69,6 @@ from yaozarrs.write._common._models import _check_model
 
 __all__ = [
     "Bf2RawBuilder",
-    "CreateArrayFunc",  # (documented as `yaozarrs.write.v06._write.CreateArrayFunc`)
     "LabelsBuilder",
     "PlateBuilder",
     "SceneBuilder",
@@ -88,25 +87,24 @@ if TYPE_CHECKING:
     import tensorstore
     import zarr
 
-    from yaozarrs.v06._coordinate_systems import CoordinateSystem
-    from yaozarrs.v06._storage import Node
-    from yaozarrs.write._common._arrays import (
+    from yaozarrs.typing import (
         AnyZarrArray,
         ArrayOrPyramid,
         CompressionName,
+        CreateArrayFunc,
         ShapeAndDTypeOrPyramid,
         ShapeLike,
         ZarrWriter,
     )
+    from yaozarrs.v06._coordinate_systems import CoordinateSystem
+    from yaozarrs.v06._storage import Node
 
-    # Compound types for images with data or specs
-    ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
-    # (label images of an image, by label name)
-    LabelsWithDatasets: TypeAlias = Mapping[str, tuple[LabelImage, ArrayOrPyramid]]
-    LabelsWithSpecs: TypeAlias = Mapping[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]]
     # (an image added to a SceneBuilder: its dataset specs, array options and labels)
     AddedImage: TypeAlias = tuple[
-        Image, ShapeAndDTypeOrPyramid, dict[str, Any], LabelsWithSpecs
+        Image,
+        ShapeAndDTypeOrPyramid,
+        dict[str, Any],
+        Mapping[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]],
     ]
 
 
@@ -267,7 +265,7 @@ def write_image(
 
 def write_plate(
     dest: str | PathLike,
-    images: Mapping[tuple[str, str, str], ImageWithDatasets],
+    images: Mapping[tuple[str, str, str], tuple[Image, ArrayOrPyramid]],
     *,
     plate: Plate | dict[str, Any] | None = None,
     extra_attributes: dict[str, Any] | None = None,
@@ -309,7 +307,7 @@ def write_plate(
     ----------
     dest : str | PathLike
         Destination path for the Plate Zarr group.
-    images : Mapping[tuple[str, str, str], ImageWithDatasets]
+    images : Mapping[tuple[str, str, str], tuple[Image, ArrayOrPyramid]]
         Mapping of `{(row, col, fov) -> (image_model, [datasets, ...])}`.
         Each tuple key specifies (row_name, column_name, field_of_view) like
         ("A", "1", "0"). Row and column names are auto-extracted from the keys.
@@ -411,7 +409,7 @@ def write_plate(
 def write_bioformats2raw(
     dest: str | PathLike,
     # mapping of {series_name -> ( Image, [datasets, ...] )}
-    images: Mapping[str, ImageWithDatasets],
+    images: Mapping[str, tuple[Image, ArrayOrPyramid]],
     *,
     ome_xml: str | None = None,
     extra_attributes: dict[str, Any] | None = None,
@@ -461,7 +459,7 @@ def write_bioformats2raw(
     ----------
     dest : str | PathLike
         Destination path for the root Zarr group.
-    images : dict[str, ImageWithDatasets]
+    images : Mapping[str, tuple[Image, ArrayOrPyramid]]
         Mapping of `{series_name -> (image_model, [datasets, ...])}`.
         Each series name (e.g., "0", "1") becomes a subgroup in the root group, with
         the Image model defining the zarr.json and the datasets providing the data
@@ -549,9 +547,9 @@ def write_bioformats2raw(
 def write_scene(
     dest: str | PathLike,
     scene: Scene,
-    images: Mapping[str, ImageWithDatasets],
+    images: Mapping[str, tuple[Image, ArrayOrPyramid]],
     *,
-    labels: Mapping[str, LabelsWithDatasets] | None = None,
+    labels: Mapping[str, Mapping[str, tuple[LabelImage, ArrayOrPyramid]]] | None = None,
     extra_attributes: dict[str, Any] | None = None,
     writer: ZarrWriter = "auto",
     overwrite: bool = False,
@@ -607,7 +605,7 @@ def write_scene(
         Destination path for the scene Zarr group.
     scene : Scene
         OME-Zarr Scene metadata model.
-    images : Mapping[str, ImageWithDatasets]
+    images : Mapping[str, tuple[Image, ArrayOrPyramid]]
         Mapping of `{path -> (image_model, [datasets, ...])}`.  Each path (e.g.
         "tile_0", or "tiles/0") becomes an Image subgroup of the scene group.
     labels : Mapping[str, Mapping[str, tuple[LabelImage, ArrayOrPyramid]]] | None
@@ -1367,7 +1365,7 @@ class SceneBuilder(_BuilderBase):
         image: Image,
         datasets: ArrayOrPyramid,
         *,
-        labels: LabelsWithDatasets | None = None,
+        labels: Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None = None,
         chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
         shards: ShapeLike | _Default | None = _Default.BUILDER,
         compression: CompressionName | _Default = _Default.BUILDER,
@@ -1444,7 +1442,7 @@ class SceneBuilder(_BuilderBase):
         image: Image,
         datasets: ShapeAndDTypeOrPyramid,
         *,
-        labels: LabelsWithSpecs | None = None,
+        labels: Mapping[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]] | None = None,
         chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
         shards: ShapeLike | _Default | None = _Default.BUILDER,
         compression: CompressionName | _Default = _Default.BUILDER,

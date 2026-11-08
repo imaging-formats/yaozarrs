@@ -31,7 +31,6 @@ from typing import TYPE_CHECKING, Any, overload
 from yaozarrs.v05 import Bf2Raw, Image, LabelImage, LabelsGroup, Plate
 from yaozarrs.v05._bf2raw import Series
 from yaozarrs.v05._plate import FieldOfView, Well, WellDef
-from yaozarrs.write._common._arrays import CreateArrayFunc
 from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
@@ -44,7 +43,6 @@ from yaozarrs.write._common._builders import (
 
 __all__ = [
     "Bf2RawBuilder",
-    "CreateArrayFunc",  # (documented as `yaozarrs.write.v05._write.CreateArrayFunc`)
     "LabelsBuilder",
     "PlateBuilder",
     "prepare_image",
@@ -56,22 +54,20 @@ __all__ = [
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from os import PathLike
-    from typing import Literal, TypeAlias
+    from typing import Literal
 
     import tensorstore
     import zarr
 
-    from yaozarrs.write._common._arrays import (
+    from yaozarrs.typing import (
         AnyZarrArray,
         ArrayOrPyramid,
         CompressionName,
+        CreateArrayFunc,
         ShapeAndDTypeOrPyramid,
         ShapeLike,
         ZarrWriter,
     )
-
-    # Compound types for images with data or specs
-    ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
 
 
 # ######################## Public API ##########################################
@@ -239,7 +235,7 @@ def write_image(
 
 def write_plate(
     dest: str | PathLike,
-    images: Mapping[tuple[str, str, str], ImageWithDatasets],
+    images: Mapping[tuple[str, str, str], tuple[Image, ArrayOrPyramid]],
     *,
     plate: Plate | dict[str, Any] | None = None,
     extra_attributes: dict[str, Any] | None = None,
@@ -281,7 +277,7 @@ def write_plate(
     ----------
     dest : str | PathLike
         Destination path for the Plate Zarr group.
-    images : Mapping[tuple[str, str, str], ImageWithDatasets]
+    images : Mapping[tuple[str, str, str], tuple[Image, ArrayOrPyramid]]
         Mapping of `{(row, col, fov) -> (image_model, [datasets, ...])}`.
         Each tuple key specifies (row_name, column_name, field_of_view) like
         ("A", "1", "0"). Row and column names are auto-extracted from the keys.
@@ -391,7 +387,7 @@ def write_plate(
 def write_bioformats2raw(
     dest: str | PathLike,
     # mapping of {series_name -> ( Image, [datasets, ...] )}
-    images: Mapping[str, ImageWithDatasets],
+    images: Mapping[str, tuple[Image, ArrayOrPyramid]],
     *,
     ome_xml: str | None = None,
     extra_attributes: dict[str, Any] | None = None,
@@ -441,7 +437,7 @@ def write_bioformats2raw(
     ----------
     dest : str | PathLike
         Destination path for the root Zarr group.
-    images : dict[str, ImageWithDatasets]
+    images : Mapping[str, tuple[Image, ArrayOrPyramid]]
         Mapping of `{series_name -> (image_model, [datasets, ...])}`.
         Each series name (e.g., "0", "1") becomes a subgroup in the root group, with
         the Image model defining the zarr.json and the datasets providing the data

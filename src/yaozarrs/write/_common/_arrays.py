@@ -11,30 +11,12 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
     from pathlib import Path
-    from typing import Literal, TypeAlias
+    from typing import Literal
 
     import dask.array as da
-    import tensorstore
-    import zarr
-    from numpy.typing import DTypeLike
 
-    WriterName = Literal["zarr", "tensorstore", "auto"]
-    ZarrWriter: TypeAlias = WriterName | "CreateArrayFunc"
-    CompressionName = Literal["blosc-zstd", "blosc-lz4", "zstd", "none"]
-    AnyZarrArray: TypeAlias = zarr.Array | tensorstore.TensorStore
-    ShapeLike: TypeAlias = tuple[int, ...]
-
-    # Actual data arrays - for write functions
-    ArrayLike: TypeAlias = Any  # e.g., numpy.ndarray, dask.array.Array, etc.
-    ArrayOrPyramid: TypeAlias = ArrayLike | Sequence[ArrayLike]
-
-    # Shape/dtype specification only (no data) - for prepare/add functions
-    ShapeAndDType: TypeAlias = tuple[ShapeLike, DTypeLike]
-    """A tuple of (shape, dtype) describing an array."""
-
-    ShapeAndDTypeOrPyramid: TypeAlias = ShapeAndDType | Sequence[ShapeAndDType]
+    from yaozarrs.typing import ArrayLike, CompressionName
 
 
 @runtime_checkable

@@ -31,11 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 
-    from yaozarrs.write.v05._write import (
-        CompressionName,
-        CreateArrayFunc,
-        ZarrWriter,
-    )
+    from yaozarrs.typing import CompressionName, CreateArrayFunc, ZarrWriter
 
 
 try:

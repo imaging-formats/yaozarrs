@@ -30,7 +30,7 @@ from yaozarrs.write.v06 import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from yaozarrs.write.v06._write import ZarrWriter
+    from yaozarrs.typing import ZarrWriter
 
 np = pytest.importorskip("numpy")
 
