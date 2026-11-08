@@ -1061,8 +1061,8 @@
 <h1 id="coordinate-systems-transformations">Coordinate Systems &amp; Transformations<a class="headerlink" href="#coordinate-systems-transformations" title="Link to this section">#</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">What you'll learn</p>
-<p>Since v0.6, OME-Zarr describes <em>where your pixels are</em> with <strong>coordinate
-systems</strong> and <strong>transformations</strong>.  This page explains what they are, and
+<p>In v0.6, OME-Zarr describes <em>where your pixels are</em> with named <strong>coordinate
+systems</strong> and <strong>transformations</strong> between them.  This page explains what they are, and
 how they appear in the metadata.</p>
 <p>If you only need a single image with a pixel size, you can mostly skip
 this: <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
@@ -1072,8 +1072,7 @@ this: <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symb
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>Multiscale.from_dims</code></a> handles it
 for you.  Read on when you need to place images relative to each other,
-line up labels, register images, or just want to understand what you're
-looking at.</p>
+line up labels, or register images.</p>
 </div>
 <div class="admonition tip">
 <p>This page is based on the <a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">OME-Zarr v0.6
@@ -1230,14 +1229,13 @@ viewing and processing unless a use case dictates otherwise".</p>
 <span class="p">}</span>
 </code></pre></div>
 <p>Here, the intrinsic coordinate system is called <code>physical</code>, but the name is up
-to you.  (The spec's examples mostly use <code>physical</code> or <code>intrinsic</code>;
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
+to you.  (<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
 
 
   &lt;span class=&quot;doc doc-labels&quot;&gt;
       &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>Multiscale.from_dims</code></a> uses <code>"intrinsic"</code>
-unless you pass <code>coordinate_system=...</code>).</p>
+  &lt;/span&gt;" href="../../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims" data-preview><code>Multiscale.from_dims</code></a>
+uses <code>"intrinsic"</code> unless you pass <code>coordinate_system=...</code>.)</p>
 <p>The rules for these dataset transformations are listed under <a data-preview href="../#coordinate-transformations">Coordinate
 Transformations</a> in the guide.</p>
 <h3 id="where-is-a-pixel">Where is a pixel?<a class="headerlink" href="#where-is-a-pixel" title="Link to this section">#</a></h3>
@@ -1251,8 +1249,8 @@ itself covers the area from <code>-0.5</code> to <code>0.5</code> along each axi
 </div>
 <p>So when you downsample by 2 (e.g. by averaging 2×2 blocks), the center of the
 first big pixel is <em>not</em> at the center of the first small pixel: it's halfway
-between the first two small pixels.  To keep the levels aligned, each level needs
-a translation of:</p>
+between the first two small pixels.  For binning-style downsampling, each level
+needs a translation of:</p>
 <div class="language-text highlight"><pre><span></span><code>translation = (pixel size at this level - pixel size at level 0) / 2
 </code></pre></div>
 <p>(plus level 0's own translation, if it has one).  Here: <code>(1.0 - 0.5) / 2 = 0.25</code>.  Try it below: hover over a pixel to see where its
@@ -1308,10 +1306,9 @@ system for the corrected geometry:</p>
   system (by <code>name</code>).</li>
 <li>The other side <strong>MUST</strong> be either another coordinate system of the same
   multiscale (by <code>name</code>), or the coordinate system of a label image in the
-  image's <code>labels</code> group (by <code>name</code> and <code>path</code>, see <a data-preview href="../#lining-labels-up-with-the-image-v06">lining labels up with
-  the image</a>).</li>
-<li>A transformation to a label image <strong>MUST</strong> be an <code>identity</code>, <code>scale</code>,
-  <code>translation</code>, or a <code>sequence</code> of a scale and a translation.</li>
+  image's <code>labels</code> group (by <code>name</code> and <code>path</code>).  Transformations to a
+  label image are limited to simple types (see <a data-preview href="../#lining-labels-up-with-the-image-v06">lining labels up with the
+  image</a>).</li>
 </ul>
 <p>So within the image's own metadata, every transformation touches the
 intrinsic coordinate system: there are no chains like
@@ -1322,29 +1319,12 @@ intrinsic coordinate system: there are no chains like
 <p>Transformations between <em>different</em> images live in a
 <a data-preview href="../#working-with-scenes">scene</a>: a group whose <code>zarr.json</code> has a
 <code>scene</code> object, with the images as subgroups.  Scene transformations refer to
-each image's coordinate systems by <code>name</code> <em>and</em> <code>path</code> (the image's path within
-the scene), and to the scene's own coordinate systems by <code>name</code> alone:</p>
-<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">"scene"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">"coordinateSystems"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stage"</span><span class="p">,</span><span class="w"> </span><span class="nt">"axes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]}],</span>
-<span class="w">    </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">      </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"translation"</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">"translation"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">270.0</span><span class="p">],</span>
-<span class="w">        </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tile_1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"physical"</span><span class="p">},</span>
-<span class="w">        </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stage"</span><span class="p">}</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">]</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div>
-<p>See <a href="../#working-with-scenes">Working with Scenes</a> for the
-details.</p>
+each image's coordinate systems by <code>name</code> <em>and</em> <code>path</code>, and to the scene's own
+coordinate systems by <code>name</code> alone.</p>
 <hr />
 <h2 id="putting-it-together-the-transformation-graph">Putting it together: the transformation graph<a class="headerlink" href="#putting-it-together-the-transformation-graph" title="Link to this section">#</a></h2>
 <p>If you draw every coordinate system as a dot, and every transformation as an
-arrow between two dots, you get a <strong>graph</strong>.  The spec has one firm rule about
-it:</p>
+arrow between two dots, you get a <strong>graph</strong>.  This graph <strong>MUST</strong> be connected:</p>
 <div class="admonition important">
 <p class="admonition-title">The graph MUST be connected</p>
 <p>Any two coordinate systems (in the multiscales and scene metadata) <strong>MUST</strong>
@@ -1362,10 +1342,10 @@ its metadata, and which <code>zarr.json</code> it's stored in:</p>
 <h2 id="transformation-types">Transformation types<a class="headerlink" href="#transformation-types" title="Link to this section">#</a></h2>
 <p>v0.6 defines 12 types of transformations: <code>identity</code>, <code>scale</code>, <code>translation</code>,
 <code>sequence</code>, <code>mapAxis</code>, <code>affine</code>, <code>rotation</code>, <code>byDimension</code>, <code>projectAxis</code>,
-<code>bijection</code>, <code>displacements</code> and <code>coordinates</code>.  Readers <strong>MUST</strong> parse the
-first four (for <code>sequence</code>, sequences of those), and <strong>SHOULD</strong> parse
-<code>mapAxis</code>, <code>affine</code>, <code>rotation</code> and <code>byDimension</code>.  Actually <em>applying</em>
-transformations to points or images is a <strong>SHOULD</strong>.  See the
+<code>bijection</code>, <code>displacements</code> and <code>coordinates</code>.  Readers <strong>MUST</strong> parse
+<code>identity</code>, <code>scale</code>, <code>translation</code>, and <code>sequence</code>s of them, <strong>SHOULD</strong> parse
+<code>mapAxis</code>, <code>affine</code>, <code>rotation</code> and <code>byDimension</code>, and <strong>SHOULD</strong> be able to
+apply transformations to points and images.  See the
 <a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">spec</a> for
 what each one does and its parameters.</p>
 <div class="admonition warning">
@@ -1440,9 +1420,7 @@ systems that aren't linked to anything; inside a scene, it's an error.</p>
 <li>The coordinate systems, transformations and scene sections of the <a href="https://ngff.openmicroscopy.org/specifications/0.6/index.html">v0.6
   specification</a></li>
 <li><a href="https://ngff.openmicroscopy.org/rfc/5/index.html">RFC-5: Coordinate Systems and
-  Transformations</a>, with its
-  <a href="https://ngff.openmicroscopy.org/rfc/5/reviews/index.html">reviews</a> and
-  <a href="https://ngff.openmicroscopy.org/rfc/5/responses/index.html">responses</a></li>
+  Transformations</a></li>
 <li>The <a href="https://itk.org/ItkSoftwareGuide.pdf">ITK Software Guide</a> (chapter 4),
   which the spec points to for a more formal definition of the pixel
   convention</li>
