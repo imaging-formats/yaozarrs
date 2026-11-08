@@ -485,48 +485,6 @@ class StorageValidator:
             return None
         return node
 
-    def _validate_vectors_at_path(
-        self,
-        zarr_group: ZarrGroup,
-        multiscale: _VectorMultiscale,
-        loc_prefix: Loc,
-    ) -> ValidationResult:
-        """Check the arrays that v0.4/v0.5 `scale`/`translation` vectors are stored in.
-
-        A vector may be "stored ... as binary data at a location in this container
-        (`path`)", and "The length of the `scale` and `translation` array MUST be the
-        same as the length of "axes"". Only the arrays' metadata is read.
-        """
-        result = ValidationResult()
-        ndim = len(multiscale.axes)
-        transforms: list[tuple[Loc, _StoredParameters]] = [
-            ((*loc_prefix, "datasets", i, "coordinateTransformations", j), t)
-            for i, ds in enumerate(multiscale.datasets)
-            for j, t in enumerate(ds.coordinateTransformations)
-        ]
-        transforms += [
-            ((*loc_prefix, "coordinateTransformations", j), t)
-            for j, t in enumerate(multiscale.coordinateTransformations or ())
-        ]
-        for loc, t in transforms:
-            if t.path is None:  # (stored inline)
-                continue
-            # ("binary data at a location in this container": not necessarily a Zarr
-            # array in this group, so a path that doesn't resolve to one only warns)
-            node = self._find_parameters(
-                zarr_group, t, loc, result, unresolved="warning"
-            )
-            if node is None:
-                continue
-            if problem := _shape_problem(node, (ndim,)):
-                result.add_error(
-                    StorageErrorType.transform_parameters_invalid,
-                    (*loc, "path"),
-                    f"The {t.type} vector at '{t.path}' {problem} (one value per axis)",
-                    ctx={"path": t.path, "fs_path": _build_fs_path(zarr_group, t.path)},
-                )
-        return result
-
     def visit_plate(
         self, zarr_group: ZarrGroup, plate_model: Any, loc_prefix: Loc
     ) -> ValidationResult:
@@ -978,6 +936,62 @@ class StorageValidator:
                         ctx={"path": dataset.path, "dtype": str(dt)},
                     )
 
+        return result
+
+
+class VectorsAtPathMixin(StorageValidator):
+    """For v0.4/v0.5, whose scale/translation vectors may be stored in Zarr (`path`)."""
+
+    def _visit_multiscale_no_prefetch(
+        self, zarr_group: ZarrGroup, multiscale: _VectorMultiscale, loc_prefix: Loc
+    ) -> ValidationResult:
+        result = super()._visit_multiscale_no_prefetch(
+            zarr_group, multiscale, loc_prefix
+        )
+        return result.merge(
+            self._validate_vectors_at_path(zarr_group, multiscale, loc_prefix)
+        )
+
+    def _validate_vectors_at_path(
+        self,
+        zarr_group: ZarrGroup,
+        multiscale: _VectorMultiscale,
+        loc_prefix: Loc,
+    ) -> ValidationResult:
+        """Check the arrays that v0.4/v0.5 `scale`/`translation` vectors are stored in.
+
+        A vector may be "stored ... as binary data at a location in this container
+        (`path`)", and "The length of the `scale` and `translation` array MUST be the
+        same as the length of "axes"". Only the arrays' metadata is read.
+        """
+        result = ValidationResult()
+        ndim = len(multiscale.axes)
+        transforms: list[tuple[Loc, _StoredParameters]] = [
+            ((*loc_prefix, "datasets", i, "coordinateTransformations", j), t)
+            for i, ds in enumerate(multiscale.datasets)
+            for j, t in enumerate(ds.coordinateTransformations)
+        ]
+        transforms += [
+            ((*loc_prefix, "coordinateTransformations", j), t)
+            for j, t in enumerate(multiscale.coordinateTransformations or ())
+        ]
+        for loc, t in transforms:
+            if t.path is None:  # (stored inline)
+                continue
+            # ("binary data at a location in this container": not necessarily a Zarr
+            # array in this group, so a path that doesn't resolve to one only warns)
+            node = self._find_parameters(
+                zarr_group, t, loc, result, unresolved="warning"
+            )
+            if node is None:
+                continue
+            if problem := _shape_problem(node, (ndim,)):
+                result.add_error(
+                    StorageErrorType.transform_parameters_invalid,
+                    (*loc, "path"),
+                    f"The {t.type} vector at '{t.path}' {problem} (one value per axis)",
+                    ctx={"path": t.path, "fs_path": _build_fs_path(zarr_group, t.path)},
+                )
         return result
 
 
