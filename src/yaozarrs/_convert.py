@@ -441,7 +441,8 @@ def convert_version(
     TypeError
         If `obj` is not a model that can be converted.
     ValueError
-        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`).
+        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`,
+        or a v0.4/v0.5 scale or translation stored at a `path`, for v0.6).
     pydantic.ValidationError
         If the metadata is not valid in the target version (e.g. 6 axes in v0.5).
 

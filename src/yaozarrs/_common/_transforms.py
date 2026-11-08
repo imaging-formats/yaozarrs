@@ -120,8 +120,13 @@ class TranslationTransformation(_BaseModel):
 def _transform_tag(v: Any) -> str | None:
     """The union member for a transformation: by its `type`, else by its values."""
     if isinstance(v, dict):
-        # (`type` may be omitted, e.g. by `DimSpec`: then the values say which it is)
-        kind = v.get("type", "translation" if "translation" in v else "scale")
+        # (`type` may be omitted, e.g. by `DimSpec`, if exactly one inline vector says
+        # which it is; anything else, like a lone `path`, is ambiguous)
+        if "type" in v:
+            kind = v["type"]
+        else:
+            found = [k for k in ("scale", "translation") if k in v]
+            kind = found[0] if len(found) == 1 else None
     else:
         kind = getattr(v, "type", None)
     return _TRANSFORM_TAGS.get(kind, kind) if isinstance(kind, str) else None

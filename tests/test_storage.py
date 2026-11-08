@@ -743,6 +743,10 @@ def test_transform_at_path_model(mod: Any) -> None:
     ts = [{"scale": [1, 1]}, {"translation": [0, 0]}]
     ds = mod.Dataset(path="0", coordinateTransformations=ts)
     assert [t.type for t in ds.coordinateTransformations] == ["scale", "translation"]
+    # (but nothing is guessed when the values don't say which it is)
+    for ambiguous in ({"path": "t"}, {"scale": [1, 1], "translation": [0, 0]}):
+        with pytest.raises(ValidationError, match="Unable to extract tag"):
+            mod.Dataset(path="0", coordinateTransformations=[ambiguous])
 
 
 def _node_files(version: str, node: Any, dims: Any = None) -> dict[str, Any]:
