@@ -5329,7 +5329,8 @@ instead.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If <code>version</code> is unknown, or has no equivalent of <code>obj</code> (e.g. a v0.6 <code>Scene</code>).</p>
+                <p>If <code>version</code> is unknown, or has no equivalent of <code>obj</code> (e.g. a v0.6 <code>Scene</code>,
+or a v0.4/v0.5 scale or translation stored at a <code>path</code>, for v0.6).</p>
               </div>
             </td>
           </tr>
@@ -5423,7 +5424,8 @@ instead.</p>
 <span class="normal">465</span>
 <span class="normal">466</span>
 <span class="normal">467</span>
-<span class="normal">468</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">convert_version</span><span class="p">(</span>
+<span class="normal">468</span>
+<span class="normal">469</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">convert_version</span><span class="p">(</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">coordinate_system</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"intrinsic"</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Convert an OME-Zarr metadata model to another version of the spec.</span>
@@ -5464,7 +5466,8 @@ instead.</p>
 <span class="sd">    TypeError</span>
 <span class="sd">        If `obj` is not a model that can be converted.</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`).</span>
+<span class="sd">        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`,</span>
+<span class="sd">        or a v0.4/v0.5 scale or translation stored at a `path`, for v0.6).</span>
 <span class="sd">    pydantic.ValidationError</span>
 <span class="sd">        If the metadata is not valid in the target version (e.g. 6 axes in v0.5).</span>
 
