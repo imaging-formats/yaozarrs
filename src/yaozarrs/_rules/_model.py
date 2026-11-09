@@ -7,7 +7,7 @@ import tomllib
 from dataclasses import dataclass, replace
 from functools import cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 # the strength of a statement: "MUST NOT" is a MUST, and "SHOULD NOT" a SHOULD
 Level = Literal["MUST", "SHOULD", "MAY"]
@@ -60,14 +60,19 @@ class SpecDoc:
 
 @dataclass(frozen=True)
 class SpecSource:
-    """A verbatim quote of a normative statement, at specific lines of a `SpecDoc`."""
+    """Where a `SpecDoc` states a rule: a verbatim prose quote, or a schema keyword."""
 
     doc: SpecDoc
     lines: tuple[int, int]
-    quote: str
+    quote: str = ""
+    """The verbatim prose (whitespace-insensitive); empty for a JSON schema source."""
     # the statement is a requirement, but this version states it without an
     # RFC 2119 keyword (the rule's `notes` say why it counts)
     implied: bool = False
+    pointer: str = ""
+    """For a JSON schema source: the JSON Pointer of the keyword that states it."""
+    value: Any = None
+    """For a JSON schema source: the keyword's value, if checked (None: not checked)."""
 
     @property
     def is_schema(self) -> bool:

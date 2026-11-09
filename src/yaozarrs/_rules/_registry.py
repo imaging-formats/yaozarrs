@@ -24,8 +24,10 @@ def _load_rule(code: str, entry: dict[str, Any], docs: dict[str, SpecDoc]) -> Ru
                     if "schema" in src
                     else docs[version],
                     lines=(start, end),
-                    quote=src["quote"],
+                    quote=src.get("quote", ""),
                     implied=src.get("implied", False),
+                    pointer=src.get("pointer", ""),
+                    value=src.get("value"),
                 )
                 for src in entry.pop("sources", ())
                 for version, (start, end) in src["lines"].items()

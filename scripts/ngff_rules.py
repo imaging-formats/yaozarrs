@@ -15,6 +15,7 @@ Usage (from the repo root):
 from __future__ import annotations
 
 import argparse
+import bisect
 import json
 import os
 import re
@@ -33,7 +34,7 @@ from pydantic import ValidationError
 
 from yaozarrs import v04, v05, v06, validate_zarr_store
 from yaozarrs._errors import StorageValidationError, StorageValidationWarning
-from yaozarrs._rules import RULES, Rule, RuleWarning, SpecDoc
+from yaozarrs._rules import RULES, Rule, RuleWarning, SpecDoc, SpecSource
 from yaozarrs._rules._registry import REGISTRY_FILE, SPEC_DOCS
 
 if TYPE_CHECKING:
@@ -100,12 +101,86 @@ def find_quote(text: str, quote: str) -> list[tuple[int, int]]:
     return [lines for *_, lines in _quote_spans(*_normalized(text), quote)]
 
 
+def pointer_spans(text: str) -> dict[str, tuple[int, int]]:
+    """The (first, last) lines of every node of a JSON document, by JSON Pointer.
+
+    A member's lines start at its key, an array item's at its value.
+    """
+    newlines = [i for i, ch in enumerate(text) if ch == "\n"]
+    decoder = json.JSONDecoder()
+    spans: dict[str, tuple[int, int]] = {}
+
+    def line(i: int) -> int:
+        return bisect.bisect_right(newlines, i - 1) + 1
+
+    def skip(i: int) -> int:
+        while i < len(text) and text[i].isspace():
+            i += 1
+        return i
+
+    def node(i: int, ptr: str, first: int) -> int:
+        i = skip(i)
+        if text[i] in "{[":
+            close, n = ("}" if text[i] == "{" else "]"), 0
+            i = skip(i + 1)
+            while text[i] != close:
+                if close == "}":
+                    key, j = decoder.raw_decode(text, i)
+                    j = skip(j)
+                    assert text[j] == ":", f"expected ':' at line {line(j)}"
+                    name = key.replace("~", "~0").replace("/", "~1")
+                    i = node(j + 1, f"{ptr}/{name}", line(i))
+                else:
+                    i = node(i, f"{ptr}/{n}", line(i))
+                    n += 1
+                i = skip(i)
+                if text[i] == ",":
+                    i = skip(i + 1)
+            i += 1
+        else:
+            _, i = decoder.raw_decode(text, i)
+        spans[ptr] = (first, line(i - 1))
+        return i
+
+    node(0, "", line(skip(0)))
+    return spans
+
+
+def resolve_pointer(data: Any, ptr: str) -> Any:
+    """The node of `data` at JSON Pointer `ptr` (KeyError or IndexError if none)."""
+    for part in ptr.split("/")[1:] if ptr else ():
+        part = part.replace("~1", "/").replace("~0", "~")
+        data = data[int(part)] if isinstance(data, list) else data[part]
+    return data
+
+
 def spec_text(doc: SpecDoc) -> str:
     """Return the vendored text of `doc`."""
     path = SPEC_SOURCES / doc.cache_name
     if not path.exists():
         raise FileNotFoundError(f"{path} missing; run `scripts/ngff_rules.py fetch`")
     return path.read_text(encoding="utf-8")
+
+
+def check_pointer(src: SpecSource) -> str | None:
+    """Return a problem, or None if `src`'s schema keyword is at its lines."""
+    text = spec_text(src.doc)
+    span = pointer_spans(text).get(src.pointer)
+    if span is None:
+        return f"pointer {src.pointer!r} not found"
+    if src.value is not None:
+        if (found := resolve_pointer(json.loads(text), src.pointer)) != src.value:
+            return f"value at {src.pointer!r} is {found!r}, not {src.value!r}"
+    if span != src.lines:
+        return f"pointer found at {span}, not at {src.lines}"
+    return None
+
+
+def check_source(src: SpecSource) -> str | None:
+    """Return a problem description, or None if `src` is where it says it is."""
+    if src.is_schema:
+        return check_pointer(src)
+    return check_quote(src.doc, src.quote, src.lines)
 
 
 def check_quote(doc: SpecDoc, quote: str, lines: tuple[int, int]) -> str | None:
@@ -469,8 +544,9 @@ def review(version: str) -> str:
             if src.is_schema:
                 name = src.doc.path.rsplit("/", 1)[-1]
                 cited = spec_text(src.doc).splitlines()[src.lines[0] - 1 : src.lines[1]]
-                cited = textwrap.dedent("\n".join(cited)).splitlines()
-                body = [f"`{name}`:", "", "```json", *cited, "```", "", *about]
+                cited = textwrap.dedent("\n".join(cited)).rstrip(",").splitlines()
+                body = [f"`{name}` `{src.pointer}`:", "", "```json", *cited, "```"]
+                body += ["", *about]
                 schema.append((name, src.lines[0], _review_item(head, body + tail)))
             else:
                 body = [*_excerpt(lines, src.lines, src.quote), "", *about, *tail]
@@ -559,7 +635,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     problems = 0
     for rule in RULES.values():
         for src in rule.sources:
-            if msg := check_quote(src.doc, src.quote, src.lines):
+            if msg := check_source(src):
                 problems += 1
                 print(f"{rule.code} [{src.doc.version}]: {msg}")
     for skip in load_skips():
@@ -579,13 +655,15 @@ def cmd_check(args: argparse.Namespace) -> int:
             for version in list(src["lines"]):
                 spec = SPEC_DOCS[version]
                 if "schema" in src:
-                    spec = spec.schema(src["schema"])
-                spans = find_quote(spec_text(spec), src["quote"])
+                    span = pointer_spans(spec_text(spec.schema(src["schema"])))
+                    spans = [span[p]] if (p := src["pointer"]) in span else []
+                else:
+                    spans = find_quote(spec_text(spec), src["quote"])
                 if len(spans) == 1:
                     src["lines"][version] = list(spans[0])
                 else:
                     unfixed += 1
-                    print(f"{code} [{version}]: cannot fix, quote found at {spans}")
+                    print(f"{code} [{version}]: cannot fix, found at {spans}")
     REGISTRY_FILE.write_text(tomlkit.dumps(doc), encoding="utf-8")
     skipped = tomlkit.parse(SKIPPED_FILE.read_text(encoding="utf-8"))
     for skip in skipped.get("skip", []):
@@ -725,67 +803,185 @@ REPORTED_NOTE = (
 )
 
 
-def _checked_in(rule: Rule, checked: list[str]) -> str:
-    if checked:
-        return ", ".join(checked)
-    if not rule.checkable:
-        return "— (about software behavior: no document can violate it)"
-    return "—"
+# hover text for the labels in a rule page's facts box
+FACT_TIPS = {
+    "Level": "How strongly the NGFF spec states the rule (its RFC 2119 keyword)",
+    "Versions": "The spec versions that state the rule",
+    "Severity": "What yaozarrs reports when a document breaks the rule",
+    "Checked in": "The spec versions in which yaozarrs reports this code",
+}
+NOT_YET_TIP = (
+    "yaozarrs doesn't report this code yet. It may still reject such a document, "
+    "under another code or none."
+)
+
+
+def _facts_group(title: str, facts: list[tuple[str, str]], empty: str = "") -> str:
+    """One labeled group (`NGFF spec` or `yaozarrs`) of a rule page's facts box."""
+    rows = [f'<dt title="{FACT_TIPS[k]}">{k}</dt><dd>{v}</dd>' for k, v in facts]
+    body = (
+        ["<dl>", *rows, "</dl>"]
+        if rows
+        else [f'<p class="rule-facts__none">{empty}</p>']
+    )
+    return "\n".join(
+        [
+            '<div class="rule-facts__group">',
+            f'<p class="rule-facts__title">{title}</p>',
+            *body,
+            "</div>",
+        ]
+    )
+
+
+def _rule_header(rule: Rule, checked: list[str]) -> list[str]:
+    """The summary and facts box at the top of a rule page (`.rule-` CSS classes)."""
+    lines = [rule.summary, "{ .rule-summary }", ""]
+    if rule.status == "draft":
+        lines += [
+            '!!! note "Draft"',
+            "    This rule comes from a development version of the spec, so it may "
+            "still change.",
+            "",
+        ]
+    elif rule.status == "withdrawn":
+        lines += [
+            '!!! warning "Withdrawn"',
+            "    This statement was dropped from the spec before it was released. "
+            "The code is kept so that it is never reused.",
+            "",
+        ]
+    if rule.is_spec_rule:
+        level = f'<span class="rule-level">{rule.level}</span>'
+        spec = _facts_group(
+            "NGFF spec", [("Level", level), ("Versions", _versions(rule))]
+        )
+    else:
+        spec = _facts_group(
+            "NGFF spec", [], "Not in the spec; this is a yaozarrs check."
+        )
+    if rule.checkable:
+        sev = rule.default_severity
+        severity = f'<span class="rule-severity rule-severity--{sev}">{sev}</span>'
+        seen = ", ".join(checked) or f'<abbr title="{NOT_YET_TIP}">not yet</abbr>'
+        ours = _facts_group("yaozarrs", [("Severity", severity), ("Checked in", seen)])
+    else:
+        ours = _facts_group(
+            "yaozarrs",
+            [],
+            "Not checked, since it is about software behavior and no document "
+            "can violate it.",
+        )
+    links = []
+    if rule.supersedes:
+        links.append(
+            "Supersedes " + ", ".join(f"[{c}]({c}.md)" for c in rule.supersedes)
+        )
+    if by := [r.code for r in RULES.values() if rule.code in r.supersedes]:
+        links.append("Superseded by " + ", ".join(f"[{c}]({c}.md)" for c in by))
+    if rule.aliases:
+        links.append("Also known as " + ", ".join(f"`{a}`" for a in rule.aliases))
+    box = ['<div class="rule-facts" markdown="block">', spec, ours]
+    if links:
+        box.append(
+            f'<p class="rule-facts__extra" markdown="span">{" · ".join(links)}</p>'
+        )
+    return [*lines, *box, "</div>", ""]
+
+
+# a rule code, or a GitHub reference like `ome/ngff#637`, in a rule's notes; skipping
+# code spans and existing links
+_NOTE_REFS = re.compile(
+    r"(`[^`]*`|\[[^\]]*\]\([^)]*\))"
+    r"|\b(YZ-(?:[A-Z]{2}-)?\d{3})\b"
+    r"|\b([\w.-]+/[\w.-]+)#(\d+)\b"
+)
+
+
+def _link_notes(rule: Rule) -> str:
+    """`rule.notes`, with links to the other rules and GitHub issues it mentions."""
+
+    def link(m: re.Match[str]) -> str:
+        if (code := m[2]) and code in RULES and code != rule.code:
+            return f"[{code}]({code}.md)"
+        if m[3]:
+            return f"[{m[0]}](https://github.com/{m[3]}/issues/{m[4]})"
+        return m[0]
+
+    return _NOTE_REFS.sub(link, rule.notes)
+
+
+def _spec_quote(src: SpecSource) -> list[str]:
+    """`src`'s quote: the prose, or the cited lines of a JSON schema as code."""
+    if not src.is_schema:
+        return [_unlink(" ".join(src.quote.split()))]
+    start, end = src.lines
+    if start == end:  # (a one-line keyword: its pointer and value say it all)
+        value = resolve_pointer(json.loads(spec_text(src.doc)), src.pointer)
+        return [f"`{src.pointer}`: `{json.dumps(value)}`"]
+    cited = "\n".join(spec_text(src.doc).splitlines()[start - 1 : end])
+    cited = textwrap.dedent(cited).rstrip(",")  # (the keyword, not what follows)
+    return [f"`{src.pointer}`", "", "```json", *cited.splitlines(), "```"]
+
+
+def _spec_source(src: SpecSource) -> str:
+    """The version of `src`, and a permalink to its lines."""
+    start, end = src.lines
+    file = src.doc.path.rsplit("/", 1)[-1]
+    where = f"line {start}" if start == end else f"lines {start}-{end}"
+    tip = f"{src.doc.repo}@{src.doc.ref}, commit {src.doc.sha[:7]}"
+    return (
+        f'<span class="rule-source__item"><span class="rule-source__version">'
+        f"{src.doc.version}</span> "
+        f'[{file}, {where}]({src.permalink} "{tip}"){{ .external }}</span>'
+    )
+
+
+def _spec_texts(rule: Rule, note_schema: bool = True) -> list[str]:
+    """Each distinct quote of `rule`, newest first, with the versions that state it."""
+    groups: dict[tuple[tuple[str, ...], bool, bool], list[SpecSource]] = {}
+    for src in reversed(rule.sources):
+        key = (tuple(_spec_quote(src)), src.implied, src.is_schema)
+        groups.setdefault(key, []).append(src)
+    lines = []
+    for (quote, implied, is_schema), srcs in groups.items():
+        caption = " ".join(_spec_source(s) for s in srcs)
+        if implied:
+            caption += (
+                ' <span class="rule-source__note">'
+                "Stated without an RFC 2119 keyword; see Notes.</span>"
+            )
+        if is_schema and note_schema:  # (unless the heading says so already)
+            caption += (
+                ' <span class="rule-source__note">Stated in the JSON schema.</span>'
+            )
+        lines += [
+            *(f"> {line}".rstrip() for line in quote),
+            "",
+            caption,
+            "{ .rule-source }",
+            "",
+        ]
+    return lines
 
 
 def render_rule(rule: Rule, checked: list[str]) -> str:
     """Markdown page for one rule."""
     lines = [f"# {rule.code}: `{rule.slug}`", ""]
-    lines += [f"> {rule.summary}", ""]
-    meta = [
-        ("Spec level", rule.level or "— (not from the NGFF spec)"),
-        ("yaozarrs severity", rule.default_severity),
-        ("Status", rule.status),
-        ("Spec versions", _versions(rule)),
-        ("Checked in", _checked_in(rule, checked)),
-    ]
-    if rule.supersedes:
-        meta.append(
-            ("Supersedes", ", ".join(f"[{c}]({c}.md)" for c in rule.supersedes))
-        )
-    superseded_by = [r.code for r in RULES.values() if rule.code in r.supersedes]
-    if superseded_by:
-        meta.append(
-            ("Superseded by", ", ".join(f"[{c}]({c}.md)" for c in superseded_by))
-        )
-    if rule.aliases:
-        meta.append(("Aliases", ", ".join(f"`{a}`" for a in rule.aliases)))
-    lines += ["| | |", "|---|---|"]
-    lines += [f"| **{k}** | {v} |" for k, v in meta]
-    lines.append("")
+    lines += _rule_header(rule, checked)
     if rule.notes:
-        lines += ["## Notes", "", rule.notes, ""]
+        lines += ["## Notes", "", _link_notes(rule), ""]
     if examples := _rendered_examples(rule, checked):
         lines += ["## Example", ""]
         for intro, body in examples:
             lines += [intro, "", "```json", body, "```", ""]
     if rule.sources:
-        lines += ["## Spec text", ""]
-        version = None
-        for src in reversed(rule.sources):
-            start, end = src.lines
-            where = f"L{start}" if start == end else f"L{start}-L{end}"
-            if src.doc.version != version:  # (one heading per version)
-                version = src.doc.version
-                lines += [f"### {version}", ""]
-            lines += [
-                f"> {_unlink(' '.join(src.quote.split()))}",
-                "",
-                *(
-                    ["*Stated without an RFC 2119 keyword; see Notes.*", ""]
-                    if src.implied
-                    else []
-                ),
-                *(["*Stated in the JSON schema.*", ""] if src.is_schema else []),
-                f"[`{src.doc.repo}@{src.doc.ref}` · `{src.doc.path}` {where}]"
-                f"({src.permalink})",
-                "",
-            ]
+        schema = {s.is_schema for s in rule.sources}
+        heading = {
+            frozenset({False}): "Spec text",
+            frozenset({True}): "JSON schema",  # (the spec's prose is silent)
+        }.get(frozenset(schema), "Spec text and JSON schema")
+        lines += [f"## {heading}", "", *_spec_texts(rule, note_schema=len(schema) > 1)]
     return "\n".join(lines)
 
 
@@ -851,7 +1047,7 @@ def render_index(checked: dict[str, list[str]]) -> str:
         "tagged.",
         "",
         "- `YZ-<AREA>-<NNN>` codes refer to statements in the NGFF spec or its JSON "
-        "schemas.",
+        "schemas.  These are codes we hope to upstream to an official spec someday.",
         "- `YZ-<NNN>` codes are checks that yaozarrs adds beyond the spec.",
         "",
         "Codes are permanent: a code is never renumbered or reused. If a statement "
@@ -871,25 +1067,13 @@ def render_index(checked: dict[str, list[str]]) -> str:
         "",
         f'<script type="application/json" id="rule-data">{_filter_data()}</script>',
         "",
-        "## Spec rules",
-        "",
-        # (the summary states the level: "must", "should", or "may")
+        # (one table, like ruff's: the yaozarrs-only checks are an area in the filter;
+        # the summary states the level: "must", "should", or "may")
         *_rule_table(
             ("Code", "Rule", "Versions", "Checked in"),
             [
                 (code(r), about(r), _versions(r, short=True), seen(r))
                 for r in RULES.values()
-                if r.is_spec_rule
-            ],
-        ),
-        "## yaozarrs checks",
-        "",
-        *_rule_table(
-            ("Code", "Rule", "Checked in"),
-            [
-                (code(r), about(r), seen(r))
-                for r in RULES.values()
-                if not r.is_spec_rule
             ],
         ),
     ]

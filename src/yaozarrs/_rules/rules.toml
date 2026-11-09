@@ -1049,9 +1049,10 @@ severity = 'warning'
 notes = 'The JSON schema requires this of every `scale`, but the prose only says values SHOULD be non-zero (YZ-CT-022) and allows negative ones. The spec editor confirmed that only positive values are meant for dataset scales (ome/ngff#637), so yaozarrs warns, and only for those.'
 
 [[rules.YZ-CT-044.sources]]
-quote = '"type": "number", "exclusiveMinimum": 0'
 schema = 'coordinate_transformations.schema'
-lines = { "0.6" = [195, 196] }
+pointer = '/$defs/scale/properties/scale/items/exclusiveMinimum'
+value = 0
+lines = { "0.6" = [196, 196] }
 
 [rules.YZ-CT-045]
 slug = 'project-axis-fields'
@@ -1060,8 +1061,9 @@ summary = 'A `projectAxis` transformation must have `droppedInputs` or `createdO
 introduced = '0.6'
 
 [[rules.YZ-CT-045.sources]]
-quote = '"anyOf": [ {"required": ["droppedInputs"]}, {"required": ["createdOutputs"]} ]'
 schema = 'coordinate_transformations.schema'
+pointer = '/$defs/projectAxis/allOf/1/anyOf'
+value = [{ required = ['droppedInputs'] }, { required = ['createdOutputs'] }]
 lines = { "0.6" = [176, 179] }
 
 [rules.YZ-CT-046]
@@ -1092,9 +1094,9 @@ quote = 'The value of "type" MUST be one of the elements of the `type` column in
 lines = { "0.4" = [346, 346], "0.5" = [278, 278] }
 
 [[rules.YZ-CT-047.sources]]
-quote = '"oneOf": [ { "$ref": "#/$defs/identity" },'
 schema = 'coordinate_transformations.schema'
-lines = { "0.6" = [63, 66] }
+pointer = '/$defs/coordinateTransformation/allOf/1/oneOf'
+lines = { "0.6" = [63, 100] }
 
 [rules.YZ-CT-048]
 slug = 'transform-prefer-least-expressive'
@@ -1798,9 +1800,16 @@ summary = 'Plate `columns` must have at least one entry.'
 introduced = '0.4'
 
 [[rules.YZ-PL-037.sources]]
-quote = '"required": [ "name" ] }, "minItems": 1, "uniqueItems": true }, "rows": {'
 schema = 'plate.schema'
-lines = { "0.4" = [79, 86], "0.5" = [76, 83], "0.6" = [76, 83] }
+pointer = '/properties/plate/properties/columns/minItems'
+value = 1
+lines = { "0.4" = [83, 83] }
+
+[[rules.YZ-PL-037.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/columns/minItems'
+value = 1
+lines = { "0.5" = [80, 80], "0.6" = [80, 80] }
 
 [rules.YZ-PL-038]
 slug = 'plate-rows-nonempty'
@@ -1809,9 +1818,16 @@ summary = 'Plate `rows` must have at least one entry.'
 introduced = '0.4'
 
 [[rules.YZ-PL-038.sources]]
-quote = '"required": [ "name" ] }, "minItems": 1, "uniqueItems": true }, "wells": {'
 schema = 'plate.schema'
-lines = { "0.4" = [98, 105], "0.5" = [95, 102], "0.6" = [95, 102] }
+pointer = '/properties/plate/properties/rows/minItems'
+value = 1
+lines = { "0.4" = [102, 102] }
+
+[[rules.YZ-PL-038.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/rows/minItems'
+value = 1
+lines = { "0.5" = [99, 99], "0.6" = [99, 99] }
 
 [rules.YZ-PL-039]
 slug = 'plate-wells-nonempty'
@@ -1820,9 +1836,16 @@ summary = 'Plate `wells` must have at least one entry.'
 introduced = '0.4'
 
 [[rules.YZ-PL-039.sources]]
-quote = '"columnIndex" ] }, "minItems": 1, "uniqueItems": true }'
 schema = 'plate.schema'
-lines = { "0.4" = [128, 133], "0.5" = [127, 132], "0.6" = [127, 132] }
+pointer = '/properties/plate/properties/wells/minItems'
+value = 1
+lines = { "0.4" = [131, 131] }
+
+[[rules.YZ-PL-039.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/wells/minItems'
+value = 1
+lines = { "0.5" = [130, 130], "0.6" = [130, 130] }
 
 [rules.YZ-PL-040]
 slug = 'plate-wells-unique'
@@ -1831,9 +1854,16 @@ summary = 'Plate `wells` must not contain identical entries.'
 introduced = '0.4'
 
 [[rules.YZ-PL-040.sources]]
-quote = '"columnIndex" ] }, "minItems": 1, "uniqueItems": true }'
 schema = 'plate.schema'
-lines = { "0.4" = [128, 133], "0.5" = [127, 132], "0.6" = [127, 132] }
+pointer = '/properties/plate/properties/wells/uniqueItems'
+value = true
+lines = { "0.4" = [132, 132] }
+
+[[rules.YZ-PL-040.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/wells/uniqueItems'
+value = true
+lines = { "0.5" = [131, 131], "0.6" = [131, 131] }
 
 [rules.YZ-PL-041]
 slug = 'plate-column-defined'
@@ -2113,9 +2143,16 @@ summary = 'Well `images` must have at least one entry.'
 introduced = '0.4'
 
 [[rules.YZ-WL-012.sources]]
-quote = '"required": [ "path" ] }, "minItems": 1, "uniqueItems": true }'
 schema = 'well.schema'
-lines = { "0.4" = [27, 33], "0.5" = [31, 37], "0.6" = [38, 44] }
+pointer = '/properties/well/properties/images/minItems'
+value = 1
+lines = { "0.4" = [31, 31] }
+
+[[rules.YZ-WL-012.sources]]
+schema = 'well.schema'
+pointer = '/properties/ome/properties/well/properties/images/minItems'
+value = 1
+lines = { "0.5" = [35, 35], "0.6" = [42, 42] }
 
 [rules.YZ-WL-013]
 slug = 'well-version-present'
@@ -2558,7 +2595,7 @@ slug = 'label-color-value-integer'
 level = 'MUST'
 summary = "A `colors` entry's `label-value` must be an integer."
 introduced = "0.4"
-notes = "yaozarrs also accepts a non-integer number in v0.4, as the 0.4 `label.schema` does (`\"type\": \"number\"`)."
+notes = "The prose and the JSON schema disagree: `label.schema` types it as `number` in every version. The prose wins, so yaozarrs requires an integer (a float with no fractional part, like `2.0`, is read as one)."
 
 [[rules.YZ-IL-007.sources]]
 quote = 'whose value MUST be the integer corresponding to a particular label'
@@ -2567,6 +2604,18 @@ lines = { "0.5" = [427, 428], "0.6" = [1508, 1508] }
 [[rules.YZ-IL-007.sources]]
 quote = "`label-value` key whose value MUST be an integer specifying the pixel value for that label. It MAY contain an `rgba` key"
 lines = {"0.4" = [479, 480]}
+
+[[rules.YZ-IL-007.sources]]
+schema = 'label.schema'
+pointer = '/properties/image-label/properties/colors/items/properties/label-value/type'
+value = 'number'
+lines = { "0.4" = [19, 19] }
+
+[[rules.YZ-IL-007.sources]]
+schema = 'label.schema'
+pointer = '/$defs/image-label/properties/colors/items/properties/label-value/type'
+value = 'number'
+lines = { "0.5" = [40, 40], "0.6" = [40, 40] }
 
 [rules.YZ-IL-008]
 slug = 'label-color-rgba'
@@ -2660,9 +2709,10 @@ summary = '`image-label` `colors`, if present, must have at least one entry.'
 introduced = '0.5'
 
 [[rules.YZ-IL-014.sources]]
-quote = '"minItems": 1, "uniqueItems": true }, "properties": {'
 schema = 'label.schema'
-lines = { "0.5" = [58, 61], "0.6" = [58, 61] }
+pointer = '/$defs/image-label/properties/colors/minItems'
+value = 1
+lines = { "0.5" = [58, 58], "0.6" = [58, 58] }
 
 [rules.YZ-IL-015]
 slug = 'image-label-colors-unique'
@@ -2671,9 +2721,10 @@ summary = '`image-label` `colors` must not contain identical entries.'
 introduced = '0.5'
 
 [[rules.YZ-IL-015.sources]]
-quote = '"uniqueItems": true }, "properties": {'
 schema = 'label.schema'
-lines = { "0.5" = [59, 61], "0.6" = [59, 61] }
+pointer = '/$defs/image-label/properties/colors/uniqueItems'
+value = true
+lines = { "0.5" = [59, 59], "0.6" = [59, 59] }
 
 [rules.YZ-IL-016]
 slug = 'image-label-properties-nonempty'
@@ -2682,9 +2733,10 @@ summary = '`image-label` `properties`, if present, must have at least one entry.
 introduced = '0.5'
 
 [[rules.YZ-IL-016.sources]]
-quote = '"minItems": 1, "uniqueItems": true }, "source": {'
 schema = 'label.schema'
-lines = { "0.5" = [76, 79], "0.6" = [76, 79] }
+pointer = '/$defs/image-label/properties/properties/minItems'
+value = 1
+lines = { "0.5" = [76, 76], "0.6" = [76, 76] }
 
 [rules.YZ-IL-017]
 slug = 'image-label-properties-unique'
@@ -2693,9 +2745,10 @@ summary = '`image-label` `properties` must not contain identical entries.'
 introduced = '0.5'
 
 [[rules.YZ-IL-017.sources]]
-quote = '"uniqueItems": true }, "source": {'
 schema = 'label.schema'
-lines = { "0.5" = [77, 79], "0.6" = [77, 79] }
+pointer = '/$defs/image-label/properties/properties/uniqueItems'
+value = true
+lines = { "0.5" = [77, 77], "0.6" = [77, 77] }
 
 [rules.YZ-IL-018]
 slug = 'label-colors-display'
@@ -2865,9 +2918,16 @@ introduced = '0.6'
 notes = 'The prose is silent; `scene.schema` sets `additionalProperties: false` here, unlike anywhere else.'
 
 [[rules.YZ-SC-008.sources]]
-quote = '''"input": { "type": "object", "properties": { "name": {"type": "string"}, "path": {"type": "string"} }, "required": ["name"], "additionalProperties": false,'''
 schema = 'scene.schema'
-lines = { "0.6" = [34, 41] }
+pointer = '/properties/ome/properties/scene/properties/coordinateTransformations/items/allOf/1/properties/input/additionalProperties'
+value = false
+lines = { "0.6" = [41, 41] }
+
+[[rules.YZ-SC-008.sources]]
+schema = 'scene.schema'
+pointer = '/properties/ome/properties/scene/properties/coordinateTransformations/items/allOf/1/properties/output/additionalProperties'
+value = false
+lines = { "0.6" = [51, 51] }
 
 [rules.YZ-SC-009]
 slug = 'scene-default-coordinate-system'
@@ -2901,7 +2961,7 @@ slug = 'ome-version-present'
 level = 'MUST'
 summary = 'The `ome` object must contain a `version` key.'
 introduced = '0.5'
-notes = 'The 0.5 spec only says that the version is denoted by this attribute, without a keyword.'
+notes = 'In 0.4, each multiscales object had its own version instead (YZ-MS-008). The 0.5 spec only says that the version is denoted by this attribute, without a keyword.'
 
 [[rules.YZ-GN-001.sources]]
 quote = 'object that MUST contain a `version` key,'

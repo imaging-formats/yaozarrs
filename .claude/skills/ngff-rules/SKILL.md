@@ -79,12 +79,30 @@ add `[<CODE>.examples."<version>"]`, in that version's own format. A rule that
 only exists in one version has only that entry. Model examples are validated as JSON
 (`model_validate_json`), so documents with a `version` field need one in the example.
 
-A requirement that only a JSON schema in the spec repo states is still a spec rule.
-Add `schema = '<file>.schema'` to its `sources` block, and quote the schema (the file is
-found in that version's `schemas/` folder, and `fetch` vendors it). A base schema means
-`level = 'MUST'`, and a `strict_*.schema` means `level = 'SHOULD'`. If a schema and the
-prose disagree, keep yaozarrs' behavior (use `severity` if it only warns), and describe
-the disagreement in `notes`.
+A rule cites one of the spec's JSON schemas in exactly two cases:
+
+- **the prose is silent**, and only the schema states the constraint (it is still a
+  spec rule);
+- **the prose and the schema both constrain it, but disagree** (e.g. 0.4's prose says
+  a `colors` entry's `label-value` MUST be an integer, `label.schema` says `number`): add
+  the schema source next to the prose one, as a record of the conflict, and say in
+  `notes` which one yaozarrs follows (the prose, unless it's silent).
+
+Don't cite a schema that says the same as the prose, or for prose the schema doesn't
+encode. A schema source points at the keyword, rather than quoting text:
+
+```toml
+[[rules.YZ-PL-040.sources]]
+schema = 'plate.schema'      # in that version's `schemas/` folder (`fetch` vendors it)
+pointer = '/properties/ome/properties/plate/properties/wells/uniqueItems'
+value = true                 # optional: the keyword's value, checked by the tests
+lines = { "0.5" = [0, 0], "0.6" = [0, 0] }
+```
+
+One block per pointer: if a later version moves the keyword (0.4's plate schema has no
+`ome` object), it gets its own block. `check --fix` fills in the keyword's lines, and
+`check` verifies the pointer and the value. A base schema means `level = 'MUST'`, and a
+`strict_*.schema` means `level = 'SHOULD'`.
 
 Optional fields: `notes`, `severity` (default: `warning` for SHOULD, else `error`),
 `status` (`stable` by default), `removed`, `supersedes`, `aliases`, and
@@ -125,7 +143,10 @@ lists the keywords still missing.
    unique" is only a change of wording. A sentence with two keywords is two rules. If
    a later version changes any of the three, the old rule gets `removed="<version>"`
    and a new code is minted with `supersedes=("<old>",)`. If only the wording changes,
-   keep the code and add a source for the new version.
+   keep the code and add a source for the new version. `supersedes` is only for a new
+   rule about the same subject: if a requirement's job moves to a different or broader
+   statement (0.4's `multiscales` `version` became the `ome` object's `version`), the
+   old rule just gets `removed`, and the notes of both say where it went.
 3. **Quotes are verbatim** (whitespace-insensitive) and must contain the rule's
    `level` keyword. Never type line numbers by hand. Write `[0, 0]` and run
    `uv run python scripts/ngff_rules.py check --fix`, which fills them in when a quote

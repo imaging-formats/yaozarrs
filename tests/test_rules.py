@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import importlib.util
 import json
 import pickle
@@ -95,6 +96,8 @@ def test_rule_fields(rule: Rule) -> None:
     assert {s.doc.version for s in rule.sources} == set(stated)
     for src in rule.sources:
         assert src.doc.version in TRACKED_VERSIONS
+        # a prose source quotes the spec; a schema source points at a keyword
+        assert bool(src.pointer) == src.is_schema != bool(src.quote)
         if src.is_schema:
             # schemas have no keywords: base schemas are MUST, strict schemas SHOULD
             strict = src.doc.path.rsplit("/", 1)[-1].startswith("strict_")
@@ -127,7 +130,29 @@ def test_tracked_versions_ordered() -> None:
     ],
 )
 def test_quote_at_lines(src: SpecSource) -> None:
-    assert ngff_rules.check_quote(src.doc, src.quote, src.lines) is None
+    assert ngff_rules.check_source(src) is None
+
+
+def test_pointer_spans() -> None:
+    text = '{\n  "a": {\n    "b~/c": [1,\n      {"d": true}]\n  },\n  "e": 0\n}\n'
+    spans = ngff_rules.pointer_spans(text)
+    assert spans == {
+        "": (1, 7),
+        "/a": (2, 5),
+        "/a/b~0~1c": (3, 4),
+        "/a/b~0~1c/0": (3, 3),
+        "/a/b~0~1c/1": (4, 4),
+        "/a/b~0~1c/1/d": (4, 4),
+        "/e": (6, 6),
+    }
+    assert ngff_rules.resolve_pointer(json.loads(text), "/a/b~0~1c/1/d") is True
+
+
+def test_pointer_value_is_checked() -> None:
+    src = next(s for s in get_rule("YZ-PL-040").sources)
+    assert ngff_rules.check_pointer(src) is None
+    problem = ngff_rules.check_pointer(dataclasses.replace(src, value=False))
+    assert problem and "not False" in problem
 
 
 def test_quote_must_be_unique() -> None:
