@@ -607,41 +607,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#spec-text" class="md-nav__link">
+  <a href="#json-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Spec text
+        JSON schema
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -666,52 +638,28 @@
 
 
 <h1 id="yz-il-017-image-label-properties-unique">YZ-IL-017: <code>image-label-properties-unique</code><a class="headerlink" href="#yz-il-017-image-label-properties-unique" title="Link to this section">#</a></h1>
+<p class="rule-summary"><code>image-label</code> <code>properties</code> must not contain identical entries.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.5+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
+<h2 id="json-schema">JSON schema<a class="headerlink" href="#json-schema" title="Link to this section">#</a></h2>
 <blockquote>
-<p><code>image-label</code> <code>properties</code> must not contain identical entries.</p>
+<p><code>/$defs/image-label/properties/properties/uniqueItems</code>: <code>true</code></p>
 </blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.5+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
-<h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
-<blockquote>
-<p>"uniqueItems": true }, "source": {</p>
-</blockquote>
-<p><em>Stated in the JSON schema.</em></p>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/schemas/label.schema#L77-L79"><code>ome/ngff-spec@0.6</code> · <code>schemas/label.schema</code> L77-L79</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
-<blockquote>
-<p>"uniqueItems": true }, "source": {</p>
-</blockquote>
-<p><em>Stated in the JSON schema.</em></p>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/schemas/label.schema#L77-L79"><code>ome/ngff-spec@0.5</code> · <code>schemas/label.schema</code> L77-L79</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/schemas/label.schema#L77" title="ome/ngff-spec@0.6, commit 89da1da">label.schema, line 77</a></span> <span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/schemas/label.schema#L77" title="ome/ngff-spec@0.5, commit d916404">label.schema, line 77</a></span></p>
 
 
 

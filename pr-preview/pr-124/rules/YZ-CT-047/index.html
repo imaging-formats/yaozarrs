@@ -618,52 +618,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#spec-text" class="md-nav__link">
+  <a href="#spec-text-and-json-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Spec text
+        Spec text and JSON schema
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.4
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -688,58 +649,73 @@
 
 
 <h1 id="yz-ct-047-transform-type-known">YZ-CT-047: <code>transform-type-known</code><a class="headerlink" href="#yz-ct-047-transform-type-known" title="Link to this section">#</a></h1>
-<blockquote>
-<p>The <code>type</code> of a coordinate transformation must be one of the types the spec defines.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.4+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">The <code>type</code> of a coordinate transformation must be one of the types the spec defines.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.4+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
-<p>The set of types grows from <code>identity</code>, <code>translation</code> and <code>scale</code> (0.4, 0.5) to twelve types in 0.6. The 0.6 prose only says "The following transformations are supported", so its source is the schema. yaozarrs rejects unknown types (in 0.4/0.5 as untagged union errors; in 0.6 as <code>union_tag_invalid</code>, tagged as YZ-SC-002 inside a scene).</p>
-<h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
+<p>The set of types grows from <code>identity</code>, <code>translation</code> and <code>scale</code> (0.4, 0.5) to twelve types in 0.6. The 0.6 prose only says "The following transformations are supported", so its source is the schema. yaozarrs rejects unknown types (in 0.4/0.5 as untagged union errors; in 0.6 as <code>union_tag_invalid</code>, tagged as <a href="../YZ-SC-002/">YZ-SC-002</a> inside a scene).</p>
+<h2 id="spec-text-and-json-schema">Spec text and JSON schema<a class="headerlink" href="#spec-text-and-json-schema" title="Link to this section">#</a></h2>
 <blockquote>
-<p>"oneOf": [ { "$ref": "#/$defs/identity" },</p>
+<p><code>/$defs/coordinateTransformation/allOf/1/oneOf</code></p>
+<div class="language-json highlight"><pre><span></span><code><span class="nt">"oneOf"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/identity"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/mapAxis"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/projectAxis"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/scale"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/translation"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/affine"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/rotation"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/bijection"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/sequence"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/byDimension"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/displacements"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"$ref"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#/$defs/coordinates"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</code></pre></div>
 </blockquote>
-<p><em>Stated in the JSON schema.</em></p>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/schemas/coordinate_transformations.schema#L63-L66"><code>ome/ngff-spec@0.6</code> · <code>schemas/coordinate_transformations.schema</code> L63-L66</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/schemas/coordinate_transformations.schema#L63-L100" title="ome/ngff-spec@0.6, commit 89da1da">coordinate_transformations.schema, lines 63-100</a></span> <span class="rule-source__note">Stated in the JSON schema.</span></p>
 <blockquote>
 <p>The value of "type" MUST be one of the elements of the <code>type</code> column in the table below.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L278"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L278</a></p>
-<h3 id="04">0.4<a class="headerlink" href="#04" title="Link to this section">#</a></h3>
-<blockquote>
-<p>The value of "type" MUST be one of the elements of the <code>type</code> column in the table below.</p>
-</blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L346"><code>ome/ngff-spec@0.4</code> · <code>index.md</code> L346</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L278" title="ome/ngff-spec@0.5, commit d916404">index.md, line 278</a></span> <span class="rule-source__item"><span class="rule-source__version">0.4</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L346" title="ome/ngff-spec@0.4, commit a4c6800">index.md, line 346</a></span></p>
 
 
 

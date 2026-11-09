@@ -626,34 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -677,52 +649,30 @@
 
 
 <h1 id="yz-gn-005-ome-version-consistent">YZ-GN-005: <code>ome-version-consistent</code><a class="headerlink" href="#yz-gn-005-ome-version-consistent" title="Link to this section">#</a></h1>
-<blockquote>
-<p>The OME-Zarr metadata version must be the same throughout a hierarchy.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.5+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">The OME-Zarr metadata version must be the same throughout a hierarchy.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.5+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
 <p>There is no rule code for this yet. The storage validator parses child groups with the models of the root's version, so a child that declares another version fails as invalid metadata under the parent's rule (e.g. <a href="../YZ-PL-007/">YZ-PL-007</a>).</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
 <blockquote>
 <p>The OME-Zarr Metadata version MUST be consistent within a hierarchy.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L178"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L178</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
-<blockquote>
-<p>The OME-Zarr Metadata version MUST be consistent within a hierarchy.</p>
-</blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L163"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L163</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L178" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 178</a></span> <span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L163" title="ome/ngff-spec@0.5, commit d916404">index.md, line 163</a></span></p>
 
 
 

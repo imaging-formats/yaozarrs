@@ -626,34 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.4
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -677,52 +649,30 @@
 
 
 <h1 id="yz-ms-005-multiscale-transforms-follow-dataset-rules">YZ-MS-005: <code>multiscale-transforms-follow-dataset-rules</code><a class="headerlink" href="#yz-ms-005-multiscale-transforms-follow-dataset-rules" title="Link to this section">#</a></h1>
-<blockquote>
-<p>Transformations in <code>multiscales</code> <code>coordinateTransformations</code> must follow the same rules (allowed types, order, etc.) as those of <code>datasets</code>.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.4, 0.5 (removed in 0.6)</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">Transformations in <code>multiscales</code> <code>coordinateTransformations</code> must follow the same rules (allowed types, order, etc.) as those of <code>datasets</code>.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.4, 0.5 (removed in 0.6)</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
-<p>yaozarrs validates them with the same validator as dataset transformations, so violations report YZ-DS-009 and YZ-CT-001 to YZ-CT-004, not this code. In 0.6, multiscale transformations have their own constraints (YZ-CT-012, YZ-CT-013, YZ-CT-014).</p>
+<p>yaozarrs validates them with the same validator as dataset transformations, so violations report <a href="../YZ-DS-009/">YZ-DS-009</a> and <a href="../YZ-CT-001/">YZ-CT-001</a> to <a href="../YZ-CT-004/">YZ-CT-004</a>, not this code. In 0.6, multiscale transformations have their own constraints (<a href="../YZ-CT-012/">YZ-CT-012</a>, <a href="../YZ-CT-013/">YZ-CT-013</a>, <a href="../YZ-CT-014/">YZ-CT-014</a>).</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
 <blockquote>
 <p>Each "multiscales" dictionary MAY contain the field "coordinateTransformations", describing transformations that are applied to all resolution levels in the same manner. The transformations MUST follow the same rules about allowed types, order, etc. as in "datasets:coordinateTransformations" and are applied after them.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L317-L318"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L317-L318</a></p>
-<h3 id="04">0.4<a class="headerlink" href="#04" title="Link to this section">#</a></h3>
-<blockquote>
-<p>Each "multiscales" dictionary MAY contain the field "coordinateTransformations", describing transformations that are applied to all resolution levels in the same manner. The transformations MUST follow the same rules about allowed types, order, etc. as in "datasets:coordinateTransformations" and are applied after them.</p>
-</blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L383-L384"><code>ome/ngff-spec@0.4</code> · <code>index.md</code> L383-L384</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L317-L318" title="ome/ngff-spec@0.5, commit d916404">index.md, lines 317-318</a></span> <span class="rule-source__item"><span class="rule-source__version">0.4</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L383-L384" title="ome/ngff-spec@0.4, commit a4c6800">index.md, lines 383-384</a></span></p>
 
 
 

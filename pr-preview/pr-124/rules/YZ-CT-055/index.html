@@ -626,23 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -666,47 +649,30 @@
 
 
 <h1 id="yz-ct-055-field-regular-grid">YZ-CT-055: <code>field-regular-grid</code><a class="headerlink" href="#yz-ct-055-field-regular-grid" title="Link to this section">#</a></h1>
-<blockquote>
-<p>The array of a <code>coordinates</code> or <code>displacements</code> transformation must be a regular grid of vectors.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.6+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">The array of a <code>coordinates</code> or <code>displacements</code> transformation must be a regular grid of vectors.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.6+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
 <p>yaozarrs does not check this; a Zarr array whose datasets map to the input coordinate system by a scale (and translation) is a regular grid by construction.</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
 <blockquote>
 <p>The array containing the coordinates or displacements MUST: - be a regular grid of vectors.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1054-L1055"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L1054-L1055</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1054-L1055" title="ome/ngff-spec@0.6, commit 89da1da">index.md, lines 1054-1055</a></span></p>
 
 
 

@@ -626,45 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.4
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -688,58 +649,34 @@
 
 
 <h1 id="yz-ct-046-transform-type-present">YZ-CT-046: <code>transform-type-present</code><a class="headerlink" href="#yz-ct-046-transform-type-present" title="Link to this section">#</a></h1>
-<blockquote>
-<p>Each coordinate transformation must contain <code>type</code>.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.4+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">Each coordinate transformation must contain <code>type</code>.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.4+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
-<p>The 0.6 spec states this in the transformation field table ("Required: yes"), not with a keyword. In 0.4 and 0.5, yaozarrs infers a missing <code>type</code> from the parameter field that is present (lenient); in 0.6 the transformation union discriminates on <code>type</code>, so a missing one is rejected (tagged as YZ-SC-002 inside a scene, untagged elsewhere).</p>
+<p>The 0.6 spec states this in the transformation field table ("Required: yes"), not with a keyword. In 0.4 and 0.5, yaozarrs infers a missing <code>type</code> from the parameter field that is present (lenient); in 0.6 the transformation union discriminates on <code>type</code>, so a missing one is rejected (tagged as <a href="../YZ-SC-002/">YZ-SC-002</a> inside a scene, untagged elsewhere).</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
 <blockquote>
 <p>| <code>type</code> | string | yes |</p>
 </blockquote>
-<p><em>Stated without an RFC 2119 keyword; see Notes.</em></p>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L399"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L399</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L399" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 399</a></span> <span class="rule-source__note">Stated without an RFC 2119 keyword; see Notes.</span></p>
 <blockquote>
 <p>Each entry describes a single transformation and MUST contain the field "type".</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L277"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L277</a></p>
-<h3 id="04">0.4<a class="headerlink" href="#04" title="Link to this section">#</a></h3>
-<blockquote>
-<p>Each entry describes a single transformation and MUST contain the field "type".</p>
-</blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L345"><code>ome/ngff-spec@0.4</code> · <code>index.md</code> L345</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L277" title="ome/ngff-spec@0.5, commit d916404">index.md, line 277</a></span> <span class="rule-source__item"><span class="rule-source__version">0.4</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L345" title="ome/ngff-spec@0.4, commit a4c6800">index.md, line 345</a></span></p>
 
 
 

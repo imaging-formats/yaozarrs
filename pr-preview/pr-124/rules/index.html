@@ -591,11 +591,6 @@
                       
                     
                     
-                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-                      <div class="md-sidebar-button__wrapper">
-                        <label class="md-sidebar-button" for="__toc"></label>
-                      </div>
-                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -607,36 +602,6 @@
   
     
   
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#spec-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Spec rules
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#yaozarrs-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        yaozarrs checks
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -659,7 +624,7 @@
 <h1 id="rule-codes">Rule codes<a class="headerlink" href="#rule-codes" title="Link to this section">#</a></h1>
 <p>Each code identifies one normative statement in the <a href="https://ngff.openmicroscopy.org/">NGFF specification</a>, and links to the exact text in the spec that states it, for each spec version. yaozarrs errors and warnings for spec violations carry these codes once they are tagged.</p>
 <ul>
-<li><code>YZ-&lt;AREA&gt;-&lt;NNN&gt;</code> codes refer to statements in the NGFF spec or its JSON schemas.</li>
+<li><code>YZ-&lt;AREA&gt;-&lt;NNN&gt;</code> codes refer to statements in the NGFF spec or its JSON schemas.  These are codes we hope to upstream to an official spec someday.</li>
 <li><code>YZ-&lt;NNN&gt;</code> codes are checks that yaozarrs adds beyond the spec.</li>
 </ul>
 <p>Codes are permanent: a code is never renumbered or reused. If a statement changes meaning in a later spec version, its code is retired and a new one supersedes it.</p>
@@ -670,7 +635,6 @@
 <p><em>Checked in</em> lists the spec versions in which yaozarrs reports a rule's code when a document breaks the rule. If none are listed, yaozarrs may still reject such a document, but not under this code (yet).</p>
 <script type="application/json" id="rule-data">{"versions":["0.4","0.5","0.6"],"areas":{"AX":"axes","CS":"coordinateSystems","MS":"multiscales","DS":"datasets","CT":"coordinateTransformations","SC":"scene","LB":"labels","IL":"image-label","PL":"plate","WL":"well","BF":"bioformats2raw","OM":"omero","ZR":"zarr / storage layout","GN":"general","YZ":"yaozarrs checks"},"rules":{"YZ-AX-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-003":{"level":"MAY","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-004":{"level":"MAY","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-006":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-007":{"level":"MUST","versions":["0.5"],"area":"AX"},"YZ-AX-008":{"level":"MUST","versions":["0.5"],"area":"AX"},"YZ-AX-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-010":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-011":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-012":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-013":{"level":"MUST","versions":["0.6"],"area":"AX"},"YZ-AX-014":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-015":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-016":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-AX-017":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"AX"},"YZ-CS-001":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-002":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-003":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-004":{"level":"MUST","versions":["0.6"],"area":"CS"},"YZ-CS-005":{"level":"SHOULD","versions":["0.6"],"area":"CS"},"YZ-MS-001":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-002":{"level":"MUST","versions":["0.4","0.5"],"area":"MS"},"YZ-MS-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-004":{"level":"MUST","versions":["0.6"],"area":"MS"},"YZ-MS-005":{"level":"MUST","versions":["0.4","0.5"],"area":"MS"},"YZ-MS-006":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-007":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"MS"},"YZ-MS-008":{"level":"SHOULD","versions":["0.4"],"area":"MS"},"YZ-DS-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-008":{"level":"MUST","versions":["0.6"],"area":"DS"},"YZ-DS-009":{"level":"MUST","versions":["0.4","0.5"],"area":"DS"},"YZ-DS-010":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"DS"},"YZ-DS-012":{"level":"SHOULD","versions":["0.6"],"area":"DS"},"YZ-CT-001":{"level":"MUST","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-002":{"level":"MAY","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-003":{"level":"MUST","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-004":{"level":"MUST","versions":["0.4","0.5"],"area":"CT"},"YZ-CT-005":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-006":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-007":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-008":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-009":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-010":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-011":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-012":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-013":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-014":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-015":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-016":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-017":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-018":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-019":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-020":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-021":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-022":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-023":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-024":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-025":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-026":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-027":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-028":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-029":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-030":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-031":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-032":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-033":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-034":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-035":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-036":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-037":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-038":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-039":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-040":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-041":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-042":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-043":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-044":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-045":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-046":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"CT"},"YZ-CT-047":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"CT"},"YZ-CT-048":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-049":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-050":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-051":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-052":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-053":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-054":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-055":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-056":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-057":{"level":"SHOULD","versions":["0.6"],"area":"CT"},"YZ-CT-058":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-059":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-060":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-CT-061":{"level":"MUST","versions":["0.6"],"area":"CT"},"YZ-OM-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-OM-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"OM"},"YZ-PL-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-002":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-003":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-010":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-013":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-014":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-015":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-016":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-017":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-018":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-019":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-020":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-021":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-022":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-023":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-024":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-025":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-026":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-027":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-028":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-029":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-030":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-031":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-032":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-033":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-034":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-035":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-036":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-037":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-038":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-039":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-040":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-041":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-042":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-043":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-044":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-045":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-046":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-047":{"level":"SHOULD","versions":["0.4"],"area":"PL"},"YZ-PL-048":{"level":"MUST","versions":["0.5"],"area":"PL"},"YZ-PL-049":{"level":"MUST","versions":["0.4","0.5"],"area":"PL"},"YZ-PL-050":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-051":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-PL-052":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"PL"},"YZ-WL-001":{"level":"MUST","versions":["0.4","0.5"],"area":"WL"},"YZ-WL-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-010":{"level":"MUST","versions":["0.6"],"area":"WL"},"YZ-WL-011":{"level":"MUST","versions":["0.6"],"area":"WL"},"YZ-WL-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-013":{"level":"SHOULD","versions":["0.4","0.5"],"area":"WL"},"YZ-WL-014":{"level":"MUST","versions":["0.4","0.5"],"area":"WL"},"YZ-WL-015":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"WL"},"YZ-WL-016":{"level":"MUST","versions":["0.6"],"area":"WL"},"YZ-BF-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-006":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-010":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-BF-013":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"BF"},"YZ-LB-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-LB-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-LB-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-LB-004":{"level":"MUST","versions":["0.5","0.6"],"area":"LB"},"YZ-LB-005":{"level":"SHOULD","versions":["0.5","0.6"],"area":"LB"},"YZ-LB-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"LB"},"YZ-IL-001":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-003":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-007":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-008":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-009":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-010":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-011":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-012":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-013":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-014":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-015":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-016":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-017":{"level":"MUST","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-018":{"level":"SHOULD","versions":["0.5","0.6"],"area":"IL"},"YZ-IL-019":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"IL"},"YZ-IL-020":{"level":"SHOULD","versions":["0.4","0.5"],"area":"IL"},"YZ-IL-021":{"level":"MUST","versions":["0.4","0.5"],"area":"IL"},"YZ-IL-022":{"level":"MUST","versions":["0.4"],"area":"IL"},"YZ-IL-023":{"level":"SHOULD","versions":["0.4"],"area":"IL"},"YZ-SC-001":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-002":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-003":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-004":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-005":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-006":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-007":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-008":{"level":"MUST","versions":["0.6"],"area":"SC"},"YZ-SC-009":{"level":"SHOULD","versions":["0.6"],"area":"SC"},"YZ-SC-010":{"level":"SHOULD","versions":["0.6"],"area":"SC"},"YZ-GN-001":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-GN-002":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"GN"},"YZ-GN-003":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-GN-004":{"level":"MUST","versions":["0.6"],"area":"GN"},"YZ-GN-005":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-GN-006":{"level":"MUST","versions":["0.5","0.6"],"area":"GN"},"YZ-ZR-001":{"level":"MUST","versions":["0.4"],"area":"ZR"},"YZ-ZR-002":{"level":"MUST","versions":["0.5","0.6"],"area":"ZR"},"YZ-ZR-003":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-004":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-005":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-006":{"level":"MUST","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-007":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-008":{"level":"SHOULD","versions":["0.4","0.5","0.6"],"area":"ZR"},"YZ-ZR-009":{"level":"MUST","versions":["0.6"],"area":"ZR"},"YZ-001":{"level":null,"versions":[],"area":"YZ"},"YZ-002":{"level":null,"versions":[],"area":"YZ"},"YZ-003":{"level":null,"versions":[],"area":"YZ"},"YZ-004":{"level":null,"versions":[],"area":"YZ"},"YZ-005":{"level":null,"versions":[],"area":"YZ"},"YZ-006":{"level":null,"versions":[],"area":"YZ"}}}</script>
 
-<h2 id="spec-rules">Spec rules<a class="headerlink" href="#spec-rules" title="Link to this section">#</a></h2>
 <div class="rule-table">
 <table>
 <thead>
@@ -2146,48 +2110,40 @@
 <td>0.6+</td>
 <td>—</td>
 </tr>
-</tbody>
-</table>
-</div>
-<h2 id="yaozarrs-checks">yaozarrs checks<a class="headerlink" href="#yaozarrs-checks" title="Link to this section">#</a></h2>
-<div class="rule-table">
-<table>
-<thead>
-<tr>
-<th>Code</th>
-<th>Rule</th>
-<th>Checked in</th>
-</tr>
-</thead>
-<tbody>
 <tr>
 <td><code>YZ-001</code></td>
 <td><a href="YZ-001/"><code>zarr-node-name-invalid</code></a><br>A path used as a Zarr node name violates the Zarr v3 node-name rules.</td>
+<td>—</td>
 <td>—</td>
 </tr>
 <tr>
 <td><code>YZ-002</code></td>
 <td><a href="YZ-002/"><code>zarr-node-name-risky</code></a><br>A path used as a Zarr node name contains characters outside <code>[A-Za-z0-9._-]</code>, which can cause problems on some filesystems or in URLs.</td>
 <td>—</td>
+<td>—</td>
 </tr>
 <tr>
 <td><code>YZ-003</code></td>
 <td><a href="YZ-003/"><code>label-multiscales-count-matches-image</code></a><br>A label image must have the same number of <code>multiscales</code> as its image.</td>
+<td>—</td>
 <td>—</td>
 </tr>
 <tr>
 <td><code>YZ-004</code></td>
 <td><a href="YZ-004/"><code>version-prerelease</code></a><br>The document declares a pre-release of a spec version.</td>
 <td>—</td>
+<td>—</td>
 </tr>
 <tr>
 <td><code>YZ-005</code></td>
 <td><a href="YZ-005/"><code>version-unsupported</code></a><br>The document or store declares an OME-Zarr version that yaozarrs does not know.</td>
 <td>—</td>
+<td>—</td>
 </tr>
 <tr>
 <td><code>YZ-006</code></td>
 <td><a href="YZ-006/"><code>transform-path-relative</code></a><br>The <code>path</code> of a transformation's parameters must be a relative path with no empty, <code>.</code> or <code>..</code> segments.</td>
+<td>—</td>
 <td>—</td>
 </tr>
 </tbody>

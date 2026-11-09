@@ -626,34 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -677,52 +649,30 @@
 
 
 <h1 id="yz-lb-004-labels-intermediate-groups-no-metadata">YZ-LB-004: <code>labels-intermediate-groups-no-metadata</code><a class="headerlink" href="#yz-lb-004-labels-intermediate-groups-no-metadata" title="Link to this section">#</a></h1>
-<blockquote>
-<p>Intermediate groups between a "labels" group and its label images must not contain metadata.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.5+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">Intermediate groups between a "labels" group and its label images must not contain metadata.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.5+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
 <p>Presumably OME-Zarr metadata: every Zarr v3 group has a <code>zarr.json</code>.</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
 <blockquote>
 <p>and the images within it are allowed, but these MUST NOT contain metadata.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1488-L1489"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L1488-L1489</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
-<blockquote>
-<p>and the images within it are allowed, but these MUST NOT contain metadata.</p>
-</blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L397-L398"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L397-L398</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1488-L1489" title="ome/ngff-spec@0.6, commit 89da1da">index.md, lines 1488-1489</a></span> <span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L397-L398" title="ome/ngff-spec@0.5, commit d916404">index.md, lines 397-398</a></span></p>
 
 
 

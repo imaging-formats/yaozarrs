@@ -5378,7 +5378,8 @@ instead.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If <code>version</code> is unknown, or has no equivalent of <code>obj</code> (e.g. a v0.6 <code>Scene</code>).</p>
+                <p>If <code>version</code> is unknown, or has no equivalent of <code>obj</code> (e.g. a v0.6 <code>Scene</code>,
+or a v0.4/v0.5 scale or translation stored at a <code>path</code>, for v0.6).</p>
               </div>
             </td>
           </tr>
@@ -5407,33 +5408,7 @@ instead.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/_convert.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span>
-<span class="normal">381</span>
-<span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span>
-<span class="normal">385</span>
-<span class="normal">386</span>
-<span class="normal">387</span>
-<span class="normal">388</span>
-<span class="normal">389</span>
-<span class="normal">390</span>
-<span class="normal">391</span>
-<span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">403</span>
 <span class="normal">404</span>
 <span class="normal">405</span>
 <span class="normal">406</span>
@@ -5472,7 +5447,34 @@ instead.</p>
 <span class="normal">439</span>
 <span class="normal">440</span>
 <span class="normal">441</span>
-<span class="normal">442</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">convert_version</span><span class="p">(</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">convert_version</span><span class="p">(</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">coordinate_system</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"intrinsic"</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Convert an OME-Zarr metadata model to another version of the spec.</span>
@@ -5513,7 +5515,8 @@ instead.</p>
 <span class="sd">    TypeError</span>
 <span class="sd">        If `obj` is not a model that can be converted.</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`).</span>
+<span class="sd">        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`,</span>
+<span class="sd">        or a v0.4/v0.5 scale or translation stored at a `path`, for v0.6).</span>
 <span class="sd">    pydantic.ValidationError</span>
 <span class="sd">        If the metadata is not valid in the target version (e.g. 6 axes in v0.5).</span>
 

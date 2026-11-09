@@ -626,45 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.4
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -688,57 +649,34 @@
 
 
 <h1 id="yz-il-009-image-label-properties-array">YZ-IL-009: <code>image-label-properties-array</code><a class="headerlink" href="#yz-il-009-image-label-properties-array" title="Link to this section">#</a></h1>
-<blockquote>
-<p><code>image-label</code> <code>properties</code> must be an array of objects.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.4+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary"><code>image-label</code> <code>properties</code> must be an array of objects.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.4+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
-<p>An empty list is YZ-IL-016, and identical entries are YZ-IL-017.</p>
+<p>An empty list is <a href="../YZ-IL-016/">YZ-IL-016</a>, and identical entries are <a href="../YZ-IL-017/">YZ-IL-017</a>.</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
 <blockquote>
 <p>the value of the <code>properties</code> key MUST be an array of JSON objects</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1517"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L1517</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
-<blockquote>
-<p>the value of the <code>properties</code> key MUST be an array of JSON objects</p>
-</blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L435"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L435</a></p>
-<h3 id="04">0.4<a class="headerlink" href="#04" title="Link to this section">#</a></h3>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1517" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 1517</a></span> <span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L435" title="ome/ngff-spec@0.5, commit d916404">index.md, line 435</a></span></p>
 <blockquote>
 <p>The <code>image-label</code> dictionary MAY contain a <code>properties</code> key whose value MUST be a list of JSON objects which also describes the unique label values.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L488-L489"><code>ome/ngff-spec@0.4</code> · <code>index.md</code> L488-L489</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.4</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L488-L489" title="ome/ngff-spec@0.4, commit a4c6800">index.md, lines 488-489</a></span></p>
 
 
 

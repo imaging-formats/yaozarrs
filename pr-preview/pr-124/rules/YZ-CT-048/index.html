@@ -626,23 +626,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -666,55 +649,38 @@
 
 
 <h1 id="yz-ct-048-transform-prefer-least-expressive">YZ-CT-048: <code>transform-prefer-least-expressive</code><a class="headerlink" href="#yz-ct-048-transform-prefer-least-expressive" title="Link to this section">#</a></h1>
-<blockquote>
-<p>A transformation should be stored as its least expressive equivalent (e.g. a <code>scale</code>, a <code>rotation</code>, or a sequence of such, rather than an <code>affine</code>).</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>SHOULD</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>warning</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.6+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">A transformation should be stored as its least expressive equivalent (e.g. a <code>scale</code>, a <code>rotation</code>, or a sequence of such, rather than an <code>affine</code>).</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">SHOULD</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.6+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--warning">warning</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
 <p>Merges three 0.6 statements of the same preference: the general one, and the <code>scale</code> and <code>rotation</code> sections. The <code>translation</code> section says the same in lowercase ("should be preferred"). yaozarrs does not check this.</p>
 <h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
 <blockquote>
 <p>When possible, a rotation transformation SHOULD be used instead of an equivalent affine.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L961"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L961</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L961" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 961</a></span></p>
 <blockquote>
 <p>When possible, a scale transformation SHOULD be preferred to its equivalent affine.</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L833"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L833</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L833" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 833</a></span></p>
 <blockquote>
 <p>Implementations SHOULD prefer to store transformations as a sequence of less expressive transformations where possible</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L432"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L432</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L432" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 432</a></span></p>
 
 
 

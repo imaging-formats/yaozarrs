@@ -618,52 +618,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#spec-text" class="md-nav__link">
+  <a href="#spec-text-and-json-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Spec text
+        Spec text and JSON schema
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Spec text">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#06" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.6
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#05" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.5
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#04" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        0.4
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -688,57 +649,42 @@
 
 
 <h1 id="yz-il-007-label-color-value-integer">YZ-IL-007: <code>label-color-value-integer</code><a class="headerlink" href="#yz-il-007-label-color-value-integer" title="Link to this section">#</a></h1>
-<blockquote>
-<p>A <code>colors</code> entry's <code>label-value</code> must be an integer.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Spec level</strong></td>
-<td>MUST</td>
-</tr>
-<tr>
-<td><strong>yaozarrs severity</strong></td>
-<td>error</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>stable</td>
-</tr>
-<tr>
-<td><strong>Spec versions</strong></td>
-<td>0.4+</td>
-</tr>
-<tr>
-<td><strong>Checked in</strong></td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
+<p class="rule-summary">A <code>colors</code> entry's <code>label-value</code> must be an integer.</p>
+<div class="rule-facts">
+<div class="rule-facts__group">
+<p class="rule-facts__title">NGFF spec</p>
+<dl>
+<dt title="How strongly the NGFF spec states the rule (its RFC 2119 keyword)">Level</dt><dd><span class="rule-level">MUST</span></dd>
+<dt title="The spec versions that state the rule">Versions</dt><dd>0.4+</dd>
+</dl>
+</div>
+<div class="rule-facts__group">
+<p class="rule-facts__title">yaozarrs</p>
+<dl>
+<dt title="What yaozarrs reports when a document breaks the rule">Severity</dt><dd><span class="rule-severity rule-severity--error">error</span></dd>
+<dt title="The spec versions in which yaozarrs reports this code">Checked in</dt><dd><abbr title="yaozarrs doesn't report this code yet. It may still reject such a document, under another code or none.">not yet</abbr></dd>
+</dl>
+</div>
+</div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Link to this section">#</a></h2>
-<p>yaozarrs also accepts a non-integer number in v0.4, as the 0.4 <code>label.schema</code> does (<code>"type": "number"</code>).</p>
-<h2 id="spec-text">Spec text<a class="headerlink" href="#spec-text" title="Link to this section">#</a></h2>
-<h3 id="06">0.6<a class="headerlink" href="#06" title="Link to this section">#</a></h3>
+<p>The prose and the JSON schema disagree: <code>label.schema</code> types it as <code>number</code> in every version. The prose wins, so yaozarrs requires an integer (a float with no fractional part, like <code>2.0</code>, is read as one).</p>
+<h2 id="spec-text-and-json-schema">Spec text and JSON schema<a class="headerlink" href="#spec-text-and-json-schema" title="Link to this section">#</a></h2>
+<blockquote>
+<p><code>/$defs/image-label/properties/colors/items/properties/label-value/type</code>: <code>"number"</code></p>
+</blockquote>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/schemas/label.schema#L40" title="ome/ngff-spec@0.6, commit 89da1da">label.schema, line 40</a></span> <span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/schemas/label.schema#L40" title="ome/ngff-spec@0.5, commit d916404">label.schema, line 40</a></span> <span class="rule-source__note">Stated in the JSON schema.</span></p>
 <blockquote>
 <p>whose value MUST be the integer corresponding to a particular label</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1508"><code>ome/ngff-spec@0.6</code> · <code>index.md</code> L1508</a></p>
-<h3 id="05">0.5<a class="headerlink" href="#05" title="Link to this section">#</a></h3>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.6</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/89da1da5b0491f83b7cdde7d123aef763a457029/index.md?plain=1#L1508" title="ome/ngff-spec@0.6, commit 89da1da">index.md, line 1508</a></span> <span class="rule-source__item"><span class="rule-source__version">0.5</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L427-L428" title="ome/ngff-spec@0.5, commit d916404">index.md, lines 427-428</a></span></p>
 <blockquote>
-<p>whose value MUST be the integer corresponding to a particular label</p>
+<p><code>/properties/image-label/properties/colors/items/properties/label-value/type</code>: <code>"number"</code></p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/d9164040dd61b3e4688494de1a58a69251b13f24/index.md?plain=1#L427-L428"><code>ome/ngff-spec@0.5</code> · <code>index.md</code> L427-L428</a></p>
-<h3 id="04">0.4<a class="headerlink" href="#04" title="Link to this section">#</a></h3>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.4</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/schemas/label.schema#L19" title="ome/ngff-spec@0.4, commit a4c6800">label.schema, line 19</a></span> <span class="rule-source__note">Stated in the JSON schema.</span></p>
 <blockquote>
 <p><code>label-value</code> key whose value MUST be an integer specifying the pixel value for that label. It MAY contain an <code>rgba</code> key</p>
 </blockquote>
-<p><a href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L479-L480"><code>ome/ngff-spec@0.4</code> · <code>index.md</code> L479-L480</a></p>
+<p class="rule-source"><span class="rule-source__item"><span class="rule-source__version">0.4</span> <a class="external" href="https://github.com/ome/ngff-spec/blob/a4c68004fdb8a8d822367205dc12f9574a32ddf8/index.md?plain=1#L479-L480" title="ome/ngff-spec@0.4, commit a4c6800">index.md, lines 479-480</a></span></p>
 
 
 
