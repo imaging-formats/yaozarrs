@@ -552,6 +552,24 @@ def test_scene_cannot_be_downgraded() -> None:
 # ------------------------------------------------------------------------------
 
 
+def test_transform_at_path() -> None:
+    # (v0.4/v0.5 may store a scale in a Zarr array; v0.6 only inline)
+    ts = [{"type": "scale", "path": "s"}]
+    axes = [{"name": n, "type": "space"} for n in "yx"]
+    src = v05.Multiscale(
+        axes=axes, datasets=[{"path": "0", "coordinateTransformations": ts}]
+    )
+    with pytest.raises(ValueError, match="stored in a Zarr array"):
+        convert_version(src, "0.6")
+    assert convert_version(src, "0.4").datasets[0].scale_transform.path == "s"
+    # (and a stray `path` next to an inline v0.6 scale is dropped on the way down)
+    ms = _multiscale_06()
+    ms["datasets"][0]["coordinateTransformations"][0]["path"] = "s"
+    with pytest.warns(ConversionWarning, match="scale key 'path'"):
+        down = convert_version(v06.Multiscale.model_validate(ms), "0.5")
+    assert down.datasets[0].scale_transform.path is None
+
+
 def test_array_axes_raise_on_downgrade() -> None:
     # (v0.6 multiscales allow these with a warning, older versions require "space")
     axes = [{"name": n, "type": "array"} for n in "yx"]

@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._common._image import require_inline_or_path
 from yaozarrs._errors import ValidationWarning
 from yaozarrs._types import duplicates
 
@@ -187,7 +188,7 @@ class AffineTransformation(_TransformBase):
 
     @model_validator(mode="after")
     def _validate(self) -> Self:
-        _require_exactly_one(self, "affine")
+        require_inline_or_path(self, "affine", "matrix")
         # The matrix MUST be stored as 2D nested array ... where the outer array
         # MUST be length `M` and the inner arrays MUST be length `N+1`.
         if self.affine is not None:
@@ -211,7 +212,7 @@ class RotationTransformation(_TransformBase):
 
     @model_validator(mode="after")
     def _validate(self) -> Self:
-        _require_exactly_one(self, "rotation")
+        require_inline_or_path(self, "rotation", "matrix")
         if (m := self.rotation) is not None:
             # the outer array MUST be length `N` and the inner arrays MUST be length N
             if any(len(row) != len(m) for row in m):
@@ -509,15 +510,6 @@ def _output_ndim(t: Any, n_in: int | None) -> int | None:
     if isinstance(t, (AffineTransformation, CoordinatesTransformation)):
         return None  # stored in a Zarr array: can't tell from metadata alone
     return n_in  # all other types preserve dimensionality
-
-
-def _require_exactly_one(t: Any, matrix_field: str) -> None:
-    has_matrix, has_path = getattr(t, matrix_field) is not None, t.path is not None
-    if has_matrix == has_path:
-        raise ValueError(
-            f"{t.type} requires exactly one of '{matrix_field}' (inline matrix) or "
-            "'path' (Zarr array)"
-        )
 
 
 # tolerance for floating point checks of rotation matrices (the spec doesn't define
