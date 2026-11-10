@@ -449,8 +449,21 @@ class _CachedMapper(Mapping[str, bytes]):
         return result
 
     def __getattr__(self, name: str) -> Any:
-        """Delegate all other attributes to the underlying mapper."""
+        """Delegate all other public attributes to the underlying mapper."""
+        # Private and dunder names are never forwarded. `_mapper` may not be set yet
+        # (e.g. during unpickling), and protocol hooks like `__setstate__` or
+        # `__deepcopy__` must not resolve to the wrapped mapper's.
+        if name.startswith("_"):
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}",
+                name=name,
+                obj=self,
+            )
         return getattr(self._mapper, name)
+
+    def __reduce__(self) -> tuple[type[Self], tuple[Mapping[str, bytes]]]:
+        # don't pickle/copy the cache: it's shared by every node in the hierarchy
+        return (type(self), (self._mapper,))
 
 
 class ZarrNode:
