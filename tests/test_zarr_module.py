@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import copy
 import json
+import pickle
 import shutil
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING
@@ -271,6 +273,33 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
     subgroup = group["group_child"]
     assert isinstance(subgroup, ZarrGroup)
     assert subgroup.attrs["kind"] == "group"
+
+
+@pytest.mark.parametrize("roundtrip", ["pickle", "deepcopy"])
+def test_zarr_nodes_roundtrip(v2_store: Path, roundtrip: str) -> None:
+    def _rt(obj: object) -> object:
+        if roundtrip == "pickle":
+            return pickle.loads(pickle.dumps(obj))
+        return copy.deepcopy(obj)
+
+    group = open_group(v2_store)
+    group.ome_metadata()  # populate the `_ome_metadata` slot
+    group2 = _rt(group)
+    assert isinstance(group2, ZarrGroup)
+    assert group2.path == group.path
+    assert group2.store_path == group.store_path
+    assert group2.metadata == group.metadata
+    assert group2.ome_metadata() == group.ome_metadata()
+    # the shared metadata cache is not carried over
+    assert group._store._cache
+    assert not group2._store._cache
+    assert isinstance(group2["array"], ZarrArray)
+
+    arr = group["array"]
+    arr2 = _rt(arr)
+    assert isinstance(arr2, ZarrArray)
+    assert arr2.path == arr.path
+    assert arr2.metadata == arr.metadata
 
 
 def test_zarrgroup_prefetch_handles_exceptions(v2_store: Path) -> None:
