@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeGuard, TypeVar, ca
 
 from ._arrays import _get_create_func, _resolve_chunks, _write_to_array
 from ._groups import (
-    _atomic_write,
     _create_zarr3_group,
     _ensure_parent_groups,
     _rewrite_zarr3_group,
@@ -60,36 +59,6 @@ class _Default(Enum):
     """Sentinel for a per-image setting that defaults to the builder's."""
 
     BUILDER = "builder"
-
-
-_ADDED_VIA = {
-    "write_image": "written via write_image()",
-    "add_series": "added via add_series()",
-    "prepare_series": "created via prepare_series()",
-}
-
-
-def _discard(path: Path) -> None:
-    """Delete `path`, what was created of a series that failed."""
-    shutil.rmtree(path, ignore_errors=True)
-
-
-def _is_empty_dir(path: Path) -> bool:
-    return path.is_dir() and not any(path.iterdir())
-
-
-def _check_image_path(path: str) -> None:
-    # (each part is the name of a node below the parent group: Zarr node names must be
-    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
-    # collide with a group's own metadata)
-    if any(
-        not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
-        for p in path.split("/")
-    ):
-        raise ValueError(
-            f"Invalid image path {path!r}: each part must be a valid Zarr node name "
-            "(non-empty, not only periods, not starting with '__', not 'zarr.json')."
-        )
 
 
 def _is_shape_and_dtype(obj: Any) -> TypeGuard[ShapeAndDType]:
@@ -341,13 +310,6 @@ def _write_bioformats2raw(
             chunks,
             shards,
         )
-    # (unlike a builder's, a one-shot write doesn't add to an existing collection)
-    dest_path = Path(dest)
-    if not overwrite and dest_path.exists():
-        raise FileExistsError(
-            f"Zarr group already exists at {dest_path}. "
-            "Use overwrite=True to replace it."
-        )
 
     builder = builder_type(
         dest,
@@ -474,10 +436,9 @@ class _BuilderBase:
 class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
     """Builder for bioformats2raw layout hierarchies (see `vNN.Bf2RawBuilder`).
 
-    Every series is created (its group and arrays, and data if given) before it is
-    listed in `OME/zarr.json`, and the root `zarr.json` is written with the first
-    series, last.  So the store is a valid collection after every call, even an
-    interrupted one.
+    Each series is created (its group and arrays, and data if given) before it is
+    listed in `OME/zarr.json`, and the root `zarr.json` is written last, with the
+    first series: so the store is a valid collection after every call.
     """
 
     _bf2raw_type: ClassVar[type[Any]]
@@ -503,19 +464,13 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             overwrite=overwrite,
             compression=compression,
         )
-        # (written along with the next series created)
         self._ome_xml = ome_xml
         self._extra_attributes = extra_attributes
-        # (with `overwrite`, the store is replaced when the first series is created)
-        self._wipe_pending = overwrite
-        # The collection's series, in OME/zarr.json order
-        self._series: list[str] = [] if overwrite else self._load_existing()
-        # The series added with this builder: {name: the method that added it}
-        self._added: dict[str, str] = {}
-        # (the names of both, to check new ones against)
-        self._names = set(self._series)
-        # For prepare-only workflow: {name: (image, dataset specs, array options)}
-        self._queued: dict[str, tuple[Any, Sequence[Any], dict[str, Any]]] = {}
+
+        # For prepare-only workflow: {series_name: (image, dataset_specs)}
+        self._series: dict[str, ImageWithShapeSpecs] = {}
+        # The series created so far, in OME/zarr.json order: {name: how it was}
+        self._written_series: dict[str, str] = {}
 
     @property
     def root_path(self) -> Path:
@@ -524,12 +479,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
     @property
     def series(self) -> tuple[str, ...]:
-        """The series of the collection, in `OME/series` order.
-
-        Those already in the store when the builder was created, and those created
-        since (but not those only added with `add_series()`, until `prepare()`).
-        """
-        return tuple(self._series)
+        """The series created so far, in `OME/zarr.json` order."""
+        return tuple(self._written_series)
 
     def prepare_series(
         self,
@@ -545,10 +496,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
         The series' group and arrays are created first, and only then is the series
         listed in `OME/zarr.json` (which creates the collection, if this is its first
-        series), so the collection stays valid even if this is interrupted.
-
-        Write data into the returned arrays (or into the arrays opened with your own
-        backend) at any time, in any order.
+        series).  Write data into the returned arrays (or into the arrays opened with
+        your own backend) at any time, in any order.
 
         Parameters
         ----------
@@ -578,20 +527,24 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If `name` is not a valid path, is (or is inside) "OME", is nested in
-            another series, or was already added with this builder; or if the
+            If a series with this name was already added or written, or if the
             dataset specs don't match the metadata.
         FileExistsError
-            If the collection already has a series `name`, or something that isn't
-            one of its series is at its path (e.g. left by an interrupted write).
-        ImportError
-            If no suitable writer backend is installed (before anything is written).
+            If `dest` exists and `overwrite` is False (when creating the first
+            series), or if something is already at the series' path.
         """
-        specs, options = self._check_series(
-            name, image, datasets, chunks, shards, compression
+        self._validate_series_name(name)
+        options = self._array_options(chunks, shards, compression)
+        _, specs = _check_image_args(
+            image,
+            datasets,
+            self._image_type,
+            f"Series '{name}': ",
+            options["chunks"],
+            options["shards"],
         )
-        self._reserve(name, "prepare_series")
-        arrays = self._create({name: (image, specs, options)})
+        series = {name: (image, specs, options)}
+        arrays = self._create(series, "created via prepare_series()")
         return self._dest / name, arrays[name]
 
     def write_image(
@@ -600,33 +553,23 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         image: Image,
         datasets: ArrayOrPyramid,
         *,
-        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
-        shards: ShapeLike | _Default | None = _Default.BUILDER,
-        compression: CompressionName | _Default = _Default.BUILDER,
         progress: bool = False,
     ) -> Self:
         """Write a series immediately with its data.
 
-        Like `prepare_series()`, but the data is written too, before the series is
-        listed in `OME/zarr.json`: so the series only appears in the collection
-        with all of its data.
+        This method creates the series structure and writes data in one call.
+        The root structure and OME metadata are created/updated automatically.
+        Use this for the "immediate write" workflow.
 
         Parameters
         ----------
         name : str
-            Path of the series' image group below the root, e.g. "0", or
-            "group_1/array_1_0" (intermediate groups are created).
+            Series name (becomes the subgroup path, e.g., "0", "1").
         image : Image
             OME-Zarr Image metadata model for this series.
         datasets : ArrayLike | Sequence[ArrayLike]
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
-        chunks : tuple[int, ...] | "auto" | None, optional
-            Chunk shape for this series' arrays.  Default is the builder's.
-        shards : tuple[int, ...] | None, optional
-            Shard shape for this series' arrays.  Default is the builder's.
-        compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
-            Compression codec for this series' arrays.  Default is the builder's.
         progress : bool, optional
             Show progress bar when writing dask arrays. Default is False.
 
@@ -638,21 +581,16 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If `name` is invalid or was already added with this builder, or if the
-            datasets don't match the metadata (see `prepare_series()`).
-        FileExistsError
-            If the collection already has a series `name`, or something else is at
-            its path.
+            If a series with this name was already written or added.
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        datasets_seq, options = self._check_series(
-            name, image, datasets, chunks, shards, compression
-        )
+        self._validate_series_name(name)
+        datasets_seq = self._check_datasets(image, datasets, f"Series '{name}': ")
         specs = [(arr.shape, arr.dtype) for arr in datasets_seq]
-        self._reserve(name, "write_image")
-        series = {name: (image, specs, options)}
-        self._create(series, data={name: datasets_seq}, progress=progress)
+        series = {name: (image, specs, self._array_options())}
+        how = "written via write_image()"
+        self._create(series, how, data=datasets_seq, progress=progress)
         return self
 
     def add_series(
@@ -660,34 +598,24 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         name: str,
         image: Image,
         datasets: ShapeAndDTypeOrPyramid,
-        *,
-        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
-        shards: ShapeLike | _Default | None = _Default.BUILDER,
-        compression: CompressionName | _Default = _Default.BUILDER,
     ) -> Self:
         """Add a series for the prepare-only workflow.
 
-        Registers a series to be created when `prepare()` is next called.  (To create
-        a series right away, use `prepare_series()`.)  After calling `prepare()`,
-        write data to the returned array handles.
+        Registers a series to be created when `prepare()` is called. Use this
+        when you want to create the Zarr structure without writing data
+        immediately. After calling `prepare()`, write data to the returned
+        array handles.
 
         Parameters
         ----------
         name : str
-            Path of the series' image group below the root, e.g. "0", or
-            "group_1/array_1_0" (intermediate groups are created).
+            Series name (becomes the subgroup path, e.g., "0", "1").
         image : Image
             OME-Zarr Image metadata model for this series.
         datasets : ShapeAndDType | Sequence[ShapeAndDType]
             Shape and dtype specification(s) for each resolution level, as
             `(shape, dtype)` tuples. For a single dataset, pass the tuple
             directly without wrapping in a list.
-        chunks : tuple[int, ...] | "auto" | None, optional
-            Chunk shape for this series' arrays.  Default is the builder's.
-        shards : tuple[int, ...] | None, optional
-            Shard shape for this series' arrays.  Default is the builder's.
-        compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
-            Compression codec for this series' arrays.  Default is the builder's.
 
         Returns
         -------
@@ -697,27 +625,23 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If `name` is invalid or was already added with this builder, or if the
+            If a series with this name was already added or written, or if the
             number of dataset specs doesn't match the metadata.
-        FileExistsError
-            If the collection already has a series `name`.
         NotImplementedError
             If the Image has multiple multiscales.
         """
-        specs, options = self._check_series(
-            name, image, datasets, chunks, shards, compression
-        )
-        self._reserve(name, "add_series")
-        self._queued[name] = (image, specs, options)
+        self._validate_series_name(name)
+        datasets_seq = self._check_datasets(image, datasets, f"Series '{name}': ")
+        self._series[name] = (image, datasets_seq)
         return self
 
     def prepare(self) -> tuple[Path, dict[str, Any]]:
-        """Create the series added with `add_series()`, and return their arrays.
+        """Create the Zarr hierarchy and return array handles.
 
-        Creates the series added since the last call (with empty arrays), then lists
-        them all in `OME/zarr.json`, creating the collection if needed.  It can be
-        called again after adding more series.  If creating any of them fails, none
-        are added to the collection (add them again to retry).
+        Creates the series registered with `add_series()` since the last call (with
+        empty arrays), then lists them in `OME/zarr.json`, creating the collection
+        if needed.  If creating any of them fails, none are added (add them again to
+        retry).
 
         The returned arrays support numpy-style indexing for writing data:
         `arrays["series/dataset"][:] = data`.
@@ -726,23 +650,28 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         -------
         tuple[Path, dict[str, Any]]
             A tuple of (root_path, arrays) where `arrays` maps composite keys
-            like `"0/0"` (series name / dataset path) to the arrays of the series
-            created by this call. The array type depends on the configured writer
-            (zarr.Array or tensorstore.TensorStore).
+            like `"0/0"` (series name / dataset path) to array objects. The
+            array type depends on the configured writer (zarr.Array or
+            tensorstore.TensorStore).
 
         Raises
         ------
         ValueError
             If no series have been added with `add_series()` since the last call.
         FileExistsError
-            If something is already at the path of one of the series.
+            If destination exists and `overwrite` is False.
         ImportError
             If no suitable writer backend is installed.
         """
-        queued, self._queued = self._queued, {}
-        if not queued:
+        if not self._series:
             raise ValueError("No series added. Use add_series() before prepare().")
-        arrays = self._create(queued)
+
+        queued, self._series = self._series, {}
+        options = self._array_options()
+        series = {
+            name: (image, specs, options) for name, (image, specs) in queued.items()
+        }
+        arrays = self._create(series, "added via add_series()")
         all_arrays = {
             f"{name}/{dataset_path}": arr
             for name, series_arrays in arrays.items()
@@ -751,72 +680,35 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
-        total_images = len(self._names)
+        total_images = len(self._series) + len(self._written_series)
         return f"<{self.__class__.__name__}: {total_images} images>"
 
-    # ------------------ Internal methods ------------------
-
-    def _check_series(
-        self,
-        name: str,
-        image: Any,
-        datasets: Any,
-        chunks: ShapeLike | Literal["auto"] | _Default | None,
-        shards: ShapeLike | _Default | None,
-        compression: CompressionName | _Default,
-    ) -> tuple[Sequence[Any], dict[str, Any]]:
-        """Check a series before anything is written; return datasets and options."""
-        _check_image_path(name)
-        if name.split("/")[0].casefold() == "ome":
-            raise ValueError(
-                f"Invalid series name {name!r}: 'OME' is the group of the collection's "
-                "metadata."
-            )
-        options = self._array_options(chunks, shards, compression)
-        _, datasets_seq = _check_image_args(
-            image,
-            datasets,
-            self._image_type,
-            f"Series '{name}': ",
-            options["chunks"],
-            options["shards"],
-        )
-        _get_create_func(self._writer)  # (raises for an unknown/missing backend)
-        return datasets_seq, options
-
-    def _reserve(self, name: str, method: str) -> None:
-        """Reserve `name` for a series added with `method`, if it's free."""
-        if (previous := self._added.get(name)) is not None:
-            raise ValueError(f"Series '{name}' already {_ADDED_VIA[previous]}.")
-        if name in self._names:
-            raise FileExistsError(f"Series '{name}' already exists in {self._dest}.")
-        parts = name.split("/")
-        for i in range(1, len(parts)):
-            if (parent := "/".join(parts[:i])) in self._names:
-                raise ValueError(f"Series '{name}' can't be nested in '{parent}'.")
-        self._added[name] = method
-        self._names.add(name)
+    def _validate_series_name(self, name: str) -> None:
+        if (how := self._written_series.get(name)) is not None:
+            raise ValueError(f"Series '{name}' already {how}.")
+        if name in self._series:
+            raise ValueError(f"Series '{name}' already added via add_series().")
 
     def _create(
         self,
         series: Mapping[str, tuple[Any, Sequence[Any], dict[str, Any]]],
+        how: str,
         *,
-        data: Mapping[str, Sequence[Any]] | None = None,
+        data: Sequence[Any] | None = None,
         progress: bool = False,
     ) -> dict[str, dict[str, Any]]:
-        """Create the (reserved) `series`, then list them in the collection.
+        """Create `series` (and write `data`), then list them; return their arrays.
 
-        Returns their arrays, by series name and dataset path.  On failure, the series
-        created by this call are deleted, and their names freed.
+        (If creating any of them fails, what was created of them is deleted.)
         """
-        created: list[str] = []
+        created: list[Path] = []
         try:
-            self._begin()
+            self._ensure_initialized()
             arrays: dict[str, dict[str, Any]] = {}
             for name, (image, specs, options) in series.items():
                 if (path := self._dest / name).exists():
-                    raise FileExistsError(_not_a_series_message(path))
-                created.append(name)
+                    raise FileExistsError(f"{path} already exists.")
+                created.append(path)
                 _ensure_parent_groups(self._dest, name)
                 _, arrays[name] = _prepare_image(
                     path,
@@ -828,90 +720,57 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
                     **options,
                 )
                 if data is not None:
-                    for arr, values in zip(
-                        arrays[name].values(), data[name], strict=True
-                    ):
+                    for arr, values in zip(arrays[name].values(), data, strict=True):
                         _write_to_array(arr, values, progress=progress)
-            self._commit(list(series))
         except BaseException:
-            for name in series:
-                if name in self._series:
-                    continue  # (it was listed: it's part of the collection now)
-                if name in created:
-                    _discard(self._dest / name)
-                del self._added[name]
-                self._names.discard(name)
+            for path in created:
+                shutil.rmtree(path, ignore_errors=True)
             raise
+        self._list_series(series, how)
         return arrays
 
-    def _begin(self) -> None:
-        """Ready the store for new series (replacing it first, if `overwrite`)."""
-        dest = self._dest
-        if self._wipe_pending:
-            if dest.exists() and not _is_empty_dir(dest):
-                # (be cautious: don't delete anything that doesn't look like a group)
-                markers = ("zarr.json", ".zgroup", "OME/zarr.json")
-                if not any((dest / marker).exists() for marker in markers):
-                    raise FileExistsError(
-                        f"Destination {dest} exists, but is not a Zarr group. "
-                        "Refusing to overwrite.  Please delete manually."
-                    )
-                shutil.rmtree(dest)
-            self._wipe_pending = False
-        dest.mkdir(parents=True, exist_ok=True)
+    def _ensure_initialized(self) -> None:
+        """Create the root directory (replacing what's there, if `overwrite`).
 
-    def _commit(self, names: Sequence[str]) -> None:
-        """List the (created) series `names` in OME/zarr.json.
-
-        A new collection's root zarr.json is written last: until then, `dest` isn't a
-        Zarr group.
+        (Its zarr.json is written along with the first series, so that it lists it.)
         """
+        if self._initialized:
+            return
         dest = self._dest
-        (dest / "OME").mkdir(exist_ok=True)
-        if self._ome_xml is not None:
-            _atomic_write(dest / "OME" / "METADATA.ome.xml", self._ome_xml)
-            self._ome_xml = None
-        listing = [*self._series, *names]
-        _rewrite_zarr3_group(dest / "OME", self._series_type(series=listing))
-        self._series = listing
+        if dest.exists():
+            if not self._overwrite:
+                raise FileExistsError(
+                    f"Zarr group already exists at {dest}. "
+                    "Use overwrite=True to replace it."
+                )
+            # Be cautious: don't delete anything that doesn't look like a zarr group.
+            if not (dest / "zarr.json").exists():
+                raise FileExistsError(
+                    f"Destination {dest} exists, but is not a Zarr group. "
+                    "Refusing to overwrite.  Please delete manually."
+                )
+            shutil.rmtree(dest)
+        dest.mkdir(parents=True)
+        self._initialized = True
 
-        root = dest / "zarr.json"
-        if not root.exists():
+    def _list_series(self, names: Iterable[str], how: str) -> None:
+        """List the (created) series `names` in OME/zarr.json, after the others.
+
+        The root zarr.json is written with the first series, last: until then, `dest`
+        isn't a Zarr group.
+        """
+        first = not self._written_series
+        (self._dest / "OME").mkdir(exist_ok=True)
+        if first and self._ome_xml is not None:
+            (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
+        listing = [*self._written_series, *names]
+        _rewrite_zarr3_group(self._dest / "OME", self._series_type(series=listing))
+        self._written_series.update(dict.fromkeys(names, how))
+        if first:
             bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
             ome = bf2raw.model_dump(mode="json", exclude_none=True)
             attrs = {"ome": ome, **(self._extra_attributes or {})}
-            _write_group_json(dest, attrs, indent=2)
-        elif self._extra_attributes:
-            existing = json.loads(root.read_bytes()).get("attributes", {})
-            extra = {k: v for k, v in self._extra_attributes.items() if k != "ome"}
-            _write_group_json(dest, {**existing, **extra}, indent=2)
-        self._extra_attributes = None
-
-    def _load_existing(self) -> list[str]:
-        """Return the series of the collection already at `dest` (if any)."""
-        dest = self._dest
-        if not dest.exists() or _is_empty_dir(dest):
-            return []
-        try:
-            doc = json.loads((dest / "zarr.json").read_bytes())
-            ome = doc["attributes"]["ome"]
-            if doc["zarr_format"] != 3 or doc["node_type"] != "group" or "plate" in ome:
-                raise ValueError
-            self._bf2raw_type.model_validate(ome)
-            doc = json.loads((dest / "OME" / "zarr.json").read_bytes())
-            series = self._series_type.model_validate(doc["attributes"]["ome"])
-            return list(series.series)
-        except (OSError, ValueError, KeyError, TypeError):
-            version = self._bf2raw_type.model_fields["version"].default
-            raise FileExistsError(
-                f"{dest} already exists, but isn't a v{version} bioformats2raw "
-                "collection with a `series` list (which this builder could add to).  "
-                "Use overwrite=True to replace it (deleting everything in it)."
-            ) from None
-
-
-def _not_a_series_message(path: Path) -> str:
-    return f"{path} exists, but isn't a series of the collection: use another name."
+            _write_group_json(self._dest, attrs, indent=2)
 
 
 class PlateBuilderBase(_BuilderBase, Generic[Image]):

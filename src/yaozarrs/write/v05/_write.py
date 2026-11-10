@@ -712,23 +712,22 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     - Each series as a separate Image subgroup (e.g., `0/`, `1/`)
     - Optional `OME/METADATA.ome.xml` with full OME-XML metadata
 
-    Series are added one at a time, in a few different ways:
+    This builder supports three workflows:
 
-    1. **Create now, write later**: `prepare_series()` creates a series with empty
-       arrays, and returns them.  Write into them (or into the arrays opened with
-       your own backend) at any time, in any order.
-    2. **Immediate write** (simpler): `write_image()` writes a series with its data, if
-       you have the full array(s) ready.
-    3. **Prepare-only**: `add_series()` registers series, then `prepare()` creates
-       those registered since its last call, and returns their arrays.
+    1. **Immediate write** (simpler): Use `write_image()` to write each series
+       with its data immediately. The builder manages root structure and series
+       list automatically.
 
-    A series is listed in `OME/zarr.json` only once it is complete (and the root
-    `zarr.json` is written with the first series), so the store is a valid
-    collection after every call, even an interrupted one.  A collection already at
-    `dest` (written with a `series` list) is added to, unless `overwrite`.
+    2. **Prepare-only** (flexible): Use `add_series()` to register all series,
+       then `prepare()` to create the hierarchy with empty arrays. Write data
+       to the returned arrays yourself.
 
-    A builder isn't thread-safe: create series from one thread, and write their data
-    from any.
+    3. **Create now, write later**: Use `prepare_series()` to create one series at
+       a time, with empty arrays, and write to the returned arrays yourself.
+
+    Each series is listed in `OME/zarr.json` only once its arrays exist (and the
+    root `zarr.json` is written with the first series), so the store is a valid
+    collection after every call.
 
 
     See Also
@@ -752,19 +751,16 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
-        If True, replace whatever is at `dest` (deleting every series of an existing
-        collection) when the first series is created.  If False (default), add to
-        the collection at `dest`, if there is one.
+        If True, overwrite existing groups. Default is False.
         Note: existing directories that don't look like zarr groups will NOT be removed,
         an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
 
-    `chunks`, `shards` and `compression` are defaults for every series:
-    `prepare_series()`, `write_image()` and `add_series()` can override them.
-
     Examples
     --------
+    **Immediate write workflow:**
+
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
@@ -785,18 +781,6 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     ...             )
     ...         ]
     ...     )
-
-    **Create now, write later:**
-
-    >>> builder = Bf2RawBuilder("builder_incremental.zarr")
-    >>> _, arrays = builder.prepare_series("0", make_image(), ((32, 32), np.uint16))
-    >>> arrays["0"][:16] = np.ones((16, 32), dtype=np.uint16)  # e.g. tile by tile
-    >>> _ = builder.prepare_series("1", make_image(), ((16, 16), np.uint8))
-    >>> builder.series
-    ('0', '1')
-
-    **Immediate write workflow:**
-
     >>> builder = Bf2RawBuilder("builder_immediate.zarr")
     >>> builder.write_image("0", make_image(), np.zeros((32, 32), dtype=np.uint16))
     <Bf2RawBuilder: 1 images>
@@ -815,6 +799,15 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     >>> arrays["0/0"][:] = np.zeros((32, 32), dtype=np.uint16)  # Write data yourself
     >>> arrays["1/0"][:] = np.zeros((16, 16), dtype=np.uint16)
     >>> assert path.exists()
+
+    **Create now, write later:**
+
+    >>> builder3 = Bf2RawBuilder("builder_incremental.zarr")
+    >>> _, arrays = builder3.prepare_series("0", make_image(), ((32, 32), np.uint16))
+    >>> arrays["0"][:16] = np.ones((16, 32), dtype=np.uint16)  # e.g. tile by tile
+    >>> _ = builder3.prepare_series("1", make_image(), ((16, 16), np.uint8))
+    >>> builder3.series
+    ('0', '1')
     """
 
     _image_type = Image

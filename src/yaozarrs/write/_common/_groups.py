@@ -3,49 +3,13 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
-import sys
-import time
-import uuid
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from pydantic import BaseModel
-
-
-def _atomic_write(path: Path, data: str | bytes) -> None:
-    """Replace the file at `path` with `data`, atomically.
-
-    (A temporary file in the same directory is renamed over `path`, so readers see
-    either the old file or the new one, never a partial one.)
-    """
-    tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    try:
-        tmp.write_bytes(data.encode() if isinstance(data, str) else data)
-        _replace(tmp, path)
-    except BaseException:
-        tmp.unlink(missing_ok=True)
-        raise
-
-
-def _replace(src: Path, dst: Path, attempts: int = 6) -> None:
-    """`os.replace`, retried on Windows while another process has `dst` open."""
-    for attempt in range(attempts):
-        try:
-            os.replace(src, dst)
-            return
-        except PermissionError as e:
-            if sys.platform != "win32":
-                raise
-            if attempt == attempts - 1:
-                raise PermissionError(
-                    f"Couldn't replace {dst}: is it open in another program? "
-                    "(Try again once it's closed.)"
-                ) from e
-            time.sleep(0.01 * 2**attempt)
 
 
 def _write_group_json(
@@ -55,7 +19,7 @@ def _write_group_json(
     zarr_json: dict[str, Any] = {"zarr_format": 3, "node_type": "group"}
     if attributes is not None:
         zarr_json["attributes"] = attributes
-    _atomic_write(dest_path / "zarr.json", json.dumps(zarr_json, indent=indent))
+    (dest_path / "zarr.json").write_text(json.dumps(zarr_json, indent=indent))
 
 
 def _create_zarr3_group(
@@ -101,7 +65,7 @@ def _update_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
     attrs: dict[str, Any] = {k: v for k, v in existing_attrs.items() if k != "ome"}
     attrs["ome"] = ome_model.model_dump(mode="json", exclude_none=True)
     zarr_json["attributes"] = attrs
-    _atomic_write(zarr_json_path, json.dumps(zarr_json, indent=2))
+    zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
 
 
 def _rewrite_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
