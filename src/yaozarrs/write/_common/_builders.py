@@ -469,7 +469,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
         # For prepare-only workflow: {series_name: (image, dataset_specs)}
         self._series: dict[str, ImageWithShapeSpecs] = {}
-        # The series created so far, in OME/zarr.json order: {name: how it was}
+        # The series created so far, in OME/zarr.json order, each with how it was added
+        # (e.g. "written via write_image()", for "Series 'x' already ..." errors)
         self._written_series: dict[str, str] = {}
 
     @property
