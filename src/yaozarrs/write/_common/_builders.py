@@ -798,14 +798,16 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
                     f"Zarr group already exists at {dest}. "
                     "Use overwrite=True to replace it."
                 )
-            # Be cautious: don't delete anything that doesn't look like a zarr group.
-            if not (dest / "zarr.json").exists():
-                raise FileExistsError(
-                    f"Destination {dest} exists, but is not a Zarr group. "
-                    "Refusing to overwrite.  Please delete manually."
-                )
-            shutil.rmtree(dest)
-        dest.mkdir(parents=True)
+            # Be cautious: don't delete anything that doesn't look like a zarr group
+            # (an empty directory is simply used).
+            if not dest.is_dir() or any(dest.iterdir()):
+                if not (dest / "zarr.json").exists():
+                    raise FileExistsError(
+                        f"Destination {dest} exists, but is not a Zarr group. "
+                        "Refusing to overwrite.  Please delete manually."
+                    )
+                shutil.rmtree(dest)
+        dest.mkdir(parents=True, exist_ok=True)
         self._initialized = True
 
     def _update_ome_series(self, names: Iterable[str]) -> None:

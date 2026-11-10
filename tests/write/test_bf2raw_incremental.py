@@ -409,6 +409,14 @@ def test_overwrite(tmp_path: Path, ver: Any) -> None:
         )
     assert (other / "mine.txt").exists()
 
+    # (and an empty directory is simply used)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    w.Bf2RawBuilder(empty, writer=WRITERS[0], overwrite=True).prepare_series(
+        "s", _image(models), SPEC_2D
+    )
+    yaozarrs.validate_zarr_store(empty)
+
 
 def test_leftover_temp_files_are_harmless(tmp_path: Path, ver: Any) -> None:
     # (as left by a process killed mid-write)
