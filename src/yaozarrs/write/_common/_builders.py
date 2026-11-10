@@ -740,7 +740,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
     def _ensure_initialized(self) -> None:
         """Create the root directory (replacing what's there, if `overwrite`).
 
-        (Its zarr.json is written along with the first series, so that it lists it.)
+        (Its zarr.json is written last, with the first series: see
+        `_update_ome_series`.)
         """
         if self._initialized:
             return

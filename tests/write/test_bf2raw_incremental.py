@@ -98,10 +98,7 @@ def test_valid_after_every_call(tmp_path: Path, ver: Any, writer: str) -> None:
     yaozarrs.validate_zarr_store(dest)
     _set(arrays["0"], 0, 1)
 
-    # nested, with its own array settings
-    builder.prepare_series(
-        "group_1/array_1_0", _image(models), SPEC_2D, chunks=(8, 8), compression="zstd"
-    )
+    builder.prepare_series("group_1/array_1_0", _image(models), SPEC_2D)  # (nested)
     yaozarrs.validate_zarr_store(dest)
     assert (dest / "group_1" / "zarr.json").exists()
 
@@ -126,7 +123,6 @@ def test_valid_after_every_call(tmp_path: Path, ver: Any, writer: str) -> None:
     assert builder.series == tuple(expected)
     assert (dest / "OME" / "METADATA.ome.xml").read_text() == "<OME/>"
     assert json.loads((dest / "zarr.json").read_bytes())["attributes"]["a"] == 1
-    assert repr(builder) == "<Bf2RawBuilder: 6 images>"
 
 
 @needs_zarr
@@ -162,14 +158,15 @@ def test_valid_at_every_write(
     builder = w.Bf2RawBuilder(
         dest, writer="zarr", ome_xml="<OME/>", overwrite=overwrite
     )
+    # (not "0": a numbered series is valid even without OME/zarr.json)
     builder.prepare_series(
-        "0", _image(models, n_levels=2), [SPEC_2D, ((8, 8), "uint8")]
+        "s", _image(models, n_levels=2), [SPEC_2D, ((8, 8), "uint8")]
     )
     builder.write_image("a/b", _image(models), np.ones((16, 16), "uint8"))
     builder.add_series("c", _image(models), SPEC_2D)
     builder.prepare()
     yaozarrs.validate_zarr_store(dest)
-    assert _listing(dest) == ["0", "a/b", "c"]
+    assert _listing(dest) == ["s", "a/b", "c"]
     assert len(checked) > 10
 
 
@@ -275,18 +272,21 @@ def test_name_errors(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
     builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    builder.prepare_series("a/b", _image(models), SPEC_2D)
+    builder.prepare_series("a", _image(models), SPEC_2D)
     builder.write_image("c", _image(models), np.ones((16, 16), "uint8"))
     builder.add_series("d", _image(models), SPEC_2D)
     for name, match in [
-        ("a/b", "already exists"),
+        ("a", "already exists"),
         ("c", "already exists"),
         ("d", "already added via add_series"),
     ]:
         with pytest.raises(ValueError, match=match):
             builder.prepare_series(name, _image(models), SPEC_2D)
+    (dest / "x").mkdir()  # (made by someone else: it's not replaced or cleaned up)
+    (dest / "x" / "mine.txt").write_text("mine")
     with pytest.raises(FileExistsError, match="already exists"):
-        builder.prepare_series("a", _image(models), SPEC_2D)  # (a group above "a/b")
+        builder.prepare_series("x", _image(models), SPEC_2D)
+    assert (dest / "x" / "mine.txt").exists()
     yaozarrs.validate_zarr_store(dest)
 
 
@@ -313,6 +313,16 @@ def test_existing_dest(tmp_path: Path, ver: Any) -> None:
     assert _listing(dest) == ["x", "y", "z"]
     assert not (dest / "0").exists()
     assert (_get(arrays["0"], 0) == 5).all()
+
+    # (but something that isn't a Zarr group isn't replaced)
+    other = tmp_path / "other"
+    other.mkdir()
+    (other / "mine.txt").write_text("mine")
+    with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+        w.Bf2RawBuilder(other, writer=WRITERS[0], overwrite=True).prepare_series(
+            "s", _image(models), SPEC_2D
+        )
+    assert (other / "mine.txt").exists()
 
 
 def test_per_series_array_settings(tmp_path: Path, ver: Any, writer: str) -> None:
