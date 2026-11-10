@@ -8,7 +8,7 @@ title: Guide to OME-Zarr
 <script type="module" src="/javascripts/ome_explorer.js"></script>
 
 !!! tip "What you'll learn"
-    This guide attempts to demystify the **OME-Zarr (OME-Zarr)** specification and shows
+    This guide attempts to demystify the **OME-Zarr** specification and shows
     you how to work with it using yaozarrs.  It is designed to answer common questions
     and confusions encountered in the community.
 
@@ -107,8 +107,8 @@ imaging datasets.
 
 An **Image** is the fundamental building block of OME-Zarr.
 
-As of v0.6 (and since v0.4), a single image may have **no less than 2 and no
-more than 5 dimensions**, and may store multiple resolution levels.
+Since v0.4, a single image may have **no less than 2 and no more than 5
+dimensions**, and may store multiple resolution levels.
 
 - **Spatial dimensions**: X, Y, optionally Z
 - **Time**: T (temporal axis)
@@ -121,11 +121,6 @@ more than 5 dimensions**, and may store multiple resolution levels.
     than 5 dimensions in OME-Zarr.  You may use the transitional
     `bioformats2raw.layout` to store multiple images in a single zarr group.
     See [Working with Collections](#working-with-collections)
-
-    If the extra dimension is *where* each image was taken (stage positions,
-    views from different angles, etc...), v0.6 also lets you describe how the
-    images relate to each other in space with a *scene*.  See [Working with
-    Scenes](#working-with-scenes).
 
     See also: an RFC ("request for comments") proposing a relaxation of this
     restriction: [RFC-3](https://ngff.openmicroscopy.org/rfc/3/index.html)
@@ -188,10 +183,6 @@ more than 5 dimensions**, and may store multiple resolution levels.
 
     - **<=v0.4**: "multiscales" metadata directly in root of `.zattrs` files
     - **>=v0.5**: "multiscales" metadata in `zarr.json` under `attributes.ome` namespace
-
-    Between v0.5 and v0.6, the storage is the same (Zarr v3). The changes are all
-    in the metadata, mostly in how axes and transformations are described (see
-    below).
 
 ---
 
@@ -261,10 +252,10 @@ Axes define the dimensions of your image data. Starting with v0.4, axes are
           samples are meaningful, so interpolating along it makes sense (space
           and time usually are).
         - **`longName`** (optional): a longer name or description of the axis.
-        - Besides `space`, `time` and `channel`, the spec also suggests the
-          `type`s `array`, `coordinate` and `displacement` (the latter two
-          are used by [vector fields](coordinate_systems.md#transformation-types){ data-preview }).
-          Other strings are still allowed for custom types.
+        - `type` **SHOULD** be one of `space`, `time`, `channel`, `array`,
+          `coordinate` or `displacement` (the last two are used by [vector
+          fields](coordinate_systems.md#transformation-types){ data-preview }),
+          but other strings are allowed for custom types.
         - Axis names **MUST** be non-empty, and unique *within their coordinate
           system*.
 
@@ -427,10 +418,10 @@ spatial offsets.
         - **MUST** have exactly one transformation per dataset: a `scale`, an
           `identity`, or a `sequence` of a scale followed by a translation
         - Its `input` **MUST** have a `path` matching the dataset's `path`, and
-          should omit `name`
+          **SHOULD** omit `name`
         - Its `output` **MUST** have the `name` of a coordinate system in
-          `coordinateSystems`, the same one for every dataset, and should omit
-          `path`
+          `coordinateSystems`, the same one for every dataset, and **SHOULD**
+          omit `path`
         - Parameter lengths **MUST** match the number of axes
         - The scale gives the pixel size in physical units (or the time step).
           If that isn't known (or doesn't apply) for an axis, the value **MUST**
@@ -442,10 +433,7 @@ spatial offsets.
         the coordinate system and every level's transformation for you (see
         [`DimSpec`][yaozarrs.DimSpec]{ data-preview }).
 
-    !!! info "`dimension_names` are no longer required"
-        v0.5 required `dimension_names` in each array's `zarr.json`; v0.6 does
-        not mention them.  (yaozarrs still writes them, as other Zarr tools find
-        them useful.)
+    v0.6 doesn't require `dimension_names` (yaozarrs still writes them).
 
     For other transformation types, label links and scenes, see [Coordinate
     Systems & Transformations](coordinate_systems.md).
@@ -563,8 +551,7 @@ They are represented as a special group named "labels/" within an image group.
     
     Conforming readers must *search* for the `labels/` group within an image
     group to discover it: its presence is not indicated in the parent image
-    metadata.  (In v0.6, an image *may* refer to one of its label images, in an
-    optional transformation, but doesn't have to.)
+    metadata.
 
 ??? example "Label Structure and Code"
 
@@ -795,7 +782,7 @@ segmentation tool wrote labels for a crop of the image, with the corner of the
 crop as its origin.  Rather than rewriting the label image's metadata, you can add
 a transformation to the *parent image's* multiscale `coordinateTransformations`,
 linking its intrinsic coordinate system to the label image's (referenced by `name`
-*and* `path`, relative to the image group):
+*and* `path`, relative to the image group).  For a `z, y, x` image:
 
 ```json
 {
@@ -813,8 +800,7 @@ linking its intrinsic coordinate system to the label image's (referenced by `nam
 
 Here, a point in the `cells` label image's `physical` coordinate system, shifted
 by `(0, 100, 50)`, gives the matching point in the image's own `physical`
-coordinate system.  (Either direction is allowed: the image's intrinsic
-coordinate system may be the `input` or the `output`.)
+coordinate system.
 
 !!! warning "Only simple transformations"
     A transformation to a label image **MUST** be an `identity`, `scale`,
@@ -1147,6 +1133,8 @@ Wells list the fields of view (images) they contain:
     well = v05.Well(well=well_def)
     ```
 
+    A field of view's `path` **MUST** be alphanumeric and unique within the well.
+
 === "v0.4"
 
     **Spec JSON (`.zattrs` in well directory):**
@@ -1179,6 +1167,8 @@ Wells list the fields of view (images) they contain:
 
     well = v04.Well(well=well_def)
     ```
+
+    A field of view's `path` **MUST** be alphanumeric and unique within the well.
 
 | Field | Requirement | Description |
 |-------|-------------|-------------|
@@ -1344,12 +1334,9 @@ other.  For example:
 - The same sample imaged from several angles (e.g. multiview light sheet)
 - Images from different instruments (or modalities), registered onto each other
 
-A scene group's `zarr.json` holds `scene` metadata, describing **transformations between the coordinate systems of
-its images**, and each image is a normal multiscale image group inside it.
-
-!!! tip "Not sure what a coordinate system is?"
-    Scenes build on the coordinate systems and transformations of v0.6.  If those are new to you, start with [Coordinate Systems &
-    Transformations](coordinate_systems.md), then come back here.
+A scene group's `zarr.json` holds `scene` metadata, describing transformations
+between the coordinate systems of its images, and each image is a normal
+multiscale image group inside it.
 
 ### Directory Structure
 
@@ -1410,16 +1397,19 @@ contain `coordinateSystems` of its own.  Here, two tiles are placed in a shared
 }
 ```
 
-Each `input` and `output` refers to a coordinate system by `name`:
+Each `input` and `output` **MUST** refer to a coordinate system by `name`:
 
-- With a `path`, it's a coordinate system of the image at that `path`
-  (relative to the scene group).  Here, `physical` is the [intrinsic coordinate
-  system](coordinate_systems.md#the-intrinsic-coordinate-system){ data-preview } of each tile.
+- With a `path` (required for an image's coordinate system), it's a coordinate
+  system of the image at that `path` (relative to the scene group).  Here,
+  `physical` is the [intrinsic coordinate
+  system](coordinate_systems.md#the-intrinsic-coordinate-system){ data-preview }
+  of each tile.
 - Without a `path`, it's one of the scene's own `coordinateSystems` (here,
   `stage`).
 
 The second transformation says "a point in `tile_1`'s physical coordinates,
-shifted by 270 µm along x, is that point's position on the stage".
+shifted by 270 µm along x, is that point's position on the stage".  (The tiles
+below are 300 µm wide, so they overlap by 30 µm.)
 
 **yaozarrs Code:**
 
@@ -1479,15 +1469,9 @@ scene = v06.Scene(
     [`SceneBuilder`][yaozarrs.write.v06.SceneBuilder]{ data-preview }.
 
 !!! warning "Scene rules"
-    - In a scene, both `input` and `output` **MUST** have a `name`.  A `path`
-      is required when the coordinate system belongs to an image, and may be
-      left out when it's one of the scene's own.
-    - All of the coordinate systems (the scene's and its images') **MUST** be
-      [connected](coordinate_systems.md#putting-it-together-the-transformation-graph){ data-preview }
-      by transformations.
-    - A transformation's parameters **MUST** fit the coordinate systems it
-      links (e.g. a `translation` between two 2D coordinate systems has 2
-      values).
+    All of the coordinate systems (the scene's and its images') **MUST** be
+    [connected](coordinate_systems.md#putting-it-together-the-transformation-graph){ data-preview }
+    by transformations.
 
 !!! tip "Default coordinate system"
     If a viewer picks a default coordinate system to display a scene in, the
@@ -1497,8 +1481,8 @@ scene = v06.Scene(
 
 ??? question "Linking images directly"
     A transformation may also link one image directly to another (both with a
-    `path`), with no scene coordinate system in between.  This is natural for
-    registration, where you map a "moving" image onto a "fixed" one:
+    `path`), with no scene coordinate system in between, e.g. for registration,
+    mapping a "moving" image onto a "fixed" one:
 
     ```json
     {

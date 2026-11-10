@@ -2,7 +2,7 @@
 
 Specification: <https://ngff.openmicroscopy.org/specifications/0.6/>
 
-Schema: <https://github.com/ome/ngff-spec/tree/77be725697ec3a4796b0947457ccd6bfa70c387d/schemas>
+Schema: <https://github.com/ome/ngff-spec/tree/89da1da5b0491f83b7cdde7d123aef763a457029/schemas>
 
 !!! tip "Coming from v0.5?"
     In v0.6, axes live in named [coordinate systems](#coordinate-systems), and

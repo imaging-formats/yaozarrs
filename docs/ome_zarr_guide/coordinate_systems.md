@@ -54,10 +54,9 @@ Coordinate systems are defined in two places:
     `z, y, x` axes in micrometers, but a point at `(0, 0, 0)` in one has nothing
     to do with `(0, 0, 0)` in the other.
 
-    A coordinate system is identified by its `name` *and where it is defined*
-    (which `zarr.json`).  The spec says analyses that combine images, labels,
-    ROIs etc. **SHOULD** make sure they are in the same coordinate system (or can
-    be transformed into one) first.
+    A coordinate system is identified by its `name` *and* the `zarr.json` it's
+    in.  Analyses that combine images, labels, ROIs etc. **SHOULD** first check
+    that they share one (or can be transformed into one).
 
 ---
 
@@ -87,7 +86,8 @@ x_physical = 0.5 * x_pixels
 Every transformation has a `type`, which says what it does and which other
 fields it needs (here: `scale`).  It may also have a `name`, to identify
 it.  The [Transformation types](#transformation-types) section
-lists them all.
+lists them all.  (Transformations nested inside a `sequence`, `bijection` or
+`byDimension` leave out `input` and `output`.)
 
 !!! warning "Transformations point from `input` to `output`"
     Transformations map *points* from the input space to the output space
@@ -96,9 +96,6 @@ lists them all.
     each pixel of the output, where should it sample A?  For simple
     transformations (scale, translation, rotation...) the viewer can compute
     that inverse itself.
-
-    See also the [`bijection`](#transformation-types) type, which stores both
-    directions explicitly.
 
 ### Referring to coordinate systems
 
@@ -110,17 +107,15 @@ fields:
   `"labels/cells"`, or `"tile_0"`).  If the `path` is left out (or `null`), the
   coordinate system is in the same `zarr.json`.
 
-Together, `name` and `path` always point at exactly one coordinate system.
-Which of them are required depends on where the transformation is stored:
+Together, `name` and `path` point at exactly one coordinate system (or, for a
+dataset's `input`, one array).  Which of them are required depends on where the
+transformation is stored:
 
 | Where it's stored | `input` | `output` |
 |-------------------|---------|----------|
 | multiscales > datasets | `{"path": "<dataset path>"}` | `{"name": "physical"}` |
 | multiscales > coordinateTransformations | `{"name": "physical"}` | `{"name": "other"}` <br> or <br> `{"name": "physical", "path": "labels/cells"}` |
 | scene > coordinateTransformations | `{"name": "physical", "path": "imageA"}` | `{"name": "physical", "path": "imageB"}` |
-
-(The first row is special: a dataset's `input` is the dataset's *array*
-itself, referenced by its `path`.)
 
 ---
 
@@ -197,7 +192,8 @@ needs a translation of:
 translation = (pixel size at this level - pixel size at level 0) / 2
 ```
 
-(plus level 0's own translation, if it has one).  Here: `(1.0 - 0.5) / 2 = 0.25`.  Try it below: hover over a pixel to see where its
+(plus level 0's own translation, if it has one).  Here:
+`(1.0 - 0.5) / 2 = 0.25`.  Try it below: hover over a pixel to see where its
 center is, and toggle the translation to see what happens without it.
 
 <ome-pixel-grid></ome-pixel-grid>
@@ -273,13 +269,9 @@ coordinate systems by `name` alone.
 ## Putting it together: the transformation graph
 
 If you draw every coordinate system as a dot, and every transformation as an
-arrow between two dots, you get a **graph**.  This graph **MUST** be connected:
-
-!!! important "The graph MUST be connected"
-    Any two coordinate systems (in the multiscales and scene metadata) **MUST**
-    be linked by a path of one or more transformations: either directly, or
-    through other coordinate systems.  They don't *all* need to link to each
-    other directly.
+arrow between two dots, you get a **graph**.  Any two coordinate systems (in
+the multiscales and scene metadata) **MUST** be linked by a path of one or more
+transformations, though not necessarily directly.
 
 To get from any coordinate system to any other, follow the arrows (or walk them
 backwards, where they can be inverted), composing the
@@ -346,16 +338,19 @@ ms = v06.Multiscale.from_dims(
 print(ms.intrinsic_coordinate_system.name)  # "intrinsic"
 
 # add a second coordinate system, rotated 90 degrees in the yx plane
-data = ms.model_dump(by_alias=True)
-data["coordinateSystems"].append({**data["coordinateSystems"][0], "name": "rotated"})
-data["coordinateTransformations"] = [
-    v06.RotationTransformation(
-        rotation=[[1, 0, 0], [0, 0, -1], [0, 1, 0]],
-        input={"name": "intrinsic"},
-        output={"name": "rotated"},
-    ).model_dump(by_alias=True)
-]
-image = v06.Image(multiscales=[v06.Multiscale.model_validate(data)])
+intrinsic = ms.intrinsic_coordinate_system
+ms = v06.Multiscale(
+    coordinateSystems=[intrinsic, intrinsic.model_copy(update={"name": "rotated"})],
+    datasets=ms.datasets,
+    coordinateTransformations=[
+        v06.RotationTransformation(
+            rotation=[[1, 0, 0], [0, 0, -1], [0, 1, 0]],
+            input={"name": "intrinsic"},
+            output={"name": "rotated"},
+        )
+    ],
+)
+image = v06.Image(multiscales=[ms])
 ```
 
 Things that need the rest of the hierarchy (that a `path` points to a real
@@ -364,12 +359,10 @@ Zarr array has the right shape...) are checked by
 [`yaozarrs.validate_zarr_store`][]{ data-preview }.
 
 !!! note "Disconnected coordinate systems in a single image"
-    The "connected graph" rule is about the multiscales and the scene metadata
-    *combined*, so a scene could link two coordinate systems of an image that
-    the image itself doesn't.  For that reason, when
-    [`validate_zarr_store`][yaozarrs.validate_zarr_store]{ data-preview } checks an image on
-    its own (not as part of a scene), it only *warns* about coordinate
-    systems that aren't linked to anything; inside a scene, it's an error.
+    An image on its own may have unlinked coordinate systems (a scene could
+    still link them), so
+    [`validate_zarr_store`][yaozarrs.validate_zarr_store]{ data-preview } only
+    *warns* about that; inside a scene, it's an error.
 
 ---
 

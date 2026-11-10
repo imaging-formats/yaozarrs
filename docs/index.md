@@ -219,8 +219,7 @@ You can create OME-Zarr metadata objects using the pydantic models in
 
     For the common case of creating multiscale images, you can use the
     [`yaozarrs.DimSpec`][]{ data-preview } convenience class to simplify axis and transformation
-    creation.  It hides the differences between versions: the same code works
-    for `v04`, `v05` and `v06`.
+    creation.  The same code works for `v04`, `v05` and `v06`.
 
     ```python
     from yaozarrs import DimSpec, v06  # (or v04, v05)
@@ -296,7 +295,8 @@ print(type(convert_version(image, "0.6")))
 ```
 
 Metadata that the target version can't express is dropped with a
-`ConversionWarning`.  This converts metadata only: no store is read or written.
+`ConversionWarning`, or raises if it can't be dropped (e.g. a v0.6 `Scene`).
+This converts metadata only: no store is read or written.
 
 ### Open and validate a store
 

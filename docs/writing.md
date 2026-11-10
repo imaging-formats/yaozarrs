@@ -6,9 +6,9 @@ title: Writing OME-Zarr
 # Writing OME-Zarr
 
 [`yaozarrs.write.v05`][] and [`yaozarrs.write.v06`][] write complete OME-Zarr
-stores (metadata *and* array data) to a local directory.  They have the same
-functions: use the one that matches the version of your metadata models.  v0.6
-adds [`write_scene`][yaozarrs.write.v06.write_scene] and
+stores (metadata *and* array data) to a local directory.  Both have the same
+functions (use the one matching your metadata models), and v0.6 adds
+[`write_scene`][yaozarrs.write.v06.write_scene] and
 [`SceneBuilder`][yaozarrs.write.v06.SceneBuilder], for
 [scenes](ome_zarr_guide/index.md#working-with-scenes).
 
@@ -19,9 +19,9 @@ Writing needs an array backend, see [Array writer backends](#array-writer-backen
 1. Build the metadata model that matches your data (see the [Guide to
    OME-Zarr](ome_zarr_guide/index.md)): an `Image`, a `Plate`, a `Bf2Raw`
    collection, or (v0.6) a `Scene`.
-2. Pick a [high level `write_*` function](#high-level-functions), or a
-   [lower level builder](#builders).
-3. Call it with your model and your data.
+2. Pass your model and data to a [high level `write_*`
+   function](#high-level-functions), or a [lower level
+   builder](#builders).
 
 Each `Dataset` (resolution level) in an image's multiscale becomes one array in
 the store, so functions that take arrays (or `(shape, dtype)` pairs) expect one
@@ -63,9 +63,7 @@ the store.
 ## Builders
 
 When you don't have all the data up front, or want more control over how it's
-written, the lower level functions *prepare* the hierarchy: they write the
-metadata, create empty arrays, and give them back to you (keyed by path) to fill
-however you like (chunk by chunk, in parallel, ...).
+written, use `prepare_image` or a builder:
 
 | Function | Prepares | |
 | -------- | -------- | - |
@@ -75,13 +73,15 @@ however you like (chunk by chunk, in parallel, ...).
 | `Bf2RawBuilder` | a bioformats2raw collection | [v0.5][yaozarrs.write.v05.Bf2RawBuilder] · [v0.6][yaozarrs.write.v06.Bf2RawBuilder] |
 | `SceneBuilder` | a scene of images | [v0.6][yaozarrs.write.v06.SceneBuilder] |
 
-The builders can be used in two ways:
+`prepare_image` writes the metadata, creates empty arrays, and gives them back
+to you (keyed by path) to fill however you like (chunk by chunk, in parallel,
+...).  The builders can be used in two ways:
 
 - **incremental**: write one well, label or image at a time (e.g.
-  `PlateBuilder.write_well()`), and the parent metadata is updated after each
-  one.
+  `PlateBuilder.write_well()`), and the parent's metadata (the plate, labels, or
+  bioformats2raw series list) is updated after each one.
 - **prepare-only**: register everything with `add_*()`, then `prepare()` creates
-  the whole hierarchy with empty arrays.
+  the whole hierarchy with empty arrays, as `prepare_image` does.
 
 For plates and bioformats2raw collections, the builders are usually the easier
 choice.
