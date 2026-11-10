@@ -649,9 +649,15 @@ def test_bf2raw_series_errors_propagate(
         validate_zarr_store(path)
 
 
-def test_bf2raw_invalid_ome_group_uses_numbered_paths(write_demo_ome: Callable) -> None:
+@pytest.mark.parametrize(
+    "key, value",
+    [(("attributes",), {}), (("attributes", "ome", "series"), "not-a-list")],
+)
+def test_bf2raw_invalid_ome_group_uses_numbered_paths(
+    key: tuple[str, ...], value: Any, write_demo_ome: Callable
+) -> None:
     path = write_demo_ome("bioformats2raw", write_ome_group=True)
-    update_meta("OME", ("attributes",), {})(path)
+    update_meta("OME", key, value)(path)
     validate_zarr_store(path)
 
 
@@ -662,7 +668,7 @@ def _bf2raw_plate(write_demo_ome: Callable) -> tuple[Path, list[str]]:
     return path, bioformats2raw_series(path)
 
 
-def _write_series(path: Path, series: list[str]) -> None:
+def _write_series(path: Path, series: list[str] | str) -> None:
     (path / "OME").mkdir()
     ome = {"version": "0.5", "series": series}
     doc = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
@@ -681,6 +687,12 @@ def test_bf2raw_plate_series_mismatch_warns(write_demo_ome: Callable) -> None:
     _write_series(path, images[1:])
     with pytest.warns(StorageValidationWarning, match="series_plate_mismatch"):
         validate_zarr_store(path)
+
+
+def test_bf2raw_plate_invalid_series_ignored(write_demo_ome: Callable) -> None:
+    path, _ = _bf2raw_plate(write_demo_ome)
+    _write_series(path, "not-a-list")
+    validate_zarr_store(path)  # (no series_plate_mismatch warning)
 
 
 def test_bf2raw_plate_series_bad_path(write_demo_ome: Callable) -> None:
