@@ -30,7 +30,7 @@ try:
 except ImportError:
     connection_exceptions = ()
 
-from yaozarrs import v04, v05, validate_zarr_store
+from yaozarrs import bioformats2raw_series, v04, v05, validate_zarr_store
 from yaozarrs._errors import (
     ErrorDetails,
     StorageErrorType,
@@ -653,6 +653,42 @@ def test_bf2raw_invalid_ome_group_uses_numbered_paths(write_demo_ome: Callable) 
     path = write_demo_ome("bioformats2raw", write_ome_group=True)
     update_meta("OME", ("attributes",), {})(path)
     validate_zarr_store(path)
+
+
+def _bf2raw_plate(write_demo_ome: Callable) -> tuple[Path, list[str]]:
+    """A bioformats2raw plate (without an `OME` group), and its image paths."""
+    path = write_demo_ome("plate")
+    update_meta("", ("attributes", "ome", "bioformats2raw.layout"), 3)(path)
+    return path, bioformats2raw_series(path)
+
+
+def _write_series(path: Path, series: list[str]) -> None:
+    (path / "OME").mkdir()
+    ome = {"version": "0.5", "series": series}
+    doc = {"zarr_format": 3, "node_type": "group", "attributes": {"ome": ome}}
+    (path / "OME" / "zarr.json").write_text(json.dumps(doc))
+
+
+def test_bf2raw_plate_series(write_demo_ome: Callable) -> None:
+    path, images = _bf2raw_plate(write_demo_ome)
+    validate_zarr_store(path)
+    _write_series(path, images[::-1])  # (any order)
+    validate_zarr_store(path)
+
+
+def test_bf2raw_plate_series_mismatch_warns(write_demo_ome: Callable) -> None:
+    path, images = _bf2raw_plate(write_demo_ome)
+    _write_series(path, images[1:])
+    with pytest.warns(StorageValidationWarning, match="series_plate_mismatch"):
+        validate_zarr_store(path)
+
+
+def test_bf2raw_plate_series_bad_path(write_demo_ome: Callable) -> None:
+    path, images = _bf2raw_plate(write_demo_ome)
+    _write_series(path, [*images, "nope"])
+    with pytest.warns(StorageValidationWarning, match="series_plate_mismatch"):
+        with pytest.raises(StorageValidationError, match="series_path_not_found"):
+            validate_zarr_store(path)
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])

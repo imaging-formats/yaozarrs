@@ -18,10 +18,16 @@ from urllib.parse import urljoin
 from pydantic import ValidationError
 
 from yaozarrs._errors import StorageErrorType, ValidationResult
-from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
+from yaozarrs._zarr import (
+    ZarrArray,
+    ZarrGroup,
+    _numbered_children,
+    _open_group_at,
+    _series_model,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Collection, Mapping, Sequence
 
     from yaozarrs._errors import ErrorDetails
 
@@ -494,6 +500,7 @@ class StorageValidator:
         self._prefetch_plate_hierarchy(
             zarr_group, [well.path for well in plate_model.plate.wells]
         )
+        images: list[str] = []  # (paths of the images in the valid wells)
         for well_idx, well in enumerate(plate_model.plate.wells):
             well_loc = (*loc_prefix, "plate", "wells", well_idx)
 
@@ -524,6 +531,9 @@ class StorageValidator:
 
             well_model = self._child_model(well_group)
             if isinstance(well_model, self.Well):
+                images.extend(
+                    f"{well.path}/{img.path}" for img in well_model.well.images
+                )
                 result = result.merge(self.visit_well(well_group, well_model, well_loc))
                 result = result.merge(
                     self._validate_well_acquisitions(plate_model, well_model, well_loc)
@@ -536,7 +546,42 @@ class StorageValidator:
                     ctx={"path": well.path, **_invalid_ctx(well_model)},
                 )
 
+        if plate_model.bioformats2raw_layout is not None:
+            result = result.merge(
+                self._visit_plate_series(zarr_group, images, (*loc_prefix, "OME"))
+            )
         return result
+
+    def _visit_plate_series(
+        self, zarr_group: ZarrGroup, plate_images: list[str], loc_prefix: Loc
+    ) -> ValidationResult:
+        """Check the `series` list of a bioformats2raw plate, if it has one."""
+        result = ValidationResult()
+        try:
+            series = _series_model(zarr_group, version=self.VERSION, strict=self.strict)
+        except ValueError:
+            series = None  # (as in `visit_bioformats2raw`)
+        if series is None:
+            return result
+
+        # Matching "series" metadata SHOULD be provided for tools that are unaware of
+        # the "plate" specification.
+        if sorted(series.series) != sorted(plate_images):
+            in_series, in_plate = set(series.series), set(plate_images)
+            missing = [p for p in plate_images if p not in in_series]
+            extra = [p for p in series.series if p not in in_plate]
+            result.add_warning(
+                StorageErrorType.series_plate_mismatch,
+                (*loc_prefix, "series"),
+                "The series list doesn't match the images of the plate "
+                f"(missing: {missing}, not in the plate: {extra})",
+                ctx={"missing": missing, "extra": extra},
+            )
+        # "series" MUST be a list of string objects, each of which is a path to an
+        # image group. (the plate's images have been validated already)
+        return result.merge(
+            self.visit_series(zarr_group, series, loc_prefix, skip=plate_images)
+        )
 
     def _validate_well_acquisitions(
         self, plate_model: Any, well_model: Any, loc_prefix: Loc
@@ -638,23 +683,15 @@ class StorageValidator:
         """
         result = ValidationResult()
 
-        zarr_group.prefetch_children(["OME"])
-        if isinstance(ome_group := zarr_group.get("OME"), ZarrGroup):
-            try:
-                ome_model = self._parse_ome(ome_group.attrs)
-            except ValueError:
-                ome_model = None  # (fall back to the numbered directories)
-            if isinstance(ome_model, self.Series):
-                return self.visit_series(zarr_group, ome_model, (*loc_prefix, "OME"))
+        try:
+            series = _series_model(zarr_group, version=self.VERSION, strict=self.strict)
+        except ValueError:
+            series = None  # (fall back to the numbered directories)
+        if series is not None:
+            return self.visit_series(zarr_group, series, (*loc_prefix, "OME"))
 
         # Without series metadata, find consecutively numbered directories (0, 1, ...)
-        # FIXME: ... do better for searching
-        numbered_paths = []
-        for i in range(1000):  # reasonable upper limit
-            if str(i) not in zarr_group:
-                break
-            numbered_paths.append(str(i))
-
+        numbered_paths = _numbered_children(zarr_group)
         if not numbered_paths:
             result.add_error(
                 StorageErrorType.bf2raw_no_images,
@@ -663,10 +700,7 @@ class StorageValidator:
             )
             return result
 
-        # Prefetch all numbered path metadata
-        zarr_group.prefetch_children(numbered_paths)
-
-        # Validate each numbered directory as image group
+        # Validate each numbered directory as image group (already prefetched)
         for path in numbered_paths:
             image_loc = (*loc_prefix, path)
 
@@ -697,12 +731,17 @@ class StorageValidator:
         return result
 
     def visit_series(
-        self, zarr_group: ZarrGroup, ome_model: Any, loc_prefix: Loc
+        self,
+        zarr_group: ZarrGroup,
+        ome_model: Any,
+        loc_prefix: Loc,
+        skip: Collection[str] = (),
     ) -> ValidationResult:
         """Validate an OME group with series metadata.
 
         The series attribute is a list of paths to image groups. Each path
-        should point to a valid image group with multiscales metadata.
+        should point to a valid image group with multiscales metadata.  Paths in
+        `skip` (already validated) aren't checked.
 
         IMPORTANT! `zarr_group` here is the *parent* of the OME group, not the
         OME group itself.
@@ -717,8 +756,11 @@ class StorageValidator:
         ```
         """
         result = ValidationResult()
-        zarr_group.prefetch_children(ome_model.series)
+        skip = set(skip)
+        zarr_group.prefetch_children(p for p in ome_model.series if p not in skip)
         for series_idx, series_path in enumerate(ome_model.series):
+            if series_path in skip:
+                continue
             series_loc = (*loc_prefix, "series", series_idx)
 
             series_group = zarr_group.get(series_path)

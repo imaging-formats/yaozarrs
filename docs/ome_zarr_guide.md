@@ -841,8 +841,25 @@ This bioformats2raw layout described in the NGFF spec, is described below:
 
 !!! info "Image Location Rules"
     1. If `plate` metadata exists → use plate structure
-    2. If `series` attribute exists in `OME/.zattrs` → paths must match OME-XML Image element order
+    2. If `series` attribute exists in the `OME` group → paths must match OME-XML Image element order
     3. Otherwise → consecutively numbered groups: `0/`, `1/`, `2/`...
+
+[`yaozarrs.bioformats2raw_series`][] applies these rules for you, and returns the
+image paths in series order:
+
+<!-- no-test -->
+
+```python
+from yaozarrs import bioformats2raw_series, open_group
+
+root = open_group("path/to/collection.ome.zarr")
+paths = bioformats2raw_series(root)
+root.prefetch_children(paths)  # (1)!
+images = {path: root[path].ome_metadata() for path in paths}
+```
+
+1. [`ZarrGroup.prefetch_children`][yaozarrs._zarr.ZarrGroup.prefetch_children]
+   fetches the metadata of all the images at once (in one batch, on remote stores).
 
 ---
 
