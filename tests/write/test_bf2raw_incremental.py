@@ -410,6 +410,69 @@ def test_overwrite(tmp_path: Path, ver: Any) -> None:
     assert (other / "mine.txt").exists()
 
 
+def test_leftover_temp_files_are_harmless(tmp_path: Path, ver: Any) -> None:
+    # (as left by a process killed mid-write)
+    models, w = ver
+    dest = tmp_path / "out.zarr"
+    _bf2raw_store(w, models, dest, "0")
+    for directory in (dest, dest / "OME"):
+        (directory / f".zarr.json.{'0' * 8}.tmp").write_text("{")
+    yaozarrs.validate_zarr_store(dest)
+    w.Bf2RawBuilder(dest, writer=WRITERS[0]).prepare_series(
+        "1", _image(models), SPEC_2D
+    )
+    yaozarrs.validate_zarr_store(dest)
+
+
+def test_metadata_is_replaced_into_place(
+    tmp_path: Path, ver: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # (each file is written complete next to it, then renamed over it)
+    models, w = ver
+    dest = tmp_path / "out.zarr"
+    replaced: list[Path] = []
+    real = _groups._replace
+
+    def spy(src: Path, dst: Path) -> None:
+        assert src.parent == dst.parent
+        if dst.suffix == ".json":
+            json.loads(src.read_bytes())
+        replaced.append(dst)
+        real(src, dst)
+
+    monkeypatch.setattr(_groups, "_replace", spy)
+    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0], ome_xml="<OME/>")
+    builder.prepare_series("0", _image(models), SPEC_2D)
+    builder.prepare_series("1", _image(models), SPEC_2D)
+    assert {dest / "zarr.json", dest / "OME" / "METADATA.ome.xml"} <= set(replaced)
+    assert replaced.count(dest / "OME" / "zarr.json") == 2
+
+
+@pytest.mark.parametrize("case", ["win32", "linux", "interrupted"])
+def test_failed_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    # (on Windows, a file another program has open can't be replaced: retry, then
+    # say; and whatever fails, the file is untouched, with no temporary file left)
+    target = tmp_path / "zarr.json"
+    target.write_text("old")
+    monkeypatch.setattr(_groups.sys, "platform", "win32" if case == "win32" else "")
+    monkeypatch.setattr(_groups.time, "sleep", lambda _: None)
+    error = KeyboardInterrupt() if case == "interrupted" else PermissionError(13, "")
+    monkeypatch.setattr(_groups.os, "replace", replace := Mock(side_effect=error))
+    with pytest.raises(type(error)) as info:
+        _groups._atomic_write(target, "new")
+    if case == "win32":
+        assert replace.call_count == 8
+        assert "open in another program" in str(info.value)
+        assert info.value.__cause__ is error
+    else:
+        assert replace.call_count == 1
+        assert info.value is error
+    assert target.read_text() == "old"
+    assert [p.name for p in tmp_path.iterdir()] == ["zarr.json"]
+
+
 def test_per_series_array_settings(tmp_path: Path, ver: Any, writer: str) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"

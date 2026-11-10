@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeGuard, TypeVar, ca
 
 from ._arrays import _get_create_func, _resolve_chunks, _write_to_array
 from ._groups import (
+    _atomic_write,
     _create_zarr3_group,
     _ensure_parent_groups,
     _rewrite_zarr3_group,
@@ -779,7 +780,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
     def _write_ome_xml(self) -> None:
         if self._ome_xml is not None:
-            (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
+            _atomic_write(self._dest / "OME" / "METADATA.ome.xml", self._ome_xml)
 
     def _ensure_initialized(self) -> None:
         """Create the root directory (replacing what's there, if `overwrite`).
