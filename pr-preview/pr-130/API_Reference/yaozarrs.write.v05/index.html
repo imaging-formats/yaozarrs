@@ -1665,10 +1665,7 @@ an exception will be raised instead.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/yaozarrs/write/v05/_write.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1074</span>
-<span class="normal">1075</span>
-<span class="normal">1076</span>
-<span class="normal">1077</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1077</span>
 <span class="normal">1078</span>
 <span class="normal">1079</span>
 <span class="normal">1080</span>
@@ -1682,7 +1679,10 @@ an exception will be raised instead.</p>
 <span class="normal">1088</span>
 <span class="normal">1089</span>
 <span class="normal">1090</span>
-<span class="normal">1091</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">1091</span>
+<span class="normal">1092</span>
+<span class="normal">1093</span>
+<span class="normal">1094</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2699,10 +2699,7 @@ an exception will be raised instead.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/yaozarrs/write/v05/_write.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">963</span>
 <span class="normal">964</span>
 <span class="normal">965</span>
 <span class="normal">966</span>
@@ -2720,7 +2717,10 @@ an exception will be raised instead.</p>
 <span class="normal">978</span>
 <span class="normal">979</span>
 <span class="normal">980</span>
-<span class="normal">981</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3571,6 +3571,8 @@ images in a single hierarchy. It includes:</p>
 root <code>zarr.json</code> is written with the first series), so the store is a valid
 collection after every call.  A collection already at <code>dest</code> (of this version,
 with a <code>series</code> list) is added to, unless <code>overwrite</code>.</p>
+<p>A builder isn't thread-safe: create series from one thread (or behind your own
+lock), then write their data from as many threads or processes as you like.</p>
 
 
 <details class="see-also" open>
@@ -3787,10 +3789,7 @@ an exception will be raised instead.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/yaozarrs/write/v05/_write.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">820</span>
-<span class="normal">821</span>
-<span class="normal">822</span>
-<span class="normal">823</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">823</span>
 <span class="normal">824</span>
 <span class="normal">825</span>
 <span class="normal">826</span>
@@ -3808,7 +3807,10 @@ an exception will be raised instead.</p>
 <span class="normal">838</span>
 <span class="normal">839</span>
 <span class="normal">840</span>
-<span class="normal">841</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
