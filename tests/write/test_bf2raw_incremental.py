@@ -290,6 +290,19 @@ def test_name_errors(tmp_path: Path, ver: Any) -> None:
     yaozarrs.validate_zarr_store(dest)
 
 
+@pytest.mark.parametrize(
+    "name", ["OME", "ome/x", "../outside", "a//b", "__x", ".", "x/zarr.json"]
+)
+def test_invalid_names(tmp_path: Path, ver: Any, name: str) -> None:
+    models, w = ver
+    builder = w.Bf2RawBuilder(tmp_path / "out.zarr", writer=WRITERS[0])
+    with pytest.raises(ValueError, match="Invalid"):
+        builder.prepare_series(name, _image(models), SPEC_2D)
+    with pytest.raises(ValueError, match="Invalid"):
+        builder.add_series(name, _image(models), SPEC_2D)
+    assert not list(tmp_path.iterdir())  # (nothing written, inside or out)
+
+
 def test_existing_dest(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"

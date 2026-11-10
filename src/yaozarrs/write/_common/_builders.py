@@ -61,6 +61,20 @@ class _Default(Enum):
     BUILDER = "builder"
 
 
+def _check_image_path(path: str) -> None:
+    # (each part is the name of a node below the parent group: Zarr node names must be
+    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
+    # collide with a group's own metadata)
+    if any(
+        not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
+        for p in path.split("/")
+    ):
+        raise ValueError(
+            f"Invalid image path {path!r}: each part must be a valid Zarr node name "
+            "(non-empty, not only periods, not starting with '__', not 'zarr.json')."
+        )
+
+
 def _is_shape_and_dtype(obj: Any) -> TypeGuard[ShapeAndDType]:
     """Check if object is a (shape, dtype) tuple."""
     return isinstance(obj, tuple) and len(obj) == 2 and isinstance(obj[0], tuple)
@@ -527,8 +541,9 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If a series with this name was already added or written, or if the
-            dataset specs don't match the metadata.
+            If `name` isn't a valid path (or is inside "OME"), if a series with this
+            name was already added or written, or if the dataset specs don't match
+            the metadata.
         FileExistsError
             If `dest` exists and `overwrite` is False (when creating the first
             series), or if something is already at the series' path.
@@ -683,6 +698,12 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         return f"<{self.__class__.__name__}: {total_images} images>"
 
     def _validate_series_name(self, name: str) -> None:
+        _check_image_path(name)
+        if name.split("/")[0].casefold() == "ome":
+            raise ValueError(
+                f"Invalid series name {name!r}: 'OME' is the group of the "
+                "collection's metadata."
+            )
         if name in self._written_series:
             raise ValueError(f"Series '{name}' already exists.")
         if name in self._series:

@@ -57,6 +57,7 @@ from yaozarrs.write._common._builders import (
     PlateBuilderBase,
     _BuilderBase,
     _check_image_args,
+    _check_image_path,
     _check_label_dtypes,
     _Default,
     _prepare_image,
@@ -1639,20 +1640,6 @@ def _label_paths(
     return {
         f"{path}/labels/{name}": label for name, (label, _) in (labels or {}).items()
     }
-
-
-def _check_image_path(path: str) -> None:
-    # (each part is the name of a node below the scene group: Zarr node names must be
-    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
-    # collide with a group's own metadata)
-    if any(
-        not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
-        for p in path.split("/")
-    ):
-        raise ValueError(
-            f"Invalid image path {path!r}: each part must be a valid Zarr node name "
-            "(non-empty, not only periods, not starting with '__', not 'zarr.json')."
-        )
 
 
 def _check_scene(
