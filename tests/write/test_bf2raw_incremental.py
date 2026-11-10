@@ -236,6 +236,24 @@ def test_failed_prepare_adds_nothing(tmp_path: Path, ver: Any) -> None:
     assert _listing(dest) == ["a", "b"]
 
 
+def test_failed_first_series_leaves_nothing(tmp_path: Path, ver: Any) -> None:
+    # (so the same call can simply be run again)
+    models, w = ver
+    dest = tmp_path / "out.zarr"
+    _bf2raw_store(w, models, dest, "0")
+    images = {"s": (_image(models), np.ones((16, 16), "uint8"))}
+    with pytest.MonkeyPatch.context() as mp:
+        # (e.g. Ctrl-C while writing the data)
+        mp.setattr(_builders, "_write_to_array", Mock(side_effect=KeyboardInterrupt))
+        with pytest.raises(KeyboardInterrupt):
+            w.write_bioformats2raw(dest, images, writer=WRITERS[0], overwrite=True)
+    assert not dest.exists()
+
+    w.write_bioformats2raw(dest, images, writer=WRITERS[0], overwrite=True)
+    yaozarrs.validate_zarr_store(dest)
+    assert _listing(dest) == ["s"]
+
+
 def test_failed_root_write(tmp_path: Path, ver: Any) -> None:
     # (if the root zarr.json can't be written, the first series isn't added)
     models, w = ver

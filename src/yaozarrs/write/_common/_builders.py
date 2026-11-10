@@ -697,7 +697,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
     ) -> dict[str, dict[str, Any]]:
         """Create `series` (and write `data`), then list them; return their arrays.
 
-        (If creating any of them fails, what was created of them is deleted.)
+        (If creating any of them fails, what was created of them is deleted, and so is
+        `dest`, if it had no series yet.)
         """
         created: list[Path] = []
         try:
@@ -724,6 +725,11 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         except BaseException:
             for path in created:
                 shutil.rmtree(path, ignore_errors=True)
+            if self._initialized and not self._written_series:
+                # (`dest` is this builder's, and holds no series: leave nothing behind,
+                # so that the same call can simply be run again)
+                shutil.rmtree(self._dest, ignore_errors=True)
+                self._initialized = False
             raise
         return arrays
 
