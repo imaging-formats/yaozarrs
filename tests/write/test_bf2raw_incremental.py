@@ -236,6 +236,23 @@ def test_failed_prepare_adds_nothing(tmp_path: Path, ver: Any) -> None:
     assert _listing(dest) == ["a", "b"]
 
 
+def test_failed_root_write(tmp_path: Path, ver: Any) -> None:
+    # (if the root zarr.json can't be written, the first series isn't added)
+    models, w = ver
+    dest = tmp_path / "out.zarr"
+    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(_builders, "_write_group_json", Mock(side_effect=OSError("full")))
+        with pytest.raises(OSError, match="full"):
+            builder.prepare_series("s", _image(models), SPEC_2D)
+    assert builder.series == ()
+    assert not (dest / "s").exists()
+
+    builder.prepare_series("s", _image(models), SPEC_2D)  # (retry)
+    yaozarrs.validate_zarr_store(dest)
+    assert _listing(dest) == ["s"]
+
+
 def test_name_errors(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"

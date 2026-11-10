@@ -720,11 +720,11 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
                 if data is not None:
                     for arr, values in zip(arrays[name].values(), data, strict=True):
                         _write_to_array(arr, values, progress=progress)
+            self._update_ome_series(series)
         except BaseException:
             for path in created:
                 shutil.rmtree(path, ignore_errors=True)
             raise
-        self._update_ome_series(series)
         return arrays
 
     def _write_ome_xml(self) -> None:
@@ -767,12 +767,12 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             self._write_ome_xml()
         listing = [*self._written_series, *names]
         _rewrite_zarr3_group(self._dest / "OME", self._series_type(series=listing))
-        self._written_series.extend(names)
         if first:
             bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
             ome = bf2raw.model_dump(mode="json", exclude_none=True)
             attrs = {"ome": ome, **(self._extra_attributes or {})}
             _write_group_json(self._dest, attrs, indent=2)
+        self._written_series.extend(names)  # (last: only once it's all written)
 
 
 class PlateBuilderBase(_BuilderBase, Generic[Image]):
