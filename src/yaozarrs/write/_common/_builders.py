@@ -724,7 +724,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             for path in created:
                 shutil.rmtree(path, ignore_errors=True)
             raise
-        self._list_series(series)
+        self._update_ome_series(series)
         return arrays
 
     def _write_ome_xml(self) -> None:
@@ -755,8 +755,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         dest.mkdir(parents=True)
         self._initialized = True
 
-    def _list_series(self, names: Iterable[str]) -> None:
-        """List the (created) series `names` in OME/zarr.json, after the others.
+    def _update_ome_series(self, names: Iterable[str]) -> None:
+        """Add the (created) series `names` to the series list in OME/zarr.json.
 
         The root zarr.json is written with the first series, last: until then, `dest`
         isn't a Zarr group.
