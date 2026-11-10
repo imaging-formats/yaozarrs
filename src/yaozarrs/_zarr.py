@@ -1077,6 +1077,137 @@ def open_group(
     return _open_group_at(mapper)
 
 
+def bioformats2raw_series(
+    group: ZarrGroup | str | os.PathLike | Mapping[str, bytes],
+) -> list[str]:
+    """Return the image paths of a bioformats2raw collection, in series order.
+
+    As the spec prescribes, if the collection is a plate, the plate metadata takes
+    precedence: the paths are those of the images in its wells.  They're in the order
+    of the `series` list in the metadata of the collection's `OME` group if it lists
+    the same images (its order is that of the images in the OME-XML metadata), else
+    well by well.
+
+    Otherwise, the paths come from the `series` list, if present, else they are the
+    consecutively numbered child nodes `0`, `1`, ..., up to the first missing number.
+
+    This only finds the paths: it doesn't check that each one holds a valid image
+    (use [`validate_zarr_store`][yaozarrs.validate_zarr_store] for that).
+
+    Parameters
+    ----------
+    group : ZarrGroup | str | os.PathLike | Mapping[str, bytes]
+        The root group of the collection, or anything `open_group` accepts.
+
+    Returns
+    -------
+    list[str]
+        Paths of the collection's images, relative to `group`. In a valid collection,
+        each path in the list is an image group.
+
+    Raises
+    ------
+    ValueError
+        If `group` isn't a bioformats2raw collection, or if the metadata needed to
+        find its images (a plate's wells, or else the `OME` group's `series` list) is
+        invalid or missing.
+
+    Examples
+    --------
+    Pass an opened group (to share its metadata cache), and prefetch the images before
+    visiting them:
+
+    ```python
+    from yaozarrs import bioformats2raw_series, open_group
+
+    root = open_group("path/to/collection.ome.zarr")
+    paths = bioformats2raw_series(root)
+    root.prefetch_children(paths)  # one batched fetch on remote stores
+    for path in paths:
+        image = root[path].ome_metadata()  # an Image model
+    ```
+    """
+    group = open_group(group)
+    model = group.ome_metadata()
+    if isinstance(model, (v04.Plate, v05.Plate, v06.Plate)):
+        if model.bioformats2raw_layout is None:
+            raise ValueError(f"{group!r} is not a bioformats2raw collection.")
+        version = "0.4" if isinstance(model, v04.Plate) else model.version
+        return _plate_images(group, model, version=version)
+    if not isinstance(model, (v04.Bf2Raw, v05.Bf2Raw, v06.Bf2Raw)):
+        raise ValueError(f"{group!r} is not a bioformats2raw collection.")
+
+    version = "0.4" if isinstance(model, v04.Bf2Raw) else model.version
+    if (series := _series_model(group, version=version)) is not None:
+        return list(series.series)
+    return _numbered_children(group)
+
+
+def _series_model(
+    group: ZarrGroup, *, version: str, strict: bool | None = None
+) -> v04.Series | v05.Series | v06.Series | None:
+    """Return the series list in the `OME` child of a bioformats2raw group.
+
+    `None` if there's no `OME` group, or its metadata has no `series` key (the spec's
+    cue to find the images elsewhere).  Raises `ValueError` if the `OME` group's
+    metadata is invalid.
+    """
+    group.prefetch_children(["OME"])
+    if not isinstance(ome := group.get("OME"), ZarrGroup):
+        return None
+    # (`series` is optional: only validate the metadata if it's there)
+    attrs = ome.attrs if version == "0.4" else ome.attrs.get("ome")
+    if not isinstance(attrs, Mapping) or "series" not in attrs:
+        return None
+    model = ome.ome_metadata(version=version, strict=strict)
+    return model if isinstance(model, (v04.Series, v05.Series, v06.Series)) else None
+
+
+def _plate_images(
+    group: ZarrGroup, plate: v04.Plate | v05.Plate | v06.Plate, *, version: str
+) -> list[str]:
+    """Return the paths of a plate's images.
+
+    In the order of the `series` list if it lists the same images, else well by well.
+    """
+    well_paths = [well.path for well in plate.plate.wells]
+    group.prefetch_children(["OME", *well_paths])  # (one batch)
+    paths: list[str] = []
+    for well_path in well_paths:
+        meta = None
+        if isinstance(well := group.get(well_path), ZarrGroup):
+            meta = well.ome_metadata(version=version)
+        if not isinstance(meta, (v04.Well, v05.Well, v06.Well)):
+            raise ValueError(f"Plate well {well_path!r} has no well metadata.")
+        paths.extend(f"{well_path}/{image.path}" for image in meta.well.images)
+
+    try:
+        series = _series_model(group, version=version)
+    except ValueError:
+        series = None  # (the plate has the images: an invalid `series` isn't needed)
+    if series is not None and sorted(series.series) == sorted(paths):
+        return list(series.series)
+    return paths
+
+
+def _numbered_children(group: ZarrGroup, batch: int = 16) -> list[str]:
+    """Return the children `0`, `1`, ... of `group`, up to the first missing number.
+
+    Children are looked up in batches, starting at `batch` and doubling each time, so
+    `n` children take about `log2(n / batch)` round trips on remote stores (missing
+    keys are cached as missing, so `in` doesn't fetch them again).
+    """
+    found: list[str] = []
+    while True:
+        keys = [str(i) for i in range(len(found), len(found) + batch)]
+        group.prefetch_children(keys)
+        for key in keys:
+            if key not in group:
+                return found
+            found.append(key)
+        batch *= 2
+
+
 # ---------------------------------------------------
 
 
