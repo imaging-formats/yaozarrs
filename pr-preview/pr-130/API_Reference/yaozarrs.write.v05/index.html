@@ -1903,8 +1903,7 @@ pass the array directly without wrapping in a list.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1117</span>
-<span class="normal">1118</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1118</span>
 <span class="normal">1119</span>
 <span class="normal">1120</span>
 <span class="normal">1121</span>
@@ -1949,7 +1948,8 @@ pass the array directly without wrapping in a list.</p>
 <span class="normal">1160</span>
 <span class="normal">1161</span>
 <span class="normal">1162</span>
-<span class="normal">1163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
+<span class="normal">1163</span>
+<span class="normal">1164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2150,8 +2150,7 @@ number of specs doesn't match the metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1165</span>
-<span class="normal">1166</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1166</span>
 <span class="normal">1167</span>
 <span class="normal">1168</span>
 <span class="normal">1169</span>
@@ -2192,7 +2191,8 @@ number of specs doesn't match the metadata.</p>
 <span class="normal">1204</span>
 <span class="normal">1205</span>
 <span class="normal">1206</span>
-<span class="normal">1207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_label</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label_image</span><span class="p">:</span> <span class="n">LabelImage</span><span class="p">,</span>
@@ -2333,8 +2333,7 @@ tensorstore.TensorStore).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1209</span>
-<span class="normal">1210</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1210</span>
 <span class="normal">1211</span>
 <span class="normal">1212</span>
 <span class="normal">1213</span>
@@ -2373,7 +2372,8 @@ tensorstore.TensorStore).</p>
 <span class="normal">1246</span>
 <span class="normal">1247</span>
 <span class="normal">1248</span>
-<span class="normal">1249</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">1249</span>
+<span class="normal">1250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete labels group structure including LabelsGroup</span>
@@ -2950,8 +2950,7 @@ provided Plate doesn't include this well.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">834</span>
-<span class="normal">835</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">835</span>
 <span class="normal">836</span>
 <span class="normal">837</span>
 <span class="normal">838</span>
@@ -3007,7 +3006,8 @@ provided Plate doesn't include this well.</p>
 <span class="normal">888</span>
 <span class="normal">889</span>
 <span class="normal">890</span>
-<span class="normal">891</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
+<span class="normal">891</span>
+<span class="normal">892</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3222,8 +3222,7 @@ don't match Image metadata.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">893</span>
-<span class="normal">894</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">894</span>
 <span class="normal">895</span>
 <span class="normal">896</span>
 <span class="normal">897</span>
@@ -3268,7 +3267,8 @@ don't match Image metadata.</p>
 <span class="normal">936</span>
 <span class="normal">937</span>
 <span class="normal">938</span>
-<span class="normal">939</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
+<span class="normal">939</span>
+<span class="normal">940</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">row</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3414,8 +3414,7 @@ objects. The array type depends on the configured writer
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/write/_common/_builders.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">941</span>
-<span class="normal">942</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">942</span>
 <span class="normal">943</span>
 <span class="normal">944</span>
 <span class="normal">945</span>
@@ -3457,7 +3456,8 @@ objects. The array type depends on the configured writer
 <span class="normal">981</span>
 <span class="normal">982</span>
 <span class="normal">983</span>
-<span class="normal">984</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">984</span>
+<span class="normal">985</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Create the Zarr hierarchy and return array handles.</span>
 
 <span class="sd">    Creates the complete Plate structure including plate metadata (auto-</span>
@@ -4224,7 +4224,7 @@ series), or if something is already at the series' path.</p>
         <span class="n">options</span><span class="p">[</span><span class="s2">"shards"</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">series</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">options</span><span class="p">)}</span>
-    <span class="n">arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_series</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dest</span> <span class="o">/</span> <span class="n">name</span><span class="p">,</span> <span class="n">arrays</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4480,7 +4480,7 @@ pass the array directly without wrapping in a list.</p>
     <span class="n">datasets_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_datasets</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">datasets</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Series '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">': "</span><span class="p">)</span>
     <span class="n">specs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">datasets_seq</span><span class="p">]</span>
     <span class="n">series</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array_options</span><span class="p">())}</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets_seq</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_create_series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">datasets_seq</span><span class="p">},</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4894,7 +4894,7 @@ tensorstore.TensorStore).</p>
     <span class="n">series</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">name</span><span class="p">:</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">specs</span><span class="p">)</span> <span class="ow">in</span> <span class="n">queued</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">}</span>
-    <span class="n">arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_series</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
     <span class="n">all_arrays</span> <span class="o">=</span> <span class="p">{</span>
         <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">dataset_path</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">arr</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">series_arrays</span> <span class="ow">in</span> <span class="n">arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
