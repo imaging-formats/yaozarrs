@@ -477,7 +477,7 @@ def write_bioformats2raw(
     FileExistsError
         If `dest` exists and `overwrite` is False.
     ValueError
-        If any series has mismatched datasets/metadata.
+        If any series has an invalid name, or mismatched datasets/metadata.
     ImportError
         If no suitable writer backend is installed.
 
@@ -727,7 +727,8 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
 
     Each series is listed in `OME/zarr.json` only once its arrays exist (and the
     root `zarr.json` is written with the first series), so the store is a valid
-    collection after every call.
+    collection after every call.  A collection already at `dest` (of this version,
+    with a `series` list) is added to, unless `overwrite`.
 
 
     See Also
@@ -751,7 +752,9 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
-        If True, overwrite existing groups. Default is False.
+        If True, replace whatever is at `dest` (when the first series is created).
+        If False (default), add to the collection at `dest`, if there is one:
+        anything else at `dest` raises `FileExistsError`.
         Note: existing directories that don't look like zarr groups will NOT be removed,
         an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional

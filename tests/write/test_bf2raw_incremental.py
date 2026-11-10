@@ -126,14 +126,14 @@ def test_valid_after_every_call(tmp_path: Path, ver: Any, writer: str) -> None:
 
 
 @needs_zarr
-@pytest.mark.parametrize("overwrite", [False, True])
+@pytest.mark.parametrize("existing", ["none", "overwrite", "extend"])
 def test_valid_at_every_write(
-    tmp_path: Path, ver: Any, overwrite: bool, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, ver: Any, existing: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Before each write, the store is absent or valid: so a crash leaves it so."""
     models, w = ver
     dest = tmp_path / "out.zarr"
-    if overwrite:
+    if existing != "none":
         _bf2raw_store(w, models, dest, "0", "1")
     checked: list[str] = []
 
@@ -155,6 +155,7 @@ def test_valid_at_every_write(
     ]:
         monkeypatch.setattr(module, name, checking(getattr(module, name)))
 
+    overwrite = existing == "overwrite"
     builder = w.Bf2RawBuilder(
         dest, writer="zarr", ome_xml="<OME/>", overwrite=overwrite
     )
@@ -166,7 +167,8 @@ def test_valid_at_every_write(
     builder.add_series("c", _image(models), SPEC_2D)
     builder.prepare()
     yaozarrs.validate_zarr_store(dest)
-    assert _listing(dest) == ["s", "a/b", "c"]
+    before = ["0", "1"] if existing == "extend" else []
+    assert _listing(dest) == [*before, "s", "a/b", "c"]
     assert len(checked) > 10
 
 
@@ -303,18 +305,89 @@ def test_invalid_names(tmp_path: Path, ver: Any, name: str) -> None:
     assert not list(tmp_path.iterdir())  # (nothing written, inside or out)
 
 
-def test_existing_dest(tmp_path: Path, ver: Any) -> None:
+def test_extend_existing_collection(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
     _bf2raw_store(w, models, dest, "0", "1")
     before = _snapshot(dest)
+    builder = w.Bf2RawBuilder(
+        dest, writer=WRITERS[0], ome_xml="<OME/>", extra_attributes={"a": 1}
+    )
+    assert builder.series == ("0", "1")
+    assert _snapshot(dest) == before  # (constructing writes nothing)
+    with pytest.raises(ValueError, match="already exists"):
+        builder.prepare_series("0", _image(models), SPEC_2D)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(_builders, "_write_to_array", Mock(side_effect=KeyboardInterrupt))
+        with pytest.raises(KeyboardInterrupt):
+            builder.write_image("x", _image(models), np.ones((16, 16), "uint8"))
+    assert _snapshot(dest) == before  # (a failure never removes the collection)
+
+    with pytest.MonkeyPatch.context() as mp:  # (merging `extra_attributes` fails)
+        mp.setattr(_builders, "_write_group_json", Mock(side_effect=OSError("full")))
+        with pytest.raises(OSError, match="full"):
+            builder.prepare_series("x", _image(models), SPEC_2D)
+    yaozarrs.validate_zarr_store(dest)
+    assert builder.series == ("0", "1")
+    assert _listing(dest) == ["0", "1"]
+
+    builder.prepare_series("2", _image(models), SPEC_2D)
+    yaozarrs.validate_zarr_store(dest)
+    assert _listing(dest) == ["0", "1", "2"]
+    assert (dest / "OME" / "METADATA.ome.xml").read_text() == "<OME/>"
+    root = json.loads((dest / "zarr.json").read_bytes())["attributes"]
+    assert root["a"] == 1 and root["ome"]["bioformats2raw.layout"] == 3
+
+    # a one-shot write doesn't add to it
+    with pytest.raises(FileExistsError, match="already exists"):
+        _bf2raw_store(w, models, dest, "3")
+
+
+def _numbered(dest: Path, w: ModuleType, models: ModuleType) -> None:
+    # (a collection without a `series` list: its series are its numbered groups)
+    _bf2raw_store(w, models, dest, "0")
+    (dest / "OME" / "zarr.json").write_text(
+        json.dumps({"zarr_format": 3, "node_type": "group"})
+    )
+
+
+def _other_version(dest: Path, w: ModuleType, models: ModuleType) -> None:
+    other_models, other_w = (v06, w06) if w is w05 else (v05, w05)
+    _bf2raw_store(other_w, other_models, dest, "0")
+
+
+def _plate(dest: Path, w: ModuleType, models: ModuleType) -> None:
+    # (a plate, though it has `bioformats2raw.layout`: the plate wins)
+    _bf2raw_store(w, models, dest, "0")
+    root = json.loads((dest / "zarr.json").read_bytes())
+    root["attributes"]["ome"]["plate"] = {}
+    (dest / "zarr.json").write_text(json.dumps(root))
+
+
+def _other_dir(dest: Path, w: ModuleType, models: ModuleType) -> None:
+    dest.mkdir()
+    (dest / "mine.txt").write_text("mine")
+
+
+@pytest.mark.parametrize("make", [_numbered, _other_version, _plate, _other_dir])
+def test_other_content_is_refused(tmp_path: Path, ver: Any, make: Callable) -> None:
+    models, w = ver
+    dest = tmp_path / "out.zarr"
+    make(dest, w, models)
+    before = _snapshot(dest)
     with pytest.raises(FileExistsError, match="Use overwrite=True"):
-        w.Bf2RawBuilder(dest, writer=WRITERS[0]).prepare_series(
-            "2", _image(models), SPEC_2D
-        )
+        w.Bf2RawBuilder(dest, writer=WRITERS[0])
     assert _snapshot(dest) == before
 
-    # with overwrite, it's replaced once, when the first series is created
+
+def test_overwrite(tmp_path: Path, ver: Any) -> None:
+    models, w = ver
+    dest = tmp_path / "out.zarr"
+    _bf2raw_store(w, models, dest, "0", "1")
+    before = _snapshot(dest)
+
+    # it's replaced once, when the first series is created
     builder = w.Bf2RawBuilder(dest, writer=WRITERS[0], overwrite=True)
     assert _snapshot(dest) == before
     _, arrays = builder.prepare_series("x", _image(models), SPEC_2D)
@@ -329,8 +402,7 @@ def test_existing_dest(tmp_path: Path, ver: Any) -> None:
 
     # (but something that isn't a Zarr group isn't replaced)
     other = tmp_path / "other"
-    other.mkdir()
-    (other / "mine.txt").write_text("mine")
+    _other_dir(other, w, models)
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
         w.Bf2RawBuilder(other, writer=WRITERS[0], overwrite=True).prepare_series(
             "s", _image(models), SPEC_2D
