@@ -455,6 +455,10 @@ array node to a full zarr array using your preferred backend.
     These methods require that you have the appropriate backend installed
     (`tensorstore` or `zarr`).
 
+To use any other backend, or your own open options, pass the array's URI
+([`store_path`][yaozarrs._zarr.ZarrNode.store_path]) to that backend (see
+[`ZarrArray`][yaozarrs._zarr.ZarrArray] for an example).
+
 ```python
 from yaozarrs import open_group
 

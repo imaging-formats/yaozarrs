@@ -467,13 +467,13 @@ class _CachedMapper(Mapping[str, bytes]):
 
 
 class ZarrNode:
-    """Base class for zarr nodes ([yaozarrs.ZarrGroup][] and [yaozarrs._zarr.ZarrArray][]).
+    """Base class for zarr nodes ([yaozarrs.ZarrGroup][] and [yaozarrs.ZarrArray][]).
 
     This is a minimal implementation that provides access to metadata and hierarchy
     traversal without requiring a full zarr-python dependency.  You cannot read array
     data directly without depending on zarr-python or tensorstore, but you can navigate
     the tree and read metadata.
-    """  # noqa: E501
+    """
 
     __slots__ = ("_metadata", "_path", "_store")
 
@@ -910,10 +910,29 @@ class ZarrGroup(ZarrNode):
 class ZarrArray(ZarrNode):
     """Wrapper around a zarr v2/v3 array.
 
-    This class is not exported publicly. But you may receive this object when traversing
-    a zarr group hierarchy.  It has no ability to directly read array data, but you can
-    convert it to a zarr-python with `to_zarr_python()`, or use another library like
-    tensorstore manually.
+    You will receive this object when traversing a zarr group hierarchy.  It exposes
+    array metadata (`shape`, `dtype`, `chunks`, `shards`, ...), but has no ability to
+    directly read array data: convert it to zarr-python with `to_zarr_python()`, or to
+    tensorstore with `to_tensorstore()`.
+
+    To open it with any other backend (or with your own options), pass the URI from
+    `store_path` to that backend.  Don't hand `store` to a backend for reading data:
+    it caches every key it reads, without limit.
+
+    Note that zarr-python doesn't decode percent-encoded `file://` URIs, so it can't
+    open the `store_path` of a local path containing spaces (`to_zarr_python()`
+    handles that case).
+
+    Examples
+    --------
+    >>> url = (
+    ...     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr"
+    ... )
+    >>> arr = open_group(url)["0"]
+    >>> arr.store_path
+    'https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr/0'
+    >>> tensorstore.open({"driver": "zarr3", "kvstore": arr.store_path}).result()
+    >>> zarr.open_array(arr.store_path, mode="r")
     """
 
     __slots__ = ()
@@ -929,6 +948,51 @@ class ZarrArray(ZarrNode):
         if self._metadata.shape is None:  # pragma: no cover
             raise ValueError("Array metadata missing 'shape'")
         return len(self._metadata.shape)
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """Return the array shape."""
+        if self._metadata.shape is None:  # pragma: no cover
+            raise ValueError("Array metadata missing 'shape'")
+        return self._metadata.shape
+
+    @property
+    def chunks(self) -> tuple[int, ...]:
+        """Return the chunk shape (the inner chunk shape, if the array is sharded).
+
+        Matches zarr-python's `Array.chunks`.  For nested sharding, this is the chunk
+        shape directly inside the outermost shard.
+        """
+        if (codec := self._sharding_codec()) is not None:
+            return tuple(codec["configuration"]["chunk_shape"])
+        return self._grid_chunk_shape()
+
+    @property
+    def shards(self) -> tuple[int, ...] | None:
+        """Return the shard shape, or `None` if the array is not sharded.
+
+        Matches zarr-python's `Array.shards`: an array is considered sharded only when
+        its `codecs` are exactly `[sharding_indexed]`.
+        """
+        return None if self._sharding_codec() is None else self._grid_chunk_shape()
+
+    def _sharding_codec(self) -> dict | None:
+        codecs = (self._metadata.model_extra or {}).get("codecs") or []
+        if len(codecs) == 1 and codecs[0].get("name") == "sharding_indexed":
+            return codecs[0]
+        return None
+
+    def _grid_chunk_shape(self) -> tuple[int, ...]:
+        extra = self._metadata.model_extra or {}
+        if self._metadata.zarr_format == 2:
+            return tuple(extra["chunks"])
+        grid = extra["chunk_grid"]
+        if (name := grid.get("name")) != "regular":
+            raise NotImplementedError(
+                "chunk/shard shape is only defined for 'regular' chunk grids, "
+                f"this array uses {name!r}. Use zarr-python or tensorstore instead."
+            )
+        return tuple(grid["configuration"]["chunk_shape"])
 
     @property
     def dtype(self) -> str:

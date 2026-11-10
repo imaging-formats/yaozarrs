@@ -16,7 +16,7 @@ from ._validate import (
     validate_ome_uri,
     validate_zarr_store,
 )
-from ._zarr import ZarrGroup, open_group
+from ._zarr import ZarrArray, ZarrGroup, open_group
 
 __all__ = [
     "ConversionWarning",
@@ -24,6 +24,7 @@ __all__ = [
     "StorageValidationError",
     "StorageValidationWarning",
     "ValidationWarning",
+    "ZarrArray",
     "ZarrGroup",
     "convert_version",
     "open_group",

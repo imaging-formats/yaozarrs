@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
+import importlib.util
 import json
 import pickle
 import shutil
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -17,6 +18,7 @@ except ImportError:
 
 from pydantic import BaseModel
 
+import yaozarrs
 from yaozarrs._zarr import (
     ZarrArray,
     ZarrGroup,
@@ -417,3 +419,69 @@ def test_zarrgroup_tree_plain_text(write_demo_ome: Callable) -> None:
     assert path.name in tree_str
     # Plain text uses box drawing characters
     assert "├──" in tree_str or "└──" in tree_str
+
+
+def _assert_layout_matches_zarr(y_arr: ZarrArray, z_arr: Any) -> None:
+    for attr in ("shape", "chunks", "shards"):
+        try:
+            expected = getattr(z_arr, attr)
+        except NotImplementedError:
+            with pytest.raises(NotImplementedError):
+                getattr(y_arr, attr)
+        else:
+            assert getattr(y_arr, attr) == expected, attr
+
+
+@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("layout", ["v2", "v3", "v3-sharded"])
+def test_zarrarray_chunk_layout(tmp_path: Path, layout: str, ndim: int) -> None:
+    zarr = pytest.importorskip("zarr")
+    shape = (10, 13, 7, 6, 5)[:ndim]
+    chunks = (2, 3, 4, 2, 5)[:ndim]
+    shards = tuple(2 * c for c in chunks) if layout == "v3-sharded" else None
+    fmt = 2 if layout == "v2" else 3
+    root = zarr.open_group(tmp_path / "a.zarr", mode="w", zarr_format=fmt)
+    z_arr = root.create_array(
+        "a", shape=shape, chunks=chunks, shards=shards, dtype="u2"
+    )
+
+    y_arr = yaozarrs.open_group(tmp_path / "a.zarr")["a"]
+    assert isinstance(y_arr, yaozarrs.ZarrArray)
+    assert (y_arr.shape, y_arr.chunks, y_arr.shards) == (shape, chunks, shards)
+    _assert_layout_matches_zarr(y_arr, z_arr)
+
+    if importlib.util.find_spec("tensorstore"):
+        ts_layout = y_arr.to_tensorstore().chunk_layout
+        assert ts_layout.read_chunk.shape == y_arr.chunks
+        assert ts_layout.write_chunk.shape == (y_arr.shards or y_arr.chunks)
+
+
+@pytest.mark.filterwarnings("ignore:Combining a `sharding_indexed` codec")
+@pytest.mark.parametrize(
+    "case", ["nested", "transpose", "rectilinear", "rectilinear-sharded"]
+)
+def test_zarrarray_chunk_layout_edge_cases(tmp_path: Path, case: str) -> None:
+    """Unusual v3 layouts report the same chunks/shards as zarr-python (or raise)."""
+    zarr = pytest.importorskip("zarr")
+    codecs = zarr.codecs
+    kwargs: dict = {"shape": (16, 16), "dtype": "u1", "chunks": (8, 8)}
+    if case == "nested":  # outermost shard, and the chunks directly inside it
+        inner = codecs.ShardingCodec(chunk_shape=(2, 2))
+        kwargs["serializer"] = codecs.ShardingCodec(chunk_shape=(4, 4), codecs=[inner])
+    elif case == "transpose":  # zarr-python only treats [sharding_indexed] as sharded
+        kwargs["filters"] = [codecs.TransposeCodec(order=(1, 0))]
+        kwargs["serializer"] = codecs.ShardingCodec(chunk_shape=(4, 2))
+    elif case == "rectilinear":
+        kwargs["chunks"] = [[6, 10], [16]]
+    else:
+        kwargs.update(chunks=(2, 4), shards=[[6, 10], [16]])
+    rectilinear = case.startswith("rectilinear")
+    if rectilinear and zarr.config.get("array.rectilinear_chunks", None) is None:
+        pytest.skip("zarr-python version lacks rectilinear chunk grids")
+
+    with zarr.config.set({"array.rectilinear_chunks": rectilinear}):
+        root = zarr.open_group(tmp_path / "a.zarr", mode="w")
+        z_arr = root.create_array("a", compressors=None, **kwargs)
+        y_arr = yaozarrs.open_group(tmp_path / "a.zarr")["a"]
+        assert isinstance(y_arr, yaozarrs.ZarrArray)
+        _assert_layout_matches_zarr(y_arr, z_arr)
