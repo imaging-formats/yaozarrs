@@ -647,9 +647,11 @@ class OmeExplorer extends LitElement {
   updated(changedProperties) {
     if (changedProperties.has('version')) {
       // When version changes, validate that selected node still exists
-      if (this.selectedNode === 'root-zgroup' && this.version === 'v0.5') {
-        // .zgroup doesn't exist in v0.5, switch to root-meta
-        this.selectedNode = 'root-meta';
+      if (this.selectedNode?.endsWith('zgroup') && this.version !== 'v0.4') {
+        // .zgroup doesn't exist in v0.5+: select the group's zarr.json instead
+        // (rows have no metadata of their own, so select the row's folder)
+        const group = this.selectedNode.slice(0, -'zgroup'.length);
+        this.selectedNode = group.startsWith('row-') ? group.slice(0, -1) : `${group}meta`;
       }
     }
 
@@ -2702,6 +2704,18 @@ class OmeExplorer extends LitElement {
     this.validateDimensions();
   }
 
+  // scales and downscale factors must be positive, so ignore anything else
+  // (e.g. a cleared field) and keep the last valid value
+  updatePositive(index, field, raw) {
+    const value = parseFloat(raw);
+    if (value > 0) this.updateDimension(index, field, value);
+  }
+
+  multiscalesDesc() {
+    const axes = this.version === 'v0.6' ? 'coordinate systems' : 'axes';
+    return `Contains multiscales with ${axes} and transformations.`;
+  }
+
   // Drag and drop methods for reordering dimensions
   handleDragStart(e, index) {
     this.draggedIndex = index;
@@ -2805,9 +2819,9 @@ class OmeExplorer extends LitElement {
 
   // Generate tree data structure for ZarrTreeViewer
   generateTreeData() {
-    const isV05 = this.version === 'v0.5';
-    const metaFile = isV05 ? 'zarr.json' : '.zattrs';
-    const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
+    const isZarr3 = this.version !== 'v0.4';
+    const metaFile = isZarr3 ? 'zarr.json' : '.zattrs';
+    const arrayMeta = isZarr3 ? 'zarr.json' : '.zarray';
     const chunkPath = this.dimensions.map(d => d.name).join('/');
 
     // Helper: generate pyramid levels for an image
@@ -2925,7 +2939,7 @@ class OmeExplorer extends LitElement {
       },
     ];
 
-    if (!isV05) {
+    if (!isZarr3) {
       rootChildren.push({
         id: 'root-zgroup',
         label: '.zgroup',
@@ -2945,9 +2959,9 @@ class OmeExplorer extends LitElement {
 
   // Generate file contents for ZarrTreeViewer
   generateFileContents() {
-    const isV05 = this.version === 'v0.5';
-    const metaFile = isV05 ? 'zarr.json' : '.zattrs';
-    const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
+    const isZarr3 = this.version !== 'v0.4';
+    const metaFile = isZarr3 ? 'zarr.json' : '.zattrs';
+    const arrayMeta = isZarr3 ? 'zarr.json' : '.zarray';
     const contents = {};
 
     // Helper: generate array level contents
@@ -2964,7 +2978,7 @@ class OmeExplorer extends LitElement {
 
         contents[`${prefix}level-${i}-meta`] = {
           title: arrayMeta,
-          description: isV05
+          description: isZarr3
             ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
             : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`,
           content: JSON.parse(this.generateArrayMetadataJSON(i)),
@@ -2984,13 +2998,13 @@ class OmeExplorer extends LitElement {
 
       contents['root'] = {
         title: 'plate.zarr/',
-        description: `Root group of the OME-Zarr plate. Contains ${isV05 ? 'zarr.json with OME plate metadata' : 'plate metadata in .zattrs'}.`,
+        description: `Root group of the OME-Zarr plate. Contains ${isZarr3 ? 'zarr.json with OME plate metadata' : 'plate metadata in .zattrs'}.`,
         content: null,
       };
 
       contents['root-plate-meta'] = {
         title: metaFile,
-        description: isV05
+        description: isZarr3
           ? 'Zarr v3 group metadata with plate layout. Defines rows, columns, and wells with their positions.'
           : 'Plate metadata file defining the well plate structure.',
         content: JSON.parse(generatePlateJSON({
@@ -3039,7 +3053,7 @@ class OmeExplorer extends LitElement {
 
           contents[`${fovPrefix}meta`] = {
             title: metaFile,
-            description: `Image metadata for FOV ${f}. Contains multiscales with axes and transformations.`,
+            description: `Image metadata for FOV ${f}. ${this.multiscalesDesc()}`,
             content: JSON.parse(this.generateJSON()),
           };
 
@@ -3053,19 +3067,19 @@ class OmeExplorer extends LitElement {
     // Otherwise, generate standard image structure
     contents['root'] = {
       title: 'image.zarr/',
-      description: `Root group of the OME-Zarr image. Contains ${isV05 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`,
+      description: `Root group of the OME-Zarr image. Contains ${isZarr3 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`,
       content: null,
     };
 
     contents['root-meta'] = {
       title: metaFile,
-      description: isV05
+      description: isZarr3
         ? 'Zarr v3 group metadata file. Contains zarr_format, node_type, and OME metadata under attributes.ome.multiscales.'
         : 'Zarr v2 attributes file containing the multiscales array with axes and coordinate transformations.',
       content: JSON.parse(this.generateJSON()),
     };
 
-    if (!isV05) {
+    if (!isZarr3) {
       contents['root-zgroup'] = {
         title: '.zgroup',
         description: 'Zarr v2 group marker file. Contains {"zarr_format": 2} to identify this as a Zarr group.',
@@ -3229,7 +3243,7 @@ class OmeExplorer extends LitElement {
   }
 
   generateArrayJSON(level) {
-    const isV05 = this.version === 'v0.5';
+    const isZarr3 = this.version !== 'v0.4';
     
     // Calculate shape for this level (example base shape, scaled down)
     const baseShapes = { c: 3, t: 10, z: 100, y: 1024, x: 1024 };
@@ -3248,7 +3262,7 @@ class OmeExplorer extends LitElement {
       return 64;
     });
 
-    if (isV05) {
+    if (isZarr3) {
       // Zarr v3 array metadata
       return this.compactJSON({
         zarr_format: 3,
@@ -3296,9 +3310,9 @@ class OmeExplorer extends LitElement {
   }
 
   getNodeInfo(nodeId) {
-    const isV05 = this.version === 'v0.5';
-    const metaFile = isV05 ? 'zarr.json' : '.zattrs';
-    const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
+    const isZarr3 = this.version !== 'v0.4';
+    const metaFile = isZarr3 ? 'zarr.json' : '.zattrs';
+    const arrayMeta = isZarr3 ? 'zarr.json' : '.zarray';
 
     // Check if we're in plate mode
     const isPlateMode = this.plateEnabled && this.selectedWells.length > 0;
@@ -3307,22 +3321,22 @@ class OmeExplorer extends LitElement {
       'root': {
         title: isPlateMode ? 'plate.zarr/' : 'image.zarr/',
         desc: isPlateMode
-          ? `Root group of the OME-Zarr plate. Contains ${isV05 ? 'zarr.json with OME plate metadata' : 'plate metadata in .zattrs'}.`
-          : `Root group of the OME-Zarr image. Contains ${isV05 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`
+          ? `Root group of the OME-Zarr plate. Contains ${isZarr3 ? 'zarr.json with OME plate metadata' : 'plate metadata in .zattrs'}.`
+          : `Root group of the OME-Zarr image. Contains ${isZarr3 ? 'zarr.json with OME metadata under attributes.ome' : '.zattrs with multiscales metadata'}.`
       },
       'root-meta': {
         title: metaFile,
         desc: isPlateMode
-          ? (isV05
+          ? (isZarr3
               ? 'Zarr v3 group metadata with plate layout. Defines rows, columns, and wells with their positions.'
               : 'Plate metadata file defining the well plate structure.')
-          : (isV05
+          : (isZarr3
               ? 'Zarr v3 group metadata file. Contains zarr_format, node_type, and OME metadata under attributes.ome.multiscales.'
               : 'Zarr v2 attributes file containing the multiscales array with axes and coordinate transformations.')
       },
       'root-plate-meta': {
         title: metaFile,
-        desc: isV05
+        desc: isZarr3
           ? 'Zarr v3 group metadata with plate layout. Defines rows, columns, and wells with their positions.'
           : 'Plate metadata file defining the well plate structure.'
       },
@@ -3379,7 +3393,7 @@ class OmeExplorer extends LitElement {
           } else if (nodeId === `${prefix}meta`) {
             return {
               title: metaFile,
-              desc: `Image metadata for FOV ${fovNum}. Contains multiscales with axes and transformations.`
+              desc: `Image metadata for FOV ${fovNum}. ${this.multiscalesDesc()}`
             };
           } else if (nodeId.includes('-level-')) {
             // Handle level nodes
@@ -3398,7 +3412,7 @@ class OmeExplorer extends LitElement {
               } else if (suffix === '-meta') {
                 return {
                   title: arrayMeta,
-                  desc: isV05
+                  desc: isZarr3
                     ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
                     : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`
                 };
@@ -3429,7 +3443,7 @@ class OmeExplorer extends LitElement {
       };
       infos[`level-${i}-meta`] = {
         title: arrayMeta,
-        desc: isV05
+        desc: isZarr3
           ? `Zarr v3 array metadata. Defines shape, chunks, dtype, codecs, and dimension_names matching the axes: [${this.dimensions.map(d => `"${d.name}"`).join(', ')}].`
           : `Zarr v2 array metadata. Defines shape, chunks, dtype, compressor, and dimension_separator.`
       };
@@ -3471,9 +3485,9 @@ class OmeExplorer extends LitElement {
   }
 
   renderTree() {
-    const isV05 = this.version === 'v0.5';
-    const metaFile = isV05 ? 'zarr.json' : '.zattrs';
-    const arrayMeta = isV05 ? 'zarr.json' : '.zarray';
+    const isZarr3 = this.version !== 'v0.4';
+    const metaFile = isZarr3 ? 'zarr.json' : '.zattrs';
+    const arrayMeta = isZarr3 ? 'zarr.json' : '.zarray';
     const chunkPath = this.dimensions.map(d => d.name).join('/');
 
     // Helper: generate level nodes for a given prefix
@@ -3522,7 +3536,7 @@ class OmeExplorer extends LitElement {
             fovFolders.push(
               this.renderTreeNode(`well-${row}-${col}-fov-${f}`, `${f}/`, 'folder', true, html`
                 ${this.renderTreeNode(`${fovPrefix}meta`, metaFile, 'file', false)}
-                ${!isV05 ? this.renderTreeNode(`${fovPrefix}zgroup`, '.zgroup', 'file', false) : ''}
+                ${!isZarr3 ? this.renderTreeNode(`${fovPrefix}zgroup`, '.zgroup', 'file', false) : ''}
                 ${generateLevelNodes(fovPrefix)}
               `)
             );
@@ -3530,13 +3544,13 @@ class OmeExplorer extends LitElement {
 
           return this.renderTreeNode(`well-${row}-${col}`, `${colName}/`, 'folder', true, html`
             ${this.renderTreeNode(`well-${row}-${col}-meta`, metaFile, 'file', false)}
-            ${!isV05 ? this.renderTreeNode(`well-${row}-${col}-zgroup`, '.zgroup', 'file', false) : ''}
+            ${!isZarr3 ? this.renderTreeNode(`well-${row}-${col}-zgroup`, '.zgroup', 'file', false) : ''}
             ${fovFolders}
           `);
         });
 
         return this.renderTreeNode(`row-${rowName}`, `${rowName}/`, 'folder', true, html`
-          ${!isV05 ? this.renderTreeNode(`row-${rowName}-zgroup`, '.zgroup', 'file', false) : ''}
+          ${!isZarr3 ? this.renderTreeNode(`row-${rowName}-zgroup`, '.zgroup', 'file', false) : ''}
           ${wellFolders}
         `);
       });
@@ -3545,7 +3559,7 @@ class OmeExplorer extends LitElement {
         <div class="tree-view">
           ${this.renderTreeNode('root', 'plate.zarr/', 'folder', true, html`
             ${this.renderTreeNode('root-plate-meta', metaFile, 'file', false)}
-            ${!isV05 ? this.renderTreeNode('root-plate-zgroup', '.zgroup', 'file', false) : ''}
+            ${!isZarr3 ? this.renderTreeNode('root-plate-zgroup', '.zgroup', 'file', false) : ''}
             ${rowFolders}
           `)}
         </div>
@@ -3567,7 +3581,7 @@ class OmeExplorer extends LitElement {
       <div class="tree-view">
         ${this.renderTreeNode('root', 'image.zarr/', 'folder', true, html`
           ${this.renderTreeNode('root-meta', metaFile, 'file', false)}
-          ${!isV05 ? this.renderTreeNode('root-zgroup', '.zgroup', 'file', false) : ''}
+          ${!isZarr3 ? this.renderTreeNode('root-zgroup', '.zgroup', 'file', false) : ''}
           ${levelNodes}
         `)}
       </div>
@@ -3602,7 +3616,7 @@ class OmeExplorer extends LitElement {
               min="1"
               max="10"
               .value=${this.numLevels}
-              @input=${(e) => this.numLevels = parseInt(e.target.value)}
+              @input=${(e) => this.numLevels = Math.min(10, Math.max(1, parseInt(e.target.value) || 1))}
             />
           </div>
         </div>
@@ -3670,7 +3684,7 @@ class OmeExplorer extends LitElement {
                           type="number"
                           step="any"
                           .value=${dim.scale}
-                          @input=${(e) => this.updateDimension(i, 'scale', parseFloat(e.target.value) || 0)}
+                          @input=${(e) => this.updatePositive(i, 'scale', e.target.value)}
                         />
                       </td>
                       <td>
@@ -3686,7 +3700,7 @@ class OmeExplorer extends LitElement {
                           type="number"
                           step="any"
                           .value=${dim.scaleFactor}
-                          @input=${(e) => this.updateDimension(i, 'scaleFactor', parseFloat(e.target.value) || 1)}
+                          @input=${(e) => this.updatePositive(i, 'scaleFactor', e.target.value)}
                         />
                       </td>
                       <td>
@@ -3781,6 +3795,12 @@ class OmeExplorer extends LitElement {
               </button>
               <div class="tab-spacer"></div>
               <div class="version-toggle">
+                <button
+                  class=${this.version === 'v0.6' ? 'active' : ''}
+                  @click=${() => this.version = 'v0.6'}
+                >
+                  v0.6
+                </button>
                 <button
                   class=${this.version === 'v0.5' ? 'active' : ''}
                   @click=${() => this.version = 'v0.5'}

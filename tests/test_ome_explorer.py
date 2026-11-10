@@ -21,13 +21,16 @@ from typing import TYPE_CHECKING
 import pytest
 from pydantic import ValidationError
 
-from yaozarrs import v04, v05, validate_ome_json
+from yaozarrs import v04, v05, v06, validate_ome_json
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 if sys.platform == "win32":
     pytest.skip("Node.js path handling differs on Windows", allow_module_level=True)
+
+ZARR_JSON = {"v0.5": v05.OMEZarrGroupJSON, "v0.6": v06.OMEZarrGroupJSON}
+MULTISCALES = (v04.Multiscale, v05.Multiscale, v06.Multiscale)
 
 # Path to the Node.js test runner
 RUNNER_PATH = Path(__file__).parent / "ome_explorer_runner.mjs"
@@ -82,7 +85,7 @@ def _config(version: str, dims: Sequence[str | dict], levels: int):
 
 
 TEST_CONFIGS = []
-for versions in ["v0.4", "v0.5"]:
+for versions in ["v0.4", "v0.5", "v0.6"]:
     for levels in [1, 3]:
         dims = ...
         name = f"{versions.replace('.', '')}_{levels}levels"
@@ -97,6 +100,13 @@ for versions in ["v0.4", "v0.5"]:
                 ),
                 _config(versions, "czyx", levels),
                 _config(versions, "tczyx", levels),
+                # space axes that aren't downsampled (DimSpec's default is 2)
+                _config(versions, [_dim("z", scaleFactor=1), *map(_dim, "yx")], levels),
+                _config(
+                    versions,
+                    [_dim("w", type_="space", scaleFactor=1), *map(_dim, "yx")],
+                    levels,
+                ),
             ]
         )
 
@@ -130,7 +140,7 @@ def _plate_config(
 
 
 PLATE_TEST_CONFIGS = []
-for version in ["v0.4", "v0.5"]:
+for version in ["v0.4", "v0.5", "v0.6"]:
     for levels in [1, 2]:
         # Test different plate types
         for plate_type in ["12-well", "24-well", "96-well"]:
@@ -219,13 +229,13 @@ def test_json_validates_against_pydantic(config: dict) -> None:
     output = run_generator(config)
     ngff_version = config["version"]
 
-    # validate_ome_json auto-detects v04 vs v05
+    # validate_ome_json auto-detects the version
     result = validate_ome_json(output["json"])
 
     # Check it returned a valid model type
     assert result is not None
-    if ngff_version == "v0.5":
-        assert isinstance(result, v05.OMEZarrGroupJSON)
+    if ngff_version != "v0.4":
+        assert isinstance(result, ZARR_JSON[ngff_version])
     else:
         # v04 output is just the .zattrs content (not wrapped in zarr.json)
         # which corresponds to Image type
@@ -238,15 +248,15 @@ def test_json_validates_against_pydantic(config: dict) -> None:
         raise AssertionError(f"Python code failed to execute:\n\nError: {e}") from e
 
     # Verify expected objects were created
-    assert isinstance(namespace["image"], (v04.Image, v05.Image))
-    assert isinstance(namespace["multiscale1"], (v04.Multiscale, v05.Multiscale))
-    assert isinstance(namespace["multiscale2"], (v04.Multiscale, v05.Multiscale))
+    assert isinstance(namespace["image"], (v04.Image, v05.Image, v06.Image))
+    assert isinstance(namespace["multiscale1"], MULTISCALES)
+    assert isinstance(namespace["multiscale2"], MULTISCALES)
     assert namespace["multiscale1"] == namespace["multiscale2"]
 
     # test the python code generates the same json as the js code
     json_dict = json.loads(output["json"])
-    python_dict = namespace["image"].model_dump(exclude_unset=True, exclude_none=True)
-    if ngff_version == "v0.5":
+    python_dict = json.loads(namespace["image"].model_dump_json())
+    if ngff_version != "v0.4":
         json_dict = json_dict["attributes"]["ome"]
     assert json_dict == python_dict
 
@@ -274,8 +284,8 @@ def test_plate_validates_against_pydantic(plate_config: dict) -> None:
     # Validate plate metadata
     plate_result = validate_ome_json(output["plateJson"])
     assert plate_result is not None
-    if ngff_version == "v0.5":
-        assert isinstance(plate_result, v05.OMEZarrGroupJSON)
+    if ngff_version != "v0.4":
+        assert isinstance(plate_result, ZARR_JSON[ngff_version])
         # Extract the plate metadata from attributes
         assert hasattr(plate_result.attributes, "ome")
         assert hasattr(plate_result.attributes.ome, "plate")
@@ -286,8 +296,8 @@ def test_plate_validates_against_pydantic(plate_config: dict) -> None:
     # Validate well metadata
     well_result = validate_ome_json(output["wellJson"])
     assert well_result is not None
-    if ngff_version == "v0.5":
-        assert isinstance(well_result, v05.OMEZarrGroupJSON)
+    if ngff_version != "v0.4":
+        assert isinstance(well_result, ZARR_JSON[ngff_version])
         assert hasattr(well_result.attributes, "ome")
         assert hasattr(well_result.attributes.ome, "well")
     else:
@@ -305,23 +315,24 @@ def test_plate_validates_against_pydantic(plate_config: dict) -> None:
 
     # Verify expected objects were created
     # Both versions create plate_def and well_def
-    assert isinstance(plate_def, (v04.PlateDef, v05.PlateDef))
-    assert isinstance(well_def, (v04.WellDef, v05.WellDef))
-    assert isinstance(namespace["image"], (v04.Image, v05.Image))
-    assert isinstance(namespace["multiscale"], (v04.Multiscale, v05.Multiscale))
+    assert isinstance(plate_def, (v04.PlateDef, v05.PlateDef, v06.PlateDef))
+    assert isinstance(well_def, (v04.WellDef, v05.WellDef, v06.WellDef))
+    assert isinstance(namespace["image"], (v04.Image, v05.Image, v06.Image))
+    assert isinstance(namespace["multiscale"], MULTISCALES)
 
-    # v0.5 also wraps them in Plate and Well
-    if ngff_version == "v0.5":
-        assert isinstance(namespace["plate"], v05.Plate)
-        assert isinstance(namespace["well"], v05.Well)
+    # v0.5+ also wraps them in Plate and Well
+    if ngff_version != "v0.4":
+        mod = {"v0.5": v05, "v0.6": v06}[ngff_version]
+        assert isinstance(namespace["plate"], mod.Plate)
+        assert isinstance(namespace["well"], mod.Well)
 
     # Verify the Python-generated plate_def matches the JS-generated plate
     plate_json_dict = json.loads(output["plateJson"])
     well_json_dict = json.loads(output["wellJson"])
-    plate_python_dict = plate_def.model_dump(exclude_unset=True)
-    well_python_dict = well_def.model_dump(exclude_unset=True)
+    plate_python_dict = json.loads(plate_def.model_dump_json())
+    well_python_dict = json.loads(well_def.model_dump_json())
 
-    if ngff_version == "v0.5":
+    if ngff_version != "v0.4":
         plate_json_dict = plate_json_dict["attributes"]["ome"]["plate"]
         well_json_dict = well_json_dict["attributes"]["ome"]["well"]
     else:

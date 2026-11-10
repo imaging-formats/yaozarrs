@@ -21,20 +21,27 @@ if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
     WriterName = Literal["zarr", "tensorstore", "auto"]
+    """The name of a built-in array backend ("auto": tensorstore, if installed)."""
     ZarrWriter: TypeAlias = WriterName | "CreateArrayFunc"
+    """A built-in array backend, by name, or a custom array-creating function."""
     CompressionName = Literal["blosc-zstd", "blosc-lz4", "zstd", "none"]
+    """The compression codec for the arrays."""
     AnyZarrArray: TypeAlias = zarr.Array | tensorstore.TensorStore
+    """An array created by one of the built-in backends."""
     ShapeLike: TypeAlias = tuple[int, ...]
+    """The shape of an array."""
 
     # Actual data arrays - for write functions
-    ArrayLike: TypeAlias = Any  # e.g., numpy.ndarray, dask.array.Array, etc.
+    ArrayLike: TypeAlias = Any
+    """Array data: a numpy array, dask array, or anything with `shape` and `dtype`."""
     ArrayOrPyramid: TypeAlias = ArrayLike | Sequence[ArrayLike]
+    """One array, or a sequence of arrays (one per dataset/resolution level)."""
 
     # Shape/dtype specification only (no data) - for prepare/add functions
     ShapeAndDType: TypeAlias = tuple[ShapeLike, DTypeLike]
     """A tuple of (shape, dtype) describing an array."""
-
     ShapeAndDTypeOrPyramid: TypeAlias = ShapeAndDType | Sequence[ShapeAndDType]
+    """One (shape, dtype) tuple, or a sequence of them (one per dataset)."""
 
 
 @runtime_checkable
@@ -68,7 +75,7 @@ class CreateArrayFunc(Protocol):
             Path to create array
         shape : tuple[int, ...]
             Array shape
-        dtype : dtype
+        dtype : DTypeLike
             Data type
         chunks : tuple[int, ...]
             Chunk shape (already resolved by yaozarrs)
