@@ -244,8 +244,8 @@ def test_name_errors(tmp_path: Path, ver: Any) -> None:
     builder.write_image("c", _image(models), np.ones((16, 16), "uint8"))
     builder.add_series("d", _image(models), SPEC_2D)
     for name, match in [
-        ("a/b", "already created via prepare_series"),
-        ("c", "already written via write_image"),
+        ("a/b", "already exists"),
+        ("c", "already exists"),
         ("d", "already added via add_series"),
     ]:
         with pytest.raises(ValueError, match=match):

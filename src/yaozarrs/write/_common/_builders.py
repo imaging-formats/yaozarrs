@@ -469,9 +469,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
         # For prepare-only workflow: {series_name: (image, dataset_specs)}
         self._series: dict[str, ImageWithShapeSpecs] = {}
-        # The series created so far, in OME/zarr.json order, each with how it was added
-        # (e.g. "written via write_image()", for "Series 'x' already ..." errors)
-        self._written_series: dict[str, str] = {}
+        # The series created so far, in OME/zarr.json order
+        self._written_series: list[str] = []
 
     @property
     def root_path(self) -> Path:
@@ -545,7 +544,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             options["shards"],
         )
         series = {name: (image, specs, options)}
-        arrays = self._create(series, "created via prepare_series()")
+        arrays = self._create(series)
         return self._dest / name, arrays[name]
 
     def write_image(
@@ -590,8 +589,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         datasets_seq = self._check_datasets(image, datasets, f"Series '{name}': ")
         specs = [(arr.shape, arr.dtype) for arr in datasets_seq]
         series = {name: (image, specs, self._array_options())}
-        how = "written via write_image()"
-        self._create(series, how, data=datasets_seq, progress=progress)
+        self._create(series, data=datasets_seq, progress=progress)
         return self
 
     def add_series(
@@ -672,7 +670,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         series = {
             name: (image, specs, options) for name, (image, specs) in queued.items()
         }
-        arrays = self._create(series, "added via add_series()")
+        arrays = self._create(series)
         all_arrays = {
             f"{name}/{dataset_path}": arr
             for name, series_arrays in arrays.items()
@@ -685,15 +683,14 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         return f"<{self.__class__.__name__}: {total_images} images>"
 
     def _validate_series_name(self, name: str) -> None:
-        if (how := self._written_series.get(name)) is not None:
-            raise ValueError(f"Series '{name}' already {how}.")
+        if name in self._written_series:
+            raise ValueError(f"Series '{name}' already exists.")
         if name in self._series:
             raise ValueError(f"Series '{name}' already added via add_series().")
 
     def _create(
         self,
         series: Mapping[str, tuple[Any, Sequence[Any], dict[str, Any]]],
-        how: str,
         *,
         data: Sequence[Any] | None = None,
         progress: bool = False,
@@ -727,7 +724,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             for path in created:
                 shutil.rmtree(path, ignore_errors=True)
             raise
-        self._list_series(series, how)
+        self._list_series(series)
         return arrays
 
     def _ensure_initialized(self) -> None:
@@ -754,7 +751,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         dest.mkdir(parents=True)
         self._initialized = True
 
-    def _list_series(self, names: Iterable[str], how: str) -> None:
+    def _list_series(self, names: Iterable[str]) -> None:
         """List the (created) series `names` in OME/zarr.json, after the others.
 
         The root zarr.json is written with the first series, last: until then, `dest`
@@ -766,7 +763,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
         listing = [*self._written_series, *names]
         _rewrite_zarr3_group(self._dest / "OME", self._series_type(series=listing))
-        self._written_series.update(dict.fromkeys(names, how))
+        self._written_series.extend(names)
         if first:
             bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
             ome = bf2raw.model_dump(mode="json", exclude_none=True)
