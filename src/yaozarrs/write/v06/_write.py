@@ -921,6 +921,9 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     collection after every call.  A collection already at `dest` (of this version,
     with a `series` list) is added to, unless `overwrite`.
 
+    A builder isn't thread-safe: create series from one thread (or behind your own
+    lock), then write their data from as many threads or processes as you like.
+
 
     See Also
     --------
