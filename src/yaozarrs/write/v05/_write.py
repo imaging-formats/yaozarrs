@@ -723,7 +723,8 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
        to the returned arrays yourself.
 
     3. **Create now, write later**: Use `prepare_series()` to create one series at
-       a time, with empty arrays, and write to the returned arrays yourself.
+       a time, with empty arrays, and write to the returned arrays yourself (the
+       builder doesn't keep them: hold on to them, or reopen them yourself).
 
     Each series is listed in `OME/zarr.json` only once its arrays exist (and the
     root `zarr.json` is written with the first series), so the store is a valid

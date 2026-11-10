@@ -523,8 +523,9 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
         The series' group and arrays are created first, and only then is the series
         listed in `OME/zarr.json` (which creates the collection, if this is its first
-        series).  Write data into the returned arrays (or into the arrays opened with
-        your own backend) at any time, in any order.
+        series).  Write data into the returned arrays at any time, in any order.  The
+        builder doesn't keep them: hold on to them, or reopen them later with your own
+        backend (at `root_path / name / <dataset path>`).
 
         Parameters
         ----------
