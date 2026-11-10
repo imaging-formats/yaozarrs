@@ -727,6 +727,10 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         self._list_series(series)
         return arrays
 
+    def _write_ome_xml(self) -> None:
+        if self._ome_xml is not None:
+            (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
+
     def _ensure_initialized(self) -> None:
         """Create the root directory (replacing what's there, if `overwrite`).
 
@@ -759,8 +763,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         """
         first = not self._written_series
         (self._dest / "OME").mkdir(exist_ok=True)
-        if first and self._ome_xml is not None:
-            (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
+        if first:
+            self._write_ome_xml()
         listing = [*self._written_series, *names]
         _rewrite_zarr3_group(self._dest / "OME", self._series_type(series=listing))
         self._written_series.extend(names)
