@@ -50,22 +50,20 @@ from yaozarrs.v06._storage import (
     _multiscale_graph,
 )
 from yaozarrs.v06._transforms import check_transform_ndim
-from yaozarrs.write._common._arrays import CreateArrayFunc, _get_create_func
+from yaozarrs.write._common import _builders
+from yaozarrs.write._common._arrays import CreateArrayFunc, get_create_func
 from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
+    BuilderBase,
+    Default,
     LabelsBuilderBase,
     PlateBuilderBase,
-    _BuilderBase,
-    _check_image_args,
-    _check_label_dtypes,
-    _Default,
-    _prepare_image,
-    _write_bioformats2raw,
-    _write_image,
-    _write_plate,
+    check_image_args,
+    check_image_path,
+    check_label_dtypes,
 )
-from yaozarrs.write._common._groups import _create_zarr3_group, _ensure_parent_groups
-from yaozarrs.write._common._models import _check_model
+from yaozarrs.write._common._groups import create_zarr3_group, ensure_parent_groups
+from yaozarrs.write._common._models import check_model
 
 __all__ = [
     "Bf2RawBuilder",
@@ -248,7 +246,7 @@ def write_image(
     ... )
     >>> assert (result / "labels" / "cells" / "0" / "zarr.json").exists()
     """
-    return _write_image(
+    return _builders.write_image(
         Path(dest),
         image,
         datasets,
@@ -393,7 +391,7 @@ def write_plate(
     ...     overwrite=True,
     ... )
     """
-    return _write_plate(
+    return _builders.write_plate(
         PlateBuilder,
         dest,
         images,
@@ -531,7 +529,7 @@ def write_bioformats2raw(
     >>> (result / "0" / "zarr.json").exists()
     True
     """
-    return _write_bioformats2raw(
+    return _builders.write_bioformats2raw(
         Bf2RawBuilder,
         dest,
         images,
@@ -877,7 +875,7 @@ def prepare_image(
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
     """
-    return _prepare_image(
+    return _builders.prepare_image(
         Path(dest),
         image,
         datasets,
@@ -902,15 +900,23 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     - Each series as a separate Image subgroup (e.g., `0/`, `1/`)
     - Optional `OME/METADATA.ome.xml` with full OME-XML metadata
 
-    This builder supports two workflows:
+    Series are added one at a time, in a few different ways:
 
-    1. **Immediate write** (simpler): Use `write_image()` to write each series
-       with its data immediately. The builder manages root structure and series
-       list automatically.
+    1. **Create now, write later**: `prepare_series()` creates a series with empty
+       arrays, and returns them.  Write into them (or into `arrays(name)`, or into
+       the arrays opened with your own backend) at any time, in any order.
+    2. **Immediate write** (simpler): `write_image()` writes a series with its data, if
+       you have the full array(s) ready.
+    3. **Prepare-only**: `add_series()` registers series, then `prepare()` creates
+       those registered since its last call, and returns their arrays.
 
-    2. **Prepare-only** (flexible): Use `add_series()` to register all series,
-       then `prepare()` to create the hierarchy with empty arrays. Write data
-       to the returned arrays yourself.
+    A series is listed in `OME/zarr.json` only once it is complete (and the root
+    `zarr.json` is written with the first series), so the store is a valid
+    collection after every call, even an interrupted one.  A collection already at
+    `dest` is added to (unless `overwrite`).
+
+    Series can be created from several threads, but not from several processes at
+    once: create series from one process, and write their data from any.
 
 
     See Also
@@ -934,16 +940,19 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
-        If True, overwrite existing groups. Default is False.
+        If True, replace whatever is at `dest` (deleting every series of an existing
+        collection) when the first series is created.  If False (default), add to
+        the collection at `dest`, if there is one.
         Note: existing directories that don't look like zarr groups will NOT be removed,
         an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
 
+    `chunks`, `shards` and `compression` are defaults for every series:
+    `prepare_series()`, `write_image()` and `add_series()` can override them.
+
     Examples
     --------
-    **Immediate write workflow:**
-
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import DimSpec, v06
@@ -954,6 +963,18 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     ...             v06.Multiscale.from_dims([DimSpec(name="y"), DimSpec(name="x")])
     ...         ]
     ...     )
+
+    **Create now, write later:**
+
+    >>> builder = Bf2RawBuilder("builder_incremental.zarr")
+    >>> _, arrays = builder.prepare_series("0", make_image(), ((32, 32), np.uint16))
+    >>> arrays["0"][:16] = np.ones((16, 32), dtype=np.uint16)  # e.g. tile by tile
+    >>> _ = builder.prepare_series("1", make_image(), ((16, 16), np.uint8))
+    >>> builder.series
+    ('0', '1')
+
+    **Immediate write workflow:**
+
     >>> builder = Bf2RawBuilder("builder_immediate.zarr")
     >>> builder.write_image("0", make_image(), np.zeros((32, 32), dtype=np.uint16))
     <Bf2RawBuilder: 1 images>
@@ -1232,7 +1253,7 @@ class LabelsBuilder(LabelsBuilderBase[LabelImage]):
         )
 
 
-class SceneBuilder(_BuilderBase):
+class SceneBuilder(BuilderBase):
     """Builder for OME-Zarr v0.6 scene hierarchies.
 
     A scene group holds [`Scene`][yaozarrs.v06.Scene] metadata, describing the
@@ -1338,7 +1359,7 @@ class SceneBuilder(_BuilderBase):
         overwrite: bool = False,
         compression: CompressionName = "blosc-zstd",
     ) -> None:
-        _check_model(scene, Scene, "scene: ")
+        check_model(scene, Scene, "scene: ")
         super().__init__(
             Path(dest),
             writer=writer,
@@ -1368,9 +1389,9 @@ class SceneBuilder(_BuilderBase):
         datasets: ArrayOrPyramid,
         *,
         labels: LabelsWithDatasets | None = None,
-        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
-        shards: ShapeLike | _Default | None = _Default.BUILDER,
-        compression: CompressionName | _Default = _Default.BUILDER,
+        chunks: ShapeLike | Literal["auto"] | Default | None = Default.BUILDER,
+        shards: ShapeLike | Default | None = Default.BUILDER,
+        compression: CompressionName | Default = Default.BUILDER,
         progress: bool = False,
     ) -> Self:
         """Write an image of the scene immediately, with its data.
@@ -1422,7 +1443,7 @@ class SceneBuilder(_BuilderBase):
         _check_scene(self._scene, {path: image, **label_images}, complete=False)
 
         self._ensure_initialized()
-        _ensure_parent_groups(self._dest, path)
+        ensure_parent_groups(self._dest, path)
         self._write(
             image,
             datasets,
@@ -1445,9 +1466,9 @@ class SceneBuilder(_BuilderBase):
         datasets: ShapeAndDTypeOrPyramid,
         *,
         labels: LabelsWithSpecs | None = None,
-        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
-        shards: ShapeLike | _Default | None = _Default.BUILDER,
-        compression: CompressionName | _Default = _Default.BUILDER,
+        chunks: ShapeLike | Literal["auto"] | Default | None = Default.BUILDER,
+        shards: ShapeLike | Default | None = Default.BUILDER,
+        compression: CompressionName | Default = Default.BUILDER,
     ) -> Self:
         """Add an image for the prepare-only workflow.
 
@@ -1534,7 +1555,7 @@ class SceneBuilder(_BuilderBase):
         self._ensure_initialized()
         all_arrays: dict[str, Any] = {}
         for path, (image, specs, options, labels) in self._images.items():
-            _ensure_parent_groups(self._dest, path)
+            ensure_parent_groups(self._dest, path)
             all_arrays.update(self._prepare(image, specs, path, **options))
             if labels:
                 builder = LabelsBuilder(
@@ -1561,15 +1582,15 @@ class SceneBuilder(_BuilderBase):
         image: Any,
         datasets: Any,
         others: Iterable[str] | None = None,
-        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
-        shards: ShapeLike | _Default | None = _Default.BUILDER,
+        chunks: ShapeLike | Literal["auto"] | Default | None = Default.BUILDER,
+        shards: ShapeLike | Default | None = Default.BUILDER,
         labels: Mapping[str, tuple[Any, Any]] | None = None,
     ) -> tuple[Any, Sequence[Any]]:
         """Check an image (its path, and its labels) before anything of it is written.
 
         `others` are the paths it mustn't clash with (default: those already added).
         """
-        _check_image_path(path)
+        check_image_path(path)
         if others is None:
             others = (*self._written_images, *self._images)
         for other in others:
@@ -1580,7 +1601,7 @@ class SceneBuilder(_BuilderBase):
                     f"Image '{path}' can't be nested in (or contain) image '{other}'."
                 )
         options = self._array_options(chunks, shards)
-        result = _check_image_args(
+        result = check_image_args(
             image,
             datasets,
             self._image_type,
@@ -1589,9 +1610,9 @@ class SceneBuilder(_BuilderBase):
             options["shards"],
         )
         for name, (label_image, label_datasets) in (labels or {}).items():
-            _check_image_path(f"{path}/labels/{name}")
+            check_image_path(f"{path}/labels/{name}")
             context = f"Image '{path}', label '{name}': "
-            _, label_seq = _check_image_args(
+            _, label_seq = check_image_args(
                 label_image,
                 label_datasets,
                 LabelImage,
@@ -1599,15 +1620,15 @@ class SceneBuilder(_BuilderBase):
                 options["chunks"],
                 options["shards"],
             )
-            _check_label_dtypes(label_seq, context)
+            check_label_dtypes(label_seq, context)
         return result
 
     def _ensure_initialized(self) -> None:
         """Create the scene group (with the scene metadata) if not already done."""
         if self._initialized:
             return
-        _get_create_func(self._writer)  # (raises for an unknown/missing backend)
-        _create_zarr3_group(
+        get_create_func(self._writer)  # (raises for an unknown/missing backend)
+        create_zarr3_group(
             self._dest,
             self._scene,
             self._overwrite,
@@ -1623,20 +1644,6 @@ def _label_paths(
     return {
         f"{path}/labels/{name}": label for name, (label, _) in (labels or {}).items()
     }
-
-
-def _check_image_path(path: str) -> None:
-    # (each part is the name of a node below the scene group: Zarr node names must be
-    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
-    # collide with a group's own metadata)
-    if any(
-        not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
-        for p in path.split("/")
-    ):
-        raise ValueError(
-            f"Invalid image path {path!r}: each part must be a valid Zarr node name "
-            "(non-empty, not only periods, not starting with '__', not 'zarr.json')."
-        )
 
 
 def _check_scene(

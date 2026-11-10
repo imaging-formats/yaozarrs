@@ -31,15 +31,12 @@ from typing import TYPE_CHECKING, Any, overload
 from yaozarrs.v05 import Bf2Raw, Image, LabelImage, LabelsGroup, Plate
 from yaozarrs.v05._bf2raw import Series
 from yaozarrs.v05._plate import FieldOfView, Well, WellDef
+from yaozarrs.write._common import _builders
 from yaozarrs.write._common._arrays import CreateArrayFunc
 from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
     PlateBuilderBase,
-    _prepare_image,
-    _write_bioformats2raw,
-    _write_image,
-    _write_plate,
 )
 
 __all__ = [
@@ -220,7 +217,7 @@ def write_image(
     ... )
     >>> assert (result / "labels" / "cells" / "0" / "zarr.json").exists()
     """
-    return _write_image(
+    return _builders.write_image(
         Path(dest),
         image,
         datasets,
@@ -373,7 +370,7 @@ def write_plate(
     ...     overwrite=True,
     ... )
     """
-    return _write_plate(
+    return _builders.write_plate(
         PlateBuilder,
         dest,
         images,
@@ -519,7 +516,7 @@ def write_bioformats2raw(
     >>> (result / "0" / "zarr.json").exists()
     True
     """
-    return _write_bioformats2raw(
+    return _builders.write_bioformats2raw(
         Bf2RawBuilder,
         dest,
         images,
@@ -687,7 +684,7 @@ def prepare_image(
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
     """
-    return _prepare_image(
+    return _builders.prepare_image(
         Path(dest),
         image,
         datasets,
@@ -712,15 +709,23 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     - Each series as a separate Image subgroup (e.g., `0/`, `1/`)
     - Optional `OME/METADATA.ome.xml` with full OME-XML metadata
 
-    This builder supports two workflows:
+    Series are added one at a time, in a few different ways:
 
-    1. **Immediate write** (simpler): Use `write_image()` to write each series
-       with its data immediately. The builder manages root structure and series
-       list automatically.
+    1. **Create now, write later**: `prepare_series()` creates a series with empty
+       arrays, and returns them.  Write into them (or into `arrays(name)`, or into
+       the arrays opened with your own backend) at any time, in any order.
+    2. **Immediate write** (simpler): `write_image()` writes a series with its data, if
+       you have the full array(s) ready.
+    3. **Prepare-only**: `add_series()` registers series, then `prepare()` creates
+       those registered since its last call, and returns their arrays.
 
-    2. **Prepare-only** (flexible): Use `add_series()` to register all series,
-       then `prepare()` to create the hierarchy with empty arrays. Write data
-       to the returned arrays yourself.
+    A series is listed in `OME/zarr.json` only once it is complete (and the root
+    `zarr.json` is written with the first series), so the store is a valid
+    collection after every call, even an interrupted one.  A collection already at
+    `dest` is added to (unless `overwrite`).
+
+    Series can be created from several threads, but not from several processes at
+    once: create series from one process, and write their data from any.
 
 
     See Also
@@ -744,16 +749,19 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
-        If True, overwrite existing groups. Default is False.
+        If True, replace whatever is at `dest` (deleting every series of an existing
+        collection) when the first series is created.  If False (default), add to
+        the collection at `dest`, if there is one.
         Note: existing directories that don't look like zarr groups will NOT be removed,
         an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
         Compression codec. Default is "blosc-zstd".
 
+    `chunks`, `shards` and `compression` are defaults for every series:
+    `prepare_series()`, `write_image()` and `add_series()` can override them.
+
     Examples
     --------
-    **Immediate write workflow:**
-
     >>> import numpy as np
     >>> from pathlib import Path
     >>> from yaozarrs import v05
@@ -774,6 +782,18 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     ...             )
     ...         ]
     ...     )
+
+    **Create now, write later:**
+
+    >>> builder = Bf2RawBuilder("builder_incremental.zarr")
+    >>> _, arrays = builder.prepare_series("0", make_image(), ((32, 32), np.uint16))
+    >>> arrays["0"][:16] = np.ones((16, 32), dtype=np.uint16)  # e.g. tile by tile
+    >>> _ = builder.prepare_series("1", make_image(), ((16, 16), np.uint8))
+    >>> builder.series
+    ('0', '1')
+
+    **Immediate write workflow:**
+
     >>> builder = Bf2RawBuilder("builder_immediate.zarr")
     >>> builder.write_image("0", make_image(), np.zeros((32, 32), dtype=np.uint16))
     <Bf2RawBuilder: 1 images>

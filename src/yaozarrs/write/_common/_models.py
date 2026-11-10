@@ -13,7 +13,7 @@ def _model_name(cls: type) -> str:
     return cls.__qualname__
 
 
-def _check_model(obj: Any, expected: type, context: str = "") -> None:
+def check_model(obj: Any, expected: type, context: str = "") -> None:
     """Raise TypeError unless `obj` is an instance of this writer's `expected` model.
 
     (e.g. a v05.Image passed to the v06 writer would otherwise be written as-is)

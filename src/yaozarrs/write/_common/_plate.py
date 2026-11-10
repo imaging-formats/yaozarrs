@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, cast
 
-from ._models import _check_model
+from ._models import check_model
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -61,7 +61,7 @@ def _column_name_width(col_names: Iterable[str]) -> int:
     return len(padded[0])
 
 
-def _autogenerate_plate_metadata(
+def autogenerate_plate_metadata(
     fov_paths: Iterable[tuple[str, str, str]],
 ) -> dict[str, Any]:
     """Auto-generate plate metadata from images dict keys.
@@ -110,7 +110,7 @@ def _autogenerate_plate_metadata(
     return {"rows": rows, "columns": columns, "wells": wells}
 
 
-def _merge_plate_metadata(
+def merge_plate_metadata(
     images: Mapping[tuple[str, str, str], ImageWithAny],
     user_plate: BaseModel | Mapping[str, Any] | None,
     plate_type: type[Any],
@@ -138,13 +138,13 @@ def _merge_plate_metadata(
     """
     # (generated even for a given Plate: this also checks the images' row and
     # column names)
-    auto_metadata = _autogenerate_plate_metadata(images)
+    auto_metadata = autogenerate_plate_metadata(images)
 
     if isinstance(user_plate, plate_type):
         _validate_plate_matches_images(user_plate, images)
         return user_plate
     if user_plate is not None and not isinstance(user_plate, Mapping):
-        _check_model(user_plate, plate_type, "plate: ")  # (raises)
+        check_model(user_plate, plate_type, "plate: ")  # (raises)
 
     merged = {**auto_metadata, **cast("Mapping[str, Any]", user_plate or {})}
     plate = plate_type.model_validate({"plate": merged})
@@ -152,7 +152,7 @@ def _merge_plate_metadata(
     return plate
 
 
-def _extend_plate_metadata(plate: Any, new: Mapping[str, Any]) -> Any:
+def extend_plate_metadata(plate: Any, new: Mapping[str, Any]) -> Any:
     """Add the rows, columns and wells of `new` that `plate` doesn't have yet."""
     merged = plate.plate.model_dump(mode="json", exclude_none=True)
     for key in ("rows", "columns"):

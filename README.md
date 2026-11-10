@@ -396,6 +396,11 @@ up front, or want more control over how it's written, use the builders
   the hierarchy with empty arrays, which you fill however you like (e.g. chunk
   by chunk, or in parallel). `prepare_image()` does the same for a single
   image.
+- **create now, write later**: `Bf2RawBuilder.prepare_series()` adds one series
+  at a time with empty arrays, for you to fill whenever you like. Each series
+  is listed only once it's complete, so the collection is valid after every
+  call, and you can keep adding series (e.g. as a model's output tiles arrive).
+  A builder opened on an existing collection adds to it.
 
 See the [writing docs](https://imaging-formats.github.io/yaozarrs/API_Reference/yaozarrs.write.v05/)
 for details.

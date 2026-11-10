@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import sys
+import time
+import uuid
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -12,24 +16,65 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 
-def _write_group_json(
-    dest_path: Path, attributes: dict[str, Any] | None = None, indent: int | None = None
+def atomic_write(path: Path, data: str | bytes) -> None:
+    """Replace the file at `path` with `data`, atomically.
+
+    (A temporary file in the same directory is renamed over `path`, so readers see
+    either the old file or the new one, never a partial one.)
+    """
+    tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        tmp.write_bytes(data.encode() if isinstance(data, str) else data)
+        _replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def _replace(src: Path, dst: Path, attempts: int = 6) -> None:
+    """`os.replace`, retried on Windows while another process has `dst` open."""
+    for attempt in range(attempts):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError as e:
+            if sys.platform != "win32":
+                raise
+            if attempt == attempts - 1:
+                raise PermissionError(
+                    f"Couldn't replace {dst}: is it open in another program? "
+                    "(Try again once it's closed.)"
+                ) from e
+            time.sleep(0.01 * 2**attempt)
+
+
+def is_empty_dir(path: Path) -> bool:
+    return path.is_dir() and not any(path.iterdir())
+
+
+def write_group_json(
+    dest_path: Path,
+    attributes: dict[str, Any] | None = None,
+    indent: int | None = None,
 ) -> None:
     """Write the `zarr.json` of a group at `dest_path` (with `attributes`, if any)."""
     zarr_json: dict[str, Any] = {"zarr_format": 3, "node_type": "group"}
     if attributes is not None:
         zarr_json["attributes"] = attributes
-    (dest_path / "zarr.json").write_text(json.dumps(zarr_json, indent=indent))
+    atomic_write(dest_path / "zarr.json", json.dumps(zarr_json, indent=indent))
 
 
-def _create_zarr3_group(
+def create_zarr3_group(
     dest_path: Path,
     ome_model: BaseModel | None = None,
     overwrite: bool = False,
     extra_attributes: dict[str, Any] | None = None,
 ) -> None:
-    """Create a zarr group directory with optional OME metadata in zarr.json."""
-    if dest_path.exists():
+    """Create a zarr group directory with optional OME metadata in zarr.json.
+
+    (An existing empty directory is used as is.)
+    """
+    if dest_path.exists() and not is_empty_dir(dest_path):
         if not overwrite:
             raise FileExistsError(
                 f"Zarr group already exists at {dest_path}. "
@@ -48,10 +93,10 @@ def _create_zarr3_group(
     if ome_model is not None:
         attrs["ome"] = ome_model.model_dump(mode="json", exclude_none=True)
     attrs.update(extra_attributes or {})
-    _write_group_json(dest_path, attrs or None, indent=2)
+    write_group_json(dest_path, attrs or None, indent=2)
 
 
-def _update_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
+def update_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
     """Update the ome metadata in an existing zarr group."""
     zarr_json_path = dest_path / "zarr.json"
     if not zarr_json_path.exists():
@@ -65,13 +110,13 @@ def _update_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
     attrs: dict[str, Any] = {k: v for k, v in existing_attrs.items() if k != "ome"}
     attrs["ome"] = ome_model.model_dump(mode="json", exclude_none=True)
     zarr_json["attributes"] = attrs
-    zarr_json_path.write_text(json.dumps(zarr_json, indent=2))
+    atomic_write(zarr_json_path, json.dumps(zarr_json, indent=2))
 
 
-def _rewrite_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
+def rewrite_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
     """(Re)write the group at `dest_path`, keeping any non-ome attributes it has.
 
-    Unlike `_update_zarr3_group`, the group's zarr.json needn't exist yet, and is
+    Unlike `update_zarr3_group`, the group's zarr.json needn't exist yet, and is
     written anew (with "ome" first in its attributes).
     """
     extra: dict[str, Any] = {}
@@ -79,10 +124,10 @@ def _rewrite_zarr3_group(dest_path: Path, ome_model: BaseModel) -> None:
         existing = json.loads(zarr_json.read_text())
         extra = {k: v for k, v in existing.get("attributes", {}).items() if k != "ome"}
     ome = ome_model.model_dump(mode="json", exclude_none=True)
-    _write_group_json(dest_path, {"ome": ome, **extra}, indent=2)
+    write_group_json(dest_path, {"ome": ome, **extra}, indent=2)
 
 
-def _ensure_parent_groups(root: Path, path: str) -> None:
+def ensure_parent_groups(root: Path, path: str) -> None:
     """Create plain groups for each intermediate node of `path` below `root`.
 
     (Zarr v3 has no implicit groups, so e.g. `root/a/` needs a `zarr.json` of its own
@@ -93,4 +138,4 @@ def _ensure_parent_groups(root: Path, path: str) -> None:
         parent = parent / part
         parent.mkdir(parents=True, exist_ok=True)
         if not (parent / "zarr.json").exists():
-            _write_group_json(parent)
+            write_group_json(parent)
