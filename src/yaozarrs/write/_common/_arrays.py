@@ -11,7 +11,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
     from pathlib import Path
     from typing import Literal, TypeAlias
 
@@ -92,7 +92,7 @@ class CreateArrayFunc(Protocol):
 
 
 # TODO: I suspect there are better chunk calculation algorithms in the backends.
-def resolve_chunks(
+def _resolve_chunks(
     shape: tuple[int, ...],
     dtype: Any,
     chunk_shape: tuple[int, ...] | Literal["auto"] | None,
@@ -243,30 +243,6 @@ def _create_array_tensorstore(
     return ts.open(spec).result()
 
 
-def _open_array_zarr(path: Path) -> Any:
-    """Open the existing zarr array at `path` for writing, using zarr-python."""
-    import zarr
-
-    return zarr.open_array(str(path), mode="r+")
-
-
-def _open_array_tensorstore(path: Path) -> Any:
-    """Open the existing zarr array at `path` for writing, using tensorstore."""
-    import tensorstore as ts
-
-    spec = {"driver": "zarr3", "kvstore": {"driver": "file", "path": str(path)}}
-    return ts.open(spec, open=True, read=True, write=True).result()
-
-
-def get_open_func(create_func: CreateArrayFunc) -> Callable[[Path], Any] | None:
-    """The function reopening arrays made by `create_func` (None for custom ones)."""
-    openers: dict[Any, Callable[[Path], Any]] = {
-        _create_array_zarr: _open_array_zarr,
-        _create_array_tensorstore: _open_array_tensorstore,
-    }
-    return openers.get(create_func)
-
-
 def _align_dask_chunks(data: da.Array, unit: tuple[int, ...]) -> da.Array:
     """Rechunk axes whose dask chunk boundaries don't fall on `unit` boundaries."""
     new_chunks: list[int | tuple[int, ...]] = []
@@ -294,7 +270,7 @@ class _TensorStoreTarget:
         self._array[key].write(value).result()
 
 
-def write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
+def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
     """Write data to an already-created array (zarr, tensorstore, or custom)."""
     is_dask = "dask" in sys.modules and hasattr(data, "compute")
     if is_dask:
@@ -338,14 +314,14 @@ def write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
 # ######################## Array Writing Functions #############################
 
 
-def get_create_func(writer: str | CreateArrayFunc) -> CreateArrayFunc:
+def _get_create_func(writer: str | CreateArrayFunc) -> CreateArrayFunc:
     if isinstance(writer, CreateArrayFunc):
         return writer
 
     if writer == "auto":
         for candidate in ["tensorstore", "zarr"]:
             try:
-                return get_create_func(candidate)
+                return _get_create_func(candidate)
             except ImportError:
                 continue
         raise ImportError(

@@ -9,7 +9,6 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import json
-import pickle
 import threading
 from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock
@@ -132,19 +131,16 @@ def test_valid_after_every_call(tmp_path: Path, ver: Any, writer: str) -> None:
     yaozarrs.validate_zarr_store(dest)
     assert (_get(arrays["0"], 0) == 1).all()  # (earlier data is kept)
 
-    # a later builder adds to the collection, and reopens its arrays
+    # a later builder adds to the collection
     resumed = w.Bf2RawBuilder(dest, writer=writer)
     assert resumed.series == builder.series
     resumed.prepare_series("5", _image(models), SPEC_2D)
     yaozarrs.validate_zarr_store(dest)
-    _set(resumed.arrays("0")["0"], 1, 2)
-    assert (_get(resumed.arrays("0")["0"], 1) == 2).all()
 
     expected = ["0", "group_1/array_1_0", "1", "2", "3", "4", "5"]
     assert _listing(dest) == expected
     assert resumed.series == tuple(expected)
     assert (dest / "OME" / "METADATA.ome.xml").read_text() == "<OME/>"
-    assert not (dest / _builders._CREATING_MARKER).exists()
     assert not list(dest.rglob("*.tmp"))
     assert repr(resumed) == "<Bf2RawBuilder: 7 images>"
 
@@ -153,16 +149,16 @@ def test_written_series_has_data_when_listed(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
     seen: list[list[str] | None] = []
-    original = _arrays.write_to_array
+    original = _arrays._write_to_array
 
-    def write_to_array(*args: Any, **kwargs: Any) -> None:
+    def _write_to_array(*args: Any, **kwargs: Any) -> None:
         seen.append(_listing(dest) if (dest / "OME" / "zarr.json").exists() else None)
         original(*args, **kwargs)
 
     builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
     builder.write_image("0", _image(models), np.ones((16, 16), "uint8"))
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(_builders, "write_to_array", write_to_array)
+        mp.setattr(_builders, "_write_to_array", _write_to_array)
         builder.write_image("1", _image(models), np.ones((16, 16), "uint8"))
     assert seen == [["0"]]  # ("1" wasn't listed yet while its data was written)
 
@@ -182,26 +178,14 @@ def _build_new(w: ModuleType, models: ModuleType, dest: Path) -> None:
     builder.write_image("a/b", _image(models), np.ones((16, 16), "uint8"))
 
 
-def _build_extend_numbered(w: ModuleType, models: ModuleType, dest: Path) -> None:
-    w.Bf2RawBuilder(dest, writer="zarr").prepare_series("x", _image(models), SPEC_2D)
-
-
 def _build_overwrite(w: ModuleType, models: ModuleType, dest: Path) -> None:
     builder = w.Bf2RawBuilder(dest, writer="zarr", overwrite=True)
     builder.prepare_series("0", _image(models), SPEC_2D)
     builder.prepare_series("1", _image(models), SPEC_2D)
 
 
-def _setup_numbered(w: ModuleType, models: ModuleType, dest: Path) -> None:
-    # (a collection without `series`: its numbered groups 0 and 1)
-    _bf2raw_store(w, models, dest, "0", "1")
-    version = _ome(dest)["version"]
-    _groups.write_group_json(dest / "OME", {"ome": {"version": version}})
-
-
 SEQUENCES = {
     "new": (None, _build_new),
-    "extend_numbered": (_setup_numbered, _build_extend_numbered),
     "overwrite": (lambda w, m, d: _bf2raw_store(w, m, d, "0", "1"), _build_overwrite),
 }
 
@@ -211,7 +195,7 @@ SEQUENCES = {
 def test_crash_at_any_step(
     tmp_path: Path, ver: Any, sequence: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """After a crash at any step, the store is absent or valid, and can be resumed."""
+    """After a crash at any step, the store is absent or valid (and extendable)."""
     models, w = ver
     setup, build = SEQUENCES[sequence]
     steps = {"n": 0, "crash_at": -1}
@@ -227,10 +211,8 @@ def test_crash_at_any_step(
 
     monkeypatch.setattr(_builders, "_discard", lambda path: None)
     for module, name in [
-        (_groups, "atomic_write"),
-        (_builders, "atomic_write"),
-        (_builders, "_claim_dir"),
-        (_builders, "_remove_tree"),
+        (_groups, "_atomic_write"),
+        (_builders, "_atomic_write"),
         (_arrays, "_create_array_zarr"),
     ]:
         monkeypatch.setattr(module, name, counted(getattr(module, name)))
@@ -249,52 +231,15 @@ def test_crash_at_any_step(
             break  # (every step has been crashed at)
         steps.update(crash_at=-1)
 
+        # (until the root zarr.json is written, there's no store at all)
         if (dest / "zarr.json").exists():
             yaozarrs.validate_zarr_store(dest)
-        # it can be resumed ...
-        resumed = w.Bf2RawBuilder(dest, writer="zarr")
-        resumed.prepare_series("resumed", _image(models), SPEC_2D)
-        yaozarrs.validate_zarr_store(dest)
-        assert "resumed" in _listing(dest)
-        # ... or replaced
-        w.Bf2RawBuilder(dest, writer="zarr", overwrite=True).prepare_series(
-            "fresh", _image(models), SPEC_2D
-        )
-        yaozarrs.validate_zarr_store(dest)
-        assert _listing(dest) == ["fresh"]
+            resumed = w.Bf2RawBuilder(dest, writer="zarr")
+            resumed.prepare_series("resumed", _image(models), SPEC_2D)
+            yaozarrs.validate_zarr_store(dest)
     else:  # pragma: no cover
         pytest.fail("the sequence never completed")
     assert crash_at > 3
-
-
-def test_interrupted_first_series_is_adopted(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    w.Bf2RawBuilder(dest, writer=WRITERS[0]).prepare_series(
-        "0", _image(models), SPEC_2D
-    )
-    # (as if the process died after listing "0", before writing the root zarr.json)
-    (dest / "zarr.json").unlink()
-    (dest / _builders._CREATING_MARKER).touch()
-
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    assert builder.series == ("0",)
-    builder.prepare_series("1", _image(models), SPEC_2D)
-    yaozarrs.validate_zarr_store(dest)
-    assert _listing(dest) == ["0", "1"]
-
-
-def test_interrupted_first_series_of_another_version(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    other_models, other_w = (v06, w06) if models is v05 else (v05, w05)
-    dest = tmp_path / "out.zarr"
-    _bf2raw_store(other_w, other_models, dest, "0")
-    (dest / "zarr.json").unlink()
-    (dest / _builders._CREATING_MARKER).touch()
-    before = _snapshot(dest)
-    with pytest.raises(FileExistsError, match="Delete it first"):
-        w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    assert _snapshot(dest) == before
 
 
 def test_failure_cleans_up(tmp_path: Path, ver: Any, writer: str) -> None:
@@ -306,7 +251,7 @@ def test_failure_cleans_up(tmp_path: Path, ver: Any, writer: str) -> None:
 
     with pytest.MonkeyPatch.context() as mp:
         # (e.g. Ctrl-C while writing the data)
-        mp.setattr(_builders, "write_to_array", Mock(side_effect=KeyboardInterrupt))
+        mp.setattr(_builders, "_write_to_array", Mock(side_effect=KeyboardInterrupt))
         with pytest.raises(KeyboardInterrupt):
             builder.write_image("1", _image(models), np.ones((16, 16), "uint8"))
     assert not (dest / "1").exists()
@@ -318,7 +263,7 @@ def test_failure_cleans_up(tmp_path: Path, ver: Any, writer: str) -> None:
     assert _listing(dest) == ["0", "1"]
 
 
-def test_failed_prepare_keeps_series_queued(tmp_path: Path, ver: Any) -> None:
+def test_failed_prepare_adds_nothing(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
     fail = {"path": "b"}
@@ -326,7 +271,7 @@ def test_failed_prepare_keeps_series_queued(tmp_path: Path, ver: Any) -> None:
     def create(path: Path, **kwargs: Any) -> Any:
         if path.parent.name == fail["path"]:
             raise RuntimeError("disk full")
-        return _arrays.get_create_func(WRITERS[0])(path, **kwargs)
+        return _arrays._get_create_func(WRITERS[0])(path, **kwargs)
 
     builder = w.Bf2RawBuilder(dest, writer=create)
     builder.add_series("a", _image(models), SPEC_2D)
@@ -337,46 +282,10 @@ def test_failed_prepare_keeps_series_queued(tmp_path: Path, ver: Any) -> None:
     assert builder.series == ()
 
     fail["path"] = ""
+    builder.add_series("a", _image(models), SPEC_2D)  # (to retry, add them again)
+    builder.add_series("b", _image(models), SPEC_2D)
     _, arrays = builder.prepare()
     assert set(arrays) == {"a/0", "b/0"}
-    assert _listing(dest) == ["a", "b"]
-
-
-def test_failed_prepare_after_listing(tmp_path: Path, ver: Any) -> None:
-    # (a series listed before the failure isn't queued again)
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    builder.add_series("a", _image(models), SPEC_2D)
-    with pytest.MonkeyPatch.context() as mp:  # (the root zarr.json)
-        mp.setattr(_builders, "write_group_json", Mock(side_effect=OSError("full")))
-        with pytest.raises(OSError, match="full"):
-            builder.prepare()
-    assert builder.series == ("a",)
-
-    builder.add_series("b", _image(models), SPEC_2D)
-    _, arrays = builder.prepare()
-    assert set(arrays) == {"b/0"}
-    assert _listing(dest) == ["a", "b"]
-    yaozarrs.validate_zarr_store(dest)
-
-
-def test_failed_prepare_drops_a_taken_path(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    builder.add_series("a", _image(models), SPEC_2D)
-    builder.add_series("b", _image(models), SPEC_2D)
-    (dest / "b").mkdir(parents=True)  # (after "b" was added)
-    with pytest.raises(FileExistsError, match="isn't a series"):
-        builder.prepare()
-    assert not (dest / "a").exists()
-
-    _, arrays = builder.prepare()  # (without "b", which would fail again)
-    assert set(arrays) == {"a/0"}
-    (dest / "b").rmdir()
-    builder.add_series("b", _image(models), SPEC_2D)
-    builder.prepare()
     assert _listing(dest) == ["a", "b"]
 
 
@@ -414,48 +323,6 @@ def test_never_invalid_while_building(tmp_path: Path, ver: Any) -> None:
     assert len(_listing(dest)) == 30
 
 
-def test_threads_and_builders_share_the_collection(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    builders = [w.Bf2RawBuilder(dest, writer=WRITERS[0]) for _ in range(2)]
-    errors: list[BaseException] = []
-
-    def work(i: int) -> None:
-        try:
-            for j in range(10):
-                builder = builders[(i + j) % 2]
-                builder.prepare_series(f"t{i}_{j}", _image(models), SPEC_2D)
-        except BaseException as e:  # pragma: no cover
-            errors.append(e)
-
-    threads = [threading.Thread(target=work, args=(i,)) for i in range(8)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-    assert not errors
-    listing = _listing(dest)
-    assert sorted(listing) == sorted(f"t{i}_{j}" for i in range(8) for j in range(10))
-    yaozarrs.validate_zarr_store(dest)
-
-
-def test_builders_merge_their_series(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    first, second = (w.Bf2RawBuilder(dest, writer=WRITERS[0]) for _ in range(2))
-    first.prepare_series("a", _image(models), SPEC_2D)
-    second.prepare_series("b", _image(models), SPEC_2D)
-    first.prepare_series("c", _image(models), SPEC_2D)
-    assert _listing(dest) == ["a", "b", "c"]
-    assert first.series == ("a", "b", "c")
-
-    # the other builder's series is there, though this one created none
-    with pytest.raises(FileExistsError, match="Series 'c' already exists"):
-        second.prepare_series("c", _image(models), SPEC_2D)
-    assert (dest / "c" / "zarr.json").exists()  # (not cleaned up by the loser)
-    yaozarrs.validate_zarr_store(dest)
-
-
 # ---------------------------------------------------------------- names
 
 
@@ -464,8 +331,7 @@ def test_builders_merge_their_series(tmp_path: Path, ver: Any) -> None:
     [
         ("a", "a", ValueError, "already created via prepare_series"),
         ("a", "a/b", ValueError, "can't be nested in"),
-        ("a/b", "a", ValueError, "can't be nested in"),
-        ("a", "A", ValueError, "differ only in case"),
+        ("a/b", "a", FileExistsError, "isn't a series"),
         (None, "OME", ValueError, "metadata"),
         (None, "ome/x", ValueError, "metadata"),
         (None, "a//b", ValueError, "Invalid image path"),
@@ -489,17 +355,16 @@ def test_name_errors(
         builder.prepare_series(second, _image(models), SPEC_2D)
 
 
-@pytest.mark.parametrize("name", ["0", "A"])
-def test_existing_series_names(tmp_path: Path, ver: Any, name: str) -> None:
+def test_existing_series_names(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
-    _bf2raw_store(w, models, dest, "0", "a")
+    _bf2raw_store(w, models, dest, "0")
     before = _snapshot(dest)
     builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
     with pytest.raises(FileExistsError, match="already exists"):
-        builder.prepare_series(name, _image(models), SPEC_2D)
+        builder.prepare_series("0", _image(models), SPEC_2D)
     with pytest.raises(FileExistsError, match="already exists"):
-        builder.add_series(name, _image(models), SPEC_2D)
+        builder.add_series("0", _image(models), SPEC_2D)
     assert _snapshot(dest) == before
 
 
@@ -509,29 +374,12 @@ def test_unlisted_path_is_not_replaced(tmp_path: Path, ver: Any) -> None:
     _bf2raw_store(w, models, dest, "0")
     (dest / "leftover").mkdir()
     builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    with pytest.raises(FileExistsError, match="interrupted write"):
+    with pytest.raises(FileExistsError, match="isn't a series"):
         builder.prepare_series("leftover", _image(models), SPEC_2D)
     assert (dest / "leftover").exists()
 
 
 # ---------------------------------------------------------------- existing stores
-
-
-def test_numbered_collection_is_extended(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    _bf2raw_store(w, models, dest, "0", "1", "3")  # (3 isn't part of it: a gap)
-    version = _ome(dest)["version"]
-    _groups.write_group_json(dest / "OME", {"ome": {"version": version}, "x": 1})
-    yaozarrs.validate_zarr_store(dest)
-
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    assert builder.series == ("0", "1")
-    builder.prepare_series("2", _image(models), SPEC_2D)
-    yaozarrs.validate_zarr_store(dest)
-    assert _listing(dest) == ["0", "1", "2"]
-    ome_attrs = json.loads((dest / "OME" / "zarr.json").read_bytes())["attributes"]
-    assert ome_attrs["x"] == 1  # (other attributes are kept)
 
 
 def _v2_group(dest: Path) -> None:
@@ -541,7 +389,7 @@ def _v2_group(dest: Path) -> None:
 
 def _plain_root(dest: Path) -> None:
     dest.mkdir()
-    _groups.write_group_json(dest)
+    _groups._write_group_json(dest)
 
 
 def _plate(dest: Path) -> None:
@@ -562,13 +410,21 @@ def _other_dir(dest: Path) -> None:
     (dest / "notes.txt").write_text("mine")
 
 
+def _numbered(dest: Path) -> None:
+    # (a collection without a `series` list: its series are its numbered groups)
+    other_models, other_w = (v06, w06) if dest.name == "v06" else (v05, w05)
+    _bf2raw_store(other_w, other_models, dest, "0")
+    version = _ome(dest)["version"]
+    _groups._write_group_json(dest / "OME", {"ome": {"version": version}})
+
+
 def _other_version(dest: Path) -> None:
     other_models, other_w = (v06, w06) if dest.name == "v05" else (v05, w05)
     _bf2raw_store(other_w, other_models, dest, "0")
 
 
 @pytest.mark.parametrize(
-    "make", [_v2_group, _plain_root, _plate, _other_dir, _other_version]
+    "make", [_v2_group, _plain_root, _plate, _other_dir, _numbered, _other_version]
 )
 def test_refuses_other_content(tmp_path: Path, ver: Any, make: Callable) -> None:
     models, w = ver
@@ -603,32 +459,7 @@ def test_overwrite_replaces_once(tmp_path: Path, ver: Any) -> None:
     builder.prepare()  # (used to delete everything again)
     assert _listing(dest) == ["x", "y", "z"]
     assert not (dest / "0").exists()
-    assert (_get(builder.arrays("x")["0"], 0) == 5).all()
-    assert not list(tmp_path.glob(".*.trash"))
-
-
-def test_overwrite_hides_the_old_series(tmp_path: Path, ver: Any) -> None:
-    # (they're about to be deleted)
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    _bf2raw_store(w, models, dest, "0")
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0], overwrite=True)
-    with pytest.raises(KeyError):
-        builder.arrays("0")
-    builder.prepare_series("0", _image(models), SPEC_2D)
-    assert _listing(dest) == ["0"]
-
-
-def test_pickle(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
-    builder.prepare_series("0", _image(models), SPEC_2D)
-    copy = pickle.loads(pickle.dumps(builder))
-    assert copy.series == ("0",)
-    assert copy._lock is builder._lock  # (one per store, in a process)
-    copy.prepare_series("1", _image(models), SPEC_2D)
-    assert _listing(dest) == ["0", "1"]
+    assert (_get(arrays["0"], 0) == 5).all()
 
 
 def test_write_bioformats2raw_still_refuses_existing(tmp_path: Path, ver: Any) -> None:
@@ -639,26 +470,25 @@ def test_write_bioformats2raw_still_refuses_existing(tmp_path: Path, ver: Any) -
         _bf2raw_store(w, models, dest, "1")
     with pytest.raises(ValueError, match="Series '1'"):  # (series are checked first)
         w.write_bioformats2raw(dest, {"1": (_image(models), np.zeros(4, "uint8"))})
-    empty = tmp_path / "empty.zarr"
-    empty.mkdir()
-    _bf2raw_store(w, models, empty, "0")  # (an empty directory is fine)
-    yaozarrs.validate_zarr_store(empty)
 
 
 def test_ome_xml_and_extra_attributes(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
-    builder = w.Bf2RawBuilder(dest, writer=WRITERS[0], extra_attributes={"a": 1})
-    builder.write_ome_xml("<OME>1</OME>")  # (no store yet: written with a series)
-    assert not dest.exists()
+    xml = dest / "OME" / "METADATA.ome.xml"
+    builder = w.Bf2RawBuilder(
+        dest, writer=WRITERS[0], ome_xml="<OME>1</OME>", extra_attributes={"a": 1}
+    )
     builder.prepare_series("0", _image(models), SPEC_2D)
-    assert (dest / "OME" / "METADATA.ome.xml").read_text() == "<OME>1</OME>"
-    builder.write_ome_xml("<OME>2</OME>")
-    assert (dest / "OME" / "METADATA.ome.xml").read_text() == "<OME>2</OME>"
+    assert xml.read_text() == "<OME>1</OME>"
 
-    # extending a collection merges extra attributes into its root
-    later = w.Bf2RawBuilder(dest, writer=WRITERS[0], extra_attributes={"b": 2})
+    # extending a collection replaces its OME-XML, and merges extra attributes into
+    # its root
+    later = w.Bf2RawBuilder(
+        dest, writer=WRITERS[0], ome_xml="<OME>2</OME>", extra_attributes={"b": 2}
+    )
     later.prepare_series("1", _image(models), SPEC_2D)
+    assert xml.read_text() == "<OME>2</OME>"
     attrs = json.loads((dest / "zarr.json").read_bytes())["attributes"]
     assert attrs["a"] == 1 and attrs["b"] == 2
     assert attrs["ome"]["bioformats2raw.layout"] == 3
@@ -686,7 +516,7 @@ def test_replace_error(
     denied = PermissionError(13, "Access is denied")
     monkeypatch.setattr(_groups.os, "replace", replace := Mock(side_effect=denied))
     with pytest.raises(PermissionError) as info:
-        _groups.atomic_write(tmp_path / "zarr.json", "{}")
+        _groups._atomic_write(tmp_path / "zarr.json", "{}")
     if platform == "win32":
         assert replace.call_count == 6
         assert "open in another program" in str(info.value)
@@ -730,35 +560,3 @@ def test_per_series_array_settings(tmp_path: Path, ver: Any, writer: str) -> Non
     codec_names = json.dumps(meta("sharded")["codecs"])
     assert "sharding_indexed" in codec_names
     assert "blosc" not in codec_names and "zstd" not in codec_names
-
-
-def test_arrays(tmp_path: Path, ver: Any, writer: str) -> None:
-    models, w = ver
-    dest = tmp_path / "out.zarr"
-    builder = w.Bf2RawBuilder(dest, writer=writer)
-    builder.prepare_series(
-        "0", _image(models, n_levels=2), [SPEC_2D, ((8, 8), "uint8")]
-    )
-    with pytest.raises(KeyError, match="no series"):
-        builder.arrays("1")
-    builder.add_series("1", _image(models), SPEC_2D)
-    with pytest.raises(KeyError, match="no series"):
-        builder.arrays("1")  # (queued, not created)
-
-    arrays = w.Bf2RawBuilder(dest, writer=writer).arrays("0")
-    assert set(arrays) == {"0", "1"}
-    _set(arrays["1"], (slice(0, 2), slice(0, 2)), 9)
-    assert (_get(builder.arrays("0")["1"], (slice(0, 2), slice(0, 2))) == 9).all()
-
-
-def test_arrays_with_a_custom_writer(tmp_path: Path, ver: Any) -> None:
-    models, w = ver
-
-    def create(path: Path, **kwargs: Any) -> Any:
-        _arrays.get_create_func(WRITERS[0])(path, **kwargs)
-        return np.zeros(kwargs["shape"], kwargs["dtype"])
-
-    builder = w.Bf2RawBuilder(tmp_path / "out.zarr", writer=create)
-    builder.prepare_series("0", _image(models), SPEC_2D)
-    with pytest.raises(TypeError, match="custom writer"):
-        builder.arrays("0")

@@ -31,12 +31,15 @@ from typing import TYPE_CHECKING, Any, overload
 from yaozarrs.v05 import Bf2Raw, Image, LabelImage, LabelsGroup, Plate
 from yaozarrs.v05._bf2raw import Series
 from yaozarrs.v05._plate import FieldOfView, Well, WellDef
-from yaozarrs.write._common import _builders
 from yaozarrs.write._common._arrays import CreateArrayFunc
 from yaozarrs.write._common._builders import (
     Bf2RawBuilderBase,
     LabelsBuilderBase,
     PlateBuilderBase,
+    _prepare_image,
+    _write_bioformats2raw,
+    _write_image,
+    _write_plate,
 )
 
 __all__ = [
@@ -217,7 +220,7 @@ def write_image(
     ... )
     >>> assert (result / "labels" / "cells" / "0" / "zarr.json").exists()
     """
-    return _builders.write_image(
+    return _write_image(
         Path(dest),
         image,
         datasets,
@@ -370,7 +373,7 @@ def write_plate(
     ...     overwrite=True,
     ... )
     """
-    return _builders.write_plate(
+    return _write_plate(
         PlateBuilder,
         dest,
         images,
@@ -516,7 +519,7 @@ def write_bioformats2raw(
     >>> (result / "0" / "zarr.json").exists()
     True
     """
-    return _builders.write_bioformats2raw(
+    return _write_bioformats2raw(
         Bf2RawBuilder,
         dest,
         images,
@@ -684,7 +687,7 @@ def prepare_image(
     >>> arrays["0"][:] = np.zeros((64, 64), dtype=np.uint16)
     >>> assert path.exists()
     """
-    return _builders.prepare_image(
+    return _prepare_image(
         Path(dest),
         image,
         datasets,
@@ -712,8 +715,8 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     Series are added one at a time, in a few different ways:
 
     1. **Create now, write later**: `prepare_series()` creates a series with empty
-       arrays, and returns them.  Write into them (or into `arrays(name)`, or into
-       the arrays opened with your own backend) at any time, in any order.
+       arrays, and returns them.  Write into them (or into the arrays opened with
+       your own backend) at any time, in any order.
     2. **Immediate write** (simpler): `write_image()` writes a series with its data, if
        you have the full array(s) ready.
     3. **Prepare-only**: `add_series()` registers series, then `prepare()` creates
@@ -722,10 +725,10 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     A series is listed in `OME/zarr.json` only once it is complete (and the root
     `zarr.json` is written with the first series), so the store is a valid
     collection after every call, even an interrupted one.  A collection already at
-    `dest` is added to (unless `overwrite`).
+    `dest` (written with a `series` list) is added to, unless `overwrite`.
 
-    Series can be created from several threads, but not from several processes at
-    once: create series from one process, and write their data from any.
+    A builder isn't thread-safe: create series from one thread, and write their data
+    from any.
 
 
     See Also
