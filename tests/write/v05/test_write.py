@@ -788,7 +788,7 @@ def test_write_bioformats2raw_multiscale_series(
 @pytest.mark.parametrize(
     ("first_method", "second_method", "error_match"),
     [
-        ("write_image", "add_series", "already written via write_image"),
+        ("write_image", "add_series", "already exists"),
         ("add_series", "write_image", "already added via add_series"),
     ],
 )

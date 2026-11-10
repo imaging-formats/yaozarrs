@@ -7,12 +7,14 @@ model classes (as class attributes) and its own public docstrings.
 from __future__ import annotations
 
 import json
+import shutil
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeGuard, TypeVar, cast
 
 from ._arrays import _get_create_func, _resolve_chunks, _write_to_array
 from ._groups import (
+    _atomic_write,
     _create_zarr3_group,
     _ensure_parent_groups,
     _rewrite_zarr3_group,
@@ -58,6 +60,20 @@ class _Default(Enum):
     """Sentinel for a per-image setting that defaults to the builder's."""
 
     BUILDER = "builder"
+
+
+def _check_image_path(path: str) -> None:
+    # (each part is the name of a node below the parent group: Zarr node names must be
+    # non-empty, not only periods, and not start with "__"; and "zarr.json" would
+    # collide with a group's own metadata)
+    if any(
+        not p or set(p) == {"."} or p.startswith("__") or p == "zarr.json"
+        for p in path.split("/")
+    ):
+        raise ValueError(
+            f"Invalid image path {path!r}: each part must be a valid Zarr node name "
+            "(non-empty, not only periods, not starting with '__', not 'zarr.json')."
+        )
 
 
 def _is_shape_and_dtype(obj: Any) -> TypeGuard[ShapeAndDType]:
@@ -309,6 +325,11 @@ def _write_bioformats2raw(
             chunks,
             shards,
         )
+    # (unlike a builder, a one-shot write doesn't add to a collection already there)
+    if not overwrite and Path(dest).exists():
+        raise FileExistsError(
+            f"Zarr group already exists at {dest}. Use overwrite=True to replace it."
+        )
 
     builder = builder_type(
         dest,
@@ -433,7 +454,12 @@ class _BuilderBase:
 
 
 class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
-    """Builder for bioformats2raw layout hierarchies (see `vNN.Bf2RawBuilder`)."""
+    """Builder for bioformats2raw layout hierarchies (see `vNN.Bf2RawBuilder`).
+
+    Each series is created (its group and arrays, and data if given) before it is
+    listed in `OME/zarr.json`, and the root `zarr.json` is written last, with the
+    first series: so the store is a valid collection after every call.
+    """
 
     _bf2raw_type: ClassVar[type[Any]]
     _series_type: ClassVar[type[Any]]
@@ -463,13 +489,96 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
 
         # For prepare-only workflow: {series_name: (image, dataset_specs)}
         self._series: dict[str, ImageWithShapeSpecs] = {}
-        # For immediate write workflow
-        self._written_series: list[str] = []
+        # The series of the collection, in OME/zarr.json order
+        # (including those of a collection already at `dest`, which is added to)
+        self._written_series: list[str] = (
+            [] if overwrite else self._load_existing_series()
+        )
+        self._initialized = bool(self._written_series)
 
     @property
     def root_path(self) -> Path:
         """Path to the root of the bioformats2raw hierarchy."""
         return self._dest
+
+    @property
+    def series(self) -> tuple[str, ...]:
+        """The series of the collection, in `OME/zarr.json` order.
+
+        (Including any that were already at `dest`.)
+        """
+        return tuple(self._written_series)
+
+    def prepare_series(
+        self,
+        name: str,
+        image: Image,
+        datasets: ShapeAndDTypeOrPyramid,
+        *,
+        chunks: ShapeLike | Literal["auto"] | _Default | None = _Default.BUILDER,
+        shards: ShapeLike | _Default | None = _Default.BUILDER,
+        compression: CompressionName | _Default = _Default.BUILDER,
+    ) -> tuple[Path, dict[str, Any]]:
+        """Create a series now, with empty arrays, and add it to the collection.
+
+        The series' group and arrays are created first, and only then is the series
+        listed in `OME/zarr.json` (which creates the collection, if this is its first
+        series).  Write data into the returned arrays at any time, in any order.  The
+        builder doesn't keep them: hold on to them, or reopen them later with your own
+        backend (at `root_path / name / <dataset path>`).
+
+        Parameters
+        ----------
+        name : str
+            Path of the series' image group below the root, e.g. "0", or
+            "group_1/array_1_0" (intermediate groups are created).
+        image : Image
+            OME-Zarr Image metadata model for this series.
+        datasets : ShapeAndDType | Sequence[ShapeAndDType]
+            Shape and dtype specification(s) for each resolution level, as
+            `(shape, dtype)` tuples. For a single dataset, pass the tuple
+            directly without wrapping in a list.
+        chunks : tuple[int, ...] | "auto" | None, optional
+            Chunk shape for this series' arrays.  Default is the builder's.
+        shards : tuple[int, ...] | None, optional
+            Shard shape for this series' arrays.  Default is the builder's.
+        compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
+            Compression codec for this series' arrays.  Default is the builder's.
+
+        Returns
+        -------
+        tuple[Path, dict[str, Any]]
+            The path of the series' group, and its arrays by dataset path (e.g.
+            "0").  The array type depends on the configured writer (zarr.Array or
+            tensorstore.TensorStore).
+
+        Raises
+        ------
+        ValueError
+            If `name` isn't a valid path (or is inside "OME"), if a series with this
+            name was already added or written, or if the dataset specs don't match
+            the metadata.
+        FileExistsError
+            If something is already at the series' path, or if `overwrite` is True
+            but `dest` isn't a Zarr group (which isn't deleted).
+        NotImplementedError
+            If the Image has multiple multiscales.
+        ImportError
+            If no suitable writer backend is installed.
+        """
+        self._validate_series_name(name)
+        options = self._array_options(chunks, shards, compression)
+        _, specs = _check_image_args(
+            image,
+            datasets,
+            self._image_type,
+            f"Series '{name}': ",
+            options["chunks"],
+            options["shards"],
+        )
+        series = {name: (image, specs, options)}
+        arrays = self._create_series(series)
+        return self._dest / name, arrays[name]
 
     def write_image(
         self,
@@ -505,15 +614,19 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If a series with this name was already written or added.
+            If `name` isn't a valid path (or is inside "OME"), or if a series with
+            this name was already written or added.
+        FileExistsError
+            If something is already at the series' path, or if `overwrite` is True
+            but `dest` isn't a Zarr group (which isn't deleted).
         NotImplementedError
             If the Image has multiple multiscales.
         """
         self._validate_series_name(name)
-        self._check_datasets(image, datasets, f"Series '{name}': ")
-        self._ensure_initialized()
-        self._update_ome_series(name)
-        self._write(image, datasets, name, progress=progress)
+        datasets_seq = self._check_datasets(image, datasets, f"Series '{name}': ")
+        specs = [(arr.shape, arr.dtype) for arr in datasets_seq]
+        series = {name: (image, specs, self._array_options())}
+        self._create_series(series, data={name: datasets_seq}, progress=progress)
         return self
 
     def add_series(
@@ -548,8 +661,9 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If a series with this name was already added or written, or if the
-            number of dataset specs doesn't match the metadata.
+            If `name` isn't a valid path (or is inside "OME"), if a series with this
+            name was already added or written, or if the number of dataset specs
+            doesn't match the metadata.
         NotImplementedError
             If the Image has multiple multiscales.
         """
@@ -561,9 +675,10 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
     def prepare(self) -> tuple[Path, dict[str, Any]]:
         """Create the Zarr hierarchy and return array handles.
 
-        Creates the complete bioformats2raw structure including root metadata,
-        OME directory with series list, and empty arrays for all registered
-        series. Call this after registering all series with `add_series()`.
+        Creates the series registered with `add_series()` since the last call (with
+        empty arrays), then lists them in `OME/zarr.json`, creating the collection
+        if needed.  If creating any of them fails, none are added (add them again to
+        retry).
 
         The returned arrays support numpy-style indexing for writing data:
         `arrays["series/dataset"][:] = data`.
@@ -579,23 +694,27 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         Raises
         ------
         ValueError
-            If no series have been added with `add_series()`.
+            If no series have been added with `add_series()` since the last call.
         FileExistsError
-            If destination exists and `overwrite` is False.
+            If something is already at the path of one of the series, or if
+            `overwrite` is True but `dest` isn't a Zarr group (which isn't deleted).
         ImportError
             If no suitable writer backend is installed.
         """
-        if not self._series:  # pragma: no cover
+        if not self._series:
             raise ValueError("No series added. Use add_series() before prepare().")
 
-        self._create_root_group()
-        series_model = self._series_type(series=list(self._series))
-        _create_zarr3_group(self._dest / "OME", series_model, self._overwrite)
-        self._write_ome_xml()
-
-        all_arrays: dict[str, Any] = {}
-        for series_name, (image_model, dataset_specs) in self._series.items():
-            all_arrays.update(self._prepare(image_model, dataset_specs, series_name))
+        queued, self._series = self._series, {}
+        options = self._array_options()
+        series = {
+            name: (image, specs, options) for name, (image, specs) in queued.items()
+        }
+        arrays = self._create_series(series)
+        all_arrays = {
+            f"{name}/{dataset_path}": arr
+            for name, series_arrays in arrays.items()
+            for dataset_path, arr in series_arrays.items()
+        }
         return self._dest, all_arrays
 
     def __repr__(self) -> str:
@@ -603,43 +722,143 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         return f"<{self.__class__.__name__}: {total_images} images>"
 
     def _validate_series_name(self, name: str) -> None:
+        _check_image_path(name)
+        if name.split("/")[0].casefold() == "ome":
+            raise ValueError(
+                f"Invalid series name {name!r}: 'OME' is the group of the "
+                "collection's metadata."
+            )
         if name in self._written_series:
-            raise ValueError(f"Series '{name}' already written via write_image().")
+            raise ValueError(f"Series '{name}' already exists.")
         if name in self._series:
             raise ValueError(f"Series '{name}' already added via add_series().")
 
-    def _create_root_group(self) -> None:
-        """Create the root group, with the `bioformats2raw.layout` metadata."""
-        bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
-        _create_zarr3_group(
-            self._dest, bf2raw, self._overwrite, extra_attributes=self._extra_attributes
-        )
+    def _create_series(
+        self,
+        series: Mapping[str, tuple[Any, Sequence[Any], dict[str, Any]]],
+        *,
+        data: Mapping[str, Sequence[Any]] | None = None,
+        progress: bool = False,
+    ) -> dict[str, dict[str, Any]]:
+        """Create and list `series` (with their `data`, if any); return their arrays.
+
+        (If creating any of them fails, what was created of them is deleted, and so is
+        `dest`, if it had no series yet.)
+        """
+        created: list[Path] = []
+        try:
+            self._ensure_initialized()
+            arrays: dict[str, dict[str, Any]] = {}
+            for name, (image, specs, options) in series.items():
+                if (path := self._dest / name).exists():
+                    raise FileExistsError(f"{path} already exists.")
+                created.append(path)
+                _ensure_parent_groups(self._dest, name)
+                _, arrays[name] = _prepare_image(
+                    path,
+                    image,
+                    specs,
+                    image_type=self._image_type,
+                    writer=self._writer,
+                    overwrite=False,
+                    **options,
+                )
+                if data is not None:
+                    datasets = zip(arrays[name].values(), data[name], strict=True)
+                    for arr, values in datasets:
+                        _write_to_array(arr, values, progress=progress)
+            self._update_ome_series(series)
+        except BaseException:
+            for path in created:
+                shutil.rmtree(path, ignore_errors=True)
+            if self._initialized and not self._written_series:
+                # (`dest` is this builder's, and holds no series: leave nothing behind,
+                # so that the same call can simply be run again)
+                shutil.rmtree(self._dest, ignore_errors=True)
+                self._initialized = False
+            raise
+        return arrays
 
     def _write_ome_xml(self) -> None:
         if self._ome_xml is not None:
-            (self._dest / "OME" / "METADATA.ome.xml").write_text(self._ome_xml)
+            _atomic_write(self._dest / "OME" / "METADATA.ome.xml", self._ome_xml)
 
     def _ensure_initialized(self) -> None:
-        """Create the root group and the OME directory, if not already done.
+        """Create the root directory (replacing what's there, if `overwrite`).
 
-        (OME/zarr.json is written along with the first series, so that it lists it.)
+        (Its zarr.json is written last, with the first series: see
+        `_update_ome_series`.)
         """
         if self._initialized:
             return
-        self._create_root_group()
-        (self._dest / "OME").mkdir(parents=True, exist_ok=True)
-        self._write_ome_xml()
+        dest = self._dest
+        if dest.exists():
+            if not self._overwrite:
+                raise FileExistsError(
+                    f"Zarr group already exists at {dest}. "
+                    "Use overwrite=True to replace it."
+                )
+            # Be cautious: don't delete anything that doesn't look like a zarr group
+            # (an empty directory is simply used).
+            if not dest.is_dir() or any(dest.iterdir()):
+                if not (dest / "zarr.json").exists():
+                    raise FileExistsError(
+                        f"Destination {dest} exists, but is not a Zarr group. "
+                        "Refusing to overwrite.  Please delete manually."
+                    )
+                shutil.rmtree(dest)
+        dest.mkdir(parents=True, exist_ok=True)
         self._initialized = True
 
-    def _update_ome_series(self, series_name: str) -> None:
-        """Add `series_name` to the series list in OME/zarr.json."""
-        if series_name in self._written_series:
-            # already added ... this is an internal method, don't need to raise
-            return  # pragma: no cover
+    def _update_ome_series(self, names: Iterable[str]) -> None:
+        """Add the (created) series `names` to the series list in OME/zarr.json.
 
-        self._written_series.append(series_name)
-        series_model = self._series_type(series=self._written_series)
-        _rewrite_zarr3_group(self._dest / "OME", series_model)
+        The root zarr.json is written with the first series, last: until then, `dest`
+        isn't a Zarr group.
+        """
+        first = not self._written_series
+        (self._dest / "OME").mkdir(exist_ok=True)
+        self._write_ome_xml()
+        if not first and self._extra_attributes:
+            # (an existing collection, whose root is valid already: merge them in
+            # before the new series are listed, so a failure leaves them unlisted)
+            root = json.loads((self._dest / "zarr.json").read_bytes())
+            attrs = {**root.get("attributes", {}), **self._extra_attributes}
+            _write_group_json(self._dest, attrs, indent=2)
+        listing = [*self._written_series, *names]
+        _rewrite_zarr3_group(self._dest / "OME", self._series_type(series=listing))
+        if first:
+            bf2raw = self._bf2raw_type(bioformats2raw_layout=3)
+            ome = bf2raw.model_dump(mode="json", exclude_none=True)
+            attrs = {"ome": ome, **(self._extra_attributes or {})}
+            _write_group_json(self._dest, attrs, indent=2)
+        # (last: only once it's all written; `ome_xml` and `extra_attributes` once)
+        self._written_series.extend(names)
+        self._ome_xml = self._extra_attributes = None
+
+    def _load_existing_series(self) -> list[str]:
+        """The series of the collection already at `dest` (none, if nothing's there).
+
+        Anything at `dest` other than a collection of this version with a `series` list
+        raises `FileExistsError`.
+        """
+        if not self._dest.exists():
+            return []
+        try:
+            root = json.loads((self._dest / "zarr.json").read_bytes())
+            if "plate" in root["attributes"]["ome"]:
+                raise ValueError("a plate")
+            self._bf2raw_type.model_validate(root["attributes"]["ome"])
+            ome_json = json.loads((self._dest / "OME" / "zarr.json").read_bytes())
+            listing = self._series_type.model_validate(ome_json["attributes"]["ome"])
+        except (OSError, ValueError, KeyError, TypeError):
+            version = self._bf2raw_type.model_fields["version"].default
+            raise FileExistsError(
+                f"{self._dest} exists, but isn't a v{version} bioformats2raw "
+                "collection with a `series` list (which could be added to).  Use "
+                "overwrite=True to replace it."
+            ) from None
+        return list(listing.series)
 
 
 class PlateBuilderBase(_BuilderBase, Generic[Image]):

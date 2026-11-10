@@ -477,7 +477,7 @@ def write_bioformats2raw(
     FileExistsError
         If `dest` exists and `overwrite` is False.
     ValueError
-        If any series has mismatched datasets/metadata.
+        If any series has an invalid name, or mismatched datasets/metadata.
     ImportError
         If no suitable writer backend is installed.
 
@@ -712,7 +712,7 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     - Each series as a separate Image subgroup (e.g., `0/`, `1/`)
     - Optional `OME/METADATA.ome.xml` with full OME-XML metadata
 
-    This builder supports two workflows:
+    This builder supports three workflows:
 
     1. **Immediate write** (simpler): Use `write_image()` to write each series
        with its data immediately. The builder manages root structure and series
@@ -721,6 +721,18 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     2. **Prepare-only** (flexible): Use `add_series()` to register all series,
        then `prepare()` to create the hierarchy with empty arrays. Write data
        to the returned arrays yourself.
+
+    3. **Create now, write later**: Use `prepare_series()` to create one series at
+       a time, with empty arrays, and write to the returned arrays yourself (the
+       builder doesn't keep them: hold on to them, or reopen them yourself).
+
+    Each series is listed in `OME/zarr.json` only once its arrays exist (and the
+    root `zarr.json` is written with the first series), so the store is a valid
+    collection after every call.  A collection already at `dest` (of this version,
+    with a `series` list) is added to, unless `overwrite`.
+
+    A builder isn't thread-safe: create series from one thread (or behind your own
+    lock), then write their data from as many threads or processes as you like.
 
 
     See Also
@@ -744,7 +756,9 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
         Shard shape for Zarr v3 sharding. Default is None (no sharding).
         When present, shard_shape must be divisible by chunk shape.
     overwrite : bool, optional
-        If True, overwrite existing groups. Default is False.
+        If True, replace whatever is at `dest` (when the first series is created).
+        If False (default), add to the collection at `dest`, if there is one:
+        anything else at `dest` raises `FileExistsError`.
         Note: existing directories that don't look like zarr groups will NOT be removed,
         an exception will be raised instead.
     compression : "blosc-zstd" | "blosc-lz4" | "zstd" | "none", optional
@@ -792,6 +806,15 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     >>> arrays["0/0"][:] = np.zeros((32, 32), dtype=np.uint16)  # Write data yourself
     >>> arrays["1/0"][:] = np.zeros((16, 16), dtype=np.uint16)
     >>> assert path.exists()
+
+    **Create now, write later:**
+
+    >>> builder3 = Bf2RawBuilder("builder_incremental.zarr")
+    >>> _, arrays = builder3.prepare_series("0", make_image(), ((32, 32), np.uint16))
+    >>> arrays["0"][:16] = np.ones((16, 32), dtype=np.uint16)  # e.g. tile by tile
+    >>> _ = builder3.prepare_series("1", make_image(), ((16, 16), np.uint8))
+    >>> builder3.series
+    ('0', '1')
     """
 
     _image_type = Image
