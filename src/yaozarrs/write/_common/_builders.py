@@ -544,7 +544,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             options["shards"],
         )
         series = {name: (image, specs, options)}
-        arrays = self._create(series)
+        arrays = self._create_series(series)
         return self._dest / name, arrays[name]
 
     def write_image(
@@ -589,7 +589,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         datasets_seq = self._check_datasets(image, datasets, f"Series '{name}': ")
         specs = [(arr.shape, arr.dtype) for arr in datasets_seq]
         series = {name: (image, specs, self._array_options())}
-        self._create(series, data=datasets_seq, progress=progress)
+        self._create_series(series, data={name: datasets_seq}, progress=progress)
         return self
 
     def add_series(
@@ -670,7 +670,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         series = {
             name: (image, specs, options) for name, (image, specs) in queued.items()
         }
-        arrays = self._create(series)
+        arrays = self._create_series(series)
         all_arrays = {
             f"{name}/{dataset_path}": arr
             for name, series_arrays in arrays.items()
@@ -688,14 +688,14 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
         if name in self._series:
             raise ValueError(f"Series '{name}' already added via add_series().")
 
-    def _create(
+    def _create_series(
         self,
         series: Mapping[str, tuple[Any, Sequence[Any], dict[str, Any]]],
         *,
-        data: Sequence[Any] | None = None,
+        data: Mapping[str, Sequence[Any]] | None = None,
         progress: bool = False,
     ) -> dict[str, dict[str, Any]]:
-        """Create `series` (and write `data`), then list them; return their arrays.
+        """Create and list `series` (with their `data`, if any); return their arrays.
 
         (If creating any of them fails, what was created of them is deleted, and so is
         `dest`, if it had no series yet.)
@@ -719,7 +719,8 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
                     **options,
                 )
                 if data is not None:
-                    for arr, values in zip(arrays[name].values(), data, strict=True):
+                    datasets = zip(arrays[name].values(), data[name], strict=True)
+                    for arr, values in datasets:
                         _write_to_array(arr, values, progress=progress)
             self._update_ome_series(series)
         except BaseException:
