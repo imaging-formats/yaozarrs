@@ -2210,7 +2210,7 @@
 
 <h1 id="yaozarrsv06"><code class="doc-symbol-module"></code> <code>yaozarrs.v06</code><a class="headerlink" href="#yaozarrsv06" title="Link to this section">#</a></h1>
 <p>Specification: <a href="https://ngff.openmicroscopy.org/specifications/0.6/">https://ngff.openmicroscopy.org/specifications/0.6/</a></p>
-<p>Schema: <a href="https://github.com/ome/ngff-spec/tree/77be725697ec3a4796b0947457ccd6bfa70c387d/schemas">https://github.com/ome/ngff-spec/tree/77be725697ec3a4796b0947457ccd6bfa70c387d/schemas</a></p>
+<p>Schema: <a href="https://github.com/ome/ngff-spec/tree/89da1da5b0491f83b7cdde7d123aef763a457029/schemas">https://github.com/ome/ngff-spec/tree/89da1da5b0491f83b7cdde7d123aef763a457029/schemas</a></p>
 <div class="admonition tip">
 <p class="admonition-title">Coming from v0.5?</p>
 <p>In v0.6, axes live in named <a href="#coordinate-systems">coordinate systems</a>, and
@@ -5133,8 +5133,7 @@ If <code>path</code> is omitted (or null), <code>name</code> refers to a coordin
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v06/_transforms.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">379</span>
-<span class="normal">380</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
 <span class="normal">383</span>
@@ -5218,7 +5217,8 @@ If <code>path</code> is omitted (or null), <code>name</code> refers to a coordin
 <span class="normal">461</span>
 <span class="normal">462</span>
 <span class="normal">463</span>
-<span class="normal">464</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_transform_ndim</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">CoordinateTransformation</span><span class="p">,</span> <span class="n">n_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">464</span>
+<span class="normal">465</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_transform_ndim</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">CoordinateTransformation</span><span class="p">,</span> <span class="n">n_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Check that the parameters of `t` fit `n_in` input and `n_out` output axes.</span>
 
 <span class="sd">    Raises</span>

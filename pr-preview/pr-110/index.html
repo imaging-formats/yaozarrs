@@ -1277,8 +1277,7 @@ exporting metadata back to JSON format.</li>
 <div class="tabbed-block">
 <p>For the common case of creating multiscale images, you can use the
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="API_Reference/yaozarrs/#yaozarrs.DimSpec" data-preview><code>yaozarrs.DimSpec</code></a> convenience class to simplify axis and transformation
-creation.  It hides the differences between versions: the same code works
-for <code>v04</code>, <code>v05</code> and <code>v06</code>.</p>
+creation.  The same code works for <code>v04</code>, <code>v05</code> and <code>v06</code>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">v06</span>  <span class="c1"># (or v04, v05)</span>
 
 <span class="n">image</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span>
@@ -1352,7 +1351,8 @@ the spec, keeping its kind (an <code>Image</code> stays an <code>Image</code>):<
 <span class="c1"># &lt;class 'yaozarrs.v06._image.Image'&gt;</span>
 </code></pre></div>
 <p>Metadata that the target version can't express is dropped with a
-<code>ConversionWarning</code>.  This converts metadata only: no store is read or written.</p>
+<code>ConversionWarning</code>, or raises if it can't be dropped (e.g. a v0.6 <code>Scene</code>).
+This converts metadata only: no store is read or written.</p>
 <h3 id="open-and-validate-a-store">Open and validate a store<a class="headerlink" href="#open-and-validate-a-store" title="Link to this section">#</a></h3>
 <p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>yaozarrs.validate_zarr_store</code></a> validates an entire Zarr hierarchy (both
 metadata and structure) at any URI.  Local paths need <code>fsspec</code>, and remote URIs

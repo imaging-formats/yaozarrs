@@ -1048,7 +1048,7 @@
 
 <div class="admonition tip">
 <p class="admonition-title">What you'll learn</p>
-<p>This guide attempts to demystify the <strong>OME-Zarr (OME-Zarr)</strong> specification and shows
+<p>This guide attempts to demystify the <strong>OME-Zarr</strong> specification and shows
 you how to work with it using yaozarrs.  It is designed to answer common questions
 and confusions encountered in the community.</p>
 </div>
@@ -1139,8 +1139,8 @@ format that additionally defines:</p>
 <hr />
 <h2 id="working-with-images">Working with Images<a class="headerlink" href="#working-with-images" title="Link to this section">#</a></h2>
 <p>An <strong>Image</strong> is the fundamental building block of OME-Zarr.</p>
-<p>As of v0.6 (and since v0.4), a single image may have <strong>no less than 2 and no
-more than 5 dimensions</strong>, and may store multiple resolution levels.</p>
+<p>Since v0.4, a single image may have <strong>no less than 2 and no more than 5
+dimensions</strong>, and may store multiple resolution levels.</p>
 <ul>
 <li><strong>Spatial dimensions</strong>: X, Y, optionally Z</li>
 <li><strong>Time</strong>: T (temporal axis)</li>
@@ -1154,10 +1154,6 @@ sheet microscopy, etc.), there is currently no formal specification for more
 than 5 dimensions in OME-Zarr.  You may use the transitional
 <code>bioformats2raw.layout</code> to store multiple images in a single zarr group.
 See <a href="#working-with-collections">Working with Collections</a></p>
-<p>If the extra dimension is <em>where</em> each image was taken (stage positions,
-views from different angles, etc...), v0.6 also lets you describe how the
-images relate to each other in space with a <em>scene</em>.  See <a href="#working-with-scenes">Working with
-Scenes</a>.</p>
 <p>See also: an RFC ("request for comments") proposing a relaxation of this
 restriction: <a href="https://ngff.openmicroscopy.org/rfc/3/index.html">RFC-3</a></p>
 </details>
@@ -1219,9 +1215,6 @@ to <a href="https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html">Zarr
 <li><strong>&lt;=v0.4</strong>: "multiscales" metadata directly in root of <code>.zattrs</code> files</li>
 <li><strong>&gt;=v0.5</strong>: "multiscales" metadata in <code>zarr.json</code> under <code>attributes.ome</code> namespace</li>
 </ul>
-<p>Between v0.5 and v0.6, the storage is the same (Zarr v3). The changes are all
-in the metadata, mostly in how axes and transformations are described (see
-below).</p>
 </div>
 <hr />
 <h3 id="axes">Axes<a class="headerlink" href="#axes" title="Link to this section">#</a></h3>
@@ -1285,10 +1278,10 @@ Transformations</a>.)</p>
   samples are meaningful, so interpolating along it makes sense (space
   and time usually are).</li>
 <li><strong><code>longName</code></strong> (optional): a longer name or description of the axis.</li>
-<li>Besides <code>space</code>, <code>time</code> and <code>channel</code>, the spec also suggests the
-  <code>type</code>s <code>array</code>, <code>coordinate</code> and <code>displacement</code> (the latter two
-  are used by <a data-preview href="coordinate_systems/#transformation-types">vector fields</a>).
-  Other strings are still allowed for custom types.</li>
+<li><code>type</code> <strong>SHOULD</strong> be one of <code>space</code>, <code>time</code>, <code>channel</code>, <code>array</code>,
+  <code>coordinate</code> or <code>displacement</code> (the last two are used by <a data-preview href="coordinate_systems/#transformation-types">vector
+  fields</a>),
+  but other strings are allowed for custom types.</li>
 <li>Axis names <strong>MUST</strong> be non-empty, and unique <em>within their coordinate
   system</em>.</li>
 </ul>
@@ -1427,10 +1420,10 @@ translation, wrap both in a single <code>sequence</code> transformation (scale f
 <li><strong>MUST</strong> have exactly one transformation per dataset: a <code>scale</code>, an
   <code>identity</code>, or a <code>sequence</code> of a scale followed by a translation</li>
 <li>Its <code>input</code> <strong>MUST</strong> have a <code>path</code> matching the dataset's <code>path</code>, and
-  should omit <code>name</code></li>
+  <strong>SHOULD</strong> omit <code>name</code></li>
 <li>Its <code>output</code> <strong>MUST</strong> have the <code>name</code> of a coordinate system in
-  <code>coordinateSystems</code>, the same one for every dataset, and should omit
-  <code>path</code></li>
+  <code>coordinateSystems</code>, the same one for every dataset, and <strong>SHOULD</strong>
+  omit <code>path</code></li>
 <li>Parameter lengths <strong>MUST</strong> match the number of axes</li>
 <li>The scale gives the pixel size in physical units (or the time step).
   If that isn't known (or doesn't apply) for an axis, the value <strong>MUST</strong>
@@ -1449,12 +1442,7 @@ translation, wrap both in a single <code>sequence</code> transformation (scale f
 the coordinate system and every level's transformation for you (see
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.DimSpec" data-preview><code>DimSpec</code></a>).</p>
 </div>
-<div class="admonition info">
-<p class="admonition-title"><code>dimension_names</code> are no longer required</p>
-<p>v0.5 required <code>dimension_names</code> in each array's <code>zarr.json</code>; v0.6 does
-not mention them.  (yaozarrs still writes them, as other Zarr tools find
-them useful.)</p>
-</div>
+<p>v0.6 doesn't require <code>dimension_names</code> (yaozarrs still writes them).</p>
 <p>For other transformation types, label links and scenes, see <a href="coordinate_systems/">Coordinate
 Systems &amp; Transformations</a>.</p>
 </div>
@@ -1547,8 +1535,7 @@ representing segmentation masks (nuclei, cells, regions of interest, etc.).</p>
 group itself is normative: it <strong>MUST</strong> be named <code>labels/</code>.</p>
 <p>Conforming readers must <em>search</em> for the <code>labels/</code> group within an image
 group to discover it: its presence is not indicated in the parent image
-metadata.  (In v0.6, an image <em>may</em> refer to one of its label images, in an
-optional transformation, but doesn't have to.)</p>
+metadata.</p>
 </div>
 <details class="example">
 <summary>Label Structure and Code</summary>
@@ -1759,7 +1746,7 @@ segmentation tool wrote labels for a crop of the image, with the corner of the
 crop as its origin.  Rather than rewriting the label image's metadata, you can add
 a transformation to the <em>parent image's</em> multiscale <code>coordinateTransformations</code>,
 linking its intrinsic coordinate system to the label image's (referenced by <code>name</code>
-<em>and</em> <code>path</code>, relative to the image group):</p>
+<em>and</em> <code>path</code>, relative to the image group).  For a <code>z, y, x</code> image:</p>
 <div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="c1">// found in the multiscales object of the *image* (not the label image)</span>
 <span class="w">  </span><span class="nt">"coordinateTransformations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -1774,8 +1761,7 @@ linking its intrinsic coordinate system to the label image's (referenced by <cod
 </code></pre></div>
 <p>Here, a point in the <code>cells</code> label image's <code>physical</code> coordinate system, shifted
 by <code>(0, 100, 50)</code>, gives the matching point in the image's own <code>physical</code>
-coordinate system.  (Either direction is allowed: the image's intrinsic
-coordinate system may be the <code>input</code> or the <code>output</code>.)</p>
+coordinate system.</p>
 <div class="admonition warning">
 <p class="admonition-title">Only simple transformations</p>
 <p>A transformation to a label image <strong>MUST</strong> be an <code>identity</code>, <code>scale</code>,
@@ -2073,6 +2059,7 @@ well.</p>
 
 <span class="n">well</span> <span class="o">=</span> <span class="n">v05</span><span class="o">.</span><span class="n">Well</span><span class="p">(</span><span class="n">well</span><span class="o">=</span><span class="n">well_def</span><span class="p">)</span>
 </code></pre></div>
+<p>A field of view's <code>path</code> <strong>MUST</strong> be alphanumeric and unique within the well.</p>
 </div>
 <div class="tabbed-block">
 <p><strong>Spec JSON (<code>.zattrs</code> in well directory):</strong></p>
@@ -2100,6 +2087,7 @@ well.</p>
 
 <span class="n">well</span> <span class="o">=</span> <span class="n">v04</span><span class="o">.</span><span class="n">Well</span><span class="p">(</span><span class="n">well</span><span class="o">=</span><span class="n">well_def</span><span class="p">)</span>
 </code></pre></div>
+<p>A field of view's <code>path</code> <strong>MUST</strong> be alphanumeric and unique within the well.</p>
 </div>
 </div>
 </div>
@@ -2266,13 +2254,9 @@ other.  For example:</p>
 <li>The same sample imaged from several angles (e.g. multiview light sheet)</li>
 <li>Images from different instruments (or modalities), registered onto each other</li>
 </ul>
-<p>A scene group's <code>zarr.json</code> holds <code>scene</code> metadata, describing <strong>transformations between the coordinate systems of
-its images</strong>, and each image is a normal multiscale image group inside it.</p>
-<div class="admonition tip">
-<p class="admonition-title">Not sure what a coordinate system is?</p>
-<p>Scenes build on the coordinate systems and transformations of v0.6.  If those are new to you, start with <a href="coordinate_systems/">Coordinate Systems &amp;
-Transformations</a>, then come back here.</p>
-</div>
+<p>A scene group's <code>zarr.json</code> holds <code>scene</code> metadata, describing transformations
+between the coordinate systems of its images, and each image is a normal
+multiscale image group inside it.</p>
 <h3 id="directory-structure_3">Directory Structure<a class="headerlink" href="#directory-structure_3" title="Link to this section">#</a></h3>
 <div class="language-text highlight"><pre><span></span><code>mosaic.zarr/
 ├── zarr.json                  # contains Scene metadata ("attributes.ome.scene")
@@ -2324,16 +2308,19 @@ contain <code>coordinateSystems</code> of its own.  Here, two tiles are placed i
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>Each <code>input</code> and <code>output</code> refers to a coordinate system by <code>name</code>:</p>
+<p>Each <code>input</code> and <code>output</code> <strong>MUST</strong> refer to a coordinate system by <code>name</code>:</p>
 <ul>
-<li>With a <code>path</code>, it's a coordinate system of the image at that <code>path</code>
-  (relative to the scene group).  Here, <code>physical</code> is the <a data-preview href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
-  system</a> of each tile.</li>
+<li>With a <code>path</code> (required for an image's coordinate system), it's a coordinate
+  system of the image at that <code>path</code> (relative to the scene group).  Here,
+  <code>physical</code> is the <a data-preview href="coordinate_systems/#the-intrinsic-coordinate-system">intrinsic coordinate
+  system</a>
+  of each tile.</li>
 <li>Without a <code>path</code>, it's one of the scene's own <code>coordinateSystems</code> (here,
   <code>stage</code>).</li>
 </ul>
 <p>The second transformation says "a point in <code>tile_1</code>'s physical coordinates,
-shifted by 270 µm along x, is that point's position on the stage".</p>
+shifted by 270 µm along x, is that point's position on the stage".  (The tiles
+below are 300 µm wide, so they overlap by 30 µm.)</p>
 <p><strong>yaozarrs Code:</strong></p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v06</span>
 
@@ -2388,17 +2375,9 @@ together:</p>
 </details>
 <div class="admonition warning">
 <p class="admonition-title">Scene rules</p>
-<ul>
-<li>In a scene, both <code>input</code> and <code>output</code> <strong>MUST</strong> have a <code>name</code>.  A <code>path</code>
-  is required when the coordinate system belongs to an image, and may be
-  left out when it's one of the scene's own.</li>
-<li>All of the coordinate systems (the scene's and its images') <strong>MUST</strong> be
-  <a data-preview href="coordinate_systems/#putting-it-together-the-transformation-graph">connected</a>
-  by transformations.</li>
-<li>A transformation's parameters <strong>MUST</strong> fit the coordinate systems it
-  links (e.g. a <code>translation</code> between two 2D coordinate systems has 2
-  values).</li>
-</ul>
+<p>All of the coordinate systems (the scene's and its images') <strong>MUST</strong> be
+<a data-preview href="coordinate_systems/#putting-it-together-the-transformation-graph">connected</a>
+by transformations.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Default coordinate system</p>
@@ -2410,8 +2389,8 @@ the others (like <code>stage</code> above), put it first.</p>
 <details class="question">
 <summary>Linking images directly</summary>
 <p>A transformation may also link one image directly to another (both with a
-<code>path</code>), with no scene coordinate system in between.  This is natural for
-registration, where you map a "moving" image onto a "fixed" one:</p>
+<code>path</code>), with no scene coordinate system in between, e.g. for registration,
+mapping a "moving" image onto a "fixed" one:</p>
 <div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"affine"</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">"affine"</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="err">...</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]],</span><span class="w">  </span><span class="c1">// a 3x4 matrix, for 3D images</span>

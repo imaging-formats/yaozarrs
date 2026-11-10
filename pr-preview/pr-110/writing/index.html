@@ -1290,9 +1290,9 @@
 
 <h1 id="writing-ome-zarr">Writing OME-Zarr<a class="headerlink" href="#writing-ome-zarr" title="Link to this section">#</a></h1>
 <p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-module&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-module-name&quot;&gt;yaozarrs.write.v05&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v05/#yaozarrs.write.v05"><code>yaozarrs.write.v05</code></a> and <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-module&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-module-name&quot;&gt;yaozarrs.write.v06&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06"><code>yaozarrs.write.v06</code></a> write complete OME-Zarr
-stores (metadata <em>and</em> array data) to a local directory.  They have the same
-functions: use the one that matches the version of your metadata models.  v0.6
-adds <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;write_scene&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.write_scene"><code>write_scene</code></a> and
+stores (metadata <em>and</em> array data) to a local directory.  Both have the same
+functions (use the one matching your metadata models), and v0.6 adds
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;write_scene&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.write_scene"><code>write_scene</code></a> and
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;SceneBuilder&lt;/span&gt;" href="../API_Reference/yaozarrs.write.v06/#yaozarrs.write.v06.SceneBuilder"><code>SceneBuilder</code></a>, for
 <a href="../ome_zarr_guide/#working-with-scenes">scenes</a>.</p>
 <p>Writing needs an array backend, see <a href="#array-writer-backends">Array writer backends</a>.</p>
@@ -1301,9 +1301,9 @@ adds <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbo
 <li>Build the metadata model that matches your data (see the <a href="../ome_zarr_guide/">Guide to
    OME-Zarr</a>): an <code>Image</code>, a <code>Plate</code>, a <code>Bf2Raw</code>
    collection, or (v0.6) a <code>Scene</code>.</li>
-<li>Pick a <a href="#high-level-functions">high level <code>write_*</code> function</a>, or a
-   <a href="#builders">lower level builder</a>.</li>
-<li>Call it with your model and your data.</li>
+<li>Pass your model and data to a <a href="#high-level-functions">high level <code>write_*</code>
+   function</a>, or a <a href="#builders">lower level
+   builder</a>.</li>
 </ol>
 <p>Each <code>Dataset</code> (resolution level) in an image's multiscale becomes one array in
 the store, so functions that take arrays (or <code>(shape, dtype)</code> pairs) expect one
@@ -1363,9 +1363,7 @@ the store.</p>
 </table>
 <h2 id="builders">Builders<a class="headerlink" href="#builders" title="Link to this section">#</a></h2>
 <p>When you don't have all the data up front, or want more control over how it's
-written, the lower level functions <em>prepare</em> the hierarchy: they write the
-metadata, create empty arrays, and give them back to you (keyed by path) to fill
-however you like (chunk by chunk, in parallel, ...).</p>
+written, use <code>prepare_image</code> or a builder:</p>
 <table>
 <thead>
 <tr>
@@ -1402,13 +1400,15 @@ however you like (chunk by chunk, in parallel, ...).</p>
 </tr>
 </tbody>
 </table>
-<p>The builders can be used in two ways:</p>
+<p><code>prepare_image</code> writes the metadata, creates empty arrays, and gives them back
+to you (keyed by path) to fill however you like (chunk by chunk, in parallel,
+...).  The builders can be used in two ways:</p>
 <ul>
 <li><strong>incremental</strong>: write one well, label or image at a time (e.g.
-  <code>PlateBuilder.write_well()</code>), and the parent metadata is updated after each
-  one.</li>
+  <code>PlateBuilder.write_well()</code>), and the parent's metadata (the plate, labels, or
+  bioformats2raw series list) is updated after each one.</li>
 <li><strong>prepare-only</strong>: register everything with <code>add_*()</code>, then <code>prepare()</code> creates
-  the whole hierarchy with empty arrays.</li>
+  the whole hierarchy with empty arrays, as <code>prepare_image</code> does.</li>
 </ul>
 <p>For plates and bioformats2raw collections, the builders are usually the easier
 choice.</p>

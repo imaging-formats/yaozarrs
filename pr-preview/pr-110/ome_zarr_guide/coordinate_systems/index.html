@@ -1108,10 +1108,9 @@ here), and the order of the axes is the order of the numbers in each point.</p>
 same".  An image of sample A and an image of sample B may both have
 <code>z, y, x</code> axes in micrometers, but a point at <code>(0, 0, 0)</code> in one has nothing
 to do with <code>(0, 0, 0)</code> in the other.</p>
-<p>A coordinate system is identified by its <code>name</code> <em>and where it is defined</em>
-(which <code>zarr.json</code>).  The spec says analyses that combine images, labels,
-ROIs etc. <strong>SHOULD</strong> make sure they are in the same coordinate system (or can
-be transformed into one) first.</p>
+<p>A coordinate system is identified by its <code>name</code> <em>and</em> the <code>zarr.json</code> it's
+in.  Analyses that combine images, labels, ROIs etc. <strong>SHOULD</strong> first check
+that they share one (or can be transformed into one).</p>
 </div>
 <hr />
 <h2 id="transformations">Transformations<a class="headerlink" href="#transformations" title="Link to this section">#</a></h2>
@@ -1133,7 +1132,8 @@ x_physical = 0.5 * x_pixels
 <p>Every transformation has a <code>type</code>, which says what it does and which other
 fields it needs (here: <code>scale</code>).  It may also have a <code>name</code>, to identify
 it.  The <a href="#transformation-types">Transformation types</a> section
-lists them all.</p>
+lists them all.  (Transformations nested inside a <code>sequence</code>, <code>bijection</code> or
+<code>byDimension</code> leave out <code>input</code> and <code>output</code>.)</p>
 <div class="admonition warning">
 <p class="admonition-title">Transformations point from <code>input</code> to <code>output</code></p>
 <p>Transformations map <em>points</em> from the input space to the output space
@@ -1142,8 +1142,6 @@ coordinate system of image B, a viewer usually needs the <em>inverse</em>: for
 each pixel of the output, where should it sample A?  For simple
 transformations (scale, translation, rotation...) the viewer can compute
 that inverse itself.</p>
-<p>See also the <a href="#transformation-types"><code>bijection</code></a> type, which stores both
-directions explicitly.</p>
 </div>
 <h3 id="referring-to-coordinate-systems">Referring to coordinate systems<a class="headerlink" href="#referring-to-coordinate-systems" title="Link to this section">#</a></h3>
 <p>The <code>input</code> and <code>output</code> of a transformation are objects with (up to) two
@@ -1154,8 +1152,9 @@ fields:</p>
   <code>"labels/cells"</code>, or <code>"tile_0"</code>).  If the <code>path</code> is left out (or <code>null</code>), the
   coordinate system is in the same <code>zarr.json</code>.</li>
 </ul>
-<p>Together, <code>name</code> and <code>path</code> always point at exactly one coordinate system.
-Which of them are required depends on where the transformation is stored:</p>
+<p>Together, <code>name</code> and <code>path</code> point at exactly one coordinate system (or, for a
+dataset's <code>input</code>, one array).  Which of them are required depends on where the
+transformation is stored:</p>
 <table>
 <thead>
 <tr>
@@ -1182,8 +1181,6 @@ Which of them are required depends on where the transformation is stored:</p>
 </tr>
 </tbody>
 </table>
-<p>(The first row is special: a dataset's <code>input</code> is the dataset's <em>array</em>
-itself, referenced by its <code>path</code>.)</p>
 <hr />
 <h2 id="the-intrinsic-coordinate-system">The intrinsic coordinate system<a class="headerlink" href="#the-intrinsic-coordinate-system" title="Link to this section">#</a></h2>
 <p>Every multiscale image has one special coordinate system: the one that <strong>all of
@@ -1253,7 +1250,8 @@ between the first two small pixels.  For binning-style downsampling, each level
 needs a translation of:</p>
 <div class="language-text highlight"><pre><span></span><code>translation = (pixel size at this level - pixel size at level 0) / 2
 </code></pre></div>
-<p>(plus level 0's own translation, if it has one).  Here: <code>(1.0 - 0.5) / 2 = 0.25</code>.  Try it below: hover over a pixel to see where its
+<p>(plus level 0's own translation, if it has one).  Here:
+<code>(1.0 - 0.5) / 2 = 0.25</code>.  Try it below: hover over a pixel to see where its
 center is, and toggle the translation to see what happens without it.</p>
 <p><ome-pixel-grid></ome-pixel-grid></p>
 <div class="admonition tip">
@@ -1324,14 +1322,9 @@ coordinate systems by <code>name</code> alone.</p>
 <hr />
 <h2 id="putting-it-together-the-transformation-graph">Putting it together: the transformation graph<a class="headerlink" href="#putting-it-together-the-transformation-graph" title="Link to this section">#</a></h2>
 <p>If you draw every coordinate system as a dot, and every transformation as an
-arrow between two dots, you get a <strong>graph</strong>.  This graph <strong>MUST</strong> be connected:</p>
-<div class="admonition important">
-<p class="admonition-title">The graph MUST be connected</p>
-<p>Any two coordinate systems (in the multiscales and scene metadata) <strong>MUST</strong>
-be linked by a path of one or more transformations: either directly, or
-through other coordinate systems.  They don't <em>all</em> need to link to each
-other directly.</p>
-</div>
+arrow between two dots, you get a <strong>graph</strong>.  Any two coordinate systems (in
+the multiscales and scene metadata) <strong>MUST</strong> be linked by a path of one or more
+transformations, though not necessarily directly.</p>
 <p>To get from any coordinate system to any other, follow the arrows (or walk them
 backwards, where they can be inverted), composing the
 transformations along the way.</p>
@@ -1390,16 +1383,19 @@ same coordinate system):</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">intrinsic_coordinate_system</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># "intrinsic"</span>
 
 <span class="c1"># add a second coordinate system, rotated 90 degrees in the yx plane</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">data</span><span class="p">[</span><span class="s2">"coordinateSystems"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">data</span><span class="p">[</span><span class="s2">"coordinateSystems"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"rotated"</span><span class="p">})</span>
-<span class="n">data</span><span class="p">[</span><span class="s2">"coordinateTransformations"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">v06</span><span class="o">.</span><span class="n">RotationTransformation</span><span class="p">(</span>
-        <span class="n">rotation</span><span class="o">=</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span>
-        <span class="nb">input</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"intrinsic"</span><span class="p">},</span>
-        <span class="n">output</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"rotated"</span><span class="p">},</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="p">]</span>
-<span class="n">image</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="n">v06</span><span class="o">.</span><span class="n">Multiscale</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)])</span>
+<span class="n">intrinsic</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">intrinsic_coordinate_system</span>
+<span class="n">ms</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Multiscale</span><span class="p">(</span>
+    <span class="n">coordinateSystems</span><span class="o">=</span><span class="p">[</span><span class="n">intrinsic</span><span class="p">,</span> <span class="n">intrinsic</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"rotated"</span><span class="p">})],</span>
+    <span class="n">datasets</span><span class="o">=</span><span class="n">ms</span><span class="o">.</span><span class="n">datasets</span><span class="p">,</span>
+    <span class="n">coordinateTransformations</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">RotationTransformation</span><span class="p">(</span>
+            <span class="n">rotation</span><span class="o">=</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span>
+            <span class="nb">input</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"intrinsic"</span><span class="p">},</span>
+            <span class="n">output</span><span class="o">=</span><span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"rotated"</span><span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">multiscales</span><span class="o">=</span><span class="p">[</span><span class="n">ms</span><span class="p">])</span>
 </code></pre></div>
 <p>Things that need the rest of the hierarchy (that a <code>path</code> points to a real
 image, that the graph is connected across a scene, that an <code>affine</code> stored in a
@@ -1407,12 +1403,10 @@ Zarr array has the right shape...) are checked by
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>yaozarrs.validate_zarr_store</code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Disconnected coordinate systems in a single image</p>
-<p>The "connected graph" rule is about the multiscales and the scene metadata
-<em>combined</em>, so a scene could link two coordinate systems of an image that
-the image itself doesn't.  For that reason, when
-<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>validate_zarr_store</code></a> checks an image on
-its own (not as part of a scene), it only <em>warns</em> about coordinate
-systems that aren't linked to anything; inside a scene, it's an error.</p>
+<p>An image on its own may have unlinked coordinate systems (a scene could
+still link them), so
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>validate_zarr_store</code></a> only
+<em>warns</em> about that; inside a scene, it's an error.</p>
 </div>
 <hr />
 <h2 id="further-reading">Further reading<a class="headerlink" href="#further-reading" title="Link to this section">#</a></h2>
