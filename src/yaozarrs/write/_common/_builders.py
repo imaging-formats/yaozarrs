@@ -12,7 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeGuard, TypeVar, cast
 
-from ._arrays import _get_create_func, _resolve_chunks, _write_to_array
+from ._arrays import _get_create_func, _resolve_chunks, _write_to_arrays
 from ._groups import (
     _atomic_write,
     _create_zarr3_group,
@@ -210,7 +210,7 @@ def _write_image(
     progress: bool = False,
 ) -> Path:
     """Write an Image group with data (and labels); see `vNN.write_image`."""
-    multiscale, datasets_seq = _check_image_args(
+    _, datasets_seq = _check_image_args(
         image, datasets, image_type, chunks=chunks, shards=shards
     )
     for label_name, (label_image, label_datasets) in (labels or {}).items():
@@ -234,10 +234,7 @@ def _write_image(
         compression=compression,
     )
 
-    for data_array, dataset_meta in zip(
-        datasets_seq, multiscale.datasets, strict=False
-    ):
-        _write_to_array(arrays[dataset_meta.path], data_array, progress=progress)
+    _write_to_arrays(arrays.values(), datasets_seq, progress=progress)
 
     if labels:
         if labels_builder_type is None:  # pragma: no cover
@@ -764,9 +761,9 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
                     **options,
                 )
                 if data is not None:
-                    datasets = zip(arrays[name].values(), data[name], strict=True)
-                    for arr, values in datasets:
-                        _write_to_array(arr, values, progress=progress)
+                    _write_to_arrays(
+                        arrays[name].values(), data[name], progress=progress
+                    )
             self._update_ome_series(series)
         except BaseException:
             for path in created:

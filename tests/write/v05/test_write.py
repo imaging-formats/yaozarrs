@@ -383,6 +383,36 @@ def test_write_image_dask_streams_to_backends(
     np.testing.assert_array_equal(zarr.open_array(dest / "0")[:], ref)
 
 
+@pytest.mark.parametrize("via", ["write_image", "bf2raw"])
+@pytest.mark.parametrize("writer", WRITERS)
+def test_write_dask_pyramid_computes_source_once(
+    tmp_path: Path, writer: ZarrWriter, via: str
+) -> None:
+    """Dask levels derived from one source compute it once, not once per level."""
+    da = pytest.importorskip("dask.array")
+    data, image = _make_multiscale_image(n_levels=3)
+    reads: list[int] = []
+
+    def read(block: np.ndarray) -> np.ndarray:
+        reads.append(1)
+        return block
+
+    ref = data[0]
+    source = da.from_array(ref, chunks=(1, 64, 64)).map_blocks(
+        read, meta=np.empty((0, 0, 0), ref.dtype)
+    )
+    levels = [source, source[:, ::2, ::2], source[:, ::4, ::4]]
+    if via == "write_image":
+        dest = write_image(tmp_path / "dask.zarr", image, levels, writer=writer)
+    else:
+        builder = Bf2RawBuilder(tmp_path / "dask.zarr", writer=writer)
+        dest = builder.write_image("0", image, levels).root_path / "0"
+    assert len(reads) == source.npartitions
+    zarr = pytest.importorskip("zarr")
+    for i, level in enumerate(levels):
+        np.testing.assert_array_equal(zarr.open_array(dest / str(i))[:], level)
+
+
 class _IndexOnlyArray:
     """Custom array that honors the `CreateArrayFunc` contract, and nothing more."""
 
