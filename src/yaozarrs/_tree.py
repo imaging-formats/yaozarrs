@@ -7,6 +7,7 @@ otherwise falls back to standard library.
 
 from __future__ import annotations
 
+import posixpath
 import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -15,9 +16,7 @@ from yaozarrs._zarr import (
     _BF2RAW,
     _IMAGE,
     _LABELS_GROUP,
-    _PLATE,
     _SCENE,
-    _WELL,
     ZarrArray,
     ZarrGroup,
     _numbered_children,
@@ -121,183 +120,84 @@ def _get_metadata_files(node: ZarrGroup | ZarrArray) -> list[str]:
     return [".zgroup", ".zattrs"]
 
 
-def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
-    """Extract child keys from OME metadata.
+def _metadata_children(group: ZarrGroup) -> tuple[list[str], list[str]]:
+    """Return the children of `group` that its OME metadata names (or may have).
 
-    For remote HTTP stores where directory listing isn't available,
-    we can infer children from the OME metadata structure.
-
-    Returns None if there's no OME metadata, or (for a bioformats2raw group) no
-    numbered children; otherwise a list, which may be empty.
+    For stores that can't be listed (e.g. http): the first list holds the children
+    that the metadata names, the second those `group` may also have (e.g. `labels`),
+    which have to be looked for.
     """
-    ome_meta = group.ome_metadata()
-    if ome_meta is None:
-        return None
+    try:
+        ome_meta = group.ome_metadata()
+    except Exception:
+        return [], []
 
     if isinstance(ome_meta, _BF2RAW):
         try:
-            return bioformats2raw_series(group) or None
+            return bioformats2raw_series(group), []
         except Exception:  # (e.g. invalid `OME` metadata: as validation does)
-            return _numbered_children(group) or None
+            return _numbered_children(group), []
 
     named, maybe = nodes_below(ome_meta)
     if isinstance(ome_meta, _SCENE):
         # (where the spec says to keep the arrays its transformations use)
         maybe.append("coordinateTransformations")
-    return [*named, *(key for key in maybe if key in group)]
+    return named, maybe
 
 
-def _get_child_keys(group: ZarrGroup) -> list[str]:
-    """Get sorted list of child keys from a zarr group.
+def _listed_children(group: ZarrGroup) -> list[str]:
+    """Return the names of the children of `group` from a directory listing.
 
-    First tries filesystem listing (works for local stores).
-    Falls back to OME metadata extraction for remote HTTP stores.
+    Empty if the store can't be listed (http and cloud stores, and mappings).
     """
-    children: set[str] = set()
-    store = group._store
+    mapper = group._store._mapper
+    if not hasattr(mapper, "fs"):
+        return []
+    protocol = getattr(mapper.fs, "protocol", "")
+    protocols = [protocol] if isinstance(protocol, str) else list(protocol)
+    if any(p in ("http", "https", "s3", "gs", "az") for p in protocols):
+        return []
 
-    # Try filesystem listing (works for local and some remote stores)
-    # Skip for HTTP/cloud stores that don't support directory listing
-    if hasattr(store, "_mapper") and hasattr(store._mapper, "fs"):
-        fs = store._mapper.fs
-
-        # Check filesystem protocol - skip listing for HTTP/cloud stores
-        fs_protocol = getattr(fs, "protocol", "")
-        protocols = [fs_protocol] if isinstance(fs_protocol, str) else list(fs_protocol)
-        skip_listing = any(p in ("http", "https", "s3", "gs", "az") for p in protocols)
-
-        if not skip_listing:
-            root = store._mapper.root
-            prefix = f"{group._path}/" if group._path else ""
-            full_path = f"{root}/{prefix}".rstrip("/") if prefix else root
-
-            try:
-                entries = fs.ls(full_path, detail=False)
-                for entry in entries:
-                    name = entry.rstrip("/").rsplit("/", 1)[-1]
-                    # Skip metadata files
-                    if name.startswith(".") or name == "zarr.json":
-                        continue
-                    children.add(name)
-            except Exception:
-                pass
-
-    # If filesystem listing didn't work, try OME metadata
-    if not children:
-        ome_children = _get_children_from_ome_metadata(group)
-        if ome_children:
-            children.update(ome_children)
-
-    # Sort with natural ordering (numeric awareness)
-    child_list = list(children)
-    return sorted(child_list, key=_natural_sort_key)
+    full_path = f"{mapper.root}/{group._path}" if group._path else mapper.root
+    try:
+        entries = mapper.fs.ls(full_path, detail=False)
+    except Exception:
+        return []
+    names = (entry.rstrip("/").rsplit("/", 1)[-1] for entry in entries)
+    # (skip metadata files)
+    return [n for n in names if not n.startswith(".") and n != "zarr.json"]
 
 
-def _prefetch_plate_hierarchy(
-    group: ZarrGroup,
-    depth: int | None,
-    max_per_level: int | None,
-) -> None:
-    """Prefetch all metadata for a plate hierarchy in stages.
+def _group_node(group: ZarrGroup, name: str) -> TreeNode:
+    ome_annotation = _get_ome_type_annotation(group)
+    return TreeNode(
+        name=name,
+        icon=_get_node_icon(group),
+        node_type="group",
+        metadata_files=[
+            (mf, ome_annotation if mf in ("zarr.json", ".zattrs") else "")
+            for mf in _get_metadata_files(group)
+        ],
+    )
 
-    This uses a multi-stage approach:
-    1. Prefetch all well metadata (known from plate metadata)
-    2. After wells are cached, prefetch all image metadata
-    3. After images are cached, prefetch all array metadata
 
-    This batches requests at each level for efficient network usage.
-    """
-    ome_meta = group.ome_metadata()
-    if ome_meta is None:
-        return
-
-    if isinstance(ome_meta, _PLATE):
-        plate = ome_meta.plate
-        well_paths = sorted(
-            [w.path for w in (plate.wells if plate else [])],
-            key=_natural_sort_key,
-        )
-        if max_per_level is not None:
-            well_paths = well_paths[:max_per_level]
-
-        if not well_paths:
-            return
-
-        # Prefetch all well metadata at once
-        group.prefetch_children(well_paths)
-
-        # Stage 2: If depth allows, get image paths from well metadata
-        if depth is not None and depth <= 1:
-            return
-
-        image_paths: list[str] = []
-        for wp in well_paths:
-            try:
-                well = group[wp]
-                well_meta = well.ome_metadata()
-                if isinstance(well_meta, _WELL):
-                    well_def = well_meta.well
-                    img_paths = sorted(
-                        [img.path for img in (well_def.images if well_def else [])],
-                        key=_natural_sort_key,
-                    )
-                    if max_per_level is not None:
-                        img_paths = img_paths[:max_per_level]
-                    for ip in img_paths:
-                        image_paths.append(f"{wp}/{ip}")
-            except Exception:
-                continue
-
-        if image_paths:
-            group.prefetch_children(image_paths)
-
-        # Stage 3: If depth allows, get array paths from image metadata
-        if depth is not None and depth <= 2:
-            return
-
-        array_paths: list[str] = []
-        for img_path in image_paths:
-            try:
-                image = group[img_path]
-                img_meta = image.ome_metadata()
-                if isinstance(img_meta, _IMAGE):
-                    for ms in img_meta.multiscales:
-                        ds_paths = sorted(
-                            [ds.path for ds in ms.datasets], key=_natural_sort_key
-                        )
-                        if max_per_level is not None:
-                            ds_paths = ds_paths[:max_per_level]
-                        for dp in ds_paths:
-                            array_paths.append(f"{img_path}/{dp}")
-                    array_paths.append(f"{img_path}/labels")
-            except Exception:
-                continue
-
-        if array_paths:
-            group.prefetch_children(array_paths)
-
-    elif isinstance(ome_meta, _IMAGE):
-        # For images, just prefetch array paths
-        array_paths: list[str] = []
-        for ms in ome_meta.multiscales:
-            ds_paths = sorted([ds.path for ds in ms.datasets], key=_natural_sort_key)
-            if max_per_level is not None:
-                ds_paths = ds_paths[:max_per_level]
-            array_paths.extend(ds_paths)
-
-        if array_paths:
-            group.prefetch_children(array_paths)
+def _array_node(array: ZarrArray, name: str) -> TreeNode:
+    return TreeNode(
+        name=name,
+        icon=ICON_ARRAY,
+        node_type="array",
+        dtype=str(array._metadata.data_type),
+        shape=array._metadata.shape,
+    )
 
 
 def _build_tree(
-    group: ZarrGroup,
-    depth: int | None,
-    max_per_level: int | None,
-    current_depth: int = 0,
-    name: str | None = None,
-    _prefetched: bool = False,
+    group: ZarrGroup, depth: int | None, max_per_level: int | None
 ) -> TreeNode:
     """Build the intermediate tree representation.
+
+    One level at a time, fetching the metadata of all the nodes in a level at once
+    (a couple of round trips per level on remote stores).
 
     Parameters
     ----------
@@ -307,82 +207,65 @@ def _build_tree(
         Maximum depth to traverse (None for unlimited).
     max_per_level : int | None
         Maximum children per level (None for unlimited).
-    current_depth : int
-        Current traversal depth.
-    name : str | None
-        Name to display for this node (defaults to store path basename).
-    _prefetched : bool
-        Internal flag indicating if descendants have already been prefetched.
 
     Returns
     -------
     TreeNode
         The intermediate tree representation.
     """
-    # On first call (root), prefetch all descendants using staged approach
-    if not _prefetched and current_depth == 0:
-        _prefetch_plate_hierarchy(group, depth, max_per_level)
+    display_name = group._display_name()
+    root = _group_node(group, display_name.rsplit("/", 1)[-1] or display_name)
 
-    # Determine node name
-    if name is None:
-        display_name = group._display_name()
-        name = display_name.rsplit("/", 1)[-1] or display_name
+    def _join(rel: str, key: str) -> str:
+        return f"{rel}/{key}" if rel else key
 
-    # Get icon and OME annotation
-    icon = _get_node_icon(group)
-    ome_annotation = _get_ome_type_annotation(group)
+    # (path relative to `group`, group, its tree node) for every group in a level
+    level: list[tuple[str, ZarrGroup, TreeNode]] = [("", group, root)]
+    # (normalized paths of the groups queued so far: metadata can point back up)
+    seen = {"."}
+    current_depth = 0
+    while level and (depth is None or current_depth < depth):
+        children = [
+            (keys, []) if (keys := _listed_children(grp)) else _metadata_children(grp)
+            for _, grp, _ in level
+        ]
+        if group._store._batched:  # (else the nodes are read as they're built)
+            # (one batch for the level: each group's first children, and those it
+            # may have, which can only push others out of the first `max_per_level`)
+            group.prefetch_children(
+                _join(rel, key)
+                for (rel, _, _), (keys, maybe) in zip(level, children, strict=True)
+                for key in [
+                    *sorted(set(keys), key=_natural_sort_key)[:max_per_level],
+                    *maybe,
+                ]
+            )
 
-    metadata_files = [
-        (mf, ome_annotation if mf in ("zarr.json", ".zattrs") else "")
-        for mf in _get_metadata_files(group)
-    ]
-
-    # Create the node
-    node = TreeNode(
-        name=name,
-        icon=icon,
-        node_type="group",
-        metadata_files=metadata_files,
-    )
-
-    # Get children if within depth limit
-    if depth is None or current_depth < depth:
-        child_keys = _get_child_keys(group)
-
-        # Apply max_per_level limit
-        if max_per_level is not None and len(child_keys) > max_per_level:
-            child_keys = child_keys[:max_per_level]
-            node.truncated = True
-
-        # Build child nodes (metadata should already be prefetched)
-        for key in child_keys:
-            try:
-                child = group[key]
-            except Exception:
-                continue
-
-            if isinstance(child, ZarrGroup):
-                child_node = _build_tree(
-                    child,
-                    depth,
-                    max_per_level,
-                    current_depth + 1,
-                    key,
-                    _prefetched=True,
-                )
+        next_level: list[tuple[str, ZarrGroup, TreeNode]] = []
+        for (rel, grp, node), (keys, maybe) in zip(level, children, strict=True):
+            keys = sorted(
+                {*keys, *(k for k in maybe if k in grp)}, key=_natural_sort_key
+            )
+            if max_per_level is not None and len(keys) > max_per_level:
+                keys = keys[:max_per_level]
+                node.truncated = True
+            for key in keys:
+                try:
+                    child = grp[key]
+                except Exception:
+                    continue
+                if isinstance(child, ZarrGroup):
+                    child_node = _group_node(child, key)
+                    path = _join(rel, key)
+                    if (norm := posixpath.normpath(path)) not in seen:
+                        seen.add(norm)
+                        next_level.append((path, child, child_node))
+                else:
+                    child_node = _array_node(child, key)
                 node.children.append(child_node)
-            elif isinstance(child, ZarrArray):
-                # Array node
-                array_node = TreeNode(
-                    name=key,
-                    icon=_get_node_icon(child),
-                    node_type="array",
-                    dtype=str(child._metadata.data_type),
-                    shape=child._metadata.shape,
-                )
-                node.children.append(array_node)
-
-    return node
+        level = next_level
+        current_depth += 1
+    return root
 
 
 def _render_plain(
