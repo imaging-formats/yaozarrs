@@ -314,6 +314,14 @@ def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMeta
 # ---------------------------------------------------
 
 
+def _local_root(mapper: Mapping[str, bytes]) -> str | None:
+    """Return the directory of a store on the local filesystem (an FSMap), else None."""
+    protocol = getattr(getattr(mapper, "fs", None), "protocol", None)
+    protocols = (protocol,) if isinstance(protocol, str) else protocol or ()
+    root = getattr(mapper, "root", None)
+    return root if "file" in protocols and isinstance(root, str) else None
+
+
 class _CachedMapper(Mapping[str, bytes]):
     """Caching wrapper for a store mapping that caches metadata file reads.
 
@@ -334,6 +342,21 @@ class _CachedMapper(Mapping[str, bytes]):
     def __init__(self, mapper: Mapping[str, bytes]) -> None:
         self._mapper = mapper
         self._cache: dict[str, bytes | Exception | None] = {}
+        self._local_root = _local_root(mapper)
+
+    def _fetch(self, key: str) -> bytes | None:
+        """Read `key` from the mapper (None if it's missing).
+
+        Local files are read directly: fsspec's overhead per file is larger than
+        reading a small metadata file.
+        """
+        if self._local_root is None:
+            return self._mapper.get(key)
+        try:
+            with open(f"{self._local_root}/{key}", "rb", buffering=0) as f:
+                return f.read()
+        except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
+            return None  # (FSMap's `missing_exceptions`: other errors are raised)
 
     @overload
     def get(self, key: str, /) -> bytes | None: ...
@@ -347,7 +370,7 @@ class _CachedMapper(Mapping[str, bytes]):
         """Get a value from the mapper with caching."""
         if key not in self._cache:
             # (cache what the mapper holds, never the caller's `default`)
-            self._cache[key] = self._mapper.get(key)
+            self._cache[key] = self._fetch(key)
         val = self._cache[key]
         if val is None or isinstance(val, Exception):
             return default
@@ -361,7 +384,7 @@ class _CachedMapper(Mapping[str, bytes]):
         if key in self._cache:
             val = self._cache[key]
         else:
-            self._cache[key] = val = self._mapper.get(key)
+            self._cache[key] = val = self._fetch(key)
         return not isinstance(val, (Exception, NoneType))
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
@@ -390,15 +413,16 @@ class _CachedMapper(Mapping[str, bytes]):
 
         # Fetch uncached keys in batch using FSMap.getitems()
         # For HTTPS, this uses async aiohttp with concurrency up to 1280 requests
+        # (local files gain nothing from a batch: they're read one by one below)
         if uncached_keys:
-            try:
+            results = {}
+            if self._local_root is None:
                 # use on_error='return' to get all results including missing keys
                 # which will be stored as exceptions (usually KeyErrors)
-                results = self._mapper.getitems(uncached_keys, on_error="return")
-            except Exception:
-                # Batch call failed outright, or the mapping has no `getitems`:
-                # get every key individually below.
-                results = {}
+                with suppress(Exception):
+                    # (if the batch call fails outright, or the mapping has no
+                    # `getitems`, every key is fetched individually below)
+                    results = self._mapper.getitems(uncached_keys, on_error="return")
 
             # fsspec normalizes genuine "missing key" errors to KeyError here;
             # anything else (timeout, connection reset, throttling, etc.) is a
@@ -419,7 +443,7 @@ class _CachedMapper(Mapping[str, bytes]):
 
             for key in failed_keys:
                 try:
-                    self._cache[key] = self._mapper.get(key)
+                    self._cache[key] = self._fetch(key)
                 except Exception:
                     if on_error == "raise":
                         raise
