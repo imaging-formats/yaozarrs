@@ -82,9 +82,11 @@ def test_numbered_children_batches_double(version: str) -> None:
         _v04_store(100) if version == "0.4" else _v05_store(None, 100)
     )
     assert len(yaozarrs.bioformats2raw_series(store)) == 100
-    # (after the `OME` lookup: v2 children have 3 metadata keys each, v3 have 1)
+    # (after the `OME` lookup: v2 children have 3 metadata keys each, v3 have 1,
+    # and a v2 root's own are fetched together when it's opened)
     per_child = 3 if version == "0.4" else 1
-    assert store.batches == [per_child * b for b in (1, 16, 32, 64)]
+    root = [3] if version == "0.4" else []
+    assert store.batches == [*root, *(per_child * b for b in (1, 16, 32, 64))]
 
 
 @pytest.mark.parametrize("ome", [None, {"version": "0.5"}])
