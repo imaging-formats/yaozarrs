@@ -1103,6 +1103,39 @@ def open_group(
     return _open_group_at(mapper)
 
 
+# OME metadata classes of each kind, across spec versions
+_IMAGE = (v04.Image, v05.Image, v06.Image)
+_LABELS_GROUP = (v04.LabelsGroup, v05.LabelsGroup, v06.LabelsGroup)
+_PLATE = (v04.Plate, v05.Plate, v06.Plate)
+_WELL = (v04.Well, v05.Well, v06.Well)
+_BF2RAW = (v04.Bf2Raw, v05.Bf2Raw, v06.Bf2Raw)
+_SCENE = (v06.Scene,)
+
+
+def nodes_below(model: object) -> tuple[list[str], list[str]]:
+    """Return the paths of the nodes below the group that holds OME metadata `model`.
+
+    First the nodes (groups and arrays) that it names, then those the group may also
+    have, which nothing names (an image's `labels`).  A bioformats2raw collection's
+    images aren't named in its metadata, so none are returned.
+    """
+    if isinstance(model, _IMAGE):
+        paths = (ds.path for ms in model.multiscales for ds in ms.datasets)
+        return list(dict.fromkeys(paths)), ["labels"]
+    if isinstance(model, _PLATE):
+        return list(dict.fromkeys(well.path for well in model.plate.wells)), []
+    if isinstance(model, _WELL):
+        return list(dict.fromkeys(image.path for image in model.well.images)), []
+    if isinstance(model, _LABELS_GROUP):
+        return list(dict.fromkeys(model.labels)), []
+    if isinstance(model, _SCENE):
+        transforms = model.scene.coordinateTransformations
+        refs = (ref for t in transforms for ref in (t.input, t.output))
+        paths = (ref.path for ref in refs if ref is not None and ref.path)
+        return list(dict.fromkeys(paths)), []
+    return [], []
+
+
 def bioformats2raw_series(
     group: ZarrGroup | str | os.PathLike | Mapping[str, bytes],
 ) -> list[str]:
@@ -1155,12 +1188,12 @@ def bioformats2raw_series(
     """
     group = open_group(group)
     model = group.ome_metadata()
-    if isinstance(model, (v04.Plate, v05.Plate, v06.Plate)):
+    if isinstance(model, _PLATE):
         if model.bioformats2raw_layout is None:
             raise ValueError(f"{group!r} is not a bioformats2raw collection.")
         version = "0.4" if isinstance(model, v04.Plate) else model.version
         return _plate_images(group, model, version=version)
-    if not isinstance(model, (v04.Bf2Raw, v05.Bf2Raw, v06.Bf2Raw)):
+    if not isinstance(model, _BF2RAW):
         raise ValueError(f"{group!r} is not a bioformats2raw collection.")
 
     version = "0.4" if isinstance(model, v04.Bf2Raw) else model.version
@@ -1203,7 +1236,7 @@ def _plate_images(
         meta = None
         if isinstance(well := group.get(well_path), ZarrGroup):
             meta = well.ome_metadata(version=version)
-        if not isinstance(meta, (v04.Well, v05.Well, v06.Well)):
+        if not isinstance(meta, _WELL):
             raise ValueError(f"Plate well {well_path!r} has no well metadata.")
         paths.extend(f"{well_path}/{image.path}" for image in meta.well.images)
 

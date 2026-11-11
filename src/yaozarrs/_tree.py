@@ -11,8 +11,19 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from yaozarrs import v04, v05, v06
-from yaozarrs._zarr import ZarrArray, ZarrGroup
+from yaozarrs._zarr import (
+    _BF2RAW,
+    _IMAGE,
+    _LABELS_GROUP,
+    _PLATE,
+    _SCENE,
+    _WELL,
+    ZarrArray,
+    ZarrGroup,
+    _numbered_children,
+    bioformats2raw_series,
+    nodes_below,
+)
 
 if TYPE_CHECKING:
     from rich.tree import Tree
@@ -48,14 +59,6 @@ class TreeNode:
     # For arrays
     dtype: str | None = None
     shape: tuple[int, ...] | None = None
-
-
-# OME metadata classes of each kind, across spec versions
-_IMAGE = (v04.Image, v05.Image, v06.Image)
-_LABELS_GROUP = (v04.LabelsGroup, v05.LabelsGroup, v06.LabelsGroup)
-_PLATE = (v04.Plate, v05.Plate, v06.Plate)
-_WELL = (v04.Well, v05.Well, v06.Well)
-_BF2RAW = (v04.Bf2Raw, v05.Bf2Raw, v06.Bf2Raw)
 
 
 def _natural_sort_key(s: str) -> list:
@@ -124,54 +127,24 @@ def _get_children_from_ome_metadata(group: ZarrGroup) -> list[str] | None:
     For remote HTTP stores where directory listing isn't available,
     we can infer children from the OME metadata structure.
 
-    Returns None if no OME metadata or can't determine children.
+    Returns None if there's no OME metadata, or (for a bioformats2raw group) no
+    numbered children; otherwise a list, which may be empty.
     """
     ome_meta = group.ome_metadata()
     if ome_meta is None:
         return None
 
-    if isinstance(ome_meta, _IMAGE):
-        children = list(
-            dict.fromkeys(ds.path for ms in ome_meta.multiscales for ds in ms.datasets)
-        )
-        if "labels" in group:
-            children.append("labels")
-        return children
-
-    if isinstance(ome_meta, _PLATE):
-        if plate := ome_meta.plate:
-            return list(dict.fromkeys(w.path for w in plate.wells))
-        return []
-
-    if isinstance(ome_meta, _WELL):
-        if well := ome_meta.well:
-            return list(dict.fromkeys(img.path for img in well.images))
-        return []
-
-    if isinstance(ome_meta, _LABELS_GROUP):
-        return list(ome_meta.labels)
-
-    if isinstance(ome_meta, v06.Scene):
-        refs = (
-            r
-            for t in ome_meta.scene.coordinateTransformations
-            for r in (t.input, t.output)
-        )
-        children = list(dict.fromkeys(r.path for r in refs if r is not None and r.path))
-        if "coordinateTransformations" in group:
-            children.append("coordinateTransformations")
-        return children
-
     if isinstance(ome_meta, _BF2RAW):
-        children: list[str] = []
-        for i in range(100):  # reasonable upper bound
-            if str(i) in group:
-                children.append(str(i))
-            else:
-                break
-        return children or None
+        try:
+            return bioformats2raw_series(group) or None
+        except Exception:  # (e.g. invalid `OME` metadata: as validation does)
+            return _numbered_children(group) or None
 
-    return None
+    named, maybe = nodes_below(ome_meta)
+    if isinstance(ome_meta, _SCENE):
+        # (where the spec says to keep the arrays its transformations use)
+        maybe.append("coordinateTransformations")
+    return [*named, *(key for key in maybe if key in group)]
 
 
 def _get_child_keys(group: ZarrGroup) -> list[str]:

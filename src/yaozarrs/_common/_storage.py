@@ -23,6 +23,7 @@ from yaozarrs._zarr import (
     _numbered_children,
     _open_group_at,
     _series_model,
+    nodes_below,
 )
 
 if TYPE_CHECKING:
@@ -144,23 +145,8 @@ class StorageValidator:
         except ValueError as e:
             return e
 
-    def _below(self, model: Any) -> tuple[list[str], list[str]]:
-        """Return the groups and the arrays that OME metadata `model` names."""
-        if isinstance(model, self.Image):
-            datasets = [ds.path for ms in model.multiscales for ds in ms.datasets]
-            return ["labels"], datasets
-        if isinstance(model, self.Plate):
-            return [well.path for well in model.plate.wells], []
-        if isinstance(model, self.Well):
-            return [image.path for image in model.well.images], []
-        if isinstance(model, self.LabelsGroup):
-            return list(model.labels), []
-        return [], []
-
-    def _prefetch(
-        self, zarr_group: ZarrGroup, groups: list[str], arrays: Sequence[str] = ()
-    ) -> None:
-        """Fetch the metadata of `groups` and `arrays`, and of everything below them.
+    def _prefetch(self, zarr_group: ZarrGroup, paths: list[str]) -> None:
+        """Fetch the metadata of the nodes at `paths`, and of everything below them.
 
         One level of the hierarchy at a time (e.g. a plate's wells, their images, the
         images' arrays and labels groups, ...), so a remote store gets one batch of
@@ -168,23 +154,22 @@ class StorageValidator:
         """
         if not zarr_group._store._batched:
             return  # (the nodes are read as they're visited: batching gains nothing)
-        while groups or arrays:
-            zarr_group.prefetch_children([*groups, *arrays])
+        while paths:
+            zarr_group.prefetch_children(paths)
             below: list[str] = []
-            arrays = []
-            for path in groups:
-                if path != posixpath.normpath(path):
-                    continue  # ("." or ".." in a path could make the walk loop)
+            for path in paths:
+                head = path.split("/", 1)[0]
+                if path != posixpath.normpath(path) or head in ("", ".", ".."):
+                    continue  # (a path that could loop, or leave the store)
                 try:
-                    group = zarr_group.get(path)
+                    node = zarr_group.get(path)
                 except Exception:
                     continue  # (validation raises it, if it ever reads this node)
-                if isinstance(group, ZarrGroup):
-                    model = self._prefetched[group.path] = self._child_model(group)
-                    sub_groups, sub_arrays = self._below(model)
-                    below += (f"{path}/{p}" for p in sub_groups)
-                    arrays += (f"{path}/{p}" for p in sub_arrays)
-            groups = below
+                if isinstance(node, ZarrGroup):
+                    model = self._prefetched[node.path] = self._child_model(node)
+                    named, maybe = nodes_below(model)
+                    below += (f"{path}/{p}" for p in (*named, *maybe))
+            paths = below
 
     @classmethod
     def validate_group(
@@ -224,7 +209,8 @@ class StorageValidator:
                 result.errors.append(details)
             return result
         # (fetch everything the metadata names up front: a few batches in all)
-        validator._prefetch(zarr_group, *validator._below(ome_metadata))
+        named, maybe = nodes_below(ome_metadata)
+        validator._prefetch(zarr_group, [*named, *maybe])
         return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
     def visit_root(
