@@ -314,6 +314,10 @@ def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMeta
 # ---------------------------------------------------
 
 
+# the metadata documents of a zarr v2 node
+_V2_DOCUMENTS = (".zgroup", ".zarray", ".zattrs")
+
+
 def _local_root(mapper: Mapping[str, bytes]) -> str | None:
     """Return the directory of a store on the local filesystem (an FSMap), else None."""
     protocol = getattr(getattr(mapper, "fs", None), "protocol", None)
@@ -370,10 +374,8 @@ class _CachedMapper(Mapping[str, bytes]):
         self, key: str, default: _T | None = None
     ) -> bytes | _T | None:
         """Get a value from the mapper with caching."""
-        if key not in self._cache:
-            # (cache what the mapper holds, never the caller's `default`)
-            self._cache[key] = self._fetch(key)
-        val = self._cache[key]
+        # (cache what the mapper holds, never the caller's `default`)
+        val = self._lookup(key)
         if val is None or isinstance(val, Exception):
             return default
         return val
@@ -382,12 +384,38 @@ class _CachedMapper(Mapping[str, bytes]):
         """Check if a key exists in the mapper."""
         if not isinstance(key, str):
             return False
+        return not isinstance(self._lookup(key), (Exception, NoneType))
 
-        if key in self._cache:
-            val = self._cache[key]
-        else:
-            self._cache[key] = val = self._fetch(key)
-        return not isinstance(val, (Exception, NoneType))
+    def _lookup(self, key: str) -> bytes | Exception | None:
+        """Return the cached value of `key`, fetching it first if need be."""
+        if key not in self._cache:
+            prefix, sep, name = key.rpartition("/")
+            if self._batched and name in _V2_DOCUMENTS:
+                # (a zarr v2 node's documents are read together: one round trip)
+                docs = (f"{prefix}{sep}{d}" for d in _V2_DOCUMENTS)
+                self._fetch_batch([doc for doc in docs if doc not in self._cache])
+            if key not in self._cache:
+                self._cache[key] = self._fetch(key)
+        return self._cache[key]
+
+    def _fetch_batch(self, keys: list[str]) -> None:
+        """Fetch `keys` in one call to the mapper, caching those found or missing.
+
+        fsspec normalizes genuine "missing key" errors to KeyError; anything else
+        (timeout, connection reset, throttling, etc.) is a transient failure, not a
+        "not found": those keys aren't cached, so that they're fetched again alone.
+        """
+        results = {}
+        # use on_error='return' to get all results including missing keys, which
+        # will be stored as exceptions (usually KeyErrors)
+        with suppress(Exception):  # (if it fails outright, nothing is cached)
+            results = self._mapper.getitems(keys, on_error="return")
+        for key in keys:
+            if key not in results:
+                continue
+            val = results[key]
+            if not isinstance(val, Exception) or isinstance(val, KeyError):
+                self._cache[key] = val
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
         """Batch fetch multiple items and cache them.
@@ -415,35 +443,12 @@ class _CachedMapper(Mapping[str, bytes]):
 
         # Fetch uncached keys in batch using FSMap.getitems()
         # For HTTPS, this uses async aiohttp with concurrency up to 1280 requests
-        # (local files gain nothing from a batch: they're read one by one below)
-        if uncached_keys:
-            results = {}
-            if self._local_root is None:
-                # use on_error='return' to get all results including missing keys
-                # which will be stored as exceptions (usually KeyErrors)
-                with suppress(Exception):
-                    # (if the batch call fails outright, or the mapping has no
-                    # `getitems`, every key is fetched individually below)
-                    results = self._mapper.getitems(uncached_keys, on_error="return")
-
-            # fsspec normalizes genuine "missing key" errors to KeyError here;
-            # anything else (timeout, connection reset, throttling, etc.) is a
-            # transient failure, not a "not found" - don't cache it as a
-            # permanent negative result. Cache the good results now and only
-            # retry the keys that actually failed, individually, below.
-            failed_keys: list[str] = []
-            for key in uncached_keys:
-                if key not in results:
-                    # batch call failed outright, or omitted this key
-                    failed_keys.append(key)
-                    continue
-                val = results[key]
-                if isinstance(val, Exception) and not isinstance(val, KeyError):
-                    failed_keys.append(key)
-                else:
-                    self._cache[key] = val
-
-            for key in failed_keys:
+        # (stores that can't batch, e.g. local files, are read one key at a time)
+        if self._batched and uncached_keys:
+            self._fetch_batch(uncached_keys)
+        # (and the keys the batch didn't get, one by one)
+        for key in uncached_keys:
+            if key not in self._cache:
                 try:
                     self._cache[key] = self._fetch(key)
                 except Exception:
@@ -856,13 +861,7 @@ class ZarrGroup(ZarrNode):
                 # For v2, we need to check .zgroup, .zarray, AND .zattrs
                 # The .zattrs file contains OME metadata and must be prefetched
                 # to avoid individual HTTP requests when loading group metadata
-                metadata_paths.extend(
-                    [
-                        f"{child_path}/.zgroup",
-                        f"{child_path}/.zarray",
-                        f"{child_path}/.zattrs",
-                    ]
-                )
+                metadata_paths.extend(f"{child_path}/{d}" for d in _V2_DOCUMENTS)
 
         # Batch fetch using getitems - _CachedMapper handles fallback if needed
         try:
