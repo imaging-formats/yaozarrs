@@ -117,16 +117,17 @@ def test_label_dtype_checked_without_image_label(version: str) -> None:
 class HttpLikeStore(dict):
     """Fetches keys in batches, and resolves `.` in them, as http stores do."""
 
-    batches = 0
+    round_trips = 0  # (each key fetched alone, or each batch of keys)
 
     def get(self, key: Any, default: Any = None) -> Any:
-        return super().get(posixpath.normpath(key), default)
+        self.round_trips += 1
+        return dict.get(self, posixpath.normpath(key), default)
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, Any]:
-        self.batches += 1
-        if self.batches > 20:  # (a runaway: say every key is missing, to stop it)
+        self.round_trips += 1
+        if self.round_trips > 50:  # (a runaway: say every key is missing, to stop it)
             return {key: KeyError(key) for key in keys}
-        return {key: self.get(key, KeyError(key)) for key in keys}
+        return {k: dict.get(self, posixpath.normpath(k), KeyError(k)) for k in keys}
 
 
 def _image(version: str = "0.6") -> dict:
@@ -141,7 +142,8 @@ def test_prefetch_stops_at_self_reference() -> None:
     )
     with pytest.raises(StorageValidationError, match="label_image_invalid"):
         validate_zarr_store(store)
-    assert store.batches < 10
+    open_group(store).tree()
+    assert store.round_trips < 10
 
 
 def test_prefetch_leaves_errors_to_validation() -> None:
@@ -174,3 +176,70 @@ def test_prefetched_documents_validated_once() -> None:
     with pytest.warns(StorageValidationWarning) as record:
         validate_zarr_store(store)
     assert len(record.pop(StorageValidationWarning).message.warnings()) == 3
+
+
+def _scene(n: int) -> dict[str, bytes]:
+    """A v0.6 scene of `n` 2D images, `t0`, `t1`, ..."""
+    world = {"name": "world", "axes": [{"name": ax, "type": "space"} for ax in "yx"]}
+    refs = [
+        {"type": "identity", "input": {"path": f"t{i}", "name": "intrinsic"}}
+        | {"output": {"name": "world"}}
+        for i in range(n)
+    ]
+    scene = {"coordinateSystems": [world], "coordinateTransformations": refs}
+    store = {"zarr.json": _group({"version": "0.6", "scene": scene})}
+    for i in range(n):
+        store |= {
+            f"t{i}/zarr.json": _group(_image()),
+            f"t{i}/0/zarr.json": _array("u2"),
+        }
+    return store
+
+
+# (on stores that batch: one fetch per level of the hierarchy, not one per group)
+@pytest.mark.parametrize("action", ["validate", "tree"])
+@pytest.mark.parametrize("kind", ["plate", "bioformats2raw", "scene"])
+def test_round_trips(
+    action: str, kind: str, request: Any, write_demo_ome: Callable, metadata_dict: Any
+) -> None:
+    if kind == "plate":  # (with labels)
+        data = metadata_dict(request.getfixturevalue("complex_ome_zarr"))
+    elif kind == "bioformats2raw":
+        data = metadata_dict(write_demo_ome(kind, num_series=40))
+    else:
+        data = _scene(40)
+    store = HttpLikeStore(data)
+    if action == "validate":
+        validate_zarr_store(store)
+    else:
+        open_group(store).tree()
+    assert store.round_trips < 10
+
+
+def test_v2_documents_fetched_together(
+    write_demo_ome: Callable, metadata_dict: Callable
+) -> None:
+    store = HttpLikeStore(metadata_dict(write_demo_ome("image", version="0.4")))
+    image = open_group(store)
+    datasets = image.ome_metadata().multiscales[0].datasets
+    arrays = [image[ds.path] for ds in datasets]
+    assert store.round_trips == 2 + len(arrays)  # (zarr.json, then one per node)
+
+
+def test_tree_follows_series_list(
+    write_demo_ome: Callable, metadata_dict: Callable
+) -> None:
+    # (in a store that can't be listed: more than 100 images, not numbered)
+    image = metadata_dict(write_demo_ome("bioformats2raw"))
+    names = [f"s{i}" for i in range(120)]
+    store = {"zarr.json": image["zarr.json"]}
+    store |= {
+        f"{n}/{k[2:]}": v for n in names for k, v in image.items() if k[:2] == "0/"
+    }
+    store["OME/zarr.json"] = _group({"version": "0.5", "series": names})
+    assert open_group(store).tree(depth=1).count("🖼️") == 120
+
+
+def test_tree_shows_group_with_invalid_metadata() -> None:
+    store = _scene(2) | {"t1/zarr.json": _group({"version": "0.6", "multiscales": []})}
+    assert "📁 t1" in open_group(store).tree()
