@@ -75,6 +75,7 @@ class StorageValidatorV06(StorageValidator):
     __slots__ = ("_checked", "_visited")
 
     def __init__(self) -> None:
+        super().__init__()
         self._visited: set[str] = set()
         self._checked: set[tuple] = set()
 

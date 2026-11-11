@@ -11,11 +11,10 @@ from __future__ import annotations
 import posixpath
 import re
 import warnings
-from itertools import chain, product
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeAlias
 from urllib.parse import urljoin
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._zarr import (
@@ -102,7 +101,7 @@ def _invalid_ctx(model: Any) -> dict:
 class StorageValidator:
     """Storage validator for one OME-Zarr version (see subclasses)."""
 
-    __slots__ = ("strict",)
+    __slots__ = ("_prefetched", "strict")
 
     strict: bool | None
 
@@ -118,6 +117,10 @@ class StorageValidator:
     Bf2Raw: ClassVar[type]
     Series: ClassVar[type]
 
+    def __init__(self) -> None:
+        # (OME metadata models parsed while prefetching, by path, until they're used)
+        self._prefetched: dict[str, Any] = {}
+
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
         """Validate a group's attributes, returning its OME metadata model."""
         raise NotImplementedError
@@ -132,12 +135,56 @@ class StorageValidator:
         """Version-specific checks of one dataset array (none by default)."""
         return ValidationResult()
 
-    def _child_model(self, group: ZarrGroup) -> Any:
+    def _child_model(self, group: ZarrGroup) -> BaseModel | ValueError | None:
         """Return the OME metadata model of `group`, or the `ValueError` raised."""
+        if group.path in self._prefetched:
+            return self._prefetched.pop(group.path)
         try:
             return group.ome_metadata(version=self.VERSION, strict=self.strict)
         except ValueError as e:
             return e
+
+    def _below(self, model: Any) -> tuple[list[str], list[str]]:
+        """Return the groups and the arrays that OME metadata `model` names."""
+        if isinstance(model, self.Image):
+            datasets = [ds.path for ms in model.multiscales for ds in ms.datasets]
+            return ["labels"], datasets
+        if isinstance(model, self.Plate):
+            return [well.path for well in model.plate.wells], []
+        if isinstance(model, self.Well):
+            return [image.path for image in model.well.images], []
+        if isinstance(model, self.LabelsGroup):
+            return list(model.labels), []
+        return [], []
+
+    def _prefetch(
+        self, zarr_group: ZarrGroup, groups: list[str], arrays: Sequence[str] = ()
+    ) -> None:
+        """Fetch the metadata of `groups` and `arrays`, and of everything below them.
+
+        One level of the hierarchy at a time (e.g. a plate's wells, their images, the
+        images' arrays and labels groups, ...), so a remote store gets one batch of
+        requests per level, rather than one per group.
+        """
+        if not zarr_group._store._batched:
+            return  # (the nodes are read as they're visited: batching gains nothing)
+        while groups or arrays:
+            zarr_group.prefetch_children([*groups, *arrays])
+            below: list[str] = []
+            arrays = []
+            for path in groups:
+                if path != posixpath.normpath(path):
+                    continue  # ("." or ".." in a path could make the walk loop)
+                try:
+                    group = zarr_group.get(path)
+                except Exception:
+                    continue  # (validation raises it, if it ever reads this node)
+                if isinstance(group, ZarrGroup):
+                    model = self._prefetched[group.path] = self._child_model(group)
+                    sub_groups, sub_arrays = self._below(model)
+                    below += (f"{path}/{p}" for p in sub_groups)
+                    arrays += (f"{path}/{p}" for p in sub_arrays)
+            groups = below
 
     @classmethod
     def validate_group(
@@ -176,6 +223,8 @@ class StorageValidator:
                     details["ctx"] = err["ctx"]
                 result.errors.append(details)
             return result
+        # (fetch everything the metadata names up front: a few batches in all)
+        validator._prefetch(zarr_group, *validator._below(ome_metadata))
         return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
     def visit_root(
@@ -496,10 +545,6 @@ class StorageValidator:
     ) -> ValidationResult:
         """Validate a plate group and its wells."""
         result = ValidationResult()
-        # Prefetch all metadata in one go to minimize network round trips
-        self._prefetch_plate_hierarchy(
-            zarr_group, [well.path for well in plate_model.plate.wells]
-        )
         images: list[str] = []  # (paths of the images in the valid wells)
         for well_idx, well in enumerate(plate_model.plate.wells):
             well_loc = (*loc_prefix, "plate", "wells", well_idx)
@@ -699,8 +744,9 @@ class StorageValidator:
                 "Bioformats2raw group contains no numbered image directories",
             )
             return result
+        self._prefetch(zarr_group, numbered_paths)
 
-        # Validate each numbered directory as image group (already prefetched)
+        # Validate each numbered directory as image group
         for path in numbered_paths:
             image_loc = (*loc_prefix, path)
 
@@ -757,7 +803,7 @@ class StorageValidator:
         """
         result = ValidationResult()
         skip = set(skip)
-        zarr_group.prefetch_children(p for p in ome_model.series if p not in skip)
+        self._prefetch(zarr_group, [p for p in ome_model.series if p not in skip])
         for series_idx, series_path in enumerate(ome_model.series):
             if series_path in skip:
                 continue
@@ -798,63 +844,6 @@ class StorageValidator:
 
         return result
 
-    def _prefetch_plate_hierarchy(
-        self, zarr_group: ZarrGroup, well_paths: list[str]
-    ) -> None:
-        """Prefetch entire plate hierarchy to minimize network round trips.
-
-        Strategy: Inspect first well/field to understand structure, then batch
-        fetch all metadata across the entire plate (wells, fields, datasets).
-        """
-        if not well_paths:  # pragma: no cover
-            return
-        zarr_group.prefetch_children(well_paths)
-
-        first_well = zarr_group.get(well_paths[0])
-        if not isinstance(first_well, ZarrGroup):
-            return
-        if not (field_paths := self._field_paths(first_well)):
-            return
-        zarr_group.prefetch_children(
-            "/".join(grp) for grp in product(well_paths, field_paths)
-        )
-
-        if not (dataset_paths := self._dataset_paths(first_well.get(field_paths[0]))):
-            return
-        # (and labels metadata: optional, but common)
-        ds_paths = (
-            "/".join(grp) for grp in product(well_paths, field_paths, dataset_paths)
-        )
-        labels_paths = (
-            "/".join(grp) + "/labels" for grp in product(well_paths, field_paths)
-        )
-        zarr_group.prefetch_children(chain(ds_paths, labels_paths))
-
-    def _field_paths(self, well: ZarrGroup) -> list[str]:
-        """Field image paths listed by the metadata of `well`, if it is a Well."""
-        try:
-            well_meta = self._parse_ome(well.attrs)
-            if isinstance(well_meta, self.Well):
-                return [img.path for img in well_meta.well.images]
-        except Exception:
-            pass
-        return []
-
-    def _dataset_paths(self, field: ZarrGroup | ZarrArray | None) -> list[str]:
-        """Dataset paths of the first multiscale of `field`, if it is an Image."""
-        if not isinstance(field, ZarrGroup):
-            return []  # pragma: no cover
-
-        try:
-            field_meta = self._parse_ome(field.attrs)
-        except Exception:
-            return []  # pragma: no cover
-
-        if not isinstance(field_meta, self.Image) or not field_meta.multiscales:
-            return []  # pragma: no cover
-
-        return [ds.path for ds in field_meta.multiscales[0].datasets]
-
     def _check_for_labels_group(
         self, zarr_group: ZarrGroup, loc_prefix: Loc
     ) -> tuple[ValidationResult, tuple[ZarrGroup, Any] | None]:
@@ -880,7 +869,11 @@ class StorageValidator:
             return result, None
 
         try:
-            labels_model = self._parse_ome(labels_group.attrs)
+            # (the model parsed while prefetching, so it isn't validated twice:
+            # an error is parsed again, for its message)
+            labels_model = self._prefetched.pop(labels_group.path, None)
+            if not isinstance(labels_model, BaseModel):
+                labels_model = self._parse_ome(labels_group.attrs)
             if isinstance(labels_model, self.LabelsGroup):
                 return result, (labels_group, labels_model)
             # The OME-Zarr Metadata in the zarr.json file associated with the "labels"

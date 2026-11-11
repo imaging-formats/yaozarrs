@@ -343,6 +343,8 @@ class _CachedMapper(Mapping[str, bytes]):
         self._mapper = mapper
         self._cache: dict[str, bytes | Exception | None] = {}
         self._local_root = _local_root(mapper)
+        # (whether many keys can be fetched in one call, e.g. concurrently over http)
+        self._batched: bool = self._local_root is None and hasattr(mapper, "getitems")
 
     def _fetch(self, key: str) -> bytes | None:
         """Read `key` from the mapper (None if it's missing).
