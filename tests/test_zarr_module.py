@@ -358,6 +358,16 @@ def test_zarrgroup_from_zarr_python(
     assert isinstance(group.metadata.ome_metadata(), BaseModel)
 
 
+def test_open_group_from_zarr_python_subgroup(tmp_path: Path) -> None:
+    zarr = pytest.importorskip("zarr")
+    root = zarr.open_group(tmp_path / "root.zarr", mode="w")
+    root.create_group("inner").attrs["name"] = "inner"
+
+    group = open_group(root["inner"])
+    assert group.path == "inner"
+    assert group.attrs.get("name") == "inner"
+
+
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
 def test_zarrarray_to_tensorstore(write_demo_ome: Callable, version: str) -> None:
     ts = pytest.importorskip("tensorstore")
