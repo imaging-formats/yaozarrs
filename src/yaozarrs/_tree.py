@@ -296,6 +296,7 @@ def _prefetch_plate_hierarchy(
                             ds_paths = ds_paths[:max_per_level]
                         for dp in ds_paths:
                             array_paths.append(f"{img_path}/{dp}")
+                    array_paths.append(f"{img_path}/labels")
             except Exception:
                 continue
 
