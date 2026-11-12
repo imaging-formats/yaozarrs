@@ -5121,10 +5121,7 @@ visiting them:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/_zarr.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1138</span>
-<span class="normal">1139</span>
-<span class="normal">1140</span>
-<span class="normal">1141</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1141</span>
 <span class="normal">1142</span>
 <span class="normal">1143</span>
 <span class="normal">1144</span>
@@ -5184,7 +5181,10 @@ visiting them:</p>
 <span class="normal">1198</span>
 <span class="normal">1199</span>
 <span class="normal">1200</span>
-<span class="normal">1201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">bioformats2raw_series</span><span class="p">(</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">bioformats2raw_series</span><span class="p">(</span>
     <span class="n">group</span><span class="p">:</span> <span class="n">ZarrGroup</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Return the image paths of a bioformats2raw collection, in series order.</span>
@@ -5991,7 +5991,10 @@ Ignored if <code>uri</code> is a mapping.</p>
 <span class="normal">1099</span>
 <span class="normal">1100</span>
 <span class="normal">1101</span>
-<span class="normal">1102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">open_group</span><span class="p">(</span>
+<span class="normal">1102</span>
+<span class="normal">1103</span>
+<span class="normal">1104</span>
+<span class="normal">1105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">open_group</span><span class="p">(</span>
     <span class="n">uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span> <span class="o">|</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">storage_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ZarrGroup</span><span class="p">:</span>
@@ -6043,12 +6046,15 @@ Ignored if <code>uri</code> is a mapping.</p>
             <span class="s2">"`pip install fsspec`."</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
+    <span class="n">path</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)):</span>
         <span class="n">uri</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">uri</span><span class="p">))</span>
     <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">):</span>
         <span class="c1"># Handle both zarr v2 and v3 Group objects</span>
         <span class="c1"># v3: str(group.store) returns a URI like "file:///path"</span>
         <span class="c1"># v2: group.store.path returns the directory path</span>
+        <span class="c1"># Either way, that's the store root: the group's location in it is `.path`</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="s2">"path"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">uri</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="s2">"path"</span><span class="p">):</span>
             <span class="c1"># Zarr v2: DirectoryStore has .path attribute</span>
             <span class="n">uri</span> <span class="o">=</span> <span class="n">uri</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">path</span>
@@ -6076,7 +6082,7 @@ Ignored if <code>uri</code> is a mapping.</p>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mapper</span><span class="p">,</span> <span class="n">FSMap</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected FSMap from get_mapper, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mapper</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">_open_group_at</span><span class="p">(</span><span class="n">mapper</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_open_group_at</span><span class="p">(</span><span class="n">mapper</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
