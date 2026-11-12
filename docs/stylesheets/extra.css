@@ -126,3 +126,215 @@ img.auto-screenshot {
 }
 
 /* END SYNTAX HIGHLIGHTING */
+
+/* The rule-code tables (docs/rules/index.md, from scripts/ngff_rules.py docs):
+   full width, compact, and only the summary (under the name) wraps. */
+.md-typeset .rule-table .md-typeset__table {
+	display: block; /* (not inline-block: that shrinks to the visible rows) */
+	width: 100%;
+}
+.md-typeset .rule-table table:not([class]) {
+	display: table;
+	width: 100%;
+	table-layout: fixed; /* (so the columns don't move as the filters change) */
+}
+.md-typeset .rule-table th:nth-child(1) {
+	width: 7.5em;
+}
+.md-typeset .rule-table th:nth-child(3) {
+	width: 6em;
+}
+.md-typeset .rule-table th:nth-child(4) {
+	width: 7em;
+}
+.md-typeset .rule-table table:not([class]) :is(th, td) {
+	padding: 0.7em 1em;
+}
+.md-typeset .rule-table table:not([class]) :is(th, td):not(:nth-child(2)),
+.md-typeset .rule-table table:not([class]) td:nth-child(2) > a:first-child {
+	white-space: nowrap;
+}
+
+/* the filters above them (docs/javascripts/rule_filter.js), like ruff's rules page */
+.md-typeset .rule-filter {
+	margin: 1.5em 0;
+	padding-bottom: 1em;
+	border-bottom: 1px solid var(--md-default-fg-color--lightest);
+	font-size: 0.75rem;
+}
+.md-typeset .rule-filter__fields {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 0.8em 1.2em;
+}
+.md-typeset .rule-filter__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4em;
+	flex: 1 1 8em;
+	min-width: 0;
+}
+.md-typeset .rule-filter__field:first-child {
+	flex: 3 1 16em;
+}
+.md-typeset .rule-filter__label {
+	font-weight: 700;
+}
+.md-typeset .rule-filter :is(input, select, button) {
+	box-sizing: border-box;
+	height: 2.4em;
+	padding: 0 0.7em;
+	border: 1px solid var(--md-default-fg-color--lighter);
+	border-radius: 0.2em;
+	background-color: var(--md-default-bg-color);
+	color: var(--md-default-fg-color);
+	font: inherit;
+}
+.md-typeset .rule-filter button {
+	cursor: pointer;
+}
+.md-typeset .rule-filter button:disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+.md-typeset .rule-filter__count {
+	margin: 0.8em 0 0;
+	color: var(--md-default-fg-color--light);
+}
+.md-typeset .rule-filter .rule-filter__field select {
+	width: 100%;
+	/* our own arrow, with room around it (a chevron in the text color) */
+	appearance: none;
+	padding-right: 2.2em;
+	background-image:
+		linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	background-position:
+		calc(100% - 1.15em) 55%,
+		calc(100% - 0.8em) 55%;
+	background-size: 0.35em 0.35em;
+	background-repeat: no-repeat;
+}
+
+/* rule pages (scripts/ngff_rules.py docs): the summary, then a box of facts in two
+   labeled groups, what the NGFF spec says and what yaozarrs does */
+.md-typeset .rule-summary {
+	font-size: 1.1em;
+	line-height: 1.6;
+}
+.md-typeset .rule-facts {
+	--rule-facts-line: var(--md-default-fg-color--lightest);
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+	gap: 1px; /* (the lines between cells are the box's background) */
+	margin: 1.5em 0 2em;
+	overflow: hidden;
+	border: 1px solid var(--rule-facts-line);
+	border-radius: 0.4rem;
+	background-color: var(--rule-facts-line);
+	font-size: 0.9em;
+}
+.md-typeset .rule-facts > * {
+	margin: 0;
+	padding: 0.75em 1.1em;
+	/* a faint tint over an opaque page background */
+	background: linear-gradient(
+			color-mix(in srgb, var(--md-default-fg-color) 2.5%, transparent),
+			color-mix(in srgb, var(--md-default-fg-color) 2.5%, transparent)
+		),
+		var(--md-default-bg-color);
+}
+.md-typeset .rule-facts__title {
+	margin: 0 0 0.35em;
+	color: var(--md-default-fg-color--light);
+	font-size: 0.75em;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+.md-typeset .rule-facts dl {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.2em 1.2em;
+	margin: 0;
+}
+.md-typeset .rule-facts dt {
+	color: var(--md-default-fg-color--light);
+	cursor: help;
+}
+.md-typeset .rule-facts dd {
+	margin: 0;
+}
+.md-typeset .rule-facts :is(abbr, .rule-facts__none),
+.md-typeset .rule-facts__extra {
+	color: var(--md-default-fg-color--light);
+}
+.md-typeset .rule-facts__none {
+	margin: 0;
+}
+.md-typeset .rule-facts__extra {
+	grid-column: 1 / -1;
+}
+.md-typeset .rule-level {
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+/* the one colored thing: what yaozarrs reports */
+.md-typeset .rule-severity {
+	--rule-severity: var(--md-default-fg-color--light);
+	display: inline-block;
+	padding: 0 0.65em;
+	border-radius: 1em;
+	color: var(--rule-severity);
+	background-color: color-mix(in srgb, var(--rule-severity) 11%, transparent);
+	font-weight: 700;
+	line-height: 1.7;
+}
+.md-typeset .rule-severity::before {
+	content: "";
+	display: inline-block;
+	width: 0.5em;
+	height: 0.5em;
+	margin-right: 0.4em;
+	border-radius: 50%;
+	background-color: currentColor;
+	vertical-align: 0.05em;
+}
+.md-typeset .rule-severity--error {
+	--rule-severity: #b71c1c;
+}
+.md-typeset .rule-severity--warning {
+	--rule-severity: #a3530a;
+}
+[data-md-color-scheme="slate"] .md-typeset .rule-severity--error {
+	--rule-severity: #ff8a80;
+}
+[data-md-color-scheme="slate"] .md-typeset .rule-severity--warning {
+	--rule-severity: #ffb74d;
+}
+
+/* rule pages: under each spec quote, the versions that state it, with permalinks */
+.md-typeset .rule-source {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.2em 1.2em;
+	margin: -0.8em 0 1.8em;
+	padding-left: 0.8rem; /* (under the quote's text, past its border) */
+	color: var(--md-default-fg-color--light);
+	font-size: 0.85em;
+}
+.md-typeset .rule-source__version {
+	display: inline-block;
+	margin-right: 0.4em;
+	padding: 0 0.45em;
+	border-radius: 0.2em;
+	background-color: var(--md-default-fg-color--lightest);
+	color: var(--md-default-fg-color);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+.md-typeset .rule-source__note {
+	font-style: italic;
+}

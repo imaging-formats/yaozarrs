@@ -1,0 +1,3199 @@
+# Registry of rule codes: one entry per normative statement in the NGFF spec
+# (`YZ-<AREA>-NNN`), plus checks yaozarrs adds beyond the spec (`YZ-NNN`).
+#
+# Codes are permanent: never renumber or reuse one. Line numbers are maintained by
+# `uv run python scripts/ngff_rules.py check --fix`; never edit them by hand.
+# See `.claude/skills/ngff-rules/SKILL.md` for how to add, change, or retire rules.
+
+# Spec source files, pinned to immutable commits. Keys are the tracked versions.
+# Each pin is the commit that ngff.openmicroscopy.org publishes: the `ome/ngff` repo
+# (built by Read the Docs) includes each version as a submodule of `ome/ngff-spec`,
+# rendered from its `index.md`. `scripts/ngff_rules.py site` checks the pins are current.
+
+[spec."0.4"]
+ref = '0.4'  # a branch: ngff-spec has no 0.4.x release tags
+repo = 'ome/ngff-spec'
+sha = 'a4c68004fdb8a8d822367205dc12f9574a32ddf8'
+path = 'index.md'
+
+[spec."0.5"]
+ref = '0.5'  # a branch: ngff-spec has no 0.5.x release tags
+repo = 'ome/ngff-spec'
+sha = 'd9164040dd61b3e4688494de1a58a69251b13f24'
+path = 'index.md'
+
+[spec."0.6"]
+ref = '0.6'
+repo = 'ome/ngff-spec'
+sha = '89da1da5b0491f83b7cdde7d123aef763a457029'
+path = 'index.md'
+
+# ------------------------------------------------------------------------------
+# YZ-AX
+# ------------------------------------------------------------------------------
+
+[rules.YZ-AX-001]
+slug = 'axis-name-unique'
+level = 'MUST'
+summary = 'Axis names must be unique within `axes`.'
+introduced = '0.4'
+
+[[rules.YZ-AX-001.sources]]
+quote = 'The values MUST be unique across all "name" fields.'
+lines = { "0.4" = [251, 251], "0.5" = [181, 181] }
+
+[[rules.YZ-AX-001.sources]]
+quote = 'The values in the `name` fields MUST be unique within the same coordinate system.'
+lines = { "0.6" = [260, 260] }
+
+[rules.YZ-AX-002]
+slug = 'axes-space-count'
+level = 'MUST'
+summary = '`axes` must contain 2 or 3 axes of type `space`.'
+introduced = '0.4'
+notes = 'For 0.6, yaozarrs only warns about a coordinate system with no `space` axes but at least two `array` axes: the prose forbids it, but the JSON schema allows it.'
+
+[[rules.YZ-AX-002.sources]]
+quote = 'The "axes" MUST contain 2 or 3 entries of "type:space"'
+lines = { "0.4" = [367, 367], "0.5" = [301, 301] }
+
+[[rules.YZ-AX-002.sources]]
+quote = '`axes` MUST contain 2 or 3 entries of `type:space`'
+lines = { "0.6" = [1289, 1289] }
+
+[rules.YZ-AX-003]
+slug = 'axes-time-at-most-one'
+level = 'MAY'
+summary = '`axes` may contain at most one axis of type `time`.'
+introduced = '0.4'
+
+[[rules.YZ-AX-003.sources]]
+quote = 'MAY contain one additional entry of "type:time"'
+lines = { "0.4" = [367, 367], "0.5" = [301, 301] }
+
+[[rules.YZ-AX-003.sources]]
+quote = 'MAY contain one additional entry of `type:time`'
+lines = { "0.6" = [1290, 1290] }
+
+[rules.YZ-AX-004]
+slug = 'axes-channel-at-most-one'
+level = 'MAY'
+summary = '`axes` may contain at most one axis of type `channel` (or of a null/custom type).'
+introduced = '0.4'
+notes = 'yaozarrs currently only counts axes of type `channel`; multiple null/custom axes are not rejected.'
+
+[[rules.YZ-AX-004.sources]]
+quote = 'MAY contain one additional entry of "type:channel" or a null / custom type'
+lines = { "0.4" = [367, 367], "0.5" = [301, 301] }
+
+[[rules.YZ-AX-004.sources]]
+quote = 'MAY contain one additional entry of `type:channel` or a null / custom type'
+lines = { "0.6" = [1291, 1291] }
+
+[rules.YZ-AX-005]
+slug = 'axes-type-order'
+level = 'MUST'
+summary = 'Axes must be ordered by type: `time` (if present), then `channel` or custom (if present), then `space`.'
+introduced = '0.4'
+
+[[rules.YZ-AX-005.sources]]
+quote = 'the entries MUST be ordered by "type" where the "time" axis must come first (if present), followed by the "channel" or custom axis (if present) and the axes of type "space".'
+lines = { "0.4" = [368, 368], "0.5" = [302, 302] }
+
+[[rules.YZ-AX-005.sources]]
+quote = '`axes` entries MUST be ordered by `type` where the `time` axis must come first (if present), followed by the `channel` or custom axis (if present) and the axes of type `space`.'
+lines = { "0.6" = [1292, 1293] }
+
+[rules.YZ-AX-006]
+slug = 'axis-unit-recognized'
+level = 'SHOULD'
+summary = 'An axis `unit` should be one of the UDUNITS-2 units in the spec.'
+introduced = '0.4'
+notes = 'yaozarrs checks this for `space` and `time` axes.'
+
+[[rules.YZ-AX-006.sources]]
+quote = 'The value SHOULD be one of the following strings, which are valid units according to UDUNITS-2.'
+lines = { "0.4" = [253, 253], "0.5" = [183, 183], "0.6" = [252, 253] }
+
+[rules.YZ-AX-007]
+slug = 'dimension-names-present'
+level = 'MUST'
+summary = "Each multiscale array's `zarr.json` must include `dimension_names`."
+introduced = '0.5'
+removed = '0.6'
+severity = 'warning'
+notes = 'yaozarrs only warns, because zarr-python omits `dimension_names` unless it is passed explicitly.'
+
+[[rules.YZ-AX-007.sources]]
+quote = 'The "dimension_names" attribute MUST be included in the `zarr.json` of the Zarr array of a multiscale level'
+lines = { "0.5" = [189, 189] }
+
+[rules.YZ-AX-008]
+slug = 'dimension-names-match-axes'
+level = 'MUST'
+summary = "An array's `dimension_names` must match the names in `axes`."
+introduced = '0.5'
+removed = '0.6'
+notes = 'For 0.4 stores, yaozarrs checks a non-standard `dimension_names` array attribute if it is present.'
+
+[[rules.YZ-AX-008.sources]]
+quote = 'and MUST match the names in the "axes" metadata.'
+lines = { "0.5" = [189, 189] }
+
+[rules.YZ-AX-009]
+slug = 'axis-name-present'
+level = 'MUST'
+summary = 'Each axis must have a `name`.'
+introduced = '0.4'
+
+[[rules.YZ-AX-009.sources]]
+quote = 'MUST contain the field "name" that gives the name for this dimension.'
+lines = { "0.4" = [251, 251], "0.5" = [181, 181] }
+
+[[rules.YZ-AX-009.sources]]
+quote = 'MUST contain the field `name` that gives the name for this dimension.'
+lines = { "0.6" = [243, 243] }
+
+[rules.YZ-AX-010]
+slug = 'axis-name-nonempty-string'
+level = 'MUST'
+summary = 'An axis `name` must be a non-empty string.'
+introduced = '0.6'
+
+[[rules.YZ-AX-010.sources]]
+quote = 'The value MUST be a non-empty string.'
+lines = { "0.6" = [244, 244] }
+
+[rules.YZ-AX-011]
+slug = 'axis-long-name-string'
+level = 'MUST'
+summary = 'An axis `longName`, if present, must be a string.'
+introduced = '0.6'
+
+[[rules.YZ-AX-011.sources]]
+quote = 'MAY contain the field `longName`. The value MUST be a string'
+lines = { "0.6" = [256, 257] }
+
+[rules.YZ-AX-012]
+slug = 'axis-discrete-boolean'
+level = 'MUST'
+summary = 'An axis `discrete`, if present, must be a boolean.'
+introduced = '0.6'
+
+[[rules.YZ-AX-012.sources]]
+quote = 'MAY contain the field `discrete`. The value MUST be a boolean'
+lines = { "0.6" = [248, 249] }
+
+[rules.YZ-AX-013]
+slug = 'multiscale-axes-min-count'
+level = 'MUST'
+summary = 'A coordinate system inside `multiscales` must have at least 2 axes.'
+introduced = '0.6'
+notes = 'The 0.6 spec writes this in lowercase, as the start of a sentence that continues with MUST. The upper limit is YZ-DS-003.'
+
+[[rules.YZ-AX-013.sources]]
+quote = 'The length of `axes` must be between 2 and 5'
+implied = true
+lines = { "0.6" = [1288, 1288] }
+
+[rules.YZ-AX-014]
+slug = 'axis-type-present'
+level = 'SHOULD'
+summary = 'Each axis should have a `type`.'
+introduced = '0.4'
+notes = 'yaozarrs does not warn about a missing `type` (such an axis is read as a custom axis).'
+
+[[rules.YZ-AX-014.sources]]
+quote = 'SHOULD contain the field "type".'
+lines = { "0.4" = [252, 252], "0.5" = [182, 182] }
+
+[[rules.YZ-AX-014.sources]]
+quote = 'SHOULD contain the field `type`.'
+lines = { "0.6" = [245, 245] }
+
+[rules.YZ-AX-015]
+slug = 'axis-type-known'
+level = 'SHOULD'
+summary = 'An axis `type` should be one of the types defined in the spec; other values are allowed for custom types.'
+introduced = '0.4'
+notes = '0.4 and 0.5 list `space`, `time` and `channel`; 0.6 adds `array`, `coordinate` and `displacement` (types it introduces). yaozarrs does not warn about custom types.'
+
+[[rules.YZ-AX-015.sources]]
+quote = 'It SHOULD be one of "space", "time" or "channel", but MAY take other string values for custom axis types that are not part of this specification yet.'
+lines = { "0.5" = [182, 182], "0.4" = [252, 252]}
+
+[[rules.YZ-AX-015.sources]]
+quote = 'It SHOULD be one of the strings `array`, `space`, `time`, `channel`, `coordinate`, or `displacement` but MAY take other string values for custom axis types that are not part of this specification yet.'
+lines = { "0.6" = [246, 247] }
+
+[rules.YZ-AX-016]
+slug = 'axis-unit-present'
+level = 'SHOULD'
+summary = 'Each axis should have a `unit`.'
+introduced = '0.4'
+notes = 'The spec states this for every axis, not only `space` and `time` ones. yaozarrs does not warn about a missing `unit`; which values are recognized is YZ-AX-006.'
+
+[[rules.YZ-AX-016.sources]]
+quote = 'SHOULD contain the field "unit" to specify the physical unit of this dimension.'
+lines = { "0.4" = [253, 253], "0.5" = [183, 183] }
+
+[[rules.YZ-AX-016.sources]]
+quote = 'SHOULD contain the field `unit` to specify the physical unit of this dimension.'
+lines = { "0.6" = [251, 251] }
+
+[rules.YZ-AX-017]
+slug = 'axes-spatial-zyx-order'
+level = 'SHOULD'
+summary = 'Three spatial axes, two in the image plane and one stacking axis, should be ordered `zyx`.'
+introduced = '0.4'
+notes = 'Which axis is the anisotropic stacking axis is not stated in the metadata, so yaozarrs does not check this.'
+
+[[rules.YZ-AX-017.sources]]
+quote = 'If there are three spatial axes where two correspond to the image plane ("yx") and images are stacked along the other (anisotropic) axis ("z"), the spatial axes SHOULD be ordered as "zyx".'
+lines = { "0.4" = [369, 369], "0.5" = [303, 303] }
+
+[[rules.YZ-AX-017.sources]]
+quote = 'If there are three spatial axes where two correspond to the image plane (`yx`) and images are stacked along the other (anisotropic) axis (`z`), the spatial axes SHOULD be ordered as `zyx`.'
+lines = { "0.6" = [1294, 1296] }
+
+# ------------------------------------------------------------------------------
+# YZ-CS
+# ------------------------------------------------------------------------------
+
+[rules.YZ-CS-001]
+slug = 'coordinate-system-name-present'
+level = 'MUST'
+summary = 'A coordinate system must contain `name`.'
+introduced = '0.6'
+
+[[rules.YZ-CS-001.sources]]
+quote = 'Every coordinate system: - MUST contain the field `name`.'
+lines = { "0.6" = [199, 200] }
+
+[rules.YZ-CS-002]
+slug = 'coordinate-system-name-nonempty-string'
+level = 'MUST'
+summary = 'A coordinate system `name` must be a non-empty string.'
+introduced = '0.6'
+
+[[rules.YZ-CS-002.sources]]
+quote = 'The value MUST be a non-empty string that is unique among all entries in a `coordinateSystems` array.'
+lines = { "0.6" = [201, 201] }
+
+[rules.YZ-CS-003]
+slug = 'coordinate-system-name-unique'
+level = 'MUST'
+summary = 'Coordinate system names must be unique within a `coordinateSystems` array.'
+introduced = '0.6'
+
+[[rules.YZ-CS-003.sources]]
+quote = 'The value MUST be a non-empty string that is unique among all entries in a `coordinateSystems` array.'
+lines = { "0.6" = [201, 201] }
+
+[rules.YZ-CS-004]
+slug = 'coordinate-system-axes-present'
+level = 'MUST'
+summary = 'A coordinate system must contain `axes`, an array.'
+introduced = '0.6'
+
+[[rules.YZ-CS-004.sources]]
+quote = 'MUST contain the field `axes`, whose value is an array of valid `axes`'
+lines = { "0.6" = [202, 202] }
+
+[rules.YZ-CS-005]
+slug = 'analysis-same-coordinate-system'
+level = 'SHOULD'
+summary = 'Analysis tasks should ensure that their inputs are in, or can be transformed to, the same coordinate system.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CS-005.sources]]
+quote = 'Tasks that require images, annotations, regions of interest, etc., SHOULD ensure that they are in the same coordinate system (same name and location within the Zarr hierarchy, with identical axes) or can be transformed to the same coordinate system before doing analysis.'
+lines = { "0.6" = [230, 232] }
+
+# ------------------------------------------------------------------------------
+# YZ-MS
+# ------------------------------------------------------------------------------
+
+[rules.YZ-MS-001]
+slug = 'multiscales-name'
+level = 'SHOULD'
+summary = 'Each "multiscales" dictionary should contain the field "name".'
+introduced = '0.4'
+
+[[rules.YZ-MS-001.sources]]
+quote = 'Each "multiscales" dictionary SHOULD contain the field "name".'
+lines = { "0.4" = [387, 387], "0.5" = [321, 321] }
+
+[[rules.YZ-MS-001.sources]]
+quote = 'Each `multiscales` object SHOULD contain the field `name`.'
+lines = { "0.6" = [1386, 1386] }
+
+[rules.YZ-MS-002]
+slug = 'multiscales-axes-present'
+level = 'MUST'
+summary = 'Each "multiscales" entry must contain `axes`.'
+introduced = '0.4'
+removed = '0.6'
+
+[[rules.YZ-MS-002.sources]]
+quote = 'Each "multiscales" dictionary MUST contain the field "axes"'
+lines = { "0.4" = [365, 365], "0.5" = [299, 299] }
+
+[rules.YZ-MS-003]
+slug = 'multiscales-datasets-present'
+level = 'MUST'
+summary = 'Each "multiscales" entry must contain `datasets`.'
+introduced = '0.4'
+notes = 'The 0.6 spec states this in the `multiscales` field table ("Required: yes"), not with a keyword.'
+
+[[rules.YZ-MS-003.sources]]
+quote = 'Each "multiscales" dictionary MUST contain the field "datasets"'
+lines = { "0.4" = [371, 371], "0.5" = [305, 305] }
+
+[[rules.YZ-MS-003.sources]]
+quote = '| `datasets` | JSON array of objects | yes |'
+implied = true
+lines = { "0.6" = [1278, 1278] }
+
+[rules.YZ-MS-004]
+slug = 'multiscales-coordinate-systems-present'
+level = 'MUST'
+summary = 'Each `multiscales` entry must contain `coordinateSystems`.'
+introduced = '0.6'
+supersedes = ['YZ-MS-002']
+notes = 'The 0.6 spec states this in the `multiscales` field table ("Required: yes"), not with a keyword. Replaces `axes` (YZ-MS-002).'
+
+[[rules.YZ-MS-004.sources]]
+quote = '| `coordinateSystems` | JSON array of objects | yes |'
+implied = true
+lines = { "0.6" = [1277, 1277] }
+
+[rules.YZ-MS-005]
+slug = 'multiscale-transforms-follow-dataset-rules'
+level = 'MUST'
+summary = 'Transformations in `multiscales` `coordinateTransformations` must follow the same rules (allowed types, order, etc.) as those of `datasets`.'
+introduced = '0.4'
+removed = '0.6'
+notes = 'yaozarrs validates them with the same validator as dataset transformations, so violations report YZ-DS-009 and YZ-CT-001 to YZ-CT-004, not this code. In 0.6, multiscale transformations have their own constraints (YZ-CT-012, YZ-CT-013, YZ-CT-014).'
+
+[[rules.YZ-MS-005.sources]]
+quote = 'Each "multiscales" dictionary MAY contain the field "coordinateTransformations", describing transformations that are applied to all resolution levels in the same manner. The transformations MUST follow the same rules about allowed types, order, etc. as in "datasets:coordinateTransformations" and are applied after them.'
+lines = { "0.4" = [383, 384], "0.5" = [317, 318] }
+
+[rules.YZ-MS-006]
+slug = 'multiscales-type'
+level = 'SHOULD'
+summary = 'Each "multiscales" dictionary should contain the field "type", the downscaling method.'
+introduced = '0.4'
+notes = 'yaozarrs does not warn about a missing `type`. The 0.4 and 0.5 JSON schemas do not define this field.'
+
+[[rules.YZ-MS-006.sources]]
+quote = 'Each "multiscales" dictionary SHOULD contain the field "type", which gives the type of downscaling method used to generate the multiscale image pyramid.'
+lines = { "0.4" = [389, 389], "0.5" = [323, 323] }
+
+[[rules.YZ-MS-006.sources]]
+quote = 'Each `multiscales` object SHOULD contain the field `type`, which gives the type of downscaling method used to generate the multiscale image pyramid.'
+lines = { "0.6" = [1389, 1390] }
+
+[rules.YZ-MS-007]
+slug = 'multiscales-metadata'
+level = 'SHOULD'
+summary = 'Each "multiscales" dictionary should contain the field "metadata", with information about the downscaling method.'
+introduced = '0.4'
+notes = 'yaozarrs does not warn about a missing `metadata`. The 0.4 and 0.5 JSON schemas do not define this field.'
+
+[[rules.YZ-MS-007.sources]]
+quote = 'It SHOULD contain the field "metadata", which contains a dictionary with additional information about the downscaling method.'
+lines = { "0.4" = [390, 390], "0.5" = [324, 324] }
+
+[[rules.YZ-MS-007.sources]]
+quote = 'Each `multiscales` object SHOULD contain the field `metadata`, which contains a object with additional information about the downscaling method.'
+lines = { "0.6" = [1393, 1394] }
+
+[rules.YZ-MS-008]
+slug = 'multiscales-version'
+level = 'SHOULD'
+summary = 'Each "multiscales" dictionary should contain the field "version", the version of its metadata.'
+introduced = '0.4'
+removed = '0.5'
+notes = 'yaozarrs reads a v0.4 image without `version` as 0.4, without a warning. From 0.5 on, the version is in the `ome` object (YZ-GN-001).'
+
+[[rules.YZ-MS-008.sources]]
+quote = 'It SHOULD contain the field "version", which indicates the version of the multiscale metadata of this image'
+lines = { "0.4" = [387, 387] }
+
+# ------------------------------------------------------------------------------
+# YZ-DS
+# ------------------------------------------------------------------------------
+
+[rules.YZ-DS-001]
+slug = 'datasets-resolution-order'
+level = 'MUST'
+summary = '`datasets` must be ordered from highest to lowest resolution.'
+introduced = '0.4'
+notes = 'yaozarrs compares the `scale` values of the spatial axes: per axis, a scale may not shrink from one level to the next (allowing for float noise). For 0.6, it compares their magnitudes, as scales may be negative.'
+
+[[rules.YZ-DS-001.sources]]
+quote = 'The "path"s MUST be ordered from largest (i.e. highest resolution) to smallest.'
+lines = { "0.4" = [373, 373], "0.5" = [307, 307] }
+
+[[rules.YZ-DS-001.sources]]
+quote = 'The `path`s MUST be ordered from largest (i.e. highest resolution) to smallest.'
+lines = { "0.6" = [1312, 1312] }
+
+[rules.YZ-DS-002]
+slug = 'datasets-same-ndim'
+level = 'MUST'
+summary = 'All `datasets` must have the same number of dimensions.'
+introduced = '0.4'
+notes = "The spec does not define a dataset's number of dimensions; yaozarrs uses the length of its coordinate transformations."
+
+[[rules.YZ-DS-002.sources]]
+quote = 'Each "datasets" dictionary MUST have the same number of dimensions'
+lines = { "0.4" = [375, 375], "0.5" = [309, 309] }
+
+[[rules.YZ-DS-002.sources]]
+quote = 'Every Zarr array referred to by a `path` MUST have the same number of dimensions and datatype,'
+lines = { "0.6" = [1313, 1313] }
+
+[rules.YZ-DS-003]
+slug = 'datasets-max-5d'
+level = 'MUST'
+summary = '`datasets` must not have more than 5 dimensions.'
+introduced = '0.4'
+
+[[rules.YZ-DS-003.sources]]
+quote = 'MUST NOT have more than 5 dimensions.'
+lines = { "0.4" = [375, 375], "0.5" = [309, 309], "0.6" = [1314, 1314] }
+
+[rules.YZ-DS-004]
+slug = 'dataset-path-is-array'
+level = 'MUST'
+summary = 'Each `datasets` "path" must point to a Zarr array, relative to the image group.'
+introduced = '0.4'
+
+[[rules.YZ-DS-004.sources]]
+quote = 'Each dictionary in "datasets" MUST contain the field "path", whose value contains the path to the array for this resolution relative'
+lines = { "0.4" = [372, 372], "0.5" = [306, 306] }
+
+[[rules.YZ-DS-004.sources]]
+quote = 'Each object in `datasets` MUST contain the field `path`, whose value is a string containing the path to the Zarr array for this resolution relative'
+lines = { "0.6" = [1310, 1311] }
+
+[rules.YZ-DS-005]
+slug = 'array-ndim-matches-axes'
+level = 'MUST'
+summary = 'Each multiscale array must have one dimension per axis.'
+introduced = '0.4'
+
+[[rules.YZ-DS-005.sources]]
+quote = 'MUST be equal to the dimensionality of the zarr arrays storing the image data (see "datasets:path").'
+lines = { "0.4" = [366, 366], "0.5" = [300, 300] }
+
+[[rules.YZ-DS-005.sources]]
+quote = 'MUST be equal to the dimensionality of the Zarr arrays storing the image data (see `datasets:path`).'
+lines = { "0.6" = [1288, 1288] }
+
+[rules.YZ-DS-006]
+slug = 'dataset-path-present'
+level = 'MUST'
+summary = 'Each entry in `datasets` must contain `path`.'
+introduced = '0.4'
+
+[[rules.YZ-DS-006.sources]]
+quote = 'Each dictionary in "datasets" MUST contain the field "path"'
+lines = { "0.4" = [372, 372], "0.5" = [306, 306] }
+
+[[rules.YZ-DS-006.sources]]
+quote = 'Each object in `datasets` MUST contain the field `path`'
+lines = { "0.6" = [1310, 1310] }
+
+[rules.YZ-DS-007]
+slug = 'dataset-transforms-present'
+level = 'MUST'
+summary = 'Each entry in `datasets` must contain `coordinateTransformations`.'
+introduced = '0.4'
+
+[[rules.YZ-DS-007.sources]]
+quote = 'Each dictionary in "datasets" MUST contain the field "coordinateTransformations"'
+lines = { "0.4" = [376, 376], "0.5" = [310, 310] }
+
+[[rules.YZ-DS-007.sources]]
+quote = 'Each object in `datasets` MUST contain the field `coordinateTransformations`'
+lines = { "0.6" = [1317, 1317] }
+
+[rules.YZ-DS-008]
+slug = 'datasets-same-dtype'
+level = 'MUST'
+summary = 'All arrays referred to by `datasets` must have the same data type.'
+introduced = '0.6'
+
+[[rules.YZ-DS-008.sources]]
+quote = 'Every Zarr array referred to by a `path` MUST have the same number of dimensions and datatype,'
+lines = { "0.6" = [1313, 1313] }
+
+[rules.YZ-DS-009]
+slug = 'dataset-transform-scale-translation-only'
+level = 'MUST'
+summary = 'Dataset transformations must be of type `scale` or `translation` only.'
+introduced = '0.4'
+removed = '0.6'
+notes = 'yaozarrs enforces this through the model (its transformation union only has `scale` and `translation`), but those pydantic errors are not tagged, as the union is not discriminated. In 0.6, YZ-CT-005 replaces this rule.'
+
+[[rules.YZ-DS-009.sources]]
+quote = 'The transformation MUST only be of type `translation` or `scale`.'
+lines = { "0.4" = [377, 377], "0.5" = [311, 311] }
+
+[rules.YZ-DS-010]
+slug = 'array-dimension-order-matches-axes'
+level = 'MUST'
+summary = 'The dimensions of each multiscale array must be in the order of `axes`.'
+introduced = '0.4'
+notes = 'The same sentence also requires the number of dimensions to match, which is YZ-DS-005. 0.4 and 0.5 state the order requirement a second time ("The order of the entries MUST correspond to the order of dimensions of the zarr arrays."). The metadata only records array dimension names in 0.5 (`dimension_names`, YZ-AX-008), so yaozarrs has no separate check.'
+
+[[rules.YZ-DS-010.sources]]
+quote = 'The number of dimensions and order MUST correspond to number and order of "axes".'
+lines = { "0.4" = [375, 375], "0.5" = [309, 309] }
+
+[[rules.YZ-DS-010.sources]]
+quote = 'The number of dimensions and order MUST correspond to number and order of `axes`.'
+lines = { "0.6" = [1315, 1315] }
+
+[rules.YZ-DS-011]
+slug = 'dataset-scale-fallback-factor'
+level = 'MUST'
+summary = 'For an axis without physical scale information, the dataset `scale` must be the scaling factor relative to the first resolution (1.0 if not downsampled).'
+introduced = '0.4'
+notes = 'The metadata does not say whether physical scale information exists for an axis, so yaozarrs cannot check this.'
+
+[[rules.YZ-DS-011.sources]]
+quote = 'If scaling information is not available or applicable for one of the axes, the value MUST express the scaling factor between the current resolution and the first resolution for the given axis, defaulting to 1.0 if there is no downsampling along the axis.'
+lines = { "0.4" = [378, 378], "0.5" = [312, 312], "0.6" = [1347, 1350] }
+
+[rules.YZ-DS-012]
+slug = 'dataset-path-treated-as-input-path'
+level = 'SHOULD'
+summary = '''Implementations should treat a dataset's `path` as the `path` of its transformation's `input`.'''
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-DS-012.sources]]
+quote = '''Implementations SHOULD always treat the dataset's `path` field as if it were equal to the value of `path` under `input`.'''
+lines = { "0.6" = [1325, 1325] }
+
+# ------------------------------------------------------------------------------
+# YZ-CT
+# ------------------------------------------------------------------------------
+
+[rules.YZ-CT-001]
+slug = 'scale-exactly-one'
+level = 'MUST'
+summary = '`coordinateTransformations` must contain exactly one `scale`.'
+introduced = '0.4'
+removed = '0.6'
+
+[[rules.YZ-CT-001.sources]]
+quote = 'They MUST contain exactly one `scale` transformation'
+lines = { "0.4" = [378, 378], "0.5" = [312, 312] }
+
+[rules.YZ-CT-002]
+slug = 'translation-at-most-one'
+level = 'MAY'
+summary = '`coordinateTransformations` may contain at most one `translation`.'
+introduced = '0.4'
+removed = '0.6'
+
+[[rules.YZ-CT-002.sources]]
+quote = 'It MAY contain exactly one `translation`'
+lines = { "0.4" = [379, 379], "0.5" = [313, 313] }
+
+[rules.YZ-CT-003]
+slug = 'translation-after-scale'
+level = 'MUST'
+summary = 'A `translation` must be listed after the `scale`.'
+introduced = '0.4'
+removed = '0.6'
+
+[[rules.YZ-CT-003.sources]]
+quote = 'If `translation` is given it MUST be listed after `scale`'
+lines = { "0.4" = [379, 379], "0.5" = [313, 313] }
+
+[rules.YZ-CT-004]
+slug = 'transform-length-matches-axes'
+level = 'MUST'
+summary = '`scale` and `translation` arrays must have one entry per axis.'
+introduced = '0.4'
+removed = '0.6'
+notes = 'In 0.6, YZ-CT-060 replaces this rule: it applies to every `scale` and `translation`, against the dimensionality of its input and output.'
+
+[[rules.YZ-CT-004.sources]]
+quote = 'The length of the `scale` and `translation` array MUST be the same as the length of "axes".'
+lines = { "0.4" = [380, 380], "0.5" = [314, 314] }
+
+[rules.YZ-CT-005]
+slug = 'dataset-transform-type'
+level = 'MUST'
+summary = 'A dataset must have a single transformation: a `scale`, an `identity`, or a `sequence` of a scale followed by a translation.'
+introduced = '0.6'
+supersedes = ['YZ-CT-001', 'YZ-CT-002', 'YZ-CT-003', 'YZ-DS-009']
+
+[[rules.YZ-CT-005.sources]]
+quote = '`coordinateTransformations` herein MUST - be restricted to a single `scale`, `identity` or `sequence` of a scale followed by a translation transformation.'
+lines = { "0.6" = [449, 450] }
+
+[rules.YZ-CT-006]
+slug = 'dataset-transform-input-path'
+level = 'MUST'
+summary = "The `input` of a dataset's transformation must specify a `path` matching the dataset's."
+introduced = '0.6'
+
+[[rules.YZ-CT-006.sources]]
+quote = 'The `input` object MUST specify a `path` field matching the `path` field of the dataset.'
+lines = { "0.6" = [1323, 1323] }
+
+[rules.YZ-CT-007]
+slug = 'dataset-transform-output-name'
+level = 'MUST'
+summary = "The `output` of a dataset's transformation must name a coordinate system."
+introduced = '0.6'
+
+[[rules.YZ-CT-007.sources]]
+quote = 'The `name` field of `output` MUST be the `name` of a coordinate system.'
+lines = { "0.6" = [1327, 1327] }
+
+[rules.YZ-CT-008]
+slug = 'dataset-transform-input-name-omitted'
+level = 'SHOULD'
+summary = "The `input` of a dataset's transformation should not have a `name`."
+introduced = '0.6'
+notes = 'Another section of the 0.6 spec says these transformations "MUST ... omit `name`", so this is only a warning.'
+
+[[rules.YZ-CT-008.sources]]
+quote = 'The `name` field under `input` SHOULD be omitted.'
+lines = { "0.6" = [1324, 1324] }
+
+[rules.YZ-CT-009]
+slug = 'dataset-transform-output-path-omitted'
+level = 'SHOULD'
+summary = "The `output` of a dataset's transformation should not have a `path`."
+introduced = '0.6'
+notes = 'Another section of the 0.6 spec says these transformations "MUST ... omit `path`", so this is only a warning.'
+
+[[rules.YZ-CT-009.sources]]
+quote = 'The `path` field of `output` SHOULD be omitted.'
+lines = { "0.6" = [1329, 1329] }
+
+[rules.YZ-CT-010]
+slug = 'dataset-transform-same-output'
+level = 'MUST'
+summary = 'Every dataset of a multiscale must output to the same coordinate system.'
+introduced = '0.6'
+
+[[rules.YZ-CT-010.sources]]
+quote = 'It MUST be the same value for every resolution level in a single multiscales'
+lines = { "0.6" = [1328, 1328] }
+
+[rules.YZ-CT-011]
+slug = 'transform-input-output-present'
+level = 'MUST'
+summary = 'A transformation must have an `input` and an `output`, unless it is part of a wrapper transformation.'
+introduced = '0.6'
+notes = 'The 0.6 spec states this in the transformation field table ("Required: yes, unless ..."), not with a keyword.'
+
+[[rules.YZ-CT-011.sources]]
+quote = '| [`input`](#input-output-md) | object | yes, unless part of a wrapper transform'
+implied = true
+lines = { "0.6" = [401, 401] }
+
+[[rules.YZ-CT-011.sources]]
+quote = '| [`output`](#input-output-md) | object | yes, unless part of a wrapper transform'
+implied = true
+lines = { "0.6" = [402, 402] }
+
+[rules.YZ-CT-012]
+slug = 'multiscale-transform-references-intrinsic'
+level = 'MUST'
+summary = "One of the `input` or `output` of a multiscale's transformation must be the intrinsic coordinate system."
+introduced = '0.6'
+
+[[rules.YZ-CT-012.sources]]
+quote = '- One of `input` or `output` MUST reference the "[intrinsic](#spec:hint:multiscales-intrinsic-coordinate-system)" coordinate system by `name` (`path` MAY be omitted or null). - The other of `input` or `output` MUST reference either:'
+lines = { "0.6" = [1359, 1360] }
+
+[rules.YZ-CT-013]
+slug = 'multiscale-transform-other-reference'
+level = 'MUST'
+summary = "The other end of a multiscale's transformation must name a coordinate system in the same multiscale, or in a child labels group."
+introduced = '0.6'
+
+[[rules.YZ-CT-013.sources]]
+quote = 'The other of `input` or `output` MUST reference either: - A named coordinate system in the same multiscales group (by `name`, `path` MAY be omitted or null), or - A named coordinate system in a child [labels](#labels-md) group (by `name` and `path`).'
+lines = { "0.6" = [1360, 1362] }
+
+[rules.YZ-CT-014]
+slug = 'label-transform-type'
+level = 'MUST'
+summary = 'A transformation to a coordinate system in a child labels group must be `identity`, `scale`, or `translation`.'
+introduced = '0.6'
+notes = 'yaozarrs also accepts a sequence of a scale and a translation, which the labels section of the spec allows (YZ-CT-061; see ome/ngff#639).'
+
+[[rules.YZ-CT-014.sources]]
+quote = 'When referencing a coordinate system in a child labels group, the transformation MUST be one of [`identity`](#identity-md), [`scale`](#scale-md), or [`translation`](#translation-md).'
+lines = { "0.6" = [1363, 1363] }
+
+[rules.YZ-CT-015]
+slug = 'transform-params-match-ndim'
+level = 'MUST'
+summary = "A transformation's parameters must be compatible with the dimensionality of its input and output."
+introduced = '0.6'
+
+[[rules.YZ-CT-015.sources]]
+quote = 'The parameter values (e.g., `scale` for a [scale transformation](#scale-md)) MUST be compatible with input and output space dimensionality (see details).'
+lines = { "0.6" = [422, 422] }
+
+[rules.YZ-CT-016]
+slug = 'map-axis-present'
+level = 'MUST'
+summary = 'A `mapAxis` transformation must have a `mapAxis` field.'
+introduced = '0.6'
+
+[[rules.YZ-CT-016.sources]]
+quote = 'Transformations MUST include a `mapAxis` field'
+lines = { "0.6" = [708, 708] }
+
+[rules.YZ-CT-017]
+slug = 'map-axis-length'
+level = 'MUST'
+summary = 'The length of `mapAxis` must equal the number of input and output axes.'
+introduced = '0.6'
+
+[[rules.YZ-CT-017.sources]]
+quote = 'The length of the array MUST equal the number of dimensions in both the input and output coordinate systems.'
+lines = { "0.6" = [710, 710] }
+
+[rules.YZ-CT-018]
+slug = 'map-axis-valid-index'
+level = 'MUST'
+summary = 'Each value in `mapAxis` must be a valid index into the input axes.'
+introduced = '0.6'
+
+[[rules.YZ-CT-018.sources]]
+quote = "Each integer in the array MUST be a valid zero-based index into the input coordinate system's axes"
+lines = { "0.6" = [711, 711] }
+
+[rules.YZ-CT-019]
+slug = 'map-axis-unique'
+level = 'MUST'
+summary = 'Each index must appear exactly once in `mapAxis`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-019.sources]]
+quote = 'Each index MUST appear exactly once in the array.'
+lines = { "0.6" = [713, 713] }
+
+[rules.YZ-CT-020]
+slug = 'project-axis-created-outputs-unique'
+level = 'MUST'
+summary = 'The values in `createdOutputs` must be unique.'
+introduced = '0.6'
+
+[[rules.YZ-CT-020.sources]]
+quote = 'The values in the `createdOutputs` array MUST be unique.'
+lines = { "0.6" = [752, 752] }
+
+[rules.YZ-CT-021]
+slug = 'project-axis-dropped-inputs-unique'
+level = 'MUST'
+summary = 'The values in `droppedInputs` must be unique.'
+introduced = '0.6'
+
+[[rules.YZ-CT-021.sources]]
+quote = 'The values in the `droppedInputs` array MUST be unique.'
+lines = { "0.6" = [756, 756] }
+
+[rules.YZ-CT-022]
+slug = 'scale-nonzero'
+level = 'SHOULD'
+summary = 'Values in a `scale` array should be non-zero.'
+introduced = '0.6'
+
+[[rules.YZ-CT-022.sources]]
+quote = 'Values in the `scale` array SHOULD be non-zero;'
+lines = { "0.6" = [836, 836] }
+
+[rules.YZ-CT-023]
+slug = 'affine-matrix-stored'
+level = 'MUST'
+summary = 'An `affine` must have its matrix either inline or in a Zarr array at `path`.'
+introduced = '0.6'
+notes = 'yaozarrs rejects a transformation with both.'
+
+[[rules.YZ-CT-023.sources]]
+quote = 'The matrix MUST be stored as a 2D array either as json or as a Zarr array.'
+lines = { "0.6" = [877, 877] }
+
+[rules.YZ-CT-024]
+slug = 'affine-path-array'
+level = 'MUST'
+summary = 'The `path` of an `affine` must point to a 2D Zarr array of shape `(M)x(N+1)`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-024.sources]]
+quote = 'The array at this path MUST be 2D whose shape MUST be `(M)x(N+1)`.'
+lines = { "0.6" = [881, 881] }
+
+[rules.YZ-CT-025]
+slug = 'affine-inline-shape'
+level = 'MUST'
+summary = 'An inline `affine` matrix must have `M` rows of length `N+1`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-025.sources]]
+quote = 'where the outer array MUST be length `M` and the inner arrays MUST be length `N+1`.'
+lines = { "0.6" = [886, 886] }
+
+[rules.YZ-CT-026]
+slug = 'rotation-same-ndim'
+level = 'MUST'
+summary = 'The input and output of a `rotation` must have the same dimensionality.'
+introduced = '0.6'
+
+[[rules.YZ-CT-026.sources]]
+quote = 'Input and output dimensionality (N) MUST be identical.'
+lines = { "0.6" = [962, 962] }
+
+[rules.YZ-CT-027]
+slug = 'rotation-orthonormal'
+level = 'MUST'
+summary = 'A `rotation` matrix must have determinant 1, with orthonormal rows and columns.'
+introduced = '0.6'
+notes = 'The spec defines no tolerance; yaozarrs allows 1e-4.'
+
+[[rules.YZ-CT-027.sources]]
+quote = 'and MUST have determinant equal to one, with orthonormal rows and columns.'
+lines = { "0.6" = [964, 964] }
+
+[rules.YZ-CT-028]
+slug = 'rotation-matrix-stored'
+level = 'MUST'
+summary = 'A `rotation` must have its matrix either inline or in a Zarr array at `path`.'
+introduced = '0.6'
+notes = 'yaozarrs rejects a transformation with both.'
+
+[[rules.YZ-CT-028.sources]]
+quote = 'The matrix MUST be stored as a 2D array either as json or in a Zarr array.'
+lines = { "0.6" = [965, 965] }
+
+[rules.YZ-CT-029]
+slug = 'rotation-path-array'
+level = 'MUST'
+summary = 'The `path` of a `rotation` must point to a 2D Zarr array of shape `N x N`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-029.sources]]
+quote = 'The array at this path MUST be 2D whose shape MUST be `N x N`.'
+lines = { "0.6" = [970, 970] }
+
+[rules.YZ-CT-030]
+slug = 'rotation-inline-shape'
+level = 'MUST'
+summary = 'An inline `rotation` matrix must be `N x N`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-030.sources]]
+quote = 'where the outer array MUST be length `N` and the inner arrays MUST be length `N`.'
+lines = { "0.6" = [974, 975] }
+
+[rules.YZ-CT-031]
+slug = 'field-path-multiscale'
+level = 'MUST'
+summary = 'The `path` of a `coordinates` or `displacements` transformation must point to a multiscale image group.'
+introduced = '0.6'
+
+[[rules.YZ-CT-031.sources]]
+quote = 'The multiscale group at `path` MUST satisfy:'
+lines = { "0.6" = [1098, 1098] }
+
+[rules.YZ-CT-032]
+slug = 'field-vector-axis'
+level = 'MUST'
+summary = 'A coordinate or displacement field must have one axis of type `coordinate` or `displacement`, with `discrete: true`.'
+introduced = '0.6'
+notes = 'The keyword is in the lead-in to this list: "The array containing the coordinates or displacements MUST:".'
+
+[[rules.YZ-CT-032.sources]]
+quote = '''specify `"type": "displacement"` or `"type": "coordinate"` depending on the type of transformation and `"discrete": true` in the multiscale image's [axes metadata](#axes-md) for the dimension corresponding to the coordinate or displacement vector.'''
+implied = true
+lines = { "0.6" = [1060, 1062] }
+
+[rules.YZ-CT-033]
+slug = 'field-ndim'
+level = 'MUST'
+summary = 'A field for an input with `N` axes must have `N+1` dimensions.'
+introduced = '0.6'
+
+[[rules.YZ-CT-033.sources]]
+quote = 'If the input coordinate system has `N` axes, the multiscale image at location `path` MUST have `N+1` dimensions.'
+lines = { "0.6" = [1099, 1099] }
+
+[rules.YZ-CT-034]
+slug = 'coordinates-vector-length'
+level = 'MUST'
+summary = 'The `coordinate` axis of a field must have length `M`, the number of output axes.'
+introduced = '0.6'
+notes = 'The spec contradicts itself here: this calls the vector axis the last axis, but the same section also says it goes before the spatial axes (YZ-CT-058).'
+
+[[rules.YZ-CT-034.sources]]
+quote = 'For `coordinates` transformations, the length of the array along the `coordinate` dimension (last axis) MUST equal `M`,'
+lines = { "0.6" = [1101, 1101] }
+
+[rules.YZ-CT-035]
+slug = 'displacements-vector-length'
+level = 'MUST'
+summary = 'The `displacement` axis of a field must have length `N`, the number of input (and output) axes.'
+introduced = '0.6'
+notes = 'The spec contradicts itself here: this calls the vector axis the last axis, but the same section also says it goes before the spatial axes (YZ-CT-058).'
+
+[[rules.YZ-CT-035.sources]]
+quote = 'For `displacements` transformations, the length of the array along the `displacement` dimension (last axis) MUST equal `N`,'
+lines = { "0.6" = [1103, 1103] }
+
+[rules.YZ-CT-036]
+slug = 'by-dimension-item-fields'
+level = 'MUST'
+summary = '`transformations` of a `byDimension` must be an array of objects with `inputAxes`, `outputAxes`, and `transformation`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-036.sources]]
+quote = 'MUST be an array of objects where each object MUST contain the fields `inputAxes`, `outputAxes` and `transformation`.'
+lines = { "0.6" = [1173, 1174] }
+
+[rules.YZ-CT-037]
+slug = 'by-dimension-output-axes'
+level = 'MUST'
+summary = 'Every output axis of a `byDimension` must appear in exactly one `outputAxes`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-037.sources]]
+quote = "Every axis index in the parent byDimension's `output` coordinate system MUST appear in exactly one child transformation's `outputAxes` array."
+lines = { "0.6" = [1179, 1180] }
+
+[rules.YZ-CT-038]
+slug = 'by-dimension-axes-length'
+level = 'MUST'
+summary = '`inputAxes` and `outputAxes` must have the same length as the parameter arrays of their transformation.'
+introduced = '0.6'
+
+[[rules.YZ-CT-038.sources]]
+quote = "The `inputAxes` and `outputAxes` arrays of each item MUST have the same length as that transformation's parameter arrays."
+lines = { "0.6" = [1181, 1182] }
+
+[rules.YZ-CT-039]
+slug = 'bijection-not-closed-form-invertible'
+level = 'SHOULD'
+summary = 'Each direction of a `bijection` should be a type that is not closed-form invertible.'
+introduced = '0.6'
+
+[[rules.YZ-CT-039.sources]]
+quote = 'Each direction SHOULD be a transformation type that is not closed-form invertible.'
+lines = { "0.6" = [1231, 1231] }
+
+[rules.YZ-CT-040]
+slug = 'bijection-same-ndim'
+level = 'MUST'
+summary = 'The input and output of a `bijection` must have the same dimensionality.'
+introduced = '0.6'
+
+[[rules.YZ-CT-040.sources]]
+quote = 'Its input and output spaces MUST have equal dimension.'
+lines = { "0.6" = [1232, 1232] }
+
+[rules.YZ-CT-041]
+slug = 'bijection-directions-match'
+level = 'MUST'
+summary = 'The forward and inverse of a `bijection` must match its input and output dimensionality.'
+introduced = '0.6'
+
+[[rules.YZ-CT-041.sources]]
+quote = "The input and output dimensions for the both the forward and inverse transformations MUST match bijection's input and output space dimensions."
+lines = { "0.6" = [1233, 1234] }
+
+[rules.YZ-CT-042]
+slug = 'transform-graph-connected'
+level = 'MUST'
+summary = 'The coordinate systems and transformations of the metadata must form a connected graph.'
+introduced = '0.6'
+notes = 'The statement covers the multiscales and scene metadata combined, so outside of a scene (where a scene could still link the coordinate systems) yaozarrs only warns.'
+
+[[rules.YZ-CT-042.sources]]
+quote = 'The graph MUST be connected (but need not be complete):'
+lines = { "0.6" = [482, 482] }
+
+[rules.YZ-CT-043]
+slug = 'transform-parameters-location'
+level = 'SHOULD'
+summary = 'In a scene, arrays with transformation parameters should be in a group called `coordinateTransformations`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-043.sources]]
+quote = 'those Zarr arrays SHOULD be stored in a Zarr group on the same level as images called "coordinateTransformations".'
+lines = { "0.6" = [145, 145] }
+
+[rules.YZ-CT-044]
+slug = 'scale-positive'
+level = 'MUST'
+summary = 'Values in a `scale` array must be greater than 0.'
+introduced = '0.6'
+severity = 'warning'
+notes = 'The JSON schema requires this of every `scale`, but the prose only says values SHOULD be non-zero (YZ-CT-022) and allows negative ones. The spec editor confirmed that only positive values are meant for dataset scales (ome/ngff#637), so yaozarrs warns, and only for those.'
+
+[[rules.YZ-CT-044.sources]]
+schema = 'coordinate_transformations.schema'
+pointer = '/$defs/scale/properties/scale/items/exclusiveMinimum'
+value = 0
+lines = { "0.6" = [196, 196] }
+
+[rules.YZ-CT-045]
+slug = 'project-axis-fields'
+level = 'MUST'
+summary = 'A `projectAxis` transformation must have `droppedInputs` or `createdOutputs`.'
+introduced = '0.6'
+
+[[rules.YZ-CT-045.sources]]
+schema = 'coordinate_transformations.schema'
+pointer = '/$defs/projectAxis/allOf/1/anyOf'
+value = [{ required = ['droppedInputs'] }, { required = ['createdOutputs'] }]
+lines = { "0.6" = [176, 179] }
+
+[rules.YZ-CT-046]
+slug = 'transform-type-present'
+level = 'MUST'
+summary = 'Each coordinate transformation must contain `type`.'
+introduced = '0.4'
+notes = 'The 0.6 spec states this in the transformation field table ("Required: yes"), not with a keyword. In 0.4 and 0.5, yaozarrs infers a missing `type` from the parameter field that is present (lenient); in 0.6 the transformation union discriminates on `type`, so a missing one is rejected (tagged as YZ-SC-002 inside a scene, untagged elsewhere).'
+
+[[rules.YZ-CT-046.sources]]
+quote = 'Each entry describes a single transformation and MUST contain the field "type".'
+lines = { "0.4" = [345, 345], "0.5" = [277, 277] }
+
+[[rules.YZ-CT-046.sources]]
+quote = '| [`type`](#transform-type-md) | string | yes |'
+implied = true
+lines = { "0.6" = [399, 399] }
+
+[rules.YZ-CT-047]
+slug = 'transform-type-known'
+level = 'MUST'
+summary = 'The `type` of a coordinate transformation must be one of the types the spec defines.'
+introduced = '0.4'
+notes = 'The set of types grows from `identity`, `translation` and `scale` (0.4, 0.5) to twelve types in 0.6. The 0.6 prose only says "The following transformations are supported", so its source is the schema. yaozarrs rejects unknown types (in 0.4/0.5 as untagged union errors; in 0.6 as `union_tag_invalid`, tagged as YZ-SC-002 inside a scene).'
+
+[[rules.YZ-CT-047.sources]]
+quote = 'The value of "type" MUST be one of the elements of the `type` column in the table below.'
+lines = { "0.4" = [346, 346], "0.5" = [278, 278] }
+
+[[rules.YZ-CT-047.sources]]
+schema = 'coordinate_transformations.schema'
+pointer = '/$defs/coordinateTransformation/allOf/1/oneOf'
+lines = { "0.6" = [63, 100] }
+
+[rules.YZ-CT-048]
+slug = 'transform-prefer-least-expressive'
+level = 'SHOULD'
+summary = 'A transformation should be stored as its least expressive equivalent (e.g. a `scale`, a `rotation`, or a sequence of such, rather than an `affine`).'
+introduced = '0.6'
+notes = 'Merges three 0.6 statements of the same preference: the general one, and the `scale` and `rotation` sections. The `translation` section says the same in lowercase ("should be preferred"). yaozarrs does not check this.'
+
+[[rules.YZ-CT-048.sources]]
+quote = 'Implementations SHOULD prefer to store transformations as a sequence of less expressive transformations where possible'
+lines = { "0.6" = [432, 432] }
+
+[[rules.YZ-CT-048.sources]]
+quote = 'When possible, a scale transformation SHOULD be preferred to its equivalent affine.'
+lines = { "0.6" = [833, 833] }
+
+[[rules.YZ-CT-048.sources]]
+quote = 'When possible, a rotation transformation SHOULD be used instead of an equivalent affine.'
+lines = { "0.6" = [961, 961] }
+
+[rules.YZ-CT-049]
+slug = 'reader-parse-basic-transforms'
+level = 'MUST'
+summary = 'Conforming readers must parse `identity`, `scale`, and `translation` transformations, and `sequence`s of them.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CT-049.sources]]
+quote = '- MUST parse `identity`, `scale`, `translation` transformations, as well as `sequence`s of them;'
+lines = { "0.6" = [437, 437] }
+
+[rules.YZ-CT-050]
+slug = 'reader-parse-matrix-transforms'
+level = 'SHOULD'
+summary = 'Conforming readers should parse `mapAxis`, `affine`, and `rotation` transformations, and `byDimension`s of the transformations they support.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CT-050.sources]]
+quote = '- SHOULD parse `mapAxis`, `affine`, `rotation` transformations, as well as `byDimension`s of all transforms supported by the reader;'
+lines = { "0.6" = [438, 438] }
+
+[rules.YZ-CT-051]
+slug = 'reader-warn-unsupported-transform'
+level = 'SHOULD'
+summary = 'Conforming readers should warn about transformations they cannot parse or display.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CT-051.sources]]
+quote = '- SHOULD display an informative warning if encountering transformations that cannot be parsed or displayed by a consumer;'
+lines = { "0.6" = [439, 439] }
+
+[rules.YZ-CT-052]
+slug = 'reader-transform-points'
+level = 'SHOULD'
+summary = 'Conforming readers should be able to apply transformations to points.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CT-052.sources]]
+quote = '- SHOULD be able to apply transformations to points;'
+lines = { "0.6" = [440, 440] }
+
+[rules.YZ-CT-053]
+slug = 'reader-transform-images'
+level = 'SHOULD'
+summary = 'Conforming readers should be able to apply transformations to images.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CT-053.sources]]
+quote = '- SHOULD be able to apply transformations to images;'
+lines = { "0.6" = [441, 441] }
+
+[rules.YZ-CT-054]
+slug = 'implementation-closed-form-inverse'
+level = 'SHOULD'
+summary = 'Implementations should be able to compute and apply the inverse of transformations that are invertible in closed form.'
+introduced = '0.6'
+checkable = false
+notes = 'The 0.6 spec puts this sentence inside an "Example" dropdown, but it is a general statement, not one about the example.'
+
+[[rules.YZ-CT-054.sources]]
+quote = 'Implementations SHOULD be able to compute and apply the inverse of some coordinate transformations when they are computable in closed-form'
+lines = { "0.6" = [509, 510] }
+
+[rules.YZ-CT-055]
+slug = 'field-regular-grid'
+level = 'MUST'
+summary = 'The array of a `coordinates` or `displacements` transformation must be a regular grid of vectors.'
+introduced = '0.6'
+notes = 'yaozarrs does not check this; a Zarr array whose datasets map to the input coordinate system by a scale (and translation) is a regular grid by construction.'
+
+[[rules.YZ-CT-055.sources]]
+quote = 'The array containing the coordinates or displacements MUST: - be a regular grid of vectors.'
+lines = { "0.6" = [1054, 1055] }
+
+[rules.YZ-CT-056]
+slug = 'field-smooth-coordinate-systems'
+level = 'MUST'
+summary = '`coordinates` and `displacements` transformations must only be used between coordinate systems defined in smooth, regularly sampled coordinate arrays.'
+introduced = '0.6'
+notes = 'The keyword is in the lead-in to this list: "The array containing the coordinates or displacements MUST:". This is about what the field means, so it cannot be checked from the metadata.'
+
+[[rules.YZ-CT-056.sources]]
+quote = 'only be used to represent transformations between coordinate systems that are defined in smooth, regularly sampled coordinate arrays.'
+implied = true
+lines = { "0.6" = [1063, 1063] }
+
+[rules.YZ-CT-057]
+slug = 'consumer-interpolation-communicate'
+level = 'SHOULD'
+summary = 'Consumers should tell users when they use a different interpolation method than the one a field transformation specifies.'
+introduced = '0.6'
+checkable = false
+
+[[rules.YZ-CT-057.sources]]
+quote = 'Consumers SHOULD clearly communicate to users if a different interpolation method is used.'
+lines = { "0.6" = [1079, 1079] }
+
+[rules.YZ-CT-058]
+slug = 'field-vector-axis-position'
+level = 'MUST'
+summary = 'The `coordinate` or `displacement` axis of a field must come after the time axis (if present) and before the spatial axes.'
+introduced = '0.6'
+notes = 'If a `displacement` or `coordinate` axis counts as a custom axis, YZ-AX-005 already requires this position. The spec contradicts itself here: the same section calls the vector axis the last axis (YZ-CT-034, YZ-CT-035).'
+
+[[rules.YZ-CT-058.sources]]
+quote = 'In that array, the array dimension corresponding to the coordinate/displacement axis MUST be inserted after a time axis (if present) and before the spatial axes'
+lines = { "0.6" = [1105, 1105] }
+
+[rules.YZ-CT-059]
+slug = 'scale-translation-same-ndim'
+level = 'MUST'
+summary = 'The input and output of a `scale` or `translation` must have the same dimensionality.'
+introduced = '0.6'
+
+[[rules.YZ-CT-059.sources]]
+quote = 'Input and output dimensionality MUST be identical and MUST equal the length of the `translation` array'
+lines = { "0.6" = [807, 808] }
+
+[[rules.YZ-CT-059.sources]]
+quote = 'Input and output dimensionality MUST be identical and MUST equal the length of the `scale` array'
+lines = { "0.6" = [834, 835] }
+
+[rules.YZ-CT-060]
+slug = 'transform-length-matches-ndim'
+level = 'MUST'
+summary = 'The `scale` or `translation` array must have one entry per dimension of its input and output.'
+introduced = '0.6'
+supersedes = ['YZ-CT-004']
+
+[[rules.YZ-CT-060.sources]]
+quote = 'MUST equal the length of the `translation` array (N).'
+lines = { "0.6" = [808, 808] }
+
+[[rules.YZ-CT-060.sources]]
+quote = 'MUST equal the length of the `scale` array (N).'
+lines = { "0.6" = [835, 835] }
+
+[rules.YZ-CT-061]
+slug = 'labels-parent-transform-type'
+level = 'MUST'
+summary = 'A transformation from an image to the label images in its `labels` group, if present, must be `identity`, `scale`, `translation`, or a `sequence` of a scale and a translation.'
+introduced = '0.6'
+notes = 'This disagrees with YZ-CT-014, which does not allow a `sequence` (see [ome/ngff#639](https://github.com/ome/ngff/issues/639)). yaozarrs accepts a sequence of a scale and a translation.'
+
+[[rules.YZ-CT-061.sources]]
+quote = '''This transformation, if specified, MUST be one of [`identity`](#identity-md), ['scale'](#scale-md), a ['translation'](#translation-md) or a ['sequence'](#sequence-md) of a scale and a translation transformation.'''
+lines = { "0.6" = [1482, 1483] }
+
+# ------------------------------------------------------------------------------
+# YZ-OM
+# ------------------------------------------------------------------------------
+
+[rules.YZ-OM-001]
+slug = 'omero-channel-color-hex'
+level = 'MUST'
+summary = 'An omero channel `color` must be a string of 6 hexadecimal digits.'
+introduced = "0.4"
+notes = "yaozarrs also accepts a leading `#` and 3-digit shorthand, and normalizes them with a warning."
+
+[[rules.YZ-OM-001.sources]]
+quote = 'Each dictionary in "channels" MUST contain the field "color", which is a string of 6 hexadecimal digits specifying the color of the channel in RGB format.'
+lines = { "0.5" = [381, 381], "0.4" = [448, 448]}
+
+[[rules.YZ-OM-001.sources]]
+quote = 'Each object in `channels` MUST contain the field `color`, which is a string of 6 hexadecimal digits specifying the color of the channel in RGB format.'
+lines = { "0.6" = [1456, 1457] }
+
+[rules.YZ-OM-002]
+slug = 'omero-channels-present'
+level = 'MUST'
+summary = '`omero` metadata, if present, must contain `channels`.'
+introduced = "0.4"
+
+[[rules.YZ-OM-002.sources]]
+quote = 'The "omero" metadata is optional, but if present it MUST contain the field "channels"'
+lines = { "0.5" = [380, 380], "0.4" = [447, 447]}
+
+[[rules.YZ-OM-002.sources]]
+quote = 'The `omero` metadata is optional, but if present it MUST contain the field `channels`'
+lines = { "0.6" = [1454, 1454] }
+
+[rules.YZ-OM-003]
+slug = 'omero-channel-color-present'
+level = 'MUST'
+summary = 'Each omero channel must contain `color`.'
+introduced = "0.4"
+
+[[rules.YZ-OM-003.sources]]
+quote = 'Each dictionary in "channels" MUST contain the field "color"'
+lines = { "0.5" = [381, 381], "0.4" = [448, 448]}
+
+[[rules.YZ-OM-003.sources]]
+quote = 'Each object in `channels` MUST contain the field `color`'
+lines = { "0.6" = [1456, 1456] }
+
+[rules.YZ-OM-004]
+slug = 'omero-channel-window-present'
+level = 'MUST'
+summary = 'Each omero channel must contain `window`.'
+introduced = "0.4"
+
+[[rules.YZ-OM-004.sources]]
+quote = 'Each dictionary in "channels" MUST contain the field "window"'
+lines = { "0.5" = [382, 382], "0.4" = [449, 449]}
+
+[[rules.YZ-OM-004.sources]]
+quote = 'Each object in `channels` MUST contain the field `window`'
+lines = { "0.6" = [1458, 1458] }
+
+[rules.YZ-OM-005]
+slug = 'omero-window-min-max-present'
+level = 'MUST'
+summary = 'An omero channel `window` must contain `min` and `max`.'
+introduced = "0.4"
+
+[[rules.YZ-OM-005.sources]]
+quote = 'The field "window" MUST contain the fields "min" and "max"'
+lines = { "0.5" = [383, 383], "0.4" = [450, 450]}
+
+[[rules.YZ-OM-005.sources]]
+quote = 'The field `window` MUST contain the fields `min` and `max`'
+lines = { "0.6" = [1460, 1460] }
+
+[rules.YZ-OM-006]
+slug = 'omero-window-start-end-present'
+level = 'MUST'
+summary = 'An omero channel `window` must contain `start` and `end`.'
+introduced = "0.4"
+
+[[rules.YZ-OM-006.sources]]
+quote = 'It MUST also contain the fields "start" and "end"'
+lines = { "0.5" = [384, 384], "0.4" = [451, 451]}
+
+[[rules.YZ-OM-006.sources]]
+quote = 'It MUST also contain the fields `start` and `end`'
+lines = { "0.6" = [1462, 1462] }
+
+[rules.YZ-PL-001]
+slug = 'acquisition-id-unique'
+level = 'MUST'
+summary = 'Acquisition `id`s must be unique within a plate.'
+introduced = '0.4'
+
+[[rules.YZ-PL-001.sources]]
+quote = 'whose value MUST be an unique integer identifier greater than or equal to 0 within the context of the plate'
+lines = { "0.4" = [516, 517], "0.5" = [462, 463], "0.6" = [1597, 1597] }
+
+[rules.YZ-PL-002]
+slug = 'plate-column-names-case-collision'
+level = 'SHOULD'
+summary = 'Plate column names should not differ only by case.'
+introduced = '0.4'
+
+[[rules.YZ-PL-002.sources]]
+quote = 'other `name` in the `columns` list. Care SHOULD be taken to avoid collisions on case-insensitive filesystems'
+lines = { "0.4" = [533, 534], "0.5" = [479, 480] }
+
+[[rules.YZ-PL-002.sources]]
+quote = 'other `name` in the `columns` array. Care SHOULD be taken to avoid collisions on case-insensitive filesystems'
+lines = { "0.6" = [1616, 1617] }
+
+[rules.YZ-PL-003]
+slug = 'plate-row-names-case-collision'
+level = 'SHOULD'
+summary = 'Plate row names should not differ only by case.'
+introduced = '0.4'
+
+[[rules.YZ-PL-003.sources]]
+quote = 'other `name` in the `rows` list. Care SHOULD be taken to avoid collisions on case-insensitive filesystems'
+lines = { "0.4" = [548, 549], "0.5" = [494, 495] }
+
+[[rules.YZ-PL-003.sources]]
+quote = 'other `name` in the `rows` array. Care SHOULD be taken to avoid collisions on case-insensitive filesystems'
+lines = { "0.6" = [1634, 1635] }
+
+[rules.YZ-PL-004]
+slug = 'well-row-index-valid'
+level = 'MUST'
+summary = "A well's `rowIndex` must be an index into the plate's `rows`."
+introduced = '0.4'
+
+[[rules.YZ-PL-004.sources]]
+quote = 'a `rowIndex` key whose value MUST be an integer identifying the index into the `rows` list'
+lines = { "0.4" = [559, 560], "0.5" = [505, 506] }
+
+[[rules.YZ-PL-004.sources]]
+quote = 'a `rowIndex` key whose value MUST be an integer identifying the index into the `rows` array'
+lines = { "0.6" = [1647, 1648] }
+
+[rules.YZ-PL-005]
+slug = 'well-column-index-valid'
+level = 'MUST'
+summary = "A well's `columnIndex` must be an index into the plate's `columns`."
+introduced = '0.4'
+
+[[rules.YZ-PL-005.sources]]
+quote = 'a `columnIndex` key whose value MUST be an integer identifying the index into the `columns` list'
+lines = { "0.5" = [506, 507], "0.4" = [560, 561]}
+
+[[rules.YZ-PL-005.sources]]
+quote = 'a `columnIndex` key whose value MUST be an integer identifying the index into the `columns` array'
+lines = { "0.6" = [1649, 1650] }
+
+[rules.YZ-PL-006]
+slug = 'well-path-matches-indices'
+level = 'MUST'
+summary = "A well's `path`, `rowIndex`, and `columnIndex` must agree."
+introduced = '0.4'
+
+[[rules.YZ-PL-006.sources]]
+quote = '`rowIndex`, `columnIndex`, and `path` MUST all refer to the same row/column pair.'
+lines = { "0.4" = [562, 562], "0.5" = [508, 508], "0.6" = [1652, 1652] }
+
+[rules.YZ-PL-007]
+slug = 'well-path-is-well-group'
+level = 'MUST'
+summary = 'Each plate well `path` must point to a well group.'
+introduced = '0.4'
+
+[[rules.YZ-PL-007.sources]]
+quote = 'Each well object MUST contain a `path` key whose value MUST be a string specifying the path to the well subgroup.'
+lines = { "0.4" = [555, 556], "0.5" = [501, 502], "0.6" = [1640, 1641] }
+
+[rules.YZ-PL-008]
+slug = 'plate-acquisitions-array'
+level = 'MUST'
+summary = 'Plate `acquisitions`, if present, must be a list of objects.'
+introduced = '0.4'
+
+[[rules.YZ-PL-008.sources]]
+quote = 'The `plate` dictionary MAY contain an `acquisitions` key whose value MUST be a list of JSON objects'
+lines = { "0.4" = [514, 515], "0.5" = [460, 461] }
+
+[[rules.YZ-PL-008.sources]]
+quote = 'The `plate` object MAY contain an `acquisitions` key whose value MUST be an array of JSON objects'
+lines = { "0.6" = [1594, 1595] }
+
+[rules.YZ-PL-009]
+slug = 'acquisition-id-present'
+level = 'MUST'
+summary = 'Each acquisition must contain `id`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-009.sources]]
+quote = 'acquisition object MUST contain an `id` key'
+lines = { "0.4" = [516, 516], "0.5" = [462, 462], "0.6" = [1596, 1596] }
+
+[rules.YZ-PL-010]
+slug = 'acquisition-id-nonnegative-integer'
+level = 'MUST'
+summary = 'An acquisition `id` must be an integer greater than or equal to 0.'
+introduced = '0.4'
+
+[[rules.YZ-PL-010.sources]]
+quote = 'whose value MUST be an unique integer identifier greater than or equal to 0'
+lines = { "0.4" = [516, 517], "0.5" = [462, 463], "0.6" = [1597, 1597] }
+
+[rules.YZ-PL-011]
+slug = 'acquisition-name-string'
+level = 'MUST'
+summary = 'An acquisition `name`, if present, must be a string.'
+introduced = '0.4'
+
+[[rules.YZ-PL-011.sources]]
+quote = 'Each acquisition object SHOULD contain a `name` key whose value MUST be a string'
+lines = { "0.4" = [519, 519], "0.5" = [465, 465], "0.6" = [1599, 1599] }
+
+[rules.YZ-PL-012]
+slug = 'acquisition-maximumfieldcount-positive'
+level = 'MUST'
+summary = 'An acquisition `maximumfieldcount`, if present, must be a positive integer.'
+introduced = '0.4'
+
+[[rules.YZ-PL-012.sources]]
+quote = 'key whose value MUST be a positive integer indicating the maximum number of fields of view'
+lines = { "0.4" = [521, 521], "0.5" = [467, 467], "0.6" = [1601, 1602] }
+
+[rules.YZ-PL-013]
+slug = 'acquisition-description-string'
+level = 'MUST'
+summary = 'An acquisition `description`, if present, must be a string.'
+introduced = '0.4'
+
+[[rules.YZ-PL-013.sources]]
+quote = 'Each acquisition object MAY contain a `description` key whose value MUST be a string'
+lines = { "0.4" = [522, 523], "0.5" = [468, 469], "0.6" = [1603, 1604] }
+
+[rules.YZ-PL-014]
+slug = 'acquisition-times-integer'
+level = 'MUST'
+summary = 'An acquisition `starttime` or `endtime`, if present, must be an integer epoch timestamp.'
+introduced = '0.4'
+notes = "yaozarrs also requires them to be greater than or equal to 0, which the spec doesn't state; that error doesn't carry this code."
+
+[[rules.YZ-PL-014.sources]]
+quote = 'Each acquisition object MAY contain a `starttime` and/or `endtime` key whose values MUST be integer epoch timestamps'
+lines = { "0.4" = [523, 524], "0.5" = [469, 470], "0.6" = [1605, 1606] }
+
+[rules.YZ-PL-015]
+slug = 'plate-columns-present'
+level = 'MUST'
+summary = 'A plate must contain `columns`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-015.sources]]
+quote = 'The `plate` dictionary MUST contain a `columns` key'
+lines = { "0.4" = [527, 527], "0.5" = [473, 473] }
+
+[[rules.YZ-PL-015.sources]]
+quote = 'The `plate` object MUST contain a `columns` key'
+lines = { "0.6" = [1608, 1608] }
+
+[rules.YZ-PL-016]
+slug = 'plate-columns-array'
+level = 'MUST'
+summary = 'Plate `columns` must be a list of objects.'
+introduced = '0.4'
+notes = 'An empty list is YZ-PL-037.'
+
+[[rules.YZ-PL-016.sources]]
+quote = '`columns` key whose value MUST be a list of JSON objects defining the columns of the plate'
+lines = { "0.4" = [527, 528], "0.5" = [473, 474] }
+
+[[rules.YZ-PL-016.sources]]
+quote = '`columns` key whose value MUST be an array of JSON objects defining the columns of the plate'
+lines = { "0.6" = [1608, 1609] }
+
+[rules.YZ-PL-017]
+slug = 'column-name-present'
+level = 'MUST'
+summary = 'Each plate column must contain `name`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-017.sources]]
+quote = 'Each column object MUST contain a `name` key'
+lines = { "0.4" = [530, 531], "0.5" = [476, 477], "0.6" = [1613, 1613] }
+
+[rules.YZ-PL-018]
+slug = 'column-name-alphanumeric'
+level = 'MUST'
+summary = 'A plate column `name` must contain only alphanumeric characters.'
+introduced = '0.4'
+
+[[rules.YZ-PL-018.sources]]
+quote = 'specifying the column name. The `name` MUST contain only alphanumeric characters'
+lines = { "0.4" = [531, 532], "0.5" = [477, 478], "0.6" = [1613, 1614] }
+
+[rules.YZ-PL-019]
+slug = 'column-name-unique'
+level = 'MUST'
+summary = 'Plate column names must be unique.'
+introduced = '0.4'
+
+[[rules.YZ-PL-019.sources]]
+quote = 'MUST NOT be a duplicate of any other `name` in the `columns` list'
+lines = { "0.4" = [532, 533], "0.5" = [478, 479] }
+
+[[rules.YZ-PL-019.sources]]
+quote = 'MUST NOT be a duplicate of any other `name` in the `columns` array'
+lines = { "0.6" = [1616, 1616] }
+
+[rules.YZ-PL-020]
+slug = 'plate-field-count-positive'
+level = 'MUST'
+summary = 'Plate `field_count`, if present, must be a positive integer.'
+introduced = '0.4'
+
+[[rules.YZ-PL-020.sources]]
+quote = 'The `plate` dictionary SHOULD contain a `field_count` key whose value MUST be a positive integer'
+lines = { "0.4" = [536, 536], "0.5" = [482, 482] }
+
+[[rules.YZ-PL-020.sources]]
+quote = 'The `plate` object SHOULD contain a `field_count` key whose value MUST be a positive integer'
+lines = { "0.6" = [1620, 1621] }
+
+[rules.YZ-PL-021]
+slug = 'plate-name-string'
+level = 'MUST'
+summary = 'Plate `name`, if present, must be a string.'
+introduced = '0.4'
+
+[[rules.YZ-PL-021.sources]]
+quote = 'The `plate` dictionary SHOULD contain a `name` key whose value MUST be a string'
+lines = { "0.4" = [539, 539], "0.5" = [485, 485] }
+
+[[rules.YZ-PL-021.sources]]
+quote = 'The `plate` object SHOULD contain a `name` key whose value MUST be a string'
+lines = { "0.6" = [1623, 1624] }
+
+[rules.YZ-PL-022]
+slug = 'plate-rows-present'
+level = 'MUST'
+summary = 'A plate must contain `rows`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-022.sources]]
+quote = 'The `plate` dictionary MUST contain a `rows` key'
+lines = { "0.4" = [542, 542], "0.5" = [488, 488] }
+
+[[rules.YZ-PL-022.sources]]
+quote = 'The `plate` object MUST contain a `rows` key'
+lines = { "0.6" = [1626, 1626] }
+
+[rules.YZ-PL-023]
+slug = 'plate-rows-array'
+level = 'MUST'
+summary = 'Plate `rows` must be a list of objects.'
+introduced = '0.4'
+notes = 'An empty list is YZ-PL-038.'
+
+[[rules.YZ-PL-023.sources]]
+quote = '`rows` key whose value MUST be a list of JSON objects defining the rows of the plate'
+lines = { "0.4" = [542, 543], "0.5" = [488, 489] }
+
+[[rules.YZ-PL-023.sources]]
+quote = '`rows` key whose value MUST be an array of JSON objects defining the rows of the plate'
+lines = { "0.6" = [1626, 1627] }
+
+[rules.YZ-PL-024]
+slug = 'row-name-present'
+level = 'MUST'
+summary = 'Each plate row must contain `name`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-024.sources]]
+quote = 'Each defined row MUST contain a `name` key'
+lines = { "0.4" = [545, 546], "0.5" = [491, 492], "0.6" = [1631, 1631] }
+
+[rules.YZ-PL-025]
+slug = 'row-name-string'
+level = 'MUST'
+summary = 'A plate row `name` must be a string.'
+introduced = '0.4'
+
+[[rules.YZ-PL-025.sources]]
+quote = 'whose value MUST be a string defining the row name'
+lines = { "0.4" = [546, 546], "0.5" = [492, 492], "0.6" = [1631, 1631] }
+
+[rules.YZ-PL-026]
+slug = 'row-name-alphanumeric'
+level = 'MUST'
+summary = 'A plate row `name` must contain only alphanumeric characters.'
+introduced = '0.4'
+
+[[rules.YZ-PL-026.sources]]
+quote = 'defining the row name. The `name` MUST contain only alphanumeric characters'
+lines = { "0.4" = [546, 547], "0.5" = [492, 493], "0.6" = [1631, 1632] }
+
+[rules.YZ-PL-027]
+slug = 'row-name-unique'
+level = 'MUST'
+summary = 'Plate row names must be unique.'
+introduced = '0.4'
+
+[[rules.YZ-PL-027.sources]]
+quote = 'MUST NOT be a duplicate of any other `name` in the `rows` list'
+lines = { "0.4" = [547, 548], "0.5" = [493, 494] }
+
+[[rules.YZ-PL-027.sources]]
+quote = 'MUST NOT be a duplicate of any other `name` in the `rows` array'
+lines = { "0.6" = [1634, 1634] }
+
+[rules.YZ-PL-028]
+slug = 'plate-wells-present'
+level = 'MUST'
+summary = 'A plate must contain `wells`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-028.sources]]
+quote = 'The `plate` dictionary MUST contain a `wells` key'
+lines = { "0.4" = [554, 554], "0.5" = [500, 500] }
+
+[[rules.YZ-PL-028.sources]]
+quote = 'The `plate` object MUST contain a `wells` key'
+lines = { "0.6" = [1638, 1638] }
+
+[rules.YZ-PL-029]
+slug = 'plate-wells-array'
+level = 'MUST'
+summary = 'Plate `wells` must be a list of objects.'
+introduced = '0.4'
+notes = 'An empty list is YZ-PL-039, and identical entries are YZ-PL-040.'
+
+[[rules.YZ-PL-029.sources]]
+quote = '`wells` key whose value MUST be a list of JSON objects defining the wells of the plate'
+lines = { "0.4" = [554, 555], "0.5" = [500, 501], "0.6" = [1638, 1639] }
+
+[rules.YZ-PL-030]
+slug = 'well-path-present'
+level = 'MUST'
+summary = 'Each plate well must contain `path`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-030.sources]]
+quote = 'Each well object MUST contain a `path` key'
+lines = { "0.4" = [555, 555], "0.5" = [501, 501], "0.6" = [1640, 1640] }
+
+[rules.YZ-PL-031]
+slug = 'well-path-string'
+level = 'MUST'
+summary = 'A plate well `path` must be a string.'
+introduced = '0.4'
+
+[[rules.YZ-PL-031.sources]]
+quote = 'whose value MUST be a string specifying the path to the well subgroup'
+lines = { "0.4" = [555, 556], "0.5" = [501, 502], "0.6" = [1641, 1641] }
+
+[rules.YZ-PL-032]
+slug = 'well-path-row-column'
+level = 'MUST'
+summary = 'A plate well `path` must have the form `<row name>/<column name>`.'
+introduced = '0.4'
+notes = "yaozarrs checks the form with the pattern `^[A-Za-z0-9]+/[A-Za-z0-9]+$`, which also rules out leading or trailing directories. That the names match the well's row and column is [YZ-PL-006](YZ-PL-006.md)."
+
+[[rules.YZ-PL-032.sources]]
+quote = 'The `path` MUST consist of a `name` in the `rows` list, a file separator (`/`), and a `name` from the `columns` list, in that order.'
+lines = { "0.4" = [556, 557], "0.5" = [502, 503] }
+
+[[rules.YZ-PL-032.sources]]
+quote = 'The `path` MUST consist of a `name` in the `rows` array, a file separator (`/`), and a `name` from the `columns` array, in that order.'
+lines = { "0.6" = [1642, 1645] }
+
+[rules.YZ-PL-033]
+slug = 'well-indices-present'
+level = 'MUST'
+summary = 'Each plate well must contain `rowIndex` and `columnIndex`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-033.sources]]
+quote = 'Each well object MUST contain both a `rowIndex` key'
+lines = { "0.4" = [559, 559], "0.5" = [505, 505], "0.6" = [1647, 1647] }
+
+[rules.YZ-PL-034]
+slug = 'well-row-index-integer'
+level = 'MUST'
+summary = 'A plate well `rowIndex` must be an integer.'
+introduced = '0.4'
+notes = 'A negative `rowIndex` is reported as [YZ-PL-004](YZ-PL-004.md).'
+
+[[rules.YZ-PL-034.sources]]
+quote = 'a `rowIndex` key whose value MUST be an integer identifying the index into the `rows` list'
+lines = { "0.4" = [559, 560], "0.5" = [505, 506] }
+
+[[rules.YZ-PL-034.sources]]
+quote = 'a `rowIndex` key whose value MUST be an integer identifying the index into the `rows` array'
+lines = { "0.6" = [1647, 1648] }
+
+[rules.YZ-PL-035]
+slug = 'well-column-index-integer'
+level = 'MUST'
+summary = 'A plate well `columnIndex` must be an integer.'
+introduced = '0.4'
+notes = 'A negative `columnIndex` is reported as [YZ-PL-005](YZ-PL-005.md).'
+
+[[rules.YZ-PL-035.sources]]
+quote = 'a `columnIndex` key whose value MUST be an integer identifying the index into the `columns` list'
+lines = { "0.5" = [506, 507], "0.4" = [560, 561]}
+
+[[rules.YZ-PL-035.sources]]
+quote = 'a `columnIndex` key whose value MUST be an integer identifying the index into the `columns` array'
+lines = { "0.6" = [1649, 1650] }
+
+[rules.YZ-PL-036]
+slug = 'column-name-string'
+level = 'MUST'
+summary = 'A plate column `name` must be a string.'
+introduced = '0.4'
+
+[[rules.YZ-PL-036.sources]]
+quote = 'Each column object MUST contain a `name` key whose value is a string specifying the column name.'
+lines = { "0.4" = [530, 531], "0.5" = [476, 477], "0.6" = [1613, 1613] }
+
+[rules.YZ-PL-037]
+slug = 'plate-columns-nonempty'
+level = 'MUST'
+summary = 'Plate `columns` must have at least one entry.'
+introduced = '0.4'
+
+[[rules.YZ-PL-037.sources]]
+schema = 'plate.schema'
+pointer = '/properties/plate/properties/columns/minItems'
+value = 1
+lines = { "0.4" = [83, 83] }
+
+[[rules.YZ-PL-037.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/columns/minItems'
+value = 1
+lines = { "0.5" = [80, 80], "0.6" = [80, 80] }
+
+[rules.YZ-PL-038]
+slug = 'plate-rows-nonempty'
+level = 'MUST'
+summary = 'Plate `rows` must have at least one entry.'
+introduced = '0.4'
+
+[[rules.YZ-PL-038.sources]]
+schema = 'plate.schema'
+pointer = '/properties/plate/properties/rows/minItems'
+value = 1
+lines = { "0.4" = [102, 102] }
+
+[[rules.YZ-PL-038.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/rows/minItems'
+value = 1
+lines = { "0.5" = [99, 99], "0.6" = [99, 99] }
+
+[rules.YZ-PL-039]
+slug = 'plate-wells-nonempty'
+level = 'MUST'
+summary = 'Plate `wells` must have at least one entry.'
+introduced = '0.4'
+
+[[rules.YZ-PL-039.sources]]
+schema = 'plate.schema'
+pointer = '/properties/plate/properties/wells/minItems'
+value = 1
+lines = { "0.4" = [131, 131] }
+
+[[rules.YZ-PL-039.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/wells/minItems'
+value = 1
+lines = { "0.5" = [130, 130], "0.6" = [130, 130] }
+
+[rules.YZ-PL-040]
+slug = 'plate-wells-unique'
+level = 'MUST'
+summary = 'Plate `wells` must not contain identical entries.'
+introduced = '0.4'
+
+[[rules.YZ-PL-040.sources]]
+schema = 'plate.schema'
+pointer = '/properties/plate/properties/wells/uniqueItems'
+value = true
+lines = { "0.4" = [132, 132] }
+
+[[rules.YZ-PL-040.sources]]
+schema = 'plate.schema'
+pointer = '/properties/ome/properties/plate/properties/wells/uniqueItems'
+value = true
+lines = { "0.5" = [131, 131], "0.6" = [131, 131] }
+
+[rules.YZ-PL-041]
+slug = 'plate-column-defined'
+level = 'MUST'
+summary = 'Every column in the physical plate must be defined in `columns`, even if it has no wells.'
+introduced = '0.4'
+checkable = false
+notes = '''yaozarrs can't know the layout of the physical plate.'''
+
+[[rules.YZ-PL-041.sources]]
+quote = 'Each column in the physical plate MUST be defined, even if no wells in the column are defined.'
+lines = { "0.4" = [529, 530], "0.5" = [475, 476], "0.6" = [1611, 1612] }
+
+[rules.YZ-PL-042]
+slug = 'plate-row-defined'
+level = 'MUST'
+summary = 'Every row in the physical plate must be defined in `rows`, even if it has no wells.'
+introduced = '0.4'
+checkable = false
+notes = '''yaozarrs can't know the layout of the physical plate.'''
+
+[[rules.YZ-PL-042.sources]]
+quote = 'Each row in the physical plate MUST be defined, even if no wells in the row are defined.'
+lines = { "0.4" = [544, 545], "0.5" = [490, 491], "0.6" = [1629, 1630] }
+
+[rules.YZ-PL-043]
+slug = 'column-name-case-sensitive'
+level = 'MUST'
+summary = 'Plate column names must be case-sensitive.'
+introduced = '0.4'
+checkable = false
+notes = 'Says how names are compared (`A` and `a` are different names, see YZ-PL-019 and YZ-PL-002); no document can violate it.'
+
+[[rules.YZ-PL-043.sources]]
+quote = 'specifying the column name. The `name` MUST contain only alphanumeric characters, MUST be case-sensitive,'
+lines = { "0.4" = [531, 532], "0.5" = [477, 478], "0.6" = [1613, 1615] }
+
+[rules.YZ-PL-044]
+slug = 'row-name-case-sensitive'
+level = 'MUST'
+summary = 'Plate row names must be case-sensitive.'
+introduced = '0.4'
+checkable = false
+notes = 'Says how names are compared (`A` and `a` are different names, see YZ-PL-027 and YZ-PL-003); no document can violate it.'
+
+[[rules.YZ-PL-044.sources]]
+quote = 'defining the row name. The `name` MUST contain only alphanumeric characters, MUST be case-sensitive,'
+lines = { "0.4" = [546, 547], "0.5" = [492, 493], "0.6" = [1631, 1633] }
+
+[rules.YZ-PL-045]
+slug = 'well-indices-zero-based'
+level = 'MUST'
+summary = 'A plate well `rowIndex` and `columnIndex` must be 0-based.'
+introduced = '0.4'
+notes = 'yaozarrs reads the indices as 0-based, so a 1-based index shows up as an index out of range (YZ-PL-004, YZ-PL-005) or a mismatch with `path` (YZ-PL-006).'
+
+[[rules.YZ-PL-045.sources]]
+quote = '`rowIndex` and `columnIndex` MUST be 0-based.'
+lines = { "0.4" = [561, 561], "0.5" = [507, 507], "0.6" = [1651, 1651] }
+
+[rules.YZ-PL-046]
+slug = 'acquisition-maximumfieldcount-present'
+level = 'SHOULD'
+summary = 'Each acquisition should contain `maximumfieldcount`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-046.sources]]
+quote = 'Each acquisition object SHOULD contain a `maximumfieldcount`'
+lines = { "0.4" = [520, 520], "0.5" = [466, 466], "0.6" = [1601, 1601] }
+
+[rules.YZ-PL-047]
+slug = 'plate-version-present'
+level = 'SHOULD'
+summary = 'The `plate` object should contain `version`.'
+introduced = '0.4'
+removed = '0.5'
+
+[[rules.YZ-PL-047.sources]]
+quote = 'The `plate` dictionary SHOULD contain a `version` key'
+lines = { "0.4" = [551, 551] }
+
+[rules.YZ-PL-048]
+slug = 'plate-version-required'
+level = 'MUST'
+summary = 'The `plate` object must contain `version`.'
+introduced = '0.5'
+removed = '0.6'
+supersedes = ['YZ-PL-047']
+notes = '''The 0.5 plate schema puts `version` only in the `ome` object (YZ-GN-001), not in `plate`, and yaozarrs doesn't check `plate.version`.'''
+
+[[rules.YZ-PL-048.sources]]
+quote = 'The `plate` dictionary MUST contain a `version` key'
+lines = { "0.5" = [497, 497] }
+
+[rules.YZ-PL-049]
+slug = 'plate-version-string'
+level = 'MUST'
+summary = 'A plate `version`, if present, must be a string.'
+introduced = '0.4'
+removed = '0.6'
+notes = 'In 0.5 the version lives in the `ome` object (YZ-GN-001).'
+
+[[rules.YZ-PL-049.sources]]
+quote = 'a `version` key whose value MUST be a string specifying the version of the plate'
+lines = { "0.4" = [551, 552], "0.5" = [497, 498] }
+
+[rules.YZ-PL-050]
+slug = 'acquisition-name-present'
+level = 'SHOULD'
+summary = 'Each acquisition should contain `name`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-050.sources]]
+quote = 'Each acquisition object SHOULD contain a `name` key'
+lines = { "0.4" = [519, 519], "0.5" = [465, 465], "0.6" = [1599, 1599] }
+
+[rules.YZ-PL-051]
+slug = 'plate-field-count-present'
+level = 'SHOULD'
+summary = 'A plate should contain `field_count`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-051.sources]]
+quote = 'The `plate` dictionary SHOULD contain a `field_count` key'
+lines = { "0.4" = [536, 536], "0.5" = [482, 482] }
+
+[[rules.YZ-PL-051.sources]]
+quote = 'The `plate` object SHOULD contain a `field_count` key'
+lines = { "0.6" = [1620, 1620] }
+
+[rules.YZ-PL-052]
+slug = 'plate-name-present'
+level = 'SHOULD'
+summary = 'A plate should contain `name`.'
+introduced = '0.4'
+
+[[rules.YZ-PL-052.sources]]
+quote = 'The `plate` dictionary SHOULD contain a `name` key'
+lines = { "0.4" = [539, 539], "0.5" = [485, 485] }
+
+[[rules.YZ-PL-052.sources]]
+quote = 'The `plate` object SHOULD contain a `name` key'
+lines = { "0.6" = [1623, 1623] }
+
+# ------------------------------------------------------------------------------
+# YZ-WL
+# ------------------------------------------------------------------------------
+
+[rules.YZ-WL-001]
+slug = 'field-path-alphanumeric'
+level = 'MUST'
+summary = 'A field of view `path` must contain only alphanumeric characters.'
+introduced = '0.4'
+removed = '0.6'
+notes = 'yaozarrs relaxes this rule: `.`, `_` and `-` produce a warning instead of an error (see ome/ngff-spec#71). Set `YAOZARRS_STRICT_FOV_NAMES=1` to make them errors, or `YAOZARRS_IGNORE_RISKY_FOV_NAMES=1` to silence the warning.'
+
+[[rules.YZ-WL-001.sources]]
+quote = 'The `path` MUST contain only alphanumeric characters'
+lines = { "0.4" = [587, 588], "0.5" = [533, 534] }
+
+[rules.YZ-WL-002]
+slug = 'field-path-unique'
+level = 'MUST'
+summary = 'Field of view `path`s must be unique within a well.'
+introduced = '0.4'
+
+[[rules.YZ-WL-002.sources]]
+quote = 'MUST NOT be a duplicate of any other `path` in the `images` list.'
+lines = { "0.4" = [588, 589], "0.5" = [534, 535], "0.6" = [1680, 1680] }
+
+[rules.YZ-WL-003]
+slug = 'field-path-is-image-group'
+level = 'MUST'
+summary = 'Each well image `path` must point to an image (field of view) group.'
+introduced = '0.4'
+
+[[rules.YZ-WL-003.sources]]
+quote = 'Each image object MUST contain a `path` key whose value MUST be a string specifying the path to the field of view.'
+lines = { "0.4" = [586, 587], "0.5" = [532, 533], "0.6" = [1678, 1679] }
+
+[rules.YZ-WL-004]
+slug = 'well-images-present'
+level = 'MUST'
+summary = 'A well must contain `images`.'
+introduced = '0.4'
+
+[[rules.YZ-WL-004.sources]]
+quote = 'The `well` dictionary MUST contain an `images` key'
+lines = { "0.4" = [585, 585], "0.5" = [531, 531] }
+
+[[rules.YZ-WL-004.sources]]
+quote = 'The `well` object MUST contain an `images` key'
+lines = { "0.6" = [1676, 1676] }
+
+[rules.YZ-WL-005]
+slug = 'well-images-array'
+level = 'MUST'
+summary = 'Well `images` must be a list of objects.'
+introduced = '0.4'
+notes = 'An empty list is YZ-WL-012, and identical entries are YZ-WL-002.'
+
+[[rules.YZ-WL-005.sources]]
+quote = '`images` key whose value MUST be a list of JSON objects specifying all fields of views for a given well'
+lines = { "0.4" = [585, 586], "0.5" = [531, 532] }
+
+[[rules.YZ-WL-005.sources]]
+quote = '`images` key whose value MUST be an array of JSON objects specifying all fields of views for a given well'
+lines = { "0.6" = [1676, 1677] }
+
+[rules.YZ-WL-006]
+slug = 'field-path-present'
+level = 'MUST'
+summary = 'Each well image (field of view) must contain `path`.'
+introduced = '0.4'
+
+[[rules.YZ-WL-006.sources]]
+quote = 'Each image object MUST contain a `path` key'
+lines = { "0.4" = [586, 587], "0.5" = [532, 533], "0.6" = [1678, 1678] }
+
+[rules.YZ-WL-007]
+slug = 'field-acquisition-integer'
+level = 'MUST'
+summary = 'A field of view `acquisition`, if present, must be an integer.'
+introduced = '0.4'
+
+[[rules.YZ-WL-007.sources]]
+quote = 'it MUST contain an `acquisition` key whose value MUST be an integer identifying the acquisition'
+lines = { "0.4" = [590, 590], "0.5" = [536, 536], "0.6" = [1686, 1686] }
+
+[rules.YZ-WL-008]
+slug = 'field-acquisition-present'
+level = 'MUST'
+summary = 'If a plate has multiple acquisitions, each field of view must have an `acquisition`.'
+introduced = '0.4'
+
+[[rules.YZ-WL-008.sources]]
+quote = 'If multiple acquisitions were performed in the plate, it MUST contain an `acquisition` key'
+lines = { "0.4" = [589, 590], "0.5" = [535, 536], "0.6" = [1685, 1686] }
+
+[rules.YZ-WL-009]
+slug = 'field-acquisition-matches-plate'
+level = 'MUST'
+summary = "A field of view's `acquisition` must match an acquisition in the plate."
+introduced = '0.4'
+notes = "yaozarrs doesn't check the value if the plate lists no acquisitions (like ome-zarr-models)."
+
+[[rules.YZ-WL-009.sources]]
+quote = 'which MUST match one of the acquisition JSON objects defined in the'
+lines = { "0.4" = [591, 591], "0.5" = [537, 537], "0.6" = [1687, 1687] }
+
+[rules.YZ-WL-010]
+slug = 'field-path-characters'
+level = 'MUST'
+summary = 'A field of view `path` must only use the characters `a-z`, `A-Z`, `0-9`, `-`, `_`, and `.`.'
+introduced = '0.6'
+supersedes = ['YZ-WL-001']
+notes = 'Replaces the alphanumeric rule (YZ-WL-001) of earlier versions. A `path` with `/` fails this rule as well (an empty `path` is YZ-WL-016).'
+
+[[rules.YZ-WL-010.sources]]
+quote = 'The `path` MUST only use characters in the sets `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`.'
+lines = { "0.6" = [1684, 1684] }
+
+[rules.YZ-WL-011]
+slug = 'field-path-node-name'
+level = 'MUST'
+summary = 'A field of view `path` must not consist only of periods, or start with `__`.'
+introduced = '0.6'
+
+[[rules.YZ-WL-011.sources]]
+quote = 'The `path` MUST NOT consist only of periods (like `.` or `..`) or start with the reserved prefix `__`;'
+lines = { "0.6" = [1682, 1682] }
+
+[rules.YZ-WL-012]
+slug = 'well-images-nonempty'
+level = 'MUST'
+summary = 'Well `images` must have at least one entry.'
+introduced = '0.4'
+
+[[rules.YZ-WL-012.sources]]
+schema = 'well.schema'
+pointer = '/properties/well/properties/images/minItems'
+value = 1
+lines = { "0.4" = [31, 31] }
+
+[[rules.YZ-WL-012.sources]]
+schema = 'well.schema'
+pointer = '/properties/ome/properties/well/properties/images/minItems'
+value = 1
+lines = { "0.5" = [35, 35], "0.6" = [42, 42] }
+
+[rules.YZ-WL-013]
+slug = 'well-version-present'
+level = 'SHOULD'
+summary = 'The `well` object should contain `version`.'
+introduced = '0.4'
+removed = '0.6'
+notes = '''In 0.5 the well schema puts `version` only in the `ome` object (YZ-GN-001), where it is required, and yaozarrs doesn't check `well.version`.'''
+
+[[rules.YZ-WL-013.sources]]
+quote = 'The `well` dictionary SHOULD contain a `version` key'
+lines = { "0.4" = [593, 593], "0.5" = [539, 539] }
+
+[rules.YZ-WL-014]
+slug = 'well-version-string'
+level = 'MUST'
+summary = 'A well `version`, if present, must be a string.'
+introduced = '0.4'
+removed = '0.6'
+notes = 'In 0.5 the version lives in the `ome` object (YZ-GN-001).'
+
+[[rules.YZ-WL-014.sources]]
+quote = 'a `version` key whose value MUST be a string specifying the version of the well'
+lines = { "0.4" = [593, 594], "0.5" = [539, 540] }
+
+[rules.YZ-WL-015]
+slug = 'field-path-case-sensitive'
+level = 'MUST'
+summary = 'Field of view `path`s must be case-sensitive.'
+introduced = '0.4'
+checkable = false
+notes = 'About how paths are compared: no document can break it.'
+
+[[rules.YZ-WL-015.sources]]
+quote = 'The `path` MUST contain only alphanumeric characters, MUST be case-sensitive,'
+lines = { "0.4" = [587, 588], "0.5" = [533, 534] }
+
+[[rules.YZ-WL-015.sources]]
+quote = 'The `path` MUST be case-sensitive,'
+lines = { "0.6" = [1680, 1680] }
+
+[rules.YZ-WL-016]
+slug = 'field-path-nonempty'
+level = 'MUST'
+summary = 'A field of view `path` must not be an empty string.'
+introduced = '0.6'
+
+[[rules.YZ-WL-016.sources]]
+quote = 'The `path` MUST NOT be an empty string'
+lines = { "0.6" = [1683, 1683] }
+
+# ------------------------------------------------------------------------------
+# YZ-BF
+# ------------------------------------------------------------------------------
+
+[rules.YZ-BF-001]
+slug = 'bf2raw-numbered-image-groups'
+level = 'MUST'
+summary = 'Without `series` metadata, bioformats2raw images must be groups numbered consecutively from 0.'
+introduced = '0.4'
+notes = 'yaozarrs discovers images by probing `0/`, `1/`, ... and stops at the first missing number.'
+
+[[rules.YZ-BF-001.sources]]
+quote = 'separate "multiscales" images MUST be stored in consecutively numbered groups starting from 0'
+lines = { "0.4" = [331, 331], "0.5" = [262, 262] }
+
+[[rules.YZ-BF-001.sources]]
+quote = 'separate `multiscales` images MUST be stored in consecutively numbered groups starting from 0'
+lines = { "0.6" = [377, 377] }
+
+[rules.YZ-BF-002]
+slug = 'bf2raw-series-paths'
+level = 'MUST'
+summary = "Each path in the OME group's \"series\" must point to an image group."
+introduced = '0.4'
+
+[[rules.YZ-BF-002.sources]]
+quote = '"series" MUST be a list of string objects, each of which is a path to an image group.'
+lines = { "0.4" = [328, 328], "0.5" = [259, 259] }
+
+[[rules.YZ-BF-002.sources]]
+quote = '`series` MUST be an array of string objects, each of which is a path to an image group.'
+lines = { "0.6" = [374, 374] }
+
+[rules.YZ-BF-003]
+slug = 'bf2raw-layout-3'
+level = 'MUST'
+summary = 'The top of a bioformats2raw hierarchy must have `"bioformats2raw.layout": 3`.'
+introduced = '0.4'
+
+[[rules.YZ-BF-003.sources]]
+quote = 'MUST have the value "3" for the "bioformats2raw.layout" key'
+lines = { "0.4" = [316, 316], "0.5" = [247, 247] }
+
+[[rules.YZ-BF-003.sources]]
+quote = 'MUST have the value `3` for the `bioformats2raw.layout` key'
+lines = { "0.6" = [362, 362] }
+
+[rules.YZ-BF-004]
+slug = 'bf2raw-series-strings'
+level = 'MUST'
+summary = '"series" must be a list of strings.'
+introduced = '0.4'
+notes = "yaozarrs also requires at least one entry; that error doesn't carry this code."
+
+[[rules.YZ-BF-004.sources]]
+quote = '"series" MUST be a list of string objects'
+lines = { "0.4" = [328, 328], "0.5" = [259, 259] }
+
+[[rules.YZ-BF-004.sources]]
+quote = '`series` MUST be an array of string objects'
+lines = { "0.6" = [374, 374] }
+
+[rules.YZ-BF-005]
+slug = 'bf2raw-plate-key-present'
+level = 'MUST'
+summary = 'A bioformats2raw top-level group that represents a plate must also have the `plate` key.'
+introduced = '0.4'
+notes = 'Whether a group "represents a plate" cannot be told from its metadata without the `plate` key, so a document can only break this rule by intent. When both keys are present, yaozarrs parses the group as a plate (the spec says `plate` "takes precedence").'
+
+[[rules.YZ-BF-005.sources]]
+quote = 'the "plate" key MUST also be present'
+lines = { "0.4" = [297, 297], "0.5" = [229, 229] }
+
+[[rules.YZ-BF-005.sources]]
+quote = 'the `plate` key MUST also be present'
+lines = { "0.6" = [344, 344] }
+
+[rules.YZ-BF-006]
+slug = 'bf2raw-ome-xml-present'
+level = 'SHOULD'
+summary = 'A bioformats2raw collection should have OME metadata for all of its images in `OME/METADATA.ome.xml`.'
+introduced = '0.4'
+notes = 'yaozarrs does not check for this file.'
+
+[[rules.YZ-BF-006.sources]]
+quote = 'SHOULD have OME metadata representing the entire collection of images in a file named "OME/METADATA.ome.xml"'
+lines = { "0.4" = [317, 317], "0.5" = [248, 248] }
+
+[[rules.YZ-BF-006.sources]]
+quote = 'SHOULD have OME metadata representing the entire collection of images in a file named `OME/METADATA.ome.xml`'
+lines = { "0.6" = [363, 363] }
+
+[rules.YZ-BF-007]
+slug = 'bf2raw-ome-xml-valid'
+level = 'MUST'
+summary = '`OME/METADATA.ome.xml` must adhere to the OME-XML specification.'
+introduced = '0.4'
+notes = 'yaozarrs does not read the OME-XML file.'
+
+[[rules.YZ-BF-007.sources]]
+quote = 'MUST adhere to the OME-XML specification'
+lines = { "0.4" = [318, 318], "0.5" = [249, 249], "0.6" = [364, 364] }
+
+[rules.YZ-BF-008]
+slug = 'bf2raw-ome-xml-metadata-only'
+level = 'MUST'
+summary = '`OME/METADATA.ome.xml` must use `<MetadataOnly/>` elements, not `<BinData/>`, `<BinaryOnly/>` or `<TiffData/>`.'
+introduced = '0.4'
+notes = 'yaozarrs does not read the OME-XML file.'
+
+[[rules.YZ-BF-008.sources]]
+quote = 'MUST use `<MetadataOnly/>` elements as opposed to `<BinData/>`, `<BinaryOnly/>` or `<TiffData/>`;'
+lines = { "0.4" = [319, 319], "0.5" = [250, 250], "0.6" = [365, 365] }
+
+[rules.YZ-BF-009]
+slug = 'bf2raw-plate-image-location'
+level = 'MUST'
+summary = 'If a bioformats2raw collection has `plate` metadata, its images must be at the locations the plate defines.'
+introduced = '0.4'
+notes = 'yaozarrs validates such a group as a plate, so the well and field of view path rules (e.g. YZ-PL-007, YZ-WL-003) are what it reports.'
+
+[[rules.YZ-BF-009.sources]]
+quote = 'If "plate" metadata is present, images MUST be located at the defined location.'
+lines = { "0.4" = [324, 324], "0.5" = [255, 255] }
+
+[[rules.YZ-BF-009.sources]]
+quote = 'If `plate` metadata is present, images MUST be located at the defined location.'
+lines = { "0.6" = [370, 370] }
+
+[rules.YZ-BF-010]
+slug = 'bf2raw-plate-series'
+level = 'SHOULD'
+summary = 'A bioformats2raw plate should also provide matching `series` metadata.'
+introduced = '0.4'
+notes = 'The `series` metadata is for tools that are unaware of the plate specification. yaozarrs does not check for it.'
+
+[[rules.YZ-BF-010.sources]]
+quote = 'Matching "series" metadata (as described next) SHOULD be provided for tools that are unaware of the "plate" specification.'
+lines = { "0.4" = [325, 325], "0.5" = [256, 256] }
+
+[[rules.YZ-BF-010.sources]]
+quote = 'Matching `series` metadata (as described next) SHOULD be provided for tools that are unaware of the `plate` specification.'
+lines = { "0.6" = [371, 371] }
+
+[rules.YZ-BF-011]
+slug = 'bf2raw-series-order'
+level = 'MUST'
+summary = 'The order of the `series` paths must match the order of the `Image` elements in `OME/METADATA.ome.xml`, if that file is provided.'
+introduced = '0.4'
+notes = 'yaozarrs does not read the OME-XML file.'
+
+[[rules.YZ-BF-011.sources]]
+quote = 'The order of the paths MUST match the order of the "Image" elements in "OME/METADATA.ome.xml" if provided.'
+lines = { "0.4" = [329, 329], "0.5" = [260, 260] }
+
+[[rules.YZ-BF-011.sources]]
+quote = 'The order of the paths MUST match the order of the `Image` elements in `OME/METADATA.ome.xml` if provided.'
+lines = { "0.6" = [375, 375] }
+
+[rules.YZ-BF-012]
+slug = 'bf2raw-image-per-ome-xml-image'
+level = 'MUST'
+summary = 'Each bioformats2raw `multiscales` group must represent exactly one OME-XML `Image`, in the order of the `series` index or the group numbers.'
+introduced = '0.4'
+notes = 'yaozarrs does not read the OME-XML file.'
+
+[[rules.YZ-BF-012.sources]]
+quote = 'Every "multiscales" group MUST represent exactly one OME-XML "Image" in the same order as either the series index or the group numbers.'
+lines = { "0.4" = [332, 332], "0.5" = [263, 263] }
+
+[[rules.YZ-BF-012.sources]]
+quote = 'Every `multiscales` group MUST represent exactly one OME-XML `Image` in the same order as either the series index or the group numbers.'
+lines = { "0.6" = [378, 378] }
+
+[rules.YZ-BF-013]
+slug = 'bf2raw-reader-show-all-images'
+level = 'SHOULD'
+summary = 'Readers should make users aware that a bioformats2raw collection has more than one image, rather than only opening the first.'
+introduced = '0.4'
+checkable = false
+
+[[rules.YZ-BF-013.sources]]
+quote = 'SHOULD make users aware of the presence of more than one image (i.e. SHOULD NOT default to only opening the first image);'
+lines = { "0.4" = [335, 335], "0.5" = [266, 266], "0.6" = [381, 381] }
+
+# ------------------------------------------------------------------------------
+# YZ-LB
+# ------------------------------------------------------------------------------
+
+[rules.YZ-LB-001]
+slug = 'labels-group-metadata'
+level = 'MUST'
+summary = 'A "labels" group must be a group whose metadata contains the key `labels`.'
+introduced = '0.4'
+notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too."
+
+[[rules.YZ-LB-001.sources]]
+quote = 'The OME-Zarr Metadata in the `zarr.json` file associated with the "labels" group MUST contain a JSON object with the key `labels`'
+lines = { "0.5" = [400, 400] }
+
+[[rules.YZ-LB-001.sources]]
+quote = "The special group \"labels\" found under an image Zarr contains the key `labels`"
+lines = { "0.4" = [456, 456] }
+implied = true
+
+[[rules.YZ-LB-001.sources]]
+quote = 'The OME-Zarr Metadata in the `zarr.json` file associated with the `labels` group MUST contain a JSON object with the key `labels`'
+lines = { "0.6" = [1492, 1492] }
+
+[rules.YZ-LB-002]
+slug = 'labels-paths-exist'
+level = 'MUST'
+summary = 'Each path listed in `labels` must point to a label image group.'
+introduced = '0.4'
+notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too. In 0.5 and 0.6, the keyword in the quoted sentence is the `labels` key's (YZ-LB-001): that each path points to a label image is implied by \"paths to the labeled multiscale image(s)\"."
+
+[[rules.YZ-LB-002.sources]]
+quote = 'MUST contain a JSON object with the key `labels`, whose value is a JSON array of paths to the labeled multiscale image(s).'
+lines = { "0.5" = [400, 401], "0.6" = [1492, 1493] }
+implied = true
+
+[[rules.YZ-LB-002.sources]]
+quote = "contains the key `labels` containing the paths to label objects which can be found underneath the group"
+lines = { "0.4" = [456, 457] }
+implied = true
+
+[rules.YZ-LB-003]
+slug = 'label-pixels-integer'
+level = 'MUST'
+summary = 'Label image arrays must have an integer data type.'
+introduced = '0.4'
+notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too. In 0.4 it appears only in a comment in the example directory layout (\"only integer values are supported\")."
+
+[[rules.YZ-LB-003.sources]]
+quote = 'The pixels of the label images MUST be integer data types'
+lines = { "0.5" = [396, 396] }
+
+[[rules.YZ-LB-003.sources]]
+quote = "Each multiscale level is stored as a separate Zarr array, as above, but only integer values"
+lines = { "0.4" = [187, 187] }
+implied = true
+
+[[rules.YZ-LB-003.sources]]
+quote = 'The pixels of the label images MUST be integer data types,'
+lines = { "0.6" = [1486, 1486] }
+
+[rules.YZ-LB-004]
+slug = 'labels-intermediate-groups-no-metadata'
+level = 'MUST'
+summary = 'Intermediate groups between a "labels" group and its label images must not contain metadata.'
+introduced = '0.5'
+notes = 'Presumably OME-Zarr metadata: every Zarr v3 group has a `zarr.json`.'
+
+[[rules.YZ-LB-004.sources]]
+quote = 'and the images within it are allowed, but these MUST NOT contain metadata.'
+lines = { "0.5" = [397, 398], "0.6" = [1488, 1489] }
+
+[rules.YZ-LB-005]
+slug = 'labels-list-all-label-images'
+level = 'SHOULD'
+summary = 'All label images in a "labels" group should be listed in its `labels` metadata.'
+introduced = '0.5'
+notes = 'In 0.4, "Unlisted groups MAY be labels" only allows label images that are not listed.'
+
+[[rules.YZ-LB-005.sources]]
+quote = 'All label images SHOULD be listed within this metadata file.'
+lines = { "0.5" = [401, 401], "0.6" = [1494, 1494] }
+
+[rules.YZ-LB-006]
+slug = 'labels-parent-image-multiscales'
+level = 'MUST'
+summary = 'The image group that contains a "labels" group must implement the multiscales specification.'
+introduced = '0.4'
+notes = 'Before 0.6 the spec only says that the "labels" group is found under (0.4) or nested within (0.5) an image group, without a keyword.'
+
+[[rules.YZ-LB-006.sources]]
+quote = '- This image group MUST implement the [multiscales](#multiscales-md) specification.'
+lines = { "0.6" = [1478, 1478] }
+
+[[rules.YZ-LB-006.sources]]
+quote = 'The "labels" group is nested within an image group, at the same level of the Zarr hierarchy as the resolution levels for the original image.'
+implied = true
+lines = { "0.5" = [395, 395] }
+
+[[rules.YZ-LB-006.sources]]
+quote = 'The special group "labels" found under an image Zarr'
+implied = true
+lines = { "0.4" = [456, 456] }
+
+# ------------------------------------------------------------------------------
+# YZ-IL
+# ------------------------------------------------------------------------------
+
+[rules.YZ-IL-001]
+slug = 'label-image-multiscales'
+level = 'MUST'
+summary = 'A label image must implement the multiscales specification.'
+introduced = '0.4'
+
+[[rules.YZ-IL-001.sources]]
+quote = '`image-label` groups MUST also contain `multiscales` metadata'
+lines = { "0.4" = [474, 474] }
+
+[[rules.YZ-IL-001.sources]]
+quote = 'The `zarr.json` file for the label image MUST implement the multiscales specification.'
+lines = { "0.5" = [417, 417], "0.6" = [1496, 1496] }
+
+[rules.YZ-IL-002]
+slug = 'label-datasets-count-matches-image'
+level = 'MUST'
+summary = 'A label image must have the same number of `datasets` (scale levels) as its image.'
+introduced = '0.4'
+notes = 'yaozarrs only reports label images with *fewer* datasets than the image.'
+
+[[rules.YZ-IL-002.sources]]
+quote = 'the two "datasets" series MUST have the same number of entries.'
+lines = { "0.4" = [474, 475] }
+
+[[rules.YZ-IL-002.sources]]
+quote = 'associated with the `datasets` key MUST have the same number of entries (scale levels) as the original unlabeled image.'
+lines = { "0.5" = [418, 418], "0.6" = [1497, 1497] }
+
+[rules.YZ-IL-003]
+slug = 'label-image-has-image-label'
+level = 'SHOULD'
+summary = 'A label image should contain `image-label` metadata.'
+introduced = '0.4'
+notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too. 0.4 goes further: a label image is defined as a group with `image-label`. #165 made it explicit as SHOULD; a maintainer there noted it \"was previously not explicitly specified\"."
+
+[[rules.YZ-IL-003.sources]]
+quote = 'SHOULD contain another key, `image-label`'
+lines = { "0.5" = [420, 420] }
+
+[[rules.YZ-IL-003.sources]]
+quote = "Groups containing the `image-label` dictionary represent an image segmentation"
+lines = { "0.4" = [472, 472] }
+implied = true
+
+[[rules.YZ-IL-003.sources]]
+quote = 'In addition to the `multiscales` key, the OME-Zarr Metadata in this image-level `zarr.json` file SHOULD contain another key, `image-label`'
+lines = { "0.6" = [1499, 1499] }
+
+[rules.YZ-IL-004]
+slug = 'label-source-image-is-image-group'
+level = 'MUST'
+summary = 'An `image-label` `source.image` path must point to an image group.'
+introduced = "0.4"
+notes = "0.4 states this without an RFC 2119 keyword. The 0.5 wording comes from [ome/ngff#165](https://github.com/ome/ngff/pull/165), a labels rewrite that set out to \"keep the actual spec the same, and just improve the language explaining it\", so the requirement is taken to apply to 0.4 too."
+
+[[rules.YZ-IL-004.sources]]
+quote = 'This object MAY include a key `image`, whose value MUST be a string specifying the relative path to a Zarr image group.'
+lines = { "0.5" = [441, 441], "0.6" = [1525, 1525] }
+
+[[rules.YZ-IL-004.sources]]
+quote = "it MAY include a key `image` whose value MUST be a string specifying the relative path to a Zarr image group."
+lines = {"0.4" = [497, 498]}
+
+[rules.YZ-IL-005]
+slug = 'image-label-colors-array'
+level = 'MUST'
+summary = '`image-label` `colors` must be an array.'
+introduced = "0.4"
+notes = "An empty list is YZ-IL-014, and identical entries are YZ-IL-015."
+
+[[rules.YZ-IL-005.sources]]
+quote = 'a `colors` key, whose value MUST be a JSON array'
+lines = { "0.5" = [422, 423], "0.6" = [1503, 1504] }
+
+[[rules.YZ-IL-005.sources]]
+quote = "The `image-label` dictionary SHOULD contain a `colors` key whose value MUST be a list of JSON objects describing the unique label values."
+lines = {"0.4" = [477, 478]}
+
+[rules.YZ-IL-006]
+slug = 'label-color-value-present'
+level = 'MUST'
+summary = 'Each entry in `colors` must contain `label-value`.'
+introduced = "0.4"
+
+[[rules.YZ-IL-006.sources]]
+quote = 'Each of these objects MUST contain the `label-value` key'
+lines = { "0.5" = [427, 427], "0.6" = [1508, 1508] }
+
+[[rules.YZ-IL-006.sources]]
+quote = "Each color object MUST contain the `label-value` key"
+lines = {"0.4" = [478, 479]}
+
+[rules.YZ-IL-007]
+slug = 'label-color-value-integer'
+level = 'MUST'
+summary = "A `colors` entry's `label-value` must be an integer."
+introduced = "0.4"
+notes = "The prose and the JSON schema disagree: `label.schema` types it as `number` in every version. The prose wins, so yaozarrs requires an integer (a float with no fractional part, like `2.0`, is read as one)."
+
+[[rules.YZ-IL-007.sources]]
+quote = 'whose value MUST be the integer corresponding to a particular label'
+lines = { "0.5" = [427, 428], "0.6" = [1508, 1508] }
+
+[[rules.YZ-IL-007.sources]]
+quote = "`label-value` key whose value MUST be an integer specifying the pixel value for that label. It MAY contain an `rgba` key"
+lines = {"0.4" = [479, 480]}
+
+[[rules.YZ-IL-007.sources]]
+schema = 'label.schema'
+pointer = '/properties/image-label/properties/colors/items/properties/label-value/type'
+value = 'number'
+lines = { "0.4" = [19, 19] }
+
+[[rules.YZ-IL-007.sources]]
+schema = 'label.schema'
+pointer = '/$defs/image-label/properties/colors/items/properties/label-value/type'
+value = 'number'
+lines = { "0.5" = [40, 40], "0.6" = [40, 40] }
+
+[rules.YZ-IL-008]
+slug = 'label-color-rgba'
+level = 'MUST'
+summary = "A `colors` entry's `rgba`, if present, must be an array of four integers from 0 to 255."
+introduced = "0.4"
+
+[[rules.YZ-IL-008.sources]]
+quote = 'the objects in this array MAY contain an `rgba` key whose value MUST be an array of four integers between 0 and 255, inclusive.'
+lines = { "0.5" = [428, 429], "0.6" = [1509, 1510] }
+
+[[rules.YZ-IL-008.sources]]
+quote = "It MAY contain an `rgba` key whose value MUST be an array of four integers between 0 and 255"
+lines = {"0.4" = [480, 481]}
+
+[rules.YZ-IL-009]
+slug = 'image-label-properties-array'
+level = 'MUST'
+summary = '`image-label` `properties` must be an array of objects.'
+introduced = "0.4"
+notes = "An empty list is YZ-IL-016, and identical entries are YZ-IL-017."
+
+[[rules.YZ-IL-009.sources]]
+quote = 'the value of the `properties` key MUST be an array of JSON objects'
+lines = { "0.5" = [435, 435], "0.6" = [1517, 1517] }
+
+[[rules.YZ-IL-009.sources]]
+quote = "The `image-label` dictionary MAY contain a `properties` key whose value MUST be a list of JSON objects which also describes the unique label values."
+lines = {"0.4" = [488, 489]}
+
+[rules.YZ-IL-010]
+slug = 'label-property-value-present'
+level = 'MUST'
+summary = 'Each entry in `properties` must contain `label-value`.'
+introduced = "0.4"
+
+[[rules.YZ-IL-010.sources]]
+quote = 'Each object in the `properties` array MUST contain the `label-value` key'
+lines = { "0.5" = [436, 436], "0.6" = [1518, 1518] }
+
+[[rules.YZ-IL-010.sources]]
+quote = "Each property object MUST contain the `label-value` key"
+lines = {"0.4" = [489, 490]}
+
+[rules.YZ-IL-011]
+slug = 'label-property-value-integer'
+level = 'MUST'
+summary = "A `properties` entry's `label-value` must be an integer."
+introduced = "0.4"
+
+[[rules.YZ-IL-011.sources]]
+quote = 'whose value again MUST be an integer specifying the pixel value for that label'
+lines = { "0.5" = [436, 436], "0.6" = [1519, 1519] }
+
+[[rules.YZ-IL-011.sources]]
+quote = "Each property object MUST contain the `label-value` key whose value MUST be an integer"
+lines = {"0.4" = [489, 490]}
+
+[rules.YZ-IL-012]
+slug = 'image-label-source-object'
+level = 'MUST'
+summary = '`image-label` `source` must be an object.'
+introduced = "0.4"
+
+[[rules.YZ-IL-012.sources]]
+quote = 'The value of the `source` key MUST be a JSON object'
+lines = { "0.5" = [440, 440], "0.6" = [1524, 1524] }
+
+[[rules.YZ-IL-012.sources]]
+quote = "The `image-label` dictionary MAY contain a `source` key whose value MUST be a JSON object"
+lines = {"0.4" = [495, 496]}
+
+[rules.YZ-IL-013]
+slug = 'image-label-source-image-string'
+level = 'MUST'
+summary = '`image-label` `source.image`, if present, must be a string.'
+introduced = "0.4"
+
+[[rules.YZ-IL-013.sources]]
+quote = 'This object MAY include a key `image`, whose value MUST be a string'
+lines = { "0.5" = [441, 441], "0.6" = [1525, 1525] }
+
+[[rules.YZ-IL-013.sources]]
+quote = "it MAY include a key `image` whose value MUST be a string"
+lines = {"0.4" = [497, 497]}
+
+[rules.YZ-IL-014]
+slug = 'image-label-colors-nonempty'
+level = 'MUST'
+summary = '`image-label` `colors`, if present, must have at least one entry.'
+introduced = '0.5'
+
+[[rules.YZ-IL-014.sources]]
+schema = 'label.schema'
+pointer = '/$defs/image-label/properties/colors/minItems'
+value = 1
+lines = { "0.5" = [58, 58], "0.6" = [58, 58] }
+
+[rules.YZ-IL-015]
+slug = 'image-label-colors-unique'
+level = 'MUST'
+summary = '`image-label` `colors` must not contain identical entries.'
+introduced = '0.5'
+
+[[rules.YZ-IL-015.sources]]
+schema = 'label.schema'
+pointer = '/$defs/image-label/properties/colors/uniqueItems'
+value = true
+lines = { "0.5" = [59, 59], "0.6" = [59, 59] }
+
+[rules.YZ-IL-016]
+slug = 'image-label-properties-nonempty'
+level = 'MUST'
+summary = '`image-label` `properties`, if present, must have at least one entry.'
+introduced = '0.5'
+
+[[rules.YZ-IL-016.sources]]
+schema = 'label.schema'
+pointer = '/$defs/image-label/properties/properties/minItems'
+value = 1
+lines = { "0.5" = [76, 76], "0.6" = [76, 76] }
+
+[rules.YZ-IL-017]
+slug = 'image-label-properties-unique'
+level = 'MUST'
+summary = '`image-label` `properties` must not contain identical entries.'
+introduced = '0.5'
+
+[[rules.YZ-IL-017.sources]]
+schema = 'label.schema'
+pointer = '/$defs/image-label/properties/properties/uniqueItems'
+value = true
+lines = { "0.5" = [77, 77], "0.6" = [77, 77] }
+
+[rules.YZ-IL-018]
+slug = 'label-colors-display'
+level = 'SHOULD'
+summary = 'Readers should display labels using the colors in `colors`.'
+introduced = '0.5'
+checkable = false
+
+[[rules.YZ-IL-018.sources]]
+quote = 'Conforming readers SHOULD display labels using the colors specified by the `colors` JSON array, as follows.'
+lines = { "0.5" = [426, 426], "0.6" = [1506, 1506] }
+
+[rules.YZ-IL-019]
+slug = 'image-label-colors-present'
+level = 'SHOULD'
+summary = 'An `image-label` object should contain `colors`.'
+introduced = "0.4"
+
+[[rules.YZ-IL-019.sources]]
+quote = 'That `image-label` object SHOULD contain the following keys: first, a `colors` key'
+lines = { "0.5" = [422, 422] }
+
+[[rules.YZ-IL-019.sources]]
+quote = 'That `image-label` object SHOULD contain a `colors` key'
+lines = { "0.6" = [1503, 1503] }
+
+[[rules.YZ-IL-019.sources]]
+quote = "The `image-label` dictionary SHOULD contain a `colors` key"
+lines = {"0.4" = [477, 477]}
+
+[rules.YZ-IL-020]
+slug = 'image-label-version-present'
+level = 'SHOULD'
+summary = 'An `image-label` object should contain `version`.'
+introduced = "0.4"
+removed = '0.6'
+notes = 'yaozarrs accepts an `image-label` without `version`.'
+
+[[rules.YZ-IL-020.sources]]
+quote = 'That `image-label` object SHOULD contain the following keys: first, a `colors` key, whose value MUST be a JSON array describing color information for the unique label values. Second, a `version` key,'
+lines = { "0.5" = [422, 423] }
+
+[[rules.YZ-IL-020.sources]]
+quote = "The `image-label` dictionary SHOULD contain a `version` key"
+lines = {"0.4" = [501, 501]}
+
+[rules.YZ-IL-021]
+slug = 'image-label-version-string'
+level = 'MUST'
+summary = 'An `image-label` `version`, if present, must be a string.'
+introduced = "0.4"
+removed = '0.6'
+
+[[rules.YZ-IL-021.sources]]
+quote = 'Second, a `version` key, whose value MUST be a string specifying the version of the OME-Zarr `image-label` schema.'
+lines = { "0.5" = [423, 424] }
+
+[rules.YZ-IL-022]
+slug = 'label-colors-value-unique'
+level = 'MUST'
+summary = 'The `label-value`s in `colors` must be unique.'
+introduced = '0.4'
+removed = '0.5'
+notes = 'yaozarrs only rejects `colors` entries that are identical (YZ-IL-015 in later versions).'
+
+[[rules.YZ-IL-022.sources]]
+quote = 'All the values under the `label-value` key MUST be unique.'
+lines = { "0.4" = [482, 482] }
+
+[rules.YZ-IL-023]
+slug = 'label-colors-duplicate-last'
+level = 'SHOULD'
+summary = 'Readers that accept duplicate `label-value`s in `colors` should use only the last entry.'
+introduced = '0.4'
+removed = '0.5'
+checkable = false
+
+[[rules.YZ-IL-023.sources]]
+quote = 'Clients who choose to not throw an error SHOULD ignore all except the _last_ entry.'
+lines = { "0.4" = [482, 483] }
+
+# ------------------------------------------------------------------------------
+# YZ-SC
+# ------------------------------------------------------------------------------
+
+[[rules.YZ-IL-021.sources]]
+quote = "whose value MUST be a string specifying the version of the image-label specification."
+lines = {"0.4" = [501, 502]}
+
+[rules.YZ-SC-001]
+slug = 'scene-transforms-present'
+level = 'MUST'
+summary = 'A `scene` must contain `coordinateTransformations`.'
+introduced = '0.6'
+
+[[rules.YZ-SC-001.sources]]
+quote = 'The `scene` object MUST contain the field `coordinateTransformations`,'
+lines = { "0.6" = [1712, 1712] }
+
+[rules.YZ-SC-002]
+slug = 'scene-transforms-valid'
+level = 'MUST'
+summary = "A `scene`'s `coordinateTransformations` must be an array of valid transformations."
+introduced = '0.6'
+
+[[rules.YZ-SC-002.sources]]
+quote = 'whose value MUST be an array of valid [transformations](#trafo-types-md).'
+lines = { "0.6" = [1713, 1713] }
+
+[rules.YZ-SC-003]
+slug = 'scene-coordinate-systems-valid'
+level = 'MUST'
+summary = "A `scene`'s `coordinateSystems`, if present, must be an array of valid coordinate systems."
+introduced = '0.6'
+
+[[rules.YZ-SC-003.sources]]
+quote = 'whose values MUST be an array of valid [coordinate systems](#coordinate-systems-md).'
+lines = { "0.6" = [1715, 1715] }
+
+[rules.YZ-SC-004]
+slug = 'scene-transform-input-output'
+level = 'MUST'
+summary = 'Transformations in a `scene` must have an `input` and an `output`.'
+introduced = '0.6'
+
+[[rules.YZ-SC-004.sources]]
+quote = 'If used inside `scene` metadata, the `input` and `output` fields of `coordinateTransformations` MUST contain a json object,'
+lines = { "0.6" = [1717, 1717] }
+
+[rules.YZ-SC-005]
+slug = 'scene-transform-reference-name'
+level = 'MUST'
+summary = 'The `input` and `output` of a transformation in a `scene` must contain `name`.'
+introduced = '0.6'
+
+[[rules.YZ-SC-005.sources]]
+quote = 'which MUST contain the field `name` and MAY contain the field `path`.'
+lines = { "0.6" = [1718, 1718] }
+
+[rules.YZ-SC-006]
+slug = 'scene-transform-reference-path'
+level = 'MUST'
+summary = "A reference in a `scene` to a coordinate system in an image must have both `path` and `name`, so one without `path` must be in the scene's `coordinateSystems`."
+introduced = '0.6'
+
+[[rules.YZ-SC-006.sources]]
+quote = 'If `name` refers to a coordinate system in the multiscale image subgroup specified by `path`, both `path` and `name` MUST be provided.'
+lines = { "0.6" = [1729, 1730] }
+
+[rules.YZ-SC-007]
+slug = 'scene-transform-reference-resolves'
+level = 'MUST'
+summary = 'A reference in a `scene` must resolve to a coordinate system in the multiscale image subgroup at `path`.'
+introduced = '0.6'
+notes = "The 0.6 spec describes what these fields refer to without a keyword; a reference that doesn't resolve can't mean anything."
+
+[[rules.YZ-SC-007.sources]]
+quote = '**name** Refers to the name of a `coordinateSystem` either in the multiscale image subgroup specified by the path, or within the `scene` object itself.'
+implied = true
+lines = { "0.6" = [1720, 1722] }
+
+[rules.YZ-SC-008]
+slug = 'scene-transform-reference-keys'
+level = 'MUST'
+summary = 'The `input` and `output` of a transformation in a `scene` must contain only `name` and `path`.'
+introduced = '0.6'
+notes = 'The prose is silent; `scene.schema` sets `additionalProperties: false` here, unlike anywhere else.'
+
+[[rules.YZ-SC-008.sources]]
+schema = 'scene.schema'
+pointer = '/properties/ome/properties/scene/properties/coordinateTransformations/items/allOf/1/properties/input/additionalProperties'
+value = false
+lines = { "0.6" = [41, 41] }
+
+[[rules.YZ-SC-008.sources]]
+schema = 'scene.schema'
+pointer = '/properties/ome/properties/scene/properties/coordinateTransformations/items/allOf/1/properties/output/additionalProperties'
+value = false
+lines = { "0.6" = [51, 51] }
+
+[rules.YZ-SC-009]
+slug = 'scene-default-coordinate-system'
+level = 'SHOULD'
+summary = '''Readers that pick a default coordinate system for a `scene` should use the scene's first `coordinateSystems` entry, if present.'''
+introduced = '0.6'
+checkable = false
+notes = 'The spec says RECOMMENDED, which RFC 2119 defines as SHOULD.'
+
+[[rules.YZ-SC-009.sources]]
+quote = '''If they do so, it is RECOMMENDED that the scene's first entry under the `coordinateSystems` field is used as the default, if present.'''
+lines = { "0.6" = [1853, 1853] }
+
+[rules.YZ-SC-010]
+slug = 'scene-reference-coordinate-system-first'
+level = 'SHOULD'
+summary = '''A coordinate system that is a common reference for the others in a `scene` should be the scene's first `coordinateSystems` entry.'''
+introduced = '0.6'
+notes = 'The spec says RECOMMENDED, which RFC 2119 defines as SHOULD. Stated in a hint. Checking it would need to decide which coordinate system is the common reference.'
+
+[[rules.YZ-SC-010.sources]]
+quote = 'it is RECOMMENDED that this coordinate system be stored as the first coordinateSystems entry in the scene.'
+lines = { "0.6" = [1854, 1854] }
+
+# ------------------------------------------------------------------------------
+# YZ-GN
+# ------------------------------------------------------------------------------
+
+[rules.YZ-GN-001]
+slug = 'ome-version-present'
+level = 'MUST'
+summary = 'The `ome` object must contain a `version` key.'
+introduced = '0.5'
+notes = 'In 0.4, each multiscales object had its own version instead (YZ-MS-008). The 0.5 spec only says that the version is denoted by this attribute, without a keyword.'
+
+[[rules.YZ-GN-001.sources]]
+quote = 'object that MUST contain a `version` key,'
+lines = { "0.6" = [181, 181] }
+
+[[rules.YZ-GN-001.sources]]
+quote = 'The version of the OME-Zarr Metadata is denoted as a string in the `version` attribute within the `ome` namespace.'
+implied = true
+lines = { "0.5" = [161, 161] }
+
+[rules.YZ-GN-002]
+slug = 'json-no-comments'
+level = 'MUST'
+summary = 'JSON metadata must not contain comments.'
+introduced = '0.4'
+notes = '''The sentence explains the comments in the spec's own examples, but the requirement applies to real documents. Comments aren't valid JSON, so a JSON parser already rejects them.'''
+
+[[rules.YZ-GN-002.sources]]
+quote = 'However, these are only for clarity purposes and comments MUST NOT be included in JSON objects.'
+lines = { "0.4" = [118, 119], "0.5" = [43, 44], "0.6" = [43, 43] }
+
+[rules.YZ-GN-003]
+slug = 'ome-key-present'
+level = 'MUST'
+summary = 'The group `attributes` must contain the key `ome`.'
+introduced = '0.5'
+notes = 'The 0.5 spec only says that the metadata is stored under the `ome` key in `attributes`, without a keyword. 0.4 has no `ome` namespace (see [YZ-ZR-003](YZ-ZR-003.md)).'
+
+[[rules.YZ-GN-003.sources]]
+quote = 'The group `attributes` MUST contain a key `ome`.'
+lines = { "0.6" = [180, 180] }
+
+[[rules.YZ-GN-003.sources]]
+quote = 'In this file, the metadata is stored under the namespaced key `ome` in `attributes`.'
+implied = true
+lines = { "0.5" = [159, 160] }
+
+[rules.YZ-GN-004]
+slug = 'ome-value-object'
+level = 'MUST'
+summary = 'The value of the `ome` key must be a JSON object.'
+introduced = '0.6'
+
+[[rules.YZ-GN-004.sources]]
+quote = 'The value of the `ome` key MUST be a JSON object'
+lines = { "0.6" = [180, 181] }
+
+[rules.YZ-GN-005]
+slug = 'ome-version-consistent'
+level = 'MUST'
+summary = 'The OME-Zarr metadata version must be the same throughout a hierarchy.'
+introduced = '0.5'
+notes = '''There is no rule code for this yet. The storage validator parses child groups with the models of the root's version, so a child that declares another version fails as invalid metadata under the parent's rule (e.g. [YZ-PL-007](YZ-PL-007.md)).'''
+
+[[rules.YZ-GN-005.sources]]
+quote = 'The OME-Zarr Metadata version MUST be consistent within a hierarchy.'
+lines = { "0.5" = [163, 163], "0.6" = [178, 178] }
+
+[rules.YZ-GN-006]
+slug = 'ome-version-string'
+level = 'MUST'
+summary = 'The `version` of the `ome` object must be a string.'
+introduced = '0.5'
+notes = 'The 0.5 spec says the version "is denoted as a string", without a keyword.'
+
+[[rules.YZ-GN-006.sources]]
+quote = 'The version of the OME-Zarr Metadata is denoted as a string in the `version` attribute within the `ome` namespace.'
+implied = true
+lines = { "0.5" = [161, 161] }
+
+[[rules.YZ-GN-006.sources]]
+quote = 'the value of which MUST be a string specifying the version of the OME-Zarr specification'
+lines = { "0.6" = [181, 181] }
+
+# ------------------------------------------------------------------------------
+# YZ-ZR
+# ------------------------------------------------------------------------------
+
+[rules.YZ-ZR-001]
+slug = 'zarr-v2-hierarchy'
+level = 'MUST'
+summary = 'Arrays must be stored in a hierarchy as defined by the Zarr v2 specification.'
+introduced = '0.4'
+removed = '0.5'
+
+[[rules.YZ-ZR-001.sources]]
+quote = 'Arrays MUST be defined and stored in a hierarchical organization as defined by the [version 2 of the Zarr specification ](https://zarr.readthedocs.io/en/stable/spec/v2.html).'
+lines = { "0.4" = [131, 133] }
+
+[rules.YZ-ZR-002]
+slug = 'zarr-v3-hierarchy'
+level = 'MUST'
+summary = 'OME-Zarr must be stored in the Zarr format as defined by the Zarr v3 specification.'
+introduced = '0.5'
+supersedes = ['YZ-ZR-001']
+notes = 'Stated without a keyword ("OME-Zarr is implemented using the Zarr format as defined by the version 3 of the Zarr specification"). It replaces the Zarr v2 requirement of 0.4.'
+
+[[rules.YZ-ZR-002.sources]]
+quote = 'OME-Zarr is implemented using the Zarr format as defined by the [version 3 of the Zarr specification](https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html).'
+implied = true
+lines = { "0.5" = [50, 51], "0.6" = [47, 48] }
+
+[rules.YZ-ZR-003]
+slug = 'metadata-in-group-attributes'
+level = 'MUST'
+summary = 'OME-Zarr metadata must be stored as attributes of the corresponding Zarr groups.'
+introduced = '0.4'
+notes = 'From 0.5 the spec says, without a keyword, that the metadata is stored in the `zarr.json` files of the hierarchy, under `ome` in `attributes` (the `ome` key is [YZ-GN-003](YZ-GN-003.md)).'
+
+[[rules.YZ-ZR-003.sources]]
+quote = 'OME-NGFF metadata MUST be stored as attributes in the corresponding Zarr groups.'
+lines = { "0.4" = [134, 135] }
+
+[[rules.YZ-ZR-003.sources]]
+quote = 'The OME-Zarr Metadata is stored in the various `zarr.json` files throughout the above array hierarchy.'
+implied = true
+lines = { "0.5" = [158, 159], "0.6" = [177, 177] }
+
+[rules.YZ-ZR-004]
+slug = 'hcs-groups-above-images'
+level = 'MUST'
+summary = 'A high-content screening dataset must have three groups above the images: the well, the well row, and the plate.'
+introduced = '0.4'
+notes = 'yaozarrs checks the parts of this layout that plate metadata describes: that each well `path` is `<row>/<column>` ([YZ-PL-032](YZ-PL-032.md)) and points to a well group ([YZ-PL-007](YZ-PL-007.md)).'
+
+[[rules.YZ-ZR-004.sources]]
+quote = 'dataset. Three groups MUST be defined above the images:'
+lines = { "0.4" = [198, 198], "0.5" = [116, 116], "0.6" = [104, 104] }
+
+[rules.YZ-ZR-005]
+slug = 'hcs-well-group-implements-well'
+level = 'MUST'
+summary = 'In a high-content screening dataset, the group above the images must implement the well specification.'
+introduced = '0.4'
+notes = 'The storage validator reports a plate well `path` whose group has no valid well metadata under [YZ-PL-007](YZ-PL-007.md).'
+
+[[rules.YZ-ZR-005.sources]]
+quote = 'the group above the images defines the well and MUST implement the [well specification](#well-md).'
+lines = {   "0.6" = [106, 106] }
+
+[[rules.YZ-ZR-005.sources]]
+quote = "the group above the images defines the well and MUST implement the [well specification](#version0.4:well-md)."
+lines = {"0.4" = [200, 201]}
+
+[[rules.YZ-ZR-005.sources]]
+quote = "the group above the images defines the well and MUST implement the [well specification](#version0.5:well-md)."
+lines = {"0.5" = [118, 119]}
+
+[rules.YZ-ZR-006]
+slug = 'hcs-plate-group-implements-plate'
+level = 'MUST'
+summary = 'In a high-content screening dataset, the group above the well rows must implement the plate specification.'
+introduced = '0.4'
+
+[[rules.YZ-ZR-006.sources]]
+quote = 'collection of wells organized in rows and columns. It MUST implement the [plate specification](#plate-md)'
+lines = {   "0.6" = [109, 110] }
+
+[[rules.YZ-ZR-006.sources]]
+quote = "collection of wells organized in rows and columns. It MUST implement the [plate specification](#version0.4:plate-md)"
+lines = {"0.4" = [205, 206]}
+
+[[rules.YZ-ZR-006.sources]]
+quote = "collection of wells organized in rows and columns. It MUST implement the [plate specification](#version0.5:plate-md)"
+lines = {"0.5" = [123, 124]}
+
+[rules.YZ-ZR-007]
+slug = 'hcs-empty-row-absent'
+level = 'SHOULD'
+summary = 'A well row group should not be present if there are no images in the well row.'
+introduced = '0.4'
+
+[[rules.YZ-ZR-007.sources]]
+quote = 'A well row group SHOULD NOT be present if there are no images in the well row.'
+lines = { "0.4" = [208, 208], "0.5" = [126, 126], "0.6" = [112, 112] }
+
+[rules.YZ-ZR-008]
+slug = 'hcs-empty-well-absent'
+level = 'SHOULD'
+summary = 'A well group should not be present if there are no images in the well.'
+introduced = '0.4'
+
+[[rules.YZ-ZR-008.sources]]
+quote = 'A well group SHOULD NOT be present if there are no images in the well.'
+lines = { "0.4" = [209, 209], "0.5" = [127, 127], "0.6" = [113, 113] }
+
+[rules.YZ-ZR-009]
+slug = 'scene-group-implements-scene'
+level = 'MUST'
+summary = 'In a scene dataset, the group above the images must implement the scene specification.'
+introduced = '0.6'
+
+[[rules.YZ-ZR-009.sources]]
+quote = 'It MUST implement the [scene specification](#scene-md).'
+lines = { "0.6" = [142, 142] }
+
+# ------------------------------------------------------------------------------
+# YZ
+# ------------------------------------------------------------------------------
+
+[rules.YZ-001]
+slug = 'zarr-node-name-invalid'
+summary = 'A path used as a Zarr node name violates the Zarr v3 node-name rules.'
+severity = 'error'
+notes = 'See the [Zarr v3 node names](https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html#node-names) rules.'
+
+[rules.YZ-002]
+slug = 'zarr-node-name-risky'
+summary = 'A path used as a Zarr node name contains characters outside `[A-Za-z0-9._-]`, which can cause problems on some filesystems or in URLs.'
+severity = 'warning'
+notes = 'Set `YAOZARRS_ALLOW_RISKY_NODE_NAMES=1` to silence this warning.'
+
+[rules.YZ-003]
+slug = 'label-multiscales-count-matches-image'
+summary = 'A label image must have the same number of `multiscales` as its image.'
+severity = 'error'
+notes = "The spec doesn't state this directly, but it is needed to pair each label multiscale with an image multiscale for YZ-IL-002."
+
+[rules.YZ-004]
+slug = 'version-prerelease'
+summary = 'The document declares a pre-release of a spec version.'
+severity = 'warning'
+notes = "The 0.6 schema accepts the release candidate `0.6rc0`. `0.6.dev4` isn't in the schema, but much of the 0.6 data written so far uses it."
+
+[rules.YZ-005]
+slug = 'version-unsupported'
+summary = 'The document or store declares an OME-Zarr version that yaozarrs does not know.'
+severity = 'error'
+
+[rules.YZ-006]
+slug = 'transform-path-relative'
+summary = "The `path` of a transformation's parameters must be a relative path with no empty, `.` or `..` segments."
+severity = 'error'
+notes = 'The 0.6 spec only says "a location in this container". Like ngff-zarr, yaozarrs rejects paths whose meaning nothing defines.'
+

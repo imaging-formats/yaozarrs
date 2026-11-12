@@ -7,8 +7,14 @@ repo_name = "imaging-formats/yaozarrs"
 site_author = "Talley Lambert"
 copyright = "2026, Talley Lambert"
 extra_css = ["stylesheets/zensical.css", "stylesheets/extra.css"]
+# the generated rule pages (scripts/ngff_rules.py docs) are linked from rules/index.md
+not_in_nav = """
+/rules/YZ-*.md
+"""
 [[project.extra_javascript]]
 path = "javascripts/yaozarrs-animation.js"
+[[project.extra_javascript]]
+path = "javascripts/rule_filter.js"
 [[project.extra_javascript]]
 path = "javascripts/ome_explorer.js"
 type = "module"
