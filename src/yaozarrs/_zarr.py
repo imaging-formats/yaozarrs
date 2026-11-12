@@ -1066,12 +1066,15 @@ def open_group(
             "`pip install fsspec`."
         ) from e
 
+    path = ""
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
     elif hasattr(uri, "store"):
         # Handle both zarr v2 and v3 Group objects
         # v3: str(group.store) returns a URI like "file:///path"
         # v2: group.store.path returns the directory path
+        # Either way, that's the store root: the group's location in it is `.path`
+        path = getattr(uri, "path", "") or ""
         if hasattr(uri.store, "path"):
             # Zarr v2: DirectoryStore has .path attribute
             uri = uri.store.path
@@ -1099,7 +1102,7 @@ def open_group(
     if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
 
-    return _open_group_at(mapper)
+    return _open_group_at(mapper, path)
 
 
 # OME metadata classes of each kind, across spec versions
