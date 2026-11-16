@@ -150,7 +150,7 @@ def test_valid_at_every_write(
     for module, name in [
         (_groups, "_write_group_json"),
         (_builders, "_write_group_json"),
-        (_builders, "_write_to_array"),
+        (_builders, "_write_to_arrays"),
         (_arrays, "_create_array_zarr"),
     ]:
         monkeypatch.setattr(module, name, checking(getattr(module, name)))
@@ -176,16 +176,16 @@ def test_written_series_has_data_when_listed(tmp_path: Path, ver: Any) -> None:
     models, w = ver
     dest = tmp_path / "out.zarr"
     seen: list[list[str] | None] = []
-    original = _arrays._write_to_array
+    original = _arrays._write_to_arrays
 
-    def _write_to_array(*args: Any, **kwargs: Any) -> None:
+    def _write_to_arrays(*args: Any, **kwargs: Any) -> None:
         seen.append(_listing(dest) if (dest / "OME" / "zarr.json").exists() else None)
         original(*args, **kwargs)
 
     builder = w.Bf2RawBuilder(dest, writer=WRITERS[0])
     builder.write_image("0", _image(models), np.ones((16, 16), "uint8"))
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(_builders, "_write_to_array", _write_to_array)
+        mp.setattr(_builders, "_write_to_arrays", _write_to_arrays)
         builder.write_image("1", _image(models), np.ones((16, 16), "uint8"))
     assert seen == [["0"]]  # ("1" wasn't listed yet while its data was written)
 
@@ -199,7 +199,7 @@ def test_failure_cleans_up(tmp_path: Path, ver: Any, writer: str) -> None:
 
     with pytest.MonkeyPatch.context() as mp:
         # (e.g. Ctrl-C while writing the data)
-        mp.setattr(_builders, "_write_to_array", Mock(side_effect=KeyboardInterrupt))
+        mp.setattr(_builders, "_write_to_arrays", Mock(side_effect=KeyboardInterrupt))
         with pytest.raises(KeyboardInterrupt):
             builder.write_image("1", _image(models), np.ones((16, 16), "uint8"))
     assert _snapshot(dest) == before
@@ -243,7 +243,7 @@ def test_failed_first_series_leaves_nothing(tmp_path: Path, ver: Any) -> None:
     images = {"s": (_image(models), np.ones((16, 16), "uint8"))}
     with pytest.MonkeyPatch.context() as mp:
         # (e.g. Ctrl-C while writing the data)
-        mp.setattr(_builders, "_write_to_array", Mock(side_effect=KeyboardInterrupt))
+        mp.setattr(_builders, "_write_to_arrays", Mock(side_effect=KeyboardInterrupt))
         with pytest.raises(KeyboardInterrupt):
             w.write_bioformats2raw(dest, images, writer=WRITERS[0], overwrite=True)
     assert not dest.exists()
@@ -319,7 +319,7 @@ def test_extend_existing_collection(tmp_path: Path, ver: Any) -> None:
         builder.prepare_series("0", _image(models), SPEC_2D)
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(_builders, "_write_to_array", Mock(side_effect=KeyboardInterrupt))
+        mp.setattr(_builders, "_write_to_arrays", Mock(side_effect=KeyboardInterrupt))
         with pytest.raises(KeyboardInterrupt):
             builder.write_image("x", _image(models), np.ones((16, 16), "uint8"))
     assert _snapshot(dest) == before  # (a failure never removes the collection)

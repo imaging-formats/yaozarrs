@@ -8,10 +8,11 @@ import itertools
 import math
 import sys
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
+    from contextlib import AbstractContextManager
     from pathlib import Path
     from typing import Literal, TypeAlias
 
@@ -270,45 +271,56 @@ class _TensorStoreTarget:
         self._array[key].write(value).result()
 
 
-def _write_to_array(array: Any, data: ArrayLike, *, progress: bool) -> None:
-    """Write data to an already-created array (zarr, tensorstore, or custom)."""
-    is_dask = "dask" in sys.modules and hasattr(data, "compute")
-    if is_dask:
-        import dask.array as da
+def _progress(progress: bool) -> AbstractContextManager[Any]:
+    """A dask progress bar, if `progress`, else a context that does nothing."""
+    if progress:
+        from dask.diagnostics.progress import ProgressBar
 
-        dask_data = cast("da.Array", data)
+        return ProgressBar()
+    return nullcontext()
 
-        if progress:
-            from dask.diagnostics.progress import ProgressBar
 
-            ctx = ProgressBar()
-        else:
-            ctx = nullcontext()
+def _write_to_arrays(
+    arrays: Iterable[Any], data: Sequence[ArrayLike], *, progress: bool
+) -> None:
+    """Write each of `data` to its already-created array (zarr, tensorstore, custom).
 
-        with ctx:
+    Dask data is stored all at once, so that levels computed from the same source
+    (e.g. a pyramid) compute it once, rather than once per level.
+    """
+    sources: list[da.Array] = []
+    targets: list[Any] = []
+    for array, values in zip(arrays, data, strict=True):
+        if "dask" in sys.modules and hasattr(values, "compute"):
             # With lock=False, dask chunks must not split a write unit (shard, else
             # chunk): concurrent read-modify-writes of the same unit would race, and
             # the last writer wins (losing data).
             if _is_loaded_instance(array, "zarr", "Array"):
                 write_unit = getattr(array, "shards", None) or array.chunks
-                dask_data = _align_dask_chunks(dask_data, write_unit)
-                da.store(dask_data, array, lock=False)  # ty: ignore[invalid-argument-type]
-                return
+                sources.append(_align_dask_chunks(values, write_unit))
+                targets.append(array)
+                continue
             if _is_loaded_instance(array, "tensorstore", "TensorStore"):
                 # (block by block, rather than computing the whole array first)
                 write_unit = tuple(array.chunk_layout.write_chunk.shape)
-                dask_data = _align_dask_chunks(dask_data, write_unit)
-                target = _TensorStoreTarget(array)
-                da.store(dask_data, target, lock=False)  # ty: ignore[invalid-argument-type]
-                return
+                sources.append(_align_dask_chunks(values, write_unit))
+                targets.append(_TensorStoreTarget(array))
+                continue
             # The write unit of any other array is unknown (custom arrays may not
             # even expose one), so concurrent chunk writes could lose data.
-            data = dask_data.compute()
+            with _progress(progress):
+                values = values.compute()
 
-    if _is_loaded_instance(array, "tensorstore", "TensorStore"):
-        array[:].write(data).result()
-    else:
-        array[:] = data
+        if _is_loaded_instance(array, "tensorstore", "TensorStore"):
+            array[:].write(values).result()
+        else:
+            array[:] = values
+
+    if sources:
+        import dask.array as da
+
+        with _progress(progress):
+            da.store(sources, targets, lock=False)  # ty: ignore[invalid-argument-type]
 
 
 # ######################## Array Writing Functions #############################
