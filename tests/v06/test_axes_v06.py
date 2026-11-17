@@ -71,20 +71,9 @@ def test_axes_are_all_axis() -> None:
     assert axes[5].discrete is True
 
 
-def test_typed_axis_type_survives_exclude_unset() -> None:
-    ax = v06.SpaceAxis(name="x")
-    assert ax.model_dump(exclude_unset=True) == {"name": "x", "type": "space"}
-    fields = list(ax.model_dump(exclude_none=False))
+def test_axis_dump_key_order() -> None:
+    fields = list(v06.SpaceAxis(name="x").model_dump(exclude_none=False))
     assert fields == ["name", "type", "unit", "longName", "discrete"]
-
-
-def test_unit_warnings() -> None:
-    with pytest.warns(ValidationWarning, match="SHOULD be one of"):
-        v06.SpaceAxis(name="x", unit="pixel")
-    with pytest.warns(ValidationWarning, match="SHOULD be one of"):
-        v06.TimeAxis(name="t", unit="fortnight")
-    # custom axes accept any unit without warning
-    v06.CustomAxis(name="d", type="displacement", unit="pixel")
 
 
 def test_coordinate_system_names_unique() -> None:

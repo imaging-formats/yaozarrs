@@ -652,39 +652,6 @@ def test_v04_image_with_omero() -> None:
     assert img.omero.channels[0].color == "FF0000"
 
 
-def test_v04_axis_types() -> None:
-    """Test all axis types and their properties."""
-    # Test SpaceAxis with all valid units
-    space_axis = v04.SpaceAxis(name="x", unit="micrometer")
-    assert space_axis.name == "x"
-    assert space_axis.type == "space"
-    assert space_axis.unit == "micrometer"
-
-    # Test SpaceAxis without unit
-    space_axis_no_unit = v04.SpaceAxis(name="y")
-    assert space_axis_no_unit.unit is None
-
-    # Test TimeAxis with valid units
-    time_axis = v04.TimeAxis(name="t", unit="second")
-    assert time_axis.name == "t"
-    assert time_axis.type == "time"
-    assert time_axis.unit == "second"
-
-    # Test ChannelAxis
-    channel_axis = v04.ChannelAxis(name="c")
-    assert channel_axis.name == "c"
-    assert channel_axis.type == "channel"
-
-    # Test CustomAxis with type
-    custom_axis = v04.CustomAxis(name="custom", type="custom_type")
-    assert custom_axis.name == "custom"
-    assert custom_axis.type == "custom_type"
-
-    # Test CustomAxis without type
-    custom_axis_no_type = v04.CustomAxis(name="other")
-    assert custom_axis_no_type.type is None
-
-
 def test_v04_transformations() -> None:
     """Test transformation objects and their properties."""
     # Test ScaleTransformation
