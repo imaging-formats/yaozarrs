@@ -2,11 +2,12 @@
 
 import os
 import re
-import warnings
 from functools import partial
 from typing import Annotated, Any, TypeAlias
 
 from pydantic import AfterValidator, BeforeValidator
+
+from yaozarrs._errors import warn
 
 BAD_NODE_RE = re.compile(r"^(?:|\.+|__.*|.*\/.*)$")
 """Regular expression matching invalid Zarr node names.
@@ -56,13 +57,12 @@ def validate_node_name(
         risky_chars = re.findall(r"[^A-Za-z0-9._-]", part)
         if risky_chars and not os.getenv("YAOZARRS_ALLOW_RISKY_NODE_NAMES"):
             for_field = f" on field '{field_name}'" if field_name else ""
-            warnings.warn(
+            warn(
                 f"The name {part!r}{for_field} contains potentially risky characters "
                 f"when used as a zarr node: {set(risky_chars)}.\nConsider using only "
                 "alphanumeric characters, dots (.), underscores (_), or hyphens (-) to "
                 "avoid issues on some filesystems or when used in URLs. "
                 "Set YAOZARRS_ALLOW_RISKY_NODE_NAMES=1 to suppress this warning.",
-                UserWarning,
                 stacklevel=3,
             )
     return path
@@ -95,13 +95,12 @@ def _warn_non_spec_fov_name(path: Any) -> str:
 
     risky_chars = re.findall(r"[^A-Za-z0-9]", _path)
     if risky_chars and not os.getenv("YAOZARRS_IGNORE_RISKY_FOV_NAMES"):
-        warnings.warn(
+        warn(
             f"The FieldOfView.path {_path!r} contains characters outside of the NGFF "
             f"spec ([A-Za-z0-9]): {set(risky_chars)}.\nWhile yaozarrs DOES allow these "
             "characters, they are not strictly spec-compliant and may cause "
             "compatibility issues with strict NGFF-compliant tools or libraries.\n"
             "See https://github.com/ome/ngff-spec/pull/71.",
-            UserWarning,
             stacklevel=3,
         )
 

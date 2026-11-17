@@ -120,6 +120,9 @@ ignore = [
     "D401", # First line should be in imperative mood (remove to opt in)
 ]
 
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"warnings.warn".msg = "for validation warnings use `yaozarrs._errors.warn` (collected by `validate_zarr_store`); for other categories, add `# noqa: TID251`"
+
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["D", "S"]
 "tests/test_realworld.py" = ["E501"]

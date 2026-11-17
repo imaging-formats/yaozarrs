@@ -1,5 +1,4 @@
 import math
-import warnings
 from typing import Annotated, Any, Literal, NoReturn, Self, TypeAlias
 
 from annotated_types import MinLen
@@ -12,7 +11,7 @@ from pydantic import (
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._image import require_inline_or_path
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 from yaozarrs._types import duplicates
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
@@ -164,10 +163,9 @@ class ScaleTransformation(_TransformBase):
         # (NOTE: the schema requires values > 0, but the prose allows negative
         # values, i.e. axis flips, so we follow the prose.)
         if 0 in v:
-            warnings.warn(
+            warn(
                 f"Scale values SHOULD be non-zero (got {v}); a zero scale is not "
                 "invertible.",
-                ValidationWarning,
                 stacklevel=2,
             )
         return v
@@ -306,11 +304,10 @@ class BijectionTransformation(_TransformBase):
         for direction in ("forward", "inverse"):
             t = getattr(self, direction)
             if _is_closed_form_invertible(t):
-                warnings.warn(
+                warn(
                     f"bijection {direction} transformation ({t.type!r}) is "
                     "closed-form invertible; each direction SHOULD be a type that "
                     "is not.",
-                    ValidationWarning,
                     stacklevel=2,
                 )
         return self
