@@ -55,8 +55,8 @@ def test_parsed_axes_are_all_axis() -> None:
 @VERSIONS
 def test_constructors_set_only_given_fields(v: ModuleType) -> None:
     assert v.SpaceAxis(name="x").model_fields_set == {"name", "type"}
-    custom = v.CustomAxis(name="x").model_dump(exclude_unset=True, exclude_none=False)
-    assert custom == {"name": "x"}
+    channel = v.ChannelAxis(name="c").model_dump(exclude_unset=True, exclude_none=False)
+    assert channel == {"name": "c", "type": "channel"}
     # (the type isn't a default, so it's always dumped)
     assert v.SpaceAxis(name="x").model_dump(exclude_defaults=True)["type"] == "space"
 
@@ -68,9 +68,10 @@ def test_constructor_rejects_other_type(v: ModuleType) -> None:
 
 
 @VERSIONS
-def test_custom_axis_of_a_typed_type(v: ModuleType) -> None:
-    # (just an axis of that type: a typed axis isn't a different class anymore)
-    assert v.CustomAxis(name="y", type="space") == v.SpaceAxis(name="y")
+def test_custom_axis_is_deprecated(v: ModuleType) -> None:
+    with pytest.warns(DeprecationWarning, match="use `Axis"):
+        ax = v.CustomAxis(name="a", type="angle")
+    assert ax == v.Axis(name="a", type="angle")
 
 
 def test_v06_constructor_fields() -> None:

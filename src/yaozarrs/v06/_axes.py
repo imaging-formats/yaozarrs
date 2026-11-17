@@ -4,6 +4,7 @@ from typing import Annotated, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import AfterValidator, Field, model_validator
+from typing_extensions import deprecated
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._axis import build_axis
@@ -32,8 +33,8 @@ AxisType: TypeAlias = Literal[
 class Axis(_BaseModel):
     """An axis of a coordinate system.
 
-    `SpaceAxis`, `TimeAxis`, `ChannelAxis` and `CustomAxis` build one with the `type`
-    filled in (and, for IDEs, the units the spec recommends for that type).
+    `SpaceAxis`, `TimeAxis` and `ChannelAxis` build one with the `type` filled in
+    (and, for IDEs, the units the spec recommends for that type).
     """
 
     # MUST contain the field `name` ... The value MUST be a non-empty string.
@@ -102,6 +103,7 @@ def ChannelAxis(
     return build_axis(Axis, "channel", name=name, **fields)
 
 
+@deprecated("`CustomAxis` is deprecated: use `Axis` instead (it's the same).")
 def CustomAxis(
     *,
     name: str,
@@ -110,7 +112,7 @@ def CustomAxis(
     longName: str | None = None,
     discrete: bool | None = None,
 ) -> Axis:
-    """An `Axis` of any other type (e.g. "array", "coordinate", "displacement")."""
+    """Deprecated: the same as [`Axis`][yaozarrs.v06.Axis] (use that instead)."""
     fields = {"type": type, "unit": unit, "longName": longName, "discrete": discrete}
     return build_axis(Axis, None, name=name, **fields)
 

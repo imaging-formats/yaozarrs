@@ -19,15 +19,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from yaozarrs.v05 import (
-    ChannelAxis,
-    Dataset,
-    Image,
-    Multiscale,
-    ScaleTransformation,
-    SpaceAxis,
-    TimeAxis,
-)
+from yaozarrs.v05 import Axis, Dataset, Image, Multiscale, ScaleTransformation
 from yaozarrs.write.v05 import write_image
 
 if TYPE_CHECKING:
@@ -60,11 +52,11 @@ image = Image(
     multiscales=[
         Multiscale(
             axes=[
-                TimeAxis(name="t"),
-                ChannelAxis(name="c"),
-                SpaceAxis(name="z", unit="micrometer"),
-                SpaceAxis(name="y", unit="micrometer"),
-                SpaceAxis(name="x", unit="micrometer"),
+                Axis(name="t", type="time"),
+                Axis(name="c", type="channel"),
+                Axis(name="z", type="space", unit="micrometer"),
+                Axis(name="y", type="space", unit="micrometer"),
+                Axis(name="x", type="space", unit="micrometer"),
             ],
             datasets=[
                 Dataset(

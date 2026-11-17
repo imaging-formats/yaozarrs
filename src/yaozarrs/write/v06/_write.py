@@ -672,8 +672,8 @@ def write_scene(
     >>> world = v06.CoordinateSystem(
     ...     name="world",
     ...     axes=[
-    ...         v06.SpaceAxis(name="y", unit="micrometer"),
-    ...         v06.SpaceAxis(name="x", unit="micrometer"),
+    ...         v06.Axis(name="y", type="space", unit="micrometer"),
+    ...         v06.Axis(name="x", type="space", unit="micrometer"),
     ...     ],
     ... )
     >>> scene = v06.Scene(

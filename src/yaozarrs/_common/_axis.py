@@ -4,6 +4,7 @@ from typing import Annotated, Any, Literal, Self, TypeAlias, TypeVar
 
 from annotated_types import Len
 from pydantic import AfterValidator, Field, model_validator
+from typing_extensions import deprecated
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UNIQUE_ITEMS
@@ -68,8 +69,9 @@ def ChannelAxis(
     return build_axis(Axis, "channel", name=name, type=type, unit=unit)
 
 
+@deprecated("`CustomAxis` is deprecated: use `Axis` instead (it's the same).")
 def CustomAxis(*, name: str, type: str | None = None, unit: str | None = None) -> Axis:
-    """An `Axis` of any other type (or none)."""
+    """Deprecated: the same as [`Axis`][yaozarrs.v05.Axis] (use that instead)."""
     return build_axis(Axis, None, name=name, type=type, unit=unit)
 
 
