@@ -1323,7 +1323,7 @@ This bioformats2raw layout described in the NGFF spec, is described below:
     2. If `series` attribute exists in the `OME` group → paths must match OME-XML Image element order
     3. Otherwise → consecutively numbered groups: `0/`, `1/`, `2/`...
 
-[`yaozarrs.bioformats2raw_series`][] applies these rules for you, and returns the
+[`yaozarrs.bioformats2raw_series`][]{ data-preview } applies these rules for you, and returns the
 image paths in series order:
 
 <!-- no-test -->

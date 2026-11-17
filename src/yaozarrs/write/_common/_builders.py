@@ -536,7 +536,7 @@ class Bf2RawBuilderBase(_BuilderBase, Generic[Image]):
             "group_1/array_1_0" (intermediate groups are created).
         image : Image
             OME-Zarr Image metadata model for this series.
-        datasets : ShapeAndDType | Sequence[ShapeAndDType]
+        datasets : ShapeAndDTypeOrPyramid
             Shape and dtype specification(s) for each resolution level, as
             `(shape, dtype)` tuples. For a single dataset, pass the tuple
             directly without wrapping in a list.

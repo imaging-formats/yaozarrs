@@ -75,13 +75,17 @@ written, use `prepare_image` or a builder:
 
 `prepare_image` writes the metadata, creates empty arrays, and gives them back
 to you (keyed by path) to fill however you like (chunk by chunk, in parallel,
-...).  The builders can be used in two ways:
+...).  The builders can be used in three ways:
 
 - **incremental**: write one well, label or image at a time (e.g.
   `PlateBuilder.write_well()`), and the parent's metadata (the plate, labels, or
   bioformats2raw series list) is updated after each one.
 - **prepare-only**: register everything with `add_*()`, then `prepare()` creates
   the whole hierarchy with empty arrays, as `prepare_image` does.
+- **create now, write later**: `Bf2RawBuilder.prepare_series()` adds one series
+  at a time with empty arrays, for you to fill whenever you like.  Each series
+  is listed only once its arrays exist, so the collection is valid after every
+  call, and you can keep adding series (e.g. as a model's output tiles arrive).
 
 For plates and bioformats2raw collections, the builders are usually the easier
 choice.
