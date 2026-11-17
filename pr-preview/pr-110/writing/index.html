@@ -26,7 +26,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.1.0">
+      <meta name="generator" content="zensical-0.1.1">
     
     
       
@@ -37,7 +37,7 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.ebb7f775.min.css">
       
         
           
@@ -1402,13 +1402,17 @@ written, use <code>prepare_image</code> or a builder:</p>
 </table>
 <p><code>prepare_image</code> writes the metadata, creates empty arrays, and gives them back
 to you (keyed by path) to fill however you like (chunk by chunk, in parallel,
-...).  The builders can be used in two ways:</p>
+...).  The builders can be used in three ways:</p>
 <ul>
 <li><strong>incremental</strong>: write one well, label or image at a time (e.g.
   <code>PlateBuilder.write_well()</code>), and the parent's metadata (the plate, labels, or
   bioformats2raw series list) is updated after each one.</li>
 <li><strong>prepare-only</strong>: register everything with <code>add_*()</code>, then <code>prepare()</code> creates
   the whole hierarchy with empty arrays, as <code>prepare_image</code> does.</li>
+<li><strong>create now, write later</strong>: <code>Bf2RawBuilder.prepare_series()</code> adds one series
+  at a time with empty arrays, for you to fill whenever you like.  Each series
+  is listed only once its arrays exist, so the collection is valid after every
+  call, and you can keep adding series (e.g. as a model's output tiles arrive).</li>
 </ul>
 <p>For plates and bioformats2raw collections, the builders are usually the easier
 choice.</p>
@@ -2164,7 +2168,7 @@ they're only there for type checkers, and for these docs.)</p>
       <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["search.highlight","search.suggest","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      <script src="../assets/javascripts/bundle.3cb411a8.min.js"></script>
       
         <script src="../javascripts/yaozarrs-animation.js"></script>
       
