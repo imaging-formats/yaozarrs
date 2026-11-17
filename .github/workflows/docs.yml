@@ -17,9 +17,7 @@ jobs:
           enable-cache: true
           python-version: "3.13"
 
-      # TODO: re-enable --strict once https://github.com/zensical/zensical/issues/700
-      # (and the related autorefs over-flagging) is fixed.
-      - run: uv run --group docs zensical build --clean
+      - run: uv run --group docs zensical build --clean --strict
       - run: touch site/.nojekyll
       # for docs-preview.yml, which deploys PR builds (it can't see the PR number)
       - if: github.event_name == 'pull_request'

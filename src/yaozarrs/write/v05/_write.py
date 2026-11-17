@@ -44,7 +44,7 @@ from yaozarrs.write._common._builders import (
 
 __all__ = [
     "Bf2RawBuilder",
-    "CreateArrayFunc",  # (documented as `yaozarrs.write.v05._write.CreateArrayFunc`)
+    "CreateArrayFunc",  # (documented in docs/writing.md)
     "LabelsBuilder",
     "PlateBuilder",
     "prepare_image",
@@ -70,8 +70,8 @@ if TYPE_CHECKING:
         ZarrWriter,
     )
 
-    # Compound types for images with data or specs
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
+    """A v0.5 `Image` model, with its array data (one array per dataset)."""
 
 
 # ######################## Public API ##########################################
@@ -611,7 +611,7 @@ def prepare_image(
         Destination path for the Zarr group.
     image : Image
         OME-Zarr Image metadata model.
-    datasets : ShapeAndDType | Sequence[ShapeAndDType]
+    datasets : ShapeAndDTypeOrPyramid
         Shape and dtype specification(s) for each dataset, as `(shape, dtype)`
         tuples. Can be:
 
@@ -636,7 +636,7 @@ def prepare_image(
 
     Returns
     -------
-    tuple[Path, dict[str, Array]]
+    tuple[Path, dict[str, AnyZarrArray]]
         A tuple of (path, arrays) where `arrays` maps dataset paths (e.g., "0")
         to array objects. The array type depends on the writer:
 

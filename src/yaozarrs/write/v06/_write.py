@@ -70,7 +70,7 @@ from yaozarrs.write._common._models import _check_model
 
 __all__ = [
     "Bf2RawBuilder",
-    "CreateArrayFunc",  # (documented as `yaozarrs.write.v06._write.CreateArrayFunc`)
+    "CreateArrayFunc",  # (documented in docs/writing.md)
     "LabelsBuilder",
     "PlateBuilder",
     "SceneBuilder",
@@ -100,11 +100,12 @@ if TYPE_CHECKING:
         ZarrWriter,
     )
 
-    # Compound types for images with data or specs
     ImageWithDatasets: TypeAlias = tuple[Image, ArrayOrPyramid]
-    # (label images of an image, by label name)
+    """A v0.6 `Image` model, with its array data (one array per dataset)."""
     LabelsWithDatasets: TypeAlias = Mapping[str, tuple[LabelImage, ArrayOrPyramid]]
+    """The label images of an image, with their data: `{name: (LabelImage, data)}`."""
     LabelsWithSpecs: TypeAlias = Mapping[str, tuple[LabelImage, ShapeAndDTypeOrPyramid]]
+    """The label images of an image, with the (shape, dtype) of their datasets."""
     # (an image added to a SceneBuilder: its dataset specs, array options and labels)
     AddedImage: TypeAlias = tuple[
         Image, ShapeAndDTypeOrPyramid, dict[str, Any], LabelsWithSpecs
@@ -810,7 +811,7 @@ def prepare_image(
         Destination path for the Zarr group.
     image : Image
         OME-Zarr Image metadata model.
-    datasets : ShapeAndDType | Sequence[ShapeAndDType]
+    datasets : ShapeAndDTypeOrPyramid
         Shape and dtype specification(s) for each dataset, as `(shape, dtype)`
         tuples. Can be:
 
@@ -835,7 +836,7 @@ def prepare_image(
 
     Returns
     -------
-    tuple[Path, dict[str, Array]]
+    tuple[Path, dict[str, AnyZarrArray]]
         A tuple of (path, arrays) where `arrays` maps dataset paths (e.g., "0")
         to array objects. The array type depends on the writer:
 
@@ -1408,7 +1409,7 @@ class SceneBuilder(_BuilderBase):
             or "tiles/0").
         image : Image
             OME-Zarr Image metadata model for this image.
-        datasets : ArrayLike | Sequence[ArrayLike]
+        datasets : ArrayOrPyramid
             Data array(s) for each resolution level. For a single dataset,
             pass the array directly without wrapping in a list.
         labels : Mapping[str, tuple[LabelImage, ArrayOrPyramid]] | None, optional
@@ -1484,7 +1485,7 @@ class SceneBuilder(_BuilderBase):
             or "tiles/0").
         image : Image
             OME-Zarr Image metadata model for this image.
-        datasets : ShapeAndDType | Sequence[ShapeAndDType]
+        datasets : ShapeAndDTypeOrPyramid
             Shape and dtype specification(s) for each resolution level, as
             `(shape, dtype)` tuples. For a single dataset, pass the tuple
             directly without wrapping in a list.

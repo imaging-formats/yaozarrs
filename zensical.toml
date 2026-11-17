@@ -7,10 +7,31 @@ repo_name = "imaging-formats/yaozarrs"
 site_author = "Talley Lambert"
 copyright = "2026, Talley Lambert"
 extra_css = ["stylesheets/zensical.css", "stylesheets/extra.css"]
+nav = [
+  "index.md",
+  "installation.md",
+  "ome_zarr_explorer.md",
+  { "Guide to OME-Zarr" = [
+    "ome_zarr_guide/index.md",
+    "ome_zarr_guide/coordinate_systems.md",
+  ] },
+  "writing.md",
+  { "API Reference" = [
+    "API_Reference/yaozarrs.md",
+    "API_Reference/yaozarrs.v04.md",
+    "API_Reference/yaozarrs.v05.md",
+    "API_Reference/yaozarrs.v06.md",
+    "API_Reference/yaozarrs.write.v05.md",
+    "API_Reference/yaozarrs.write.v06.md",
+  ] },
+]
 [[project.extra_javascript]]
 path = "javascripts/yaozarrs-animation.js"
 [[project.extra_javascript]]
 path = "javascripts/ome_explorer.js"
+type = "module"
+[[project.extra_javascript]]
+path = "javascripts/ome_transforms.js"
 type = "module"
 
 
@@ -64,6 +85,10 @@ toggle.name = "Switch to light mode"
 inventories = [
     "https://docs.python.org/3/objects.inv",
     "https://docs.pydantic.dev/latest/objects.inv",
+    "https://typing-extensions.readthedocs.io/en/latest/objects.inv",
+    "https://numpy.org/doc/stable/objects.inv",
+    "https://zarr.readthedocs.io/en/stable/objects.inv",
+    "https://google.github.io/tensorstore/objects.inv",
 ]
 paths = ["src"]
 
@@ -79,6 +104,8 @@ show_root_toc_entry = false
 members_order = "__all__"
 separate_signature = true
 show_signature_annotations = true
+show_overloads = false
+signature_crossrefs = true
 
 [[project.plugins.mkdocstrings.handlers.python.options.extensions]]
 griffe_fieldz = { strip_annotated = true }
