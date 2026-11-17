@@ -243,3 +243,23 @@ def test_tree_follows_series_list(
 def test_tree_shows_group_with_invalid_metadata() -> None:
     store = _scene(2) | {"t1/zarr.json": _group({"version": "0.6", "multiscales": []})}
     assert "📁 t1" in open_group(store).tree()
+
+
+_ZGROUP = b'{"zarr_format": 2}'
+
+
+@pytest.mark.parametrize(
+    "zattrs",
+    [
+        b'{"multiscales": {"version": "0.4"}}',
+        b'{"multiscales": ["oops"]}',
+        b'{"plate": "version"}',
+        b'{"ome": ["version"]}',
+    ],
+)
+def test_malformed_attrs_are_validation_errors(zattrs: bytes) -> None:
+    store = {".zgroup": _ZGROUP, ".zattrs": zattrs, "a/.zgroup": _ZGROUP}
+    with pytest.raises(StorageValidationError):
+        validate_zarr_store(store)
+    # (nor do they break the search for the version a child inherits)
+    assert open_group(store)["a"].ome_metadata() is None
