@@ -11,21 +11,56 @@ from __future__ import annotations
 import posixpath
 import re
 import warnings
-from itertools import chain, product
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeAlias
 from urllib.parse import urljoin
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from yaozarrs._errors import StorageErrorType, ValidationResult
-from yaozarrs._zarr import ZarrArray, ZarrGroup, _open_group_at
+from yaozarrs._zarr import (
+    ZarrArray,
+    ZarrGroup,
+    _numbered_children,
+    _open_group_at,
+    _series_model,
+    nodes_below,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Collection, Mapping, Sequence
 
     from yaozarrs._errors import ErrorDetails
 
 Loc: TypeAlias = tuple[int | str, ...]
+
+
+class _StoredParameters(Protocol):
+    """A transformation whose parameters may be stored in Zarr, at `path`."""
+
+    @property
+    def type(self) -> str: ...
+    @property
+    def path(self) -> str | None: ...
+
+
+# (structural types: this module can't import the version packages)
+class _VectorDataset(Protocol):
+    """A v0.4/v0.5 dataset, whose scale and translation may be stored at a `path`."""
+
+    @property
+    def coordinateTransformations(self) -> Sequence[_StoredParameters]: ...
+
+
+class _VectorMultiscale(Protocol):
+    """A v0.4/v0.5 multiscale, whose scales and translations may be stored at a path."""
+
+    @property
+    def axes(self) -> Sequence[object]: ...
+    @property
+    def datasets(self) -> Sequence[_VectorDataset]: ...
+    @property
+    def coordinateTransformations(self) -> Sequence[_StoredParameters] | None: ...
+
 
 _PROTOCOL = re.compile(r"^(?:file|https?|s3)://")
 
@@ -67,7 +102,7 @@ def _invalid_ctx(model: Any) -> dict:
 class StorageValidator:
     """Storage validator for one OME-Zarr version (see subclasses)."""
 
-    __slots__ = ("strict",)
+    __slots__ = ("_prefetched", "strict")
 
     strict: bool | None
 
@@ -83,6 +118,10 @@ class StorageValidator:
     Bf2Raw: ClassVar[type]
     Series: ClassVar[type]
 
+    def __init__(self) -> None:
+        # (OME metadata models parsed while prefetching, by path, until they're used)
+        self._prefetched: dict[str, Any] = {}
+
     def _parse_ome(self, attrs: Mapping[str, Any]) -> Any:
         """Validate a group's attributes, returning its OME metadata model."""
         raise NotImplementedError
@@ -97,12 +136,40 @@ class StorageValidator:
         """Version-specific checks of one dataset array (none by default)."""
         return ValidationResult()
 
-    def _child_model(self, group: ZarrGroup) -> Any:
+    def _child_model(self, group: ZarrGroup) -> BaseModel | ValueError | None:
         """Return the OME metadata model of `group`, or the `ValueError` raised."""
+        if group.path in self._prefetched:
+            return self._prefetched.pop(group.path)
         try:
             return group.ome_metadata(version=self.VERSION, strict=self.strict)
         except ValueError as e:
             return e
+
+    def _prefetch(self, zarr_group: ZarrGroup, paths: list[str]) -> None:
+        """Fetch the metadata of the nodes at `paths`, and of everything below them.
+
+        One level of the hierarchy at a time (e.g. a plate's wells, their images, the
+        images' arrays and labels groups, ...), so a remote store gets one batch of
+        requests per level, rather than one per group.
+        """
+        if not zarr_group._store._batched:
+            return  # (the nodes are read as they're visited: batching gains nothing)
+        while paths:
+            zarr_group.prefetch_children(paths)
+            below: list[str] = []
+            for path in paths:
+                head = path.split("/", 1)[0]
+                if path != posixpath.normpath(path) or head in ("", ".", ".."):
+                    continue  # (a path that could loop, or leave the store)
+                try:
+                    node = zarr_group.get(path)
+                except Exception:
+                    continue  # (validation raises it, if it ever reads this node)
+                if isinstance(node, ZarrGroup):
+                    model = self._prefetched[node.path] = self._child_model(node)
+                    named, maybe = nodes_below(model)
+                    below += (f"{path}/{p}" for p in (*named, *maybe))
+            paths = below
 
     @classmethod
     def validate_group(
@@ -141,6 +208,9 @@ class StorageValidator:
                     details["ctx"] = err["ctx"]
                 result.errors.append(details)
             return result
+        # (fetch everything the metadata names up front: a few batches in all)
+        named, maybe = nodes_below(ome_metadata)
+        validator._prefetch(zarr_group, [*named, *maybe])
         return validator.visit_root(zarr_group, ome_metadata, cls.LOC_PREFIX)
 
     def visit_root(
@@ -306,7 +376,11 @@ class StorageValidator:
                     )
 
                 for ms_idx, (lbl_ms, img_ms) in enumerate(
-                    zip(label_image_model.multiscales, parent_image_model.multiscales)
+                    zip(
+                        label_image_model.multiscales,
+                        parent_image_model.multiscales,
+                        strict=False,
+                    )
                 ):
                     n_lbl_ds = len(lbl_ms.datasets)
                     n_img_ds = len(img_ms.datasets)
@@ -407,15 +481,57 @@ class StorageValidator:
 
         return result
 
+    def _find_parameters(
+        self,
+        holder: ZarrGroup,
+        t: _StoredParameters,
+        loc: Loc,
+        result: ValidationResult,
+        *,
+        unresolved: Literal["error", "warning"] = "error",
+    ) -> ZarrGroup | ZarrArray | None:
+        """Return the node at `t.path` (parameters stored in Zarr), or add an error.
+
+        A path that can't be resolved, or where there's no Zarr node, is reported as
+        `unresolved`: a warning where the spec doesn't say it has to be a Zarr node
+        in this group.
+        """
+        if t.path is None:
+            return None
+        report = result.add_error if unresolved == "error" else result.add_warning
+        unchecked = "" if unresolved == "error" else ", so it isn't checked"
+        # (the spec only says "a location in this container": a path is resolved
+        # against the group whose metadata holds the transformation, as in the spec's
+        # examples. Like ngff-zarr, which refuses them on read and write, we reject a
+        # leading "/" and empty, "." or ".." segments: nothing defines what they'd
+        # point to)
+        path: str = t.path
+        ctx: dict = {"path": path}
+        if path.startswith("/") or any(p in ("", ".", "..") for p in path.split("/")):
+            report(
+                StorageErrorType.transform_parameters_invalid,
+                (*loc, "path"),
+                f"Path '{path}' (for {t.type}) must be a relative path inside the "
+                f"group, with no empty, '.' or '..' segments{unchecked}",
+                ctx=ctx,
+            )
+            return None
+        if (node := holder.get(path)) is None:
+            report(
+                StorageErrorType.transform_parameters_not_found,
+                (*loc, "path"),
+                f"Path '{path}' (for {t.type}) not found{unchecked}",
+                ctx={**ctx, "fs_path": _build_fs_path(holder, path)},
+            )
+            return None
+        return node
+
     def visit_plate(
         self, zarr_group: ZarrGroup, plate_model: Any, loc_prefix: Loc
     ) -> ValidationResult:
         """Validate a plate group and its wells."""
         result = ValidationResult()
-        # Prefetch all metadata in one go to minimize network round trips
-        self._prefetch_plate_hierarchy(
-            zarr_group, [well.path for well in plate_model.plate.wells]
-        )
+        images: list[str] = []  # (paths of the images in the valid wells)
         for well_idx, well in enumerate(plate_model.plate.wells):
             well_loc = (*loc_prefix, "plate", "wells", well_idx)
 
@@ -446,6 +562,9 @@ class StorageValidator:
 
             well_model = self._child_model(well_group)
             if isinstance(well_model, self.Well):
+                images.extend(
+                    f"{well.path}/{img.path}" for img in well_model.well.images
+                )
                 result = result.merge(self.visit_well(well_group, well_model, well_loc))
                 result = result.merge(
                     self._validate_well_acquisitions(plate_model, well_model, well_loc)
@@ -458,7 +577,42 @@ class StorageValidator:
                     ctx={"path": well.path, **_invalid_ctx(well_model)},
                 )
 
+        if plate_model.bioformats2raw_layout is not None:
+            result = result.merge(
+                self._visit_plate_series(zarr_group, images, (*loc_prefix, "OME"))
+            )
         return result
+
+    def _visit_plate_series(
+        self, zarr_group: ZarrGroup, plate_images: list[str], loc_prefix: Loc
+    ) -> ValidationResult:
+        """Check the `series` list of a bioformats2raw plate, if it has one."""
+        result = ValidationResult()
+        try:
+            series = _series_model(zarr_group, version=self.VERSION, strict=self.strict)
+        except ValueError:
+            series = None  # (as in `visit_bioformats2raw`)
+        if series is None:
+            return result
+
+        # Matching "series" metadata SHOULD be provided for tools that are unaware of
+        # the "plate" specification.
+        if sorted(series.series) != sorted(plate_images):
+            in_series, in_plate = set(series.series), set(plate_images)
+            missing = [p for p in plate_images if p not in in_series]
+            extra = [p for p in series.series if p not in in_plate]
+            result.add_warning(
+                StorageErrorType.series_plate_mismatch,
+                (*loc_prefix, "series"),
+                "The series list doesn't match the images of the plate "
+                f"(missing: {missing}, not in the plate: {extra})",
+                ctx={"missing": missing, "extra": extra},
+            )
+        # "series" MUST be a list of string objects, each of which is a path to an
+        # image group. (the plate's images have been validated already)
+        return result.merge(
+            self.visit_series(zarr_group, series, loc_prefix, skip=plate_images)
+        )
 
     def _validate_well_acquisitions(
         self, plate_model: Any, well_model: Any, loc_prefix: Loc
@@ -560,23 +714,15 @@ class StorageValidator:
         """
         result = ValidationResult()
 
-        zarr_group.prefetch_children(["OME"])
-        if isinstance(ome_group := zarr_group.get("OME"), ZarrGroup):
-            try:
-                ome_model = self._parse_ome(ome_group.attrs)
-            except ValueError:
-                ome_model = None  # (fall back to the numbered directories)
-            if isinstance(ome_model, self.Series):
-                return self.visit_series(zarr_group, ome_model, (*loc_prefix, "OME"))
+        try:
+            series = _series_model(zarr_group, version=self.VERSION, strict=self.strict)
+        except ValueError:
+            series = None  # (fall back to the numbered directories)
+        if series is not None:
+            return self.visit_series(zarr_group, series, (*loc_prefix, "OME"))
 
         # Without series metadata, find consecutively numbered directories (0, 1, ...)
-        # FIXME: ... do better for searching
-        numbered_paths = []
-        for i in range(1000):  # reasonable upper limit
-            if str(i) not in zarr_group:
-                break
-            numbered_paths.append(str(i))
-
+        numbered_paths = _numbered_children(zarr_group)
         if not numbered_paths:
             result.add_error(
                 StorageErrorType.bf2raw_no_images,
@@ -584,9 +730,7 @@ class StorageValidator:
                 "Bioformats2raw group contains no numbered image directories",
             )
             return result
-
-        # Prefetch all numbered path metadata
-        zarr_group.prefetch_children(numbered_paths)
+        self._prefetch(zarr_group, numbered_paths)
 
         # Validate each numbered directory as image group
         for path in numbered_paths:
@@ -619,12 +763,17 @@ class StorageValidator:
         return result
 
     def visit_series(
-        self, zarr_group: ZarrGroup, ome_model: Any, loc_prefix: Loc
+        self,
+        zarr_group: ZarrGroup,
+        ome_model: Any,
+        loc_prefix: Loc,
+        skip: Collection[str] = (),
     ) -> ValidationResult:
         """Validate an OME group with series metadata.
 
         The series attribute is a list of paths to image groups. Each path
-        should point to a valid image group with multiscales metadata.
+        should point to a valid image group with multiscales metadata.  Paths in
+        `skip` (already validated) aren't checked.
 
         IMPORTANT! `zarr_group` here is the *parent* of the OME group, not the
         OME group itself.
@@ -639,8 +788,11 @@ class StorageValidator:
         ```
         """
         result = ValidationResult()
-        zarr_group.prefetch_children(ome_model.series)
+        skip = set(skip)
+        self._prefetch(zarr_group, [p for p in ome_model.series if p not in skip])
         for series_idx, series_path in enumerate(ome_model.series):
+            if series_path in skip:
+                continue
             series_loc = (*loc_prefix, "series", series_idx)
 
             series_group = zarr_group.get(series_path)
@@ -678,63 +830,6 @@ class StorageValidator:
 
         return result
 
-    def _prefetch_plate_hierarchy(
-        self, zarr_group: ZarrGroup, well_paths: list[str]
-    ) -> None:
-        """Prefetch entire plate hierarchy to minimize network round trips.
-
-        Strategy: Inspect first well/field to understand structure, then batch
-        fetch all metadata across the entire plate (wells, fields, datasets).
-        """
-        if not well_paths:  # pragma: no cover
-            return
-        zarr_group.prefetch_children(well_paths)
-
-        first_well = zarr_group.get(well_paths[0])
-        if not isinstance(first_well, ZarrGroup):
-            return
-        if not (field_paths := self._field_paths(first_well)):
-            return
-        zarr_group.prefetch_children(
-            "/".join(grp) for grp in product(well_paths, field_paths)
-        )
-
-        if not (dataset_paths := self._dataset_paths(first_well.get(field_paths[0]))):
-            return
-        # (and labels metadata: optional, but common)
-        ds_paths = (
-            "/".join(grp) for grp in product(well_paths, field_paths, dataset_paths)
-        )
-        labels_paths = (
-            "/".join(grp) + "/labels" for grp in product(well_paths, field_paths)
-        )
-        zarr_group.prefetch_children(chain(ds_paths, labels_paths))
-
-    def _field_paths(self, well: ZarrGroup) -> list[str]:
-        """Field image paths listed by the metadata of `well`, if it is a Well."""
-        try:
-            well_meta = self._parse_ome(well.attrs)
-            if isinstance(well_meta, self.Well):
-                return [img.path for img in well_meta.well.images]
-        except Exception:
-            pass
-        return []
-
-    def _dataset_paths(self, field: ZarrGroup | ZarrArray | None) -> list[str]:
-        """Dataset paths of the first multiscale of `field`, if it is an Image."""
-        if not isinstance(field, ZarrGroup):
-            return []  # pragma: no cover
-
-        try:
-            field_meta = self._parse_ome(field.attrs)
-        except Exception:
-            return []  # pragma: no cover
-
-        if not isinstance(field_meta, self.Image) or not field_meta.multiscales:
-            return []  # pragma: no cover
-
-        return [ds.path for ds in field_meta.multiscales[0].datasets]
-
     def _check_for_labels_group(
         self, zarr_group: ZarrGroup, loc_prefix: Loc
     ) -> tuple[ValidationResult, tuple[ZarrGroup, Any] | None]:
@@ -760,7 +855,11 @@ class StorageValidator:
             return result, None
 
         try:
-            labels_model = self._parse_ome(labels_group.attrs)
+            # (the model parsed while prefetching, so it isn't validated twice:
+            # an error is parsed again, for its message)
+            labels_model = self._prefetched.pop(labels_group.path, None)
+            if not isinstance(labels_model, BaseModel):
+                labels_model = self._parse_ome(labels_group.attrs)
             if isinstance(labels_model, self.LabelsGroup):
                 return result, (labels_group, labels_model)
             # The OME-Zarr Metadata in the zarr.json file associated with the "labels"
@@ -859,6 +958,77 @@ class StorageValidator:
                     )
 
         return result
+
+
+class VectorsAtPathMixin(StorageValidator):
+    """For v0.4/v0.5, whose scale/translation vectors may be stored in Zarr (`path`)."""
+
+    def _visit_multiscale_no_prefetch(
+        self, zarr_group: ZarrGroup, multiscale: _VectorMultiscale, loc_prefix: Loc
+    ) -> ValidationResult:
+        result = super()._visit_multiscale_no_prefetch(
+            zarr_group, multiscale, loc_prefix
+        )
+        return result.merge(
+            self._validate_vectors_at_path(zarr_group, multiscale, loc_prefix)
+        )
+
+    def _validate_vectors_at_path(
+        self,
+        zarr_group: ZarrGroup,
+        multiscale: _VectorMultiscale,
+        loc_prefix: Loc,
+    ) -> ValidationResult:
+        """Check the arrays that v0.4/v0.5 `scale`/`translation` vectors are stored in.
+
+        A vector may be "stored ... as binary data at a location in this container
+        (`path`)", and "The length of the `scale` and `translation` array MUST be the
+        same as the length of "axes"". Only the arrays' metadata is read.
+        """
+        result = ValidationResult()
+        ndim = len(multiscale.axes)
+        transforms: list[tuple[Loc, _StoredParameters]] = [
+            ((*loc_prefix, "datasets", i, "coordinateTransformations", j), t)
+            for i, ds in enumerate(multiscale.datasets)
+            for j, t in enumerate(ds.coordinateTransformations)
+        ]
+        transforms += [
+            ((*loc_prefix, "coordinateTransformations", j), t)
+            for j, t in enumerate(multiscale.coordinateTransformations or ())
+        ]
+        for loc, t in transforms:
+            if t.path is None:  # (stored inline)
+                continue
+            # ("binary data at a location in this container": not necessarily a Zarr
+            # array in this group, so a path that doesn't resolve to one only warns)
+            node = self._find_parameters(
+                zarr_group, t, loc, result, unresolved="warning"
+            )
+            if node is None:
+                continue
+            if problem := _shape_problem(node, (ndim,)):
+                result.add_error(
+                    StorageErrorType.transform_parameters_invalid,
+                    (*loc, "path"),
+                    f"The {t.type} vector at '{t.path}' {problem} (one value per axis)",
+                    ctx={"path": t.path, "fs_path": _build_fs_path(zarr_group, t.path)},
+                )
+        return result
+
+
+def _shape_problem(
+    node: ZarrGroup | ZarrArray, expected: Sequence[int | None]
+) -> str | None:
+    """What's wrong with `node` as an array of shape `expected` (None: any size)."""
+    shape = node.metadata.shape if isinstance(node, ZarrArray) else None
+    if shape is None:
+        return "is not a Zarr array"
+    if len(shape) != len(expected):
+        return f"has {len(shape)} dimensions, not {len(expected)}"
+    if any(e is not None and e != s for e, s in zip(expected, shape, strict=True)):
+        want = "x".join("?" if e is None else str(e) for e in expected)
+        return f"has shape {list(shape)}, expected {want}"
+    return None
 
 
 def _parent_group(zarr_group: ZarrGroup) -> ZarrGroup | None:

@@ -5,10 +5,10 @@ from __future__ import annotations
 import textwrap
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any
+from typing import Any, NotRequired
 
 from pydantic import ValidationError
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 
 class ValidationWarning(UserWarning):
@@ -265,6 +265,7 @@ class StorageErrorType(Enum):
     series_invalid_image = auto()
     series_path_not_found = auto()
     series_path_not_group = auto()
+    series_plate_mismatch = auto()
     transform_dimension_mismatch = auto()
     transform_parameters_invalid = auto()
     transform_parameters_location = auto()

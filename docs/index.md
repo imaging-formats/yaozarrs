@@ -402,6 +402,10 @@ child = group["0"]  # (2)!
 2. Access arrays and sub-groups using standard dictionary-like syntax. Returns
    [`ZarrArray`][yaozarrs._zarr.ZarrArray] or [`ZarrGroup`][yaozarrs._zarr.ZarrGroup]
 
+For a bioformats2raw collection, [`yaozarrs.bioformats2raw_series`][]{ data-preview } lists the
+paths of its images (see [Working with
+Collections](./ome_zarr_guide/index.md#working-with-collections){ data-preview }).
+
 You can also get a tree view of the hierarchy programmatically with
 [`ZarrGroup.tree()`][yaozarrs._zarr.ZarrGroup.tree]{ data-preview }:
 

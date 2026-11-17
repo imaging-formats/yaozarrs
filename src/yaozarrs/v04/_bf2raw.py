@@ -7,11 +7,13 @@ from yaozarrs._base import ZarrGroupModel
 
 
 class Bf2Raw(ZarrGroupModel):
-    bioformats2raw_layout: Literal[3] = Field(
-        default=3,
-        alias="bioformats2raw.layout",
-        description="The top-level identifier metadata added by bioformats2raw",
-    )
+    bioformats2raw_layout: Annotated[
+        Literal[3],
+        Field(
+            alias="bioformats2raw.layout",
+            description="The top-level identifier metadata added by bioformats2raw",
+        ),
+    ] = 3
 
 
 class Series(ZarrGroupModel):

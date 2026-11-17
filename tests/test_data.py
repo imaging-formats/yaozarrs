@@ -22,7 +22,7 @@ OME_ZARR_ZATTRS: dict[str, str] = {
     str(path.relative_to(DATA)): path.read_text() for path in ZATTRS
 }
 
-PATHs, TXTs = zip(*{**OME_ZARR_JSONS, **OME_ZARR_ZATTRS}.items())
+PATHs, TXTs = zip(*{**OME_ZARR_JSONS, **OME_ZARR_ZATTRS}.items(), strict=False)
 
 
 @pytest.mark.parametrize("txt", TXTs, ids=PATHs)

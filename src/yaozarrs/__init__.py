@@ -16,7 +16,7 @@ from ._validate import (
     validate_ome_uri,
     validate_zarr_store,
 )
-from ._zarr import ZarrGroup, open_group
+from ._zarr import ZarrGroup, bioformats2raw_series, open_group
 
 __all__ = [
     "ConversionWarning",
@@ -25,6 +25,7 @@ __all__ = [
     "StorageValidationWarning",
     "ValidationWarning",
     "ZarrGroup",
+    "bioformats2raw_series",
     "convert_version",
     "open_group",
     "v04",

@@ -1,8 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from annotated_types import MinLen
 from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import ZarrGroupModel, _BaseModel
 from yaozarrs._common._node_names import RelaxedFOVPathName
@@ -254,10 +253,12 @@ class Plate(ZarrGroupModel):
 
     # If the top-level group represents a plate, the "bioformats2raw.layout" metadata
     # will be present but the "plate" key MUST also be present
-    bioformats2raw_layout: Literal[3] | None = Field(
-        default=None,
-        alias="bioformats2raw.layout",
-        description=(
-            "Marker indicating this plate was created by bioformats2raw version 3"
+    bioformats2raw_layout: Annotated[
+        Literal[3] | None,
+        Field(
+            alias="bioformats2raw.layout",
+            description=(
+                "Marker indicating this plate was created by bioformats2raw version 3"
+            ),
         ),
-    )
+    ] = None

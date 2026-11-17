@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, assert_type
 
 import pytest
 from pydantic import ValidationError
-from typing_extensions import assert_type
 
 from yaozarrs import (
     ConversionWarning,
@@ -553,10 +552,22 @@ def test_scene_cannot_be_downgraded() -> None:
 # ------------------------------------------------------------------------------
 
 
-def test_fractional_label_value_raises() -> None:
-    src = _label_image_04(colors=[{"label-value": 1.5, "rgba": [1, 2, 3, 4]}])
-    with pytest.raises(ValidationError):
-        convert_version(src, "0.5")
+def test_transform_at_path() -> None:
+    # (v0.4/v0.5 may store a scale in a Zarr array; v0.6 only inline)
+    ts = [{"type": "scale", "path": "s"}]
+    axes = [{"name": n, "type": "space"} for n in "yx"]
+    src = v05.Multiscale(
+        axes=axes, datasets=[{"path": "0", "coordinateTransformations": ts}]
+    )
+    with pytest.raises(ValueError, match="stored in a Zarr array"):
+        convert_version(src, "0.6")
+    assert convert_version(src, "0.4").datasets[0].scale_transform.path == "s"
+    # (and a stray `path` next to an inline v0.6 scale is dropped on the way down)
+    ms = _multiscale_06()
+    ms["datasets"][0]["coordinateTransformations"][0]["path"] = "s"
+    with pytest.warns(ConversionWarning, match="scale key 'path'"):
+        down = convert_version(v06.Multiscale.model_validate(ms), "0.5")
+    assert down.datasets[0].scale_transform.path is None
 
 
 def test_array_axes_raise_on_downgrade() -> None:

@@ -65,7 +65,7 @@ V04_VALID_LABELS = [
         "version": "0.4",
         "multiscales": MULTISCALES_2D,
         "image-label": {
-            "colors": [{"label-value": 1.5}, {"label-value": 2.0}],
+            "colors": [{"label-value": 1}, {"label-value": 2.0}],
         },
     },
 ]
@@ -216,6 +216,11 @@ V04_INVALID_LABELS_EXTENDED: list[tuple[dict, str]] = [
 V04_INVALID_LABELS_WITH_MESSAGES: list[tuple[dict, str]] = [
     # Missing image-label
     ({}, "Field required"),
+    # A label value that isn't an integer
+    (
+        {"image-label": {"colors": [{"label-value": 1.5}]}},
+        "valid integer, got a number with a fractional part",
+    ),
     # Invalid RGBA values (out of range)
     (
         {

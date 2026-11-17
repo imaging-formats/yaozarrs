@@ -9,12 +9,15 @@ and validated as the target model.  Version pairs without a step differ only in 
 from __future__ import annotations
 
 import copy
+import itertools
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from . import v04, v05, v06
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pydantic import BaseModel
 
 __all__ = ["ConversionWarning", "convert_version"]
@@ -68,10 +71,25 @@ def _upgrade_05_06(doc: dict, coordinate_system: str, dropped: list[str]) -> dic
     )
 
 
+def _require_inline(transforms: list[dict]) -> None:
+    """Fail for a v0.5 scale/translation stored at a `path`: v0.6 has no such form."""
+    for t in transforms:
+        if t.get("path") is not None:
+            raise ValueError(
+                f"Cannot convert a {t['type']} transformation stored in a Zarr array "
+                f"(path {t['path']!r}) to v0.6, which only stores {t['type']} values "
+                "inline."
+            )
+        t.pop("path", None)  # (a `null` path, from the dump)
+
+
 def _multiscale_05_06(ms: dict, coordinate_system: str, dropped: list[str]) -> dict:
     ms = dict(ms)
     axes = ms.pop("axes")
     overall_transforms = ms.pop("coordinateTransformations", None) or []
+    _require_inline(overall_transforms)
+    for ds in ms["datasets"]:
+        _require_inline(ds["coordinateTransformations"])
     _drop_unknown_transform_keys(overall_transforms, _V05_TRANSFORM_KEYS, dropped)
     overall = _transform_params_05(overall_transforms)
     # (an unknown `coordinateSystems` key is overwritten: v0.6 formalized that key)
@@ -106,9 +124,10 @@ def _dataset_05_06(
                     g_scale,
                     translation or [0.0] * len(scale),
                     g_translation or [0.0] * len(scale),
+                    strict=False,
                 )
             ]
-        scale = [g * s for g, s in zip(g_scale, scale)]
+        scale = [g * s for g, s in zip(g_scale, scale, strict=False)]
 
     transform: dict[str, Any] = {**old["scale"], "scale": scale}
     if translation is not None:
@@ -209,10 +228,21 @@ def _transform_06_05(ds: dict, ndim: int, dropped: list[str]) -> list[dict]:
     for step in transforms:
         if step is not transform:
             _report_lost_refs(step, {}, dropped)
+    # (v0.6 keeps an unknown `path` next to an inline scale/translation as an extra
+    # key; in v0.5 `path` would be where the vector is stored instead)
+    stray = [t for t in transforms if t["type"] in _VECTORS and "path" in t]
+    dropped.extend(f"{t['type']} key 'path'" for t in stray if t["path"] is not None)
     return [
-        {k: v for k, v in t.items() if k not in _V06_ONLY_TRANSFORM_KEYS}
+        {
+            k: v
+            for k, v in t.items()
+            if k not in _V06_ONLY_TRANSFORM_KEYS and not (k == "path" and t in stray)
+        }
         for t in transforms
     ]
+
+
+_VECTORS = ("scale", "translation")
 
 
 def _report_lost_refs(t: dict, implied: dict[str, str], dropped: list[str]) -> None:
@@ -281,7 +311,7 @@ def _convert(obj: Any, version: str, coordinate_system: str, dropped: list[str])
     doc = _strip_versions({k: v for k, v in dumped.items() if k in fields})
     start, stop = _ORDER.index(source), _ORDER.index(version)
     path = _ORDER[start : stop + 1] if start <= stop else _ORDER[stop : start + 1][::-1]
-    for hop in zip(path, path[1:]):
+    for hop in itertools.pairwise(path):
         if step := _STEPS.get(hop):
             doc = step(doc, coordinate_system, dropped)
     return getattr(package, kind).model_validate(doc)
@@ -413,7 +443,8 @@ def convert_version(
     TypeError
         If `obj` is not a model that can be converted.
     ValueError
-        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`).
+        If `version` is unknown, or has no equivalent of `obj` (e.g. a v0.6 `Scene`,
+        or a v0.4/v0.5 scale or translation stored at a `path`, for v0.6).
     pydantic.ValidationError
         If the metadata is not valid in the target version (e.g. 6 axes in v0.5).
 

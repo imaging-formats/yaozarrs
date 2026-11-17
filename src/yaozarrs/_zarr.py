@@ -45,13 +45,12 @@ from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import TypeVar
+    from typing import Self, TypeVar
 
     import rich.tree
     import tensorstore
     import zarr
     from fsspec import FSMap
-    from typing_extensions import Self
 
     _T = TypeVar("_T")
 
@@ -315,6 +314,18 @@ def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMeta
 # ---------------------------------------------------
 
 
+# the metadata documents of a zarr v2 node
+_V2_DOCUMENTS = (".zgroup", ".zarray", ".zattrs")
+
+
+def _local_root(mapper: Mapping[str, bytes]) -> str | None:
+    """Return the directory of a store on the local filesystem (an FSMap), else None."""
+    protocol = getattr(getattr(mapper, "fs", None), "protocol", None)
+    protocols = (protocol,) if isinstance(protocol, str) else protocol or ()
+    root = getattr(mapper, "root", None)
+    return root if "file" in protocols and isinstance(root, str) else None
+
+
 class _CachedMapper(Mapping[str, bytes]):
     """Caching wrapper for a store mapping that caches metadata file reads.
 
@@ -335,6 +346,23 @@ class _CachedMapper(Mapping[str, bytes]):
     def __init__(self, mapper: Mapping[str, bytes]) -> None:
         self._mapper = mapper
         self._cache: dict[str, bytes | Exception | None] = {}
+        self._local_root = _local_root(mapper)
+        # (whether many keys can be fetched in one call, e.g. concurrently over http)
+        self._batched: bool = self._local_root is None and hasattr(mapper, "getitems")
+
+    def _fetch(self, key: str) -> bytes | None:
+        """Read `key` from the mapper (None if it's missing).
+
+        Local files are read directly: fsspec's overhead per file is larger than
+        reading a small metadata file.
+        """
+        if self._local_root is None:
+            return self._mapper.get(key)
+        try:
+            with open(f"{self._local_root}/{key}", "rb", buffering=0) as f:
+                return f.read()
+        except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
+            return None  # (FSMap's `missing_exceptions`: other errors are raised)
 
     @overload
     def get(self, key: str, /) -> bytes | None: ...
@@ -346,10 +374,8 @@ class _CachedMapper(Mapping[str, bytes]):
         self, key: str, default: _T | None = None
     ) -> bytes | _T | None:
         """Get a value from the mapper with caching."""
-        if key not in self._cache:
-            # (cache what the mapper holds, never the caller's `default`)
-            self._cache[key] = self._mapper.get(key)
-        val = self._cache[key]
+        # (cache what the mapper holds, never the caller's `default`)
+        val = self._lookup(key)
         if val is None or isinstance(val, Exception):
             return default
         return val
@@ -358,12 +384,38 @@ class _CachedMapper(Mapping[str, bytes]):
         """Check if a key exists in the mapper."""
         if not isinstance(key, str):
             return False
+        return not isinstance(self._lookup(key), (Exception, NoneType))
 
-        if key in self._cache:
-            val = self._cache[key]
-        else:
-            self._cache[key] = val = self._mapper.get(key)
-        return not isinstance(val, (Exception, NoneType))
+    def _lookup(self, key: str) -> bytes | Exception | None:
+        """Return the cached value of `key`, fetching it first if need be."""
+        if key not in self._cache:
+            prefix, sep, name = key.rpartition("/")
+            if self._batched and name in _V2_DOCUMENTS:
+                # (a zarr v2 node's documents are read together: one round trip)
+                docs = (f"{prefix}{sep}{d}" for d in _V2_DOCUMENTS)
+                self._fetch_batch([doc for doc in docs if doc not in self._cache])
+            if key not in self._cache:
+                self._cache[key] = self._fetch(key)
+        return self._cache[key]
+
+    def _fetch_batch(self, keys: list[str]) -> None:
+        """Fetch `keys` in one call to the mapper, caching those found or missing.
+
+        fsspec normalizes genuine "missing key" errors to KeyError; anything else
+        (timeout, connection reset, throttling, etc.) is a transient failure, not a
+        "not found": those keys aren't cached, so that they're fetched again alone.
+        """
+        results = {}
+        # use on_error='return' to get all results including missing keys, which
+        # will be stored as exceptions (usually KeyErrors)
+        with suppress(Exception):  # (if it fails outright, nothing is cached)
+            results = self._mapper.getitems(keys, on_error="return")
+        for key in keys:
+            if key not in results:
+                continue
+            val = results[key]
+            if not isinstance(val, Exception) or isinstance(val, KeyError):
+                self._cache[key] = val
 
     def getitems(self, keys: list[str], on_error: str = "omit") -> dict[str, bytes]:
         """Batch fetch multiple items and cache them.
@@ -391,36 +443,14 @@ class _CachedMapper(Mapping[str, bytes]):
 
         # Fetch uncached keys in batch using FSMap.getitems()
         # For HTTPS, this uses async aiohttp with concurrency up to 1280 requests
-        if uncached_keys:
-            try:
-                # use on_error='return' to get all results including missing keys
-                # which will be stored as exceptions (usually KeyErrors)
-                results = self._mapper.getitems(uncached_keys, on_error="return")
-            except Exception:
-                # Batch call failed outright, or the mapping has no `getitems`:
-                # get every key individually below.
-                results = {}
-
-            # fsspec normalizes genuine "missing key" errors to KeyError here;
-            # anything else (timeout, connection reset, throttling, etc.) is a
-            # transient failure, not a "not found" - don't cache it as a
-            # permanent negative result. Cache the good results now and only
-            # retry the keys that actually failed, individually, below.
-            failed_keys: list[str] = []
-            for key in uncached_keys:
-                if key not in results:
-                    # batch call failed outright, or omitted this key
-                    failed_keys.append(key)
-                    continue
-                val = results[key]
-                if isinstance(val, Exception) and not isinstance(val, KeyError):
-                    failed_keys.append(key)
-                else:
-                    self._cache[key] = val
-
-            for key in failed_keys:
+        # (stores that can't batch, e.g. local files, are read one key at a time)
+        if self._batched and uncached_keys:
+            self._fetch_batch(uncached_keys)
+        # (and the keys the batch didn't get, one by one)
+        for key in uncached_keys:
+            if key not in self._cache:
                 try:
-                    self._cache[key] = self._mapper.get(key)
+                    self._cache[key] = self._fetch(key)
                 except Exception:
                     if on_error == "raise":
                         raise
@@ -450,8 +480,21 @@ class _CachedMapper(Mapping[str, bytes]):
         return result
 
     def __getattr__(self, name: str) -> Any:
-        """Delegate all other attributes to the underlying mapper."""
+        """Delegate all other public attributes to the underlying mapper."""
+        # Private and dunder names are never forwarded. `_mapper` may not be set yet
+        # (e.g. during unpickling), and protocol hooks like `__setstate__` or
+        # `__deepcopy__` must not resolve to the wrapped mapper's.
+        if name.startswith("_"):
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}",
+                name=name,
+                obj=self,
+            )
         return getattr(self._mapper, name)
+
+    def __reduce__(self) -> tuple[type[Self], tuple[Mapping[str, bytes]]]:
+        # don't pickle/copy the cache: it's shared by every node in the hierarchy
+        return (type(self), (self._mapper,))
 
 
 class ZarrNode:
@@ -818,13 +861,7 @@ class ZarrGroup(ZarrNode):
                 # For v2, we need to check .zgroup, .zarray, AND .zattrs
                 # The .zattrs file contains OME metadata and must be prefetched
                 # to avoid individual HTTP requests when loading group metadata
-                metadata_paths.extend(
-                    [
-                        f"{child_path}/.zgroup",
-                        f"{child_path}/.zarray",
-                        f"{child_path}/.zattrs",
-                    ]
-                )
+                metadata_paths.extend(f"{child_path}/{d}" for d in _V2_DOCUMENTS)
 
         # Batch fetch using getitems - _CachedMapper handles fallback if needed
         try:
@@ -1029,12 +1066,15 @@ def open_group(
             "`pip install fsspec`."
         ) from e
 
+    path = ""
     if isinstance(uri, (str, os.PathLike)):
         uri = os.path.expanduser(os.fspath(uri))
     elif hasattr(uri, "store"):
         # Handle both zarr v2 and v3 Group objects
         # v3: str(group.store) returns a URI like "file:///path"
         # v2: group.store.path returns the directory path
+        # Either way, that's the store root: the group's location in it is `.path`
+        path = getattr(uri, "path", "") or ""
         if hasattr(uri.store, "path"):
             # Zarr v2: DirectoryStore has .path attribute
             uri = uri.store.path
@@ -1062,7 +1102,171 @@ def open_group(
     if not isinstance(mapper, FSMap):  # pragma: no cover
         raise TypeError(f"Expected FSMap from get_mapper, got {type(mapper)}")
 
-    return _open_group_at(mapper)
+    return _open_group_at(mapper, path)
+
+
+# OME metadata classes of each kind, across spec versions
+_IMAGE = (v04.Image, v05.Image, v06.Image)
+_LABELS_GROUP = (v04.LabelsGroup, v05.LabelsGroup, v06.LabelsGroup)
+_PLATE = (v04.Plate, v05.Plate, v06.Plate)
+_WELL = (v04.Well, v05.Well, v06.Well)
+_BF2RAW = (v04.Bf2Raw, v05.Bf2Raw, v06.Bf2Raw)
+_SCENE = (v06.Scene,)
+
+
+def nodes_below(model: object) -> tuple[list[str], list[str]]:
+    """Return the paths of the nodes below the group that holds OME metadata `model`.
+
+    First the nodes (groups and arrays) that it names, then those the group may also
+    have, which nothing names (an image's `labels`).  A bioformats2raw collection's
+    images aren't named in its metadata, so none are returned.
+    """
+    if isinstance(model, _IMAGE):
+        paths = (ds.path for ms in model.multiscales for ds in ms.datasets)
+        return list(dict.fromkeys(paths)), ["labels"]
+    if isinstance(model, _PLATE):
+        return list(dict.fromkeys(well.path for well in model.plate.wells)), []
+    if isinstance(model, _WELL):
+        return list(dict.fromkeys(image.path for image in model.well.images)), []
+    if isinstance(model, _LABELS_GROUP):
+        return list(dict.fromkeys(model.labels)), []
+    if isinstance(model, _SCENE):
+        transforms = model.scene.coordinateTransformations
+        refs = (ref for t in transforms for ref in (t.input, t.output))
+        paths = (ref.path for ref in refs if ref is not None and ref.path)
+        return list(dict.fromkeys(paths)), []
+    return [], []
+
+
+def bioformats2raw_series(
+    group: ZarrGroup | str | os.PathLike | Mapping[str, bytes],
+) -> list[str]:
+    """Return the image paths of a bioformats2raw collection, in series order.
+
+    As the spec prescribes, if the collection is a plate, the plate metadata takes
+    precedence: the paths are those of the images in its wells.  They're in the order
+    of the `series` list in the metadata of the collection's `OME` group if it lists
+    the same images (its order is that of the images in the OME-XML metadata), else
+    well by well.
+
+    Otherwise, the paths come from the `series` list, if present, else they are the
+    consecutively numbered child nodes `0`, `1`, ..., up to the first missing number.
+
+    This only finds the paths: it doesn't check that each one holds a valid image
+    (use [`validate_zarr_store`][yaozarrs.validate_zarr_store] for that).
+
+    Parameters
+    ----------
+    group : ZarrGroup | str | os.PathLike | Mapping[str, bytes]
+        The root group of the collection, or anything `open_group` accepts.
+
+    Returns
+    -------
+    list[str]
+        Paths of the collection's images, relative to `group`. In a valid collection,
+        each path in the list is an image group.
+
+    Raises
+    ------
+    ValueError
+        If `group` isn't a bioformats2raw collection, or if the metadata needed to
+        find its images (a plate's wells, or else the `OME` group's `series` list) is
+        invalid or missing.
+
+    Examples
+    --------
+    Pass an opened group (to share its metadata cache), and prefetch the images before
+    visiting them:
+
+    ```python
+    from yaozarrs import bioformats2raw_series, open_group
+
+    root = open_group("path/to/collection.ome.zarr")
+    paths = bioformats2raw_series(root)
+    root.prefetch_children(paths)  # one batched fetch on remote stores
+    for path in paths:
+        image = root[path].ome_metadata()  # an Image model
+    ```
+    """
+    group = open_group(group)
+    model = group.ome_metadata()
+    if isinstance(model, _PLATE):
+        if model.bioformats2raw_layout is None:
+            raise ValueError(f"{group!r} is not a bioformats2raw collection.")
+        version = "0.4" if isinstance(model, v04.Plate) else model.version
+        return _plate_images(group, model, version=version)
+    if not isinstance(model, _BF2RAW):
+        raise ValueError(f"{group!r} is not a bioformats2raw collection.")
+
+    version = "0.4" if isinstance(model, v04.Bf2Raw) else model.version
+    if (series := _series_model(group, version=version)) is not None:
+        return list(series.series)
+    return _numbered_children(group)
+
+
+def _series_model(
+    group: ZarrGroup, *, version: str, strict: bool | None = None
+) -> v04.Series | v05.Series | v06.Series | None:
+    """Return the series list in the `OME` child of a bioformats2raw group.
+
+    `None` if there's no `OME` group, or its metadata has no `series` key (the spec's
+    cue to find the images elsewhere).  Raises `ValueError` if the `OME` group's
+    metadata is invalid.
+    """
+    group.prefetch_children(["OME"])
+    if not isinstance(ome := group.get("OME"), ZarrGroup):
+        return None
+    # (`series` is optional: only validate the metadata if it's there)
+    attrs = ome.attrs if version == "0.4" else ome.attrs.get("ome")
+    if not isinstance(attrs, Mapping) or "series" not in attrs:
+        return None
+    model = ome.ome_metadata(version=version, strict=strict)
+    return model if isinstance(model, (v04.Series, v05.Series, v06.Series)) else None
+
+
+def _plate_images(
+    group: ZarrGroup, plate: v04.Plate | v05.Plate | v06.Plate, *, version: str
+) -> list[str]:
+    """Return the paths of a plate's images.
+
+    In the order of the `series` list if it lists the same images, else well by well.
+    """
+    well_paths = [well.path for well in plate.plate.wells]
+    group.prefetch_children(["OME", *well_paths])  # (one batch)
+    paths: list[str] = []
+    for well_path in well_paths:
+        meta = None
+        if isinstance(well := group.get(well_path), ZarrGroup):
+            meta = well.ome_metadata(version=version)
+        if not isinstance(meta, _WELL):
+            raise ValueError(f"Plate well {well_path!r} has no well metadata.")
+        paths.extend(f"{well_path}/{image.path}" for image in meta.well.images)
+
+    try:
+        series = _series_model(group, version=version)
+    except ValueError:
+        series = None  # (the plate has the images: an invalid `series` isn't needed)
+    if series is not None and sorted(series.series) == sorted(paths):
+        return list(series.series)
+    return paths
+
+
+def _numbered_children(group: ZarrGroup, batch: int = 16) -> list[str]:
+    """Return the children `0`, `1`, ... of `group`, up to the first missing number.
+
+    Children are looked up in batches, starting at `batch` and doubling each time, so
+    `n` children take about `log2(n / batch)` round trips on remote stores (missing
+    keys are cached as missing, so `in` doesn't fetch them again).
+    """
+    found: list[str] = []
+    while True:
+        keys = [str(i) for i in range(len(found), len(found) + batch)]
+        group.prefetch_children(keys)
+        for key in keys:
+            if key not in group:
+                return found
+            found.append(key)
+        batch *= 2
 
 
 # ---------------------------------------------------

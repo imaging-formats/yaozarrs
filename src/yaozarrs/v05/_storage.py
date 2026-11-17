@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from yaozarrs._common._storage import StorageValidator
+from yaozarrs._common._storage import VectorsAtPathMixin
 from yaozarrs._errors import StorageErrorType, ValidationResult
 from yaozarrs._validate import validate_ome_object, validate_ome_uri
 from yaozarrs.v05._bf2raw import Bf2Raw, Series
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from yaozarrs._zarr import ZarrArray, ZarrGroup
 
 
-class StorageValidatorV05(StorageValidator):
+class StorageValidatorV05(VectorsAtPathMixin):
     """Storage validator for the OME-Zarr v0.5 spec."""
 
     __slots__ = ()

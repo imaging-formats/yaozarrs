@@ -1,8 +1,7 @@
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
 from pydantic import AfterValidator, Field, model_validator
-from typing_extensions import Self
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._node_names import BAD_NODE_RE
@@ -63,13 +62,15 @@ class Plate(_OMEDocument):
 
     # If the top-level group represents a plate, the `bioformats2raw.layout` metadata
     # will be present but the `plate` key MUST also be present
-    bioformats2raw_layout: Literal[3] | None = Field(
-        default=None,
-        alias="bioformats2raw.layout",
-        description=(
-            "Marker indicating this plate was created by bioformats2raw version 3"
+    bioformats2raw_layout: Annotated[
+        Literal[3] | None,
+        Field(
+            alias="bioformats2raw.layout",
+            description=(
+                "Marker indicating this plate was created by bioformats2raw version 3"
+            ),
         ),
-    )
+    ] = None
 
 
 def _validate_fov_path(path: str) -> str:

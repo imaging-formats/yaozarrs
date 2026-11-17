@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import copy
 import json
+import pickle
 import shutil
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -273,6 +275,33 @@ def test_zarrgroup_v2_behaviour(v2_store: Path) -> None:
     assert subgroup.attrs["kind"] == "group"
 
 
+@pytest.mark.parametrize("roundtrip", ["pickle", "deepcopy"])
+def test_zarr_nodes_roundtrip(v2_store: Path, roundtrip: str) -> None:
+    def _rt(obj: object) -> object:
+        if roundtrip == "pickle":
+            return pickle.loads(pickle.dumps(obj))
+        return copy.deepcopy(obj)
+
+    group = open_group(v2_store)
+    group.ome_metadata()  # populate the `_ome_metadata` slot
+    group2 = _rt(group)
+    assert isinstance(group2, ZarrGroup)
+    assert group2.path == group.path
+    assert group2.store_path == group.store_path
+    assert group2.metadata == group.metadata
+    assert group2.ome_metadata() == group.ome_metadata()
+    # the shared metadata cache is not carried over
+    assert group._store._cache
+    assert not group2._store._cache
+    assert isinstance(group2["array"], ZarrArray)
+
+    arr = group["array"]
+    arr2 = _rt(arr)
+    assert isinstance(arr2, ZarrArray)
+    assert arr2.path == arr.path
+    assert arr2.metadata == arr.metadata
+
+
 def test_zarrgroup_prefetch_handles_exceptions(v2_store: Path) -> None:
     group = open_group(v2_store)
     with patch.object(group._store, "getitems", RuntimeError("boom")):
@@ -327,6 +356,16 @@ def test_zarrgroup_from_zarr_python(
     assert isinstance(group, ZarrGroup)
     assert isinstance(group.metadata, ZarrMetadata)
     assert isinstance(group.metadata.ome_metadata(), BaseModel)
+
+
+def test_open_group_from_zarr_python_subgroup(tmp_path: Path) -> None:
+    zarr = pytest.importorskip("zarr")
+    root = zarr.open_group(tmp_path / "root.zarr", mode="w")
+    root.create_group("inner").attrs["name"] = "inner"
+
+    group = open_group(root["inner"])
+    assert group.path == "inner"
+    assert group.attrs.get("name") == "inner"
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
