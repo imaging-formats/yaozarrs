@@ -1133,7 +1133,7 @@ x_physical = 0.5 * x_pixels
 fields it needs (here: <code>scale</code>).  It may also have a <code>name</code>, to identify
 it.  The <a href="#transformation-types">Transformation types</a> section
 lists them all.  (Transformations nested inside a <code>sequence</code>, <code>bijection</code> or
-<code>byDimension</code> leave out <code>input</code> and <code>output</code>.)</p>
+<code>byDimension</code> may leave out <code>input</code> and <code>output</code>.)</p>
 <div class="admonition warning">
 <p class="admonition-title">Transformations point from <code>input</code> to <code>output</code></p>
 <p>Transformations map <em>points</em> from the input space to the output space
@@ -1403,10 +1403,10 @@ Zarr array has the right shape...) are checked by
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>yaozarrs.validate_zarr_store</code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Disconnected coordinate systems in a single image</p>
-<p>An image on its own may have unlinked coordinate systems (a scene could
-still link them), so
+<p>One image's metadata can't show whether a scene links its coordinate
+systems, so
 <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;validate_zarr_store&lt;/span&gt;" href="../../API_Reference/yaozarrs/#yaozarrs.validate_zarr_store" data-preview><code>validate_zarr_store</code></a> only
-<em>warns</em> about that; inside a scene, it's an error.</p>
+<em>warns</em> about unlinked ones; inside a scene, it's an error.</p>
 </div>
 <hr />
 <h2 id="further-reading">Further reading<a class="headerlink" href="#further-reading" title="Link to this section">#</a></h2>

@@ -1336,12 +1336,14 @@ validate it and cast it to the appropriate typed <code>yaozarrs</code> model:</p
 <p>The spec doesn't forbid keys it doesn't define, and neither do the JSON
 schemas (except in the <code>input</code> and <code>output</code> of v0.6 scene transformations),
 so yaozarrs keeps them: they're in each model's <code>model_extra</code>, and
-<code>model_dump()</code> / <code>model_dump_json()</code> write them back out. So a misspelled
+<code>model_dump()</code> / <code>model_dump_json()</code> write them back out (except <code>null</code>
+values, unless you pass <code>exclude_none=False</code>). So a misspelled
 <em>optional</em> key is (unfortunately) kept as an unknown key, not reported.</p>
 </details>
 <h3 id="convert-between-versions">Convert between versions<a class="headerlink" href="#convert-between-versions" title="Link to this section">#</a></h3>
-<p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="API_Reference/yaozarrs/#yaozarrs.convert_version" data-preview><code>yaozarrs.convert_version</code></a> converts any metadata model to another version of
-the spec, keeping its kind (an <code>Image</code> stays an <code>Image</code>):</p>
+<p><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;convert_version&lt;/span&gt;" href="API_Reference/yaozarrs/#yaozarrs.convert_version" data-preview><code>yaozarrs.convert_version</code></a> converts a group's metadata model (or a
+<code>Multiscale</code>) to another version of the spec, keeping its kind (an <code>Image</code> stays an
+<code>Image</code>):</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DimSpec</span><span class="p">,</span> <span class="n">convert_version</span><span class="p">,</span> <span class="n">v04</span>
 
 <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">64</span><span class="p">),</span> <span class="n">DimSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">64</span><span class="p">)]</span>
