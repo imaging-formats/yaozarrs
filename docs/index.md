@@ -276,13 +276,15 @@ yaozarrs.validate_ome_object(dict_obj)  # (2)!
     The spec doesn't forbid keys it doesn't define, and neither do the JSON
     schemas (except in the `input` and `output` of v0.6 scene transformations),
     so yaozarrs keeps them: they're in each model's `model_extra`, and
-    `model_dump()` / `model_dump_json()` write them back out. So a misspelled
+    `model_dump()` / `model_dump_json()` write them back out (except `null`
+    values, unless you pass `exclude_none=False`). So a misspelled
     *optional* key is (unfortunately) kept as an unknown key, not reported.
 
 ### Convert between versions
 
-[`yaozarrs.convert_version`][]{ data-preview } converts any metadata model to another version of
-the spec, keeping its kind (an `Image` stays an `Image`):
+[`yaozarrs.convert_version`][]{ data-preview } converts a group's metadata model (or a
+`Multiscale`) to another version of the spec, keeping its kind (an `Image` stays an
+`Image`):
 
 ```python
 from yaozarrs import DimSpec, convert_version, v04

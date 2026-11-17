@@ -87,7 +87,7 @@ Every transformation has a `type`, which says what it does and which other
 fields it needs (here: `scale`).  It may also have a `name`, to identify
 it.  The [Transformation types](#transformation-types) section
 lists them all.  (Transformations nested inside a `sequence`, `bijection` or
-`byDimension` leave out `input` and `output`.)
+`byDimension` may leave out `input` and `output`.)
 
 !!! warning "Transformations point from `input` to `output`"
     Transformations map *points* from the input space to the output space
@@ -359,10 +359,10 @@ Zarr array has the right shape...) are checked by
 [`yaozarrs.validate_zarr_store`][]{ data-preview }.
 
 !!! note "Disconnected coordinate systems in a single image"
-    An image on its own may have unlinked coordinate systems (a scene could
-    still link them), so
+    One image's metadata can't show whether a scene links its coordinate
+    systems, so
     [`validate_zarr_store`][yaozarrs.validate_zarr_store]{ data-preview } only
-    *warns* about that; inside a scene, it's an error.
+    *warns* about unlinked ones; inside a scene, it's an error.
 
 ---
 

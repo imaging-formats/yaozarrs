@@ -253,9 +253,9 @@ Axes define the dimensions of your image data. Starting with v0.4, axes are
           and time usually are).
         - **`longName`** (optional): a longer name or description of the axis.
         - `type` **SHOULD** be one of `space`, `time`, `channel`, `array`,
-          `coordinate` or `displacement` (the last two are used by [vector
-          fields](coordinate_systems.md#transformation-types){ data-preview }),
-          but other strings are allowed for custom types.
+          `coordinate` or `displacement` (the last two are for the vector-field
+          arrays of `displacements` and `coordinates` transformations), but
+          other strings are allowed for custom types.
         - Axis names **MUST** be non-empty, and unique *within their coordinate
           system*.
 
