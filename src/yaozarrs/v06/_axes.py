@@ -1,19 +1,17 @@
 import warnings
 from collections.abc import Sequence
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Literal, Self, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import (
-    AfterValidator,
-    Discriminator,
-    Field,
-    Tag,
-    field_validator,
-    model_validator,
-)
+from pydantic import AfterValidator, Field, model_validator
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._common._units import SpaceUnits, TimeUnits
+from yaozarrs._common._axis import build_axis
+from yaozarrs._common._units import (
+    ValidSpaceUnit,
+    ValidTimeUnit,
+    warn_if_unexpected_unit,
+)
 from yaozarrs._errors import ValidationWarning
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
 
@@ -25,13 +23,26 @@ __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "CustomAxis",
 ]
 
+# the axis types the spec recommends (it MAY take other values, for custom types)
+AxisType: TypeAlias = Literal[
+    "array", "space", "time", "channel", "coordinate", "displacement"
+]
 
-class _AxisBase(_BaseModel):
+
+class Axis(_BaseModel):
+    """An axis of a coordinate system.
+
+    `SpaceAxis`, `TimeAxis`, `ChannelAxis` and `CustomAxis` build one with the `type`
+    filled in (and, for IDEs, the units the spec recommends for that type).
+    """
+
     # MUST contain the field `name` ... The value MUST be a non-empty string.
     name: str = Field(min_length=1, description="The name of the axis.")
-    # SHOULD contain the field `type`. (narrowed by subclasses)
-    type: str | None = Field(default=None, description="The type of the axis.")
-    # SHOULD contain the field `unit` (narrowed by subclasses)
+    # SHOULD contain the field `type`.
+    type: AxisType | str | None = Field(
+        default=None, description="The type of the axis."
+    )
+    # SHOULD contain the field `unit`
     unit: str | None = Field(default=None, description="Physical unit of the axis.")
     # MAY contain the field `longName`. The value MUST be a string
     longName: str | None = Field(
@@ -46,72 +57,62 @@ class _AxisBase(_BaseModel):
         ),
     )
 
-
-class _TypedAxis(_AxisBase):
-    @model_validator(mode="before")
-    @classmethod
-    def _inject_type_if_missing(cls, data: Any) -> Any:
-        # allows e.g. `SpaceAxis(name="x")`, while still marking `type` as
-        # explicitly set (so that it survives `model_dump(exclude_unset=True)`)
-        if isinstance(data, dict) and "type" not in data:
-            return {**data, "type": cls.model_fields["type"].default}
-        return data
+    @model_validator(mode="after")
+    def _warn_unexpected_unit(self) -> Self:
+        warn_if_unexpected_unit(self.type, self.unit)
+        return self
 
 
-class SpaceAxis(_TypedAxis):
-    """Axis with `type="space"` (units restricted to SpaceUnits)."""
-
-    type: Literal["space"] = "space"
-    unit: SpaceUnits | None = None
-
-
-class TimeAxis(_TypedAxis):
-    """Axis with `type="time"` (units restricted to TimeUnits)."""
-
-    type: Literal["time"] = "time"
-    unit: TimeUnits | None = None
-
-
-class ChannelAxis(_TypedAxis):
-    """Axis with `type="channel"`."""
-
-    type: Literal["channel"] = "channel"
+def SpaceAxis(
+    *,
+    name: str,
+    type: Literal["space"] = "space",
+    unit: ValidSpaceUnit | str | None = None,
+    longName: str | None = None,
+    discrete: bool | None = None,
+) -> Axis:
+    """An `Axis` with `type="space"`."""
+    fields = {"type": type, "unit": unit, "longName": longName, "discrete": discrete}
+    return build_axis(Axis, "space", name=name, **fields)
 
 
-class CustomAxis(_AxisBase):
-    """Axis with any other `type` (e.g. "array", "coordinate", "displacement") or none.
-
-    The spec recommends `type` be one of "array", "space", "time", "channel",
-    "coordinate", or "displacement", but it MAY take other values for custom axis types.
-    """
-
-    type: Literal["array", "coordinate", "displacement"] | str | None = None
-
-    @field_validator("type")
-    @classmethod
-    def _not_a_typed_axis(cls, v: str | None) -> str | None:
-        # (an axis of these types can't be used as a CustomAxis: inside an axes list,
-        # the `Axis` union expects the matching typed class)
-        if v in ("space", "time", "channel"):
-            raise ValueError(
-                f"Use {v.title()}Axis for axes of type {v!r} (CustomAxis is for other "
-                "types)."
-            )
-        return v
+def TimeAxis(
+    *,
+    name: str,
+    type: Literal["time"] = "time",
+    unit: ValidTimeUnit | str | None = None,
+    longName: str | None = None,
+    discrete: bool | None = None,
+) -> Axis:
+    """An `Axis` with `type="time"`."""
+    fields = {"type": type, "unit": unit, "longName": longName, "discrete": discrete}
+    return build_axis(Axis, "time", name=name, **fields)
 
 
-def _axis_discriminator(v: Any) -> str:
-    t = v.get("type") if isinstance(v, dict) else getattr(v, "type", None)
-    return t if t in ("space", "time", "channel") else "custom"
+def ChannelAxis(
+    *,
+    name: str,
+    type: Literal["channel"] = "channel",
+    unit: str | None = None,
+    longName: str | None = None,
+    discrete: bool | None = None,
+) -> Axis:
+    """An `Axis` with `type="channel"`."""
+    fields = {"type": type, "unit": unit, "longName": longName, "discrete": discrete}
+    return build_axis(Axis, "channel", name=name, **fields)
 
 
-Axis: TypeAlias = Annotated[
-    Annotated[SpaceAxis, Tag("space")]
-    | Annotated[TimeAxis, Tag("time")]
-    | Annotated[ChannelAxis, Tag("channel")]
-    | Annotated[CustomAxis, Tag("custom")],
-    Discriminator(_axis_discriminator),
-]
+def CustomAxis(
+    *,
+    name: str,
+    type: Literal["array", "coordinate", "displacement"] | str | None = None,
+    unit: str | None = None,
+    longName: str | None = None,
+    discrete: bool | None = None,
+) -> Axis:
+    """An `Axis` of any other type (e.g. "array", "coordinate", "displacement")."""
+    fields = {"type": type, "unit": unit, "longName": longName, "discrete": discrete}
+    return build_axis(Axis, None, name=name, **fields)
 
 
 def _validate_axes(axes: list[Axis]) -> list[Axis]:

@@ -150,7 +150,7 @@ print(type(obj))
 # <class 'yaozarrs.v05._zarr_json.OMEZarrGroupJSON'>
 
 print(repr(obj.attributes.ome.multiscales[0].axes[0]))
-# SpaceAxis(name='y', type='space', unit='micrometer')
+# Axis(name='y', type='space', unit='micrometer')
 ```
 
 #### Validate arbitrary python objects

@@ -764,7 +764,7 @@ def test_v04_axis_name_uniqueness_custom_validation() -> None:
     with pytest.raises(
         ValueError, match=r"Axis names must be unique\. Found duplicates"
     ):
-        _validate_axes_list(axes)  # ty: ignore[invalid-argument-type]
+        _validate_axes_list(axes)
 
 
 def test_multiscale_from_dims() -> None:

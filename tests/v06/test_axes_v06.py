@@ -65,18 +65,9 @@ def test_invalid_coordinate_systems(obj: dict, msg: str) -> None:
         v06.CoordinateSystem.model_validate(obj)
 
 
-def test_axis_discrimination() -> None:
+def test_axes_are_all_axis() -> None:
     axes = AXES.validate_python([T, C, Y, X, I, D, {"name": "foo"}])
-    types = [type(ax) for ax in axes]
-    assert types == [
-        v06.TimeAxis,
-        v06.ChannelAxis,
-        v06.SpaceAxis,
-        v06.SpaceAxis,
-        v06.CustomAxis,
-        v06.CustomAxis,
-        v06.CustomAxis,
-    ]
+    assert all(type(ax) is v06.Axis for ax in axes)
     assert axes[5].discrete is True
 
 
@@ -160,12 +151,6 @@ def test_multiscale_array_axes_warn() -> None:
 def test_multiscale_array_axes_other_rules(axes: list[dict], msg: str) -> None:
     with pytest.warns(ValidationWarning), pytest.raises(ValueError, match=msg):
         validate_multiscale_axes(AXES.validate_python(axes))
-
-
-@pytest.mark.parametrize("type_", ["space", "time", "channel"])
-def test_custom_axis_rejects_known_types(type_: str) -> None:
-    with pytest.raises(ValidationError, match=f"Use {type_.title()}Axis"):
-        v06.CustomAxis(name="a", type=type_)
 
 
 PARITY_AXES = [

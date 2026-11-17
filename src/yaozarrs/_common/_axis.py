@@ -1,110 +1,76 @@
 """Axis building blocks (identical in v0.4 and v0.5)."""
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias, TypeVar
 
 from annotated_types import Len
-from pydantic import (
-    AfterValidator,
-    Discriminator,
-    Field,
-    Tag,
-    model_validator,
-)
+from pydantic import AfterValidator, Field, model_validator
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._types import UNIQUE_ITEMS
 
-from ._units import SpaceUnits, TimeUnits
+from ._units import ValidSpaceUnit, ValidTimeUnit, warn_if_unexpected_unit
+
+_AxisT = TypeVar("_AxisT", bound=_BaseModel)
 
 
-class _AxisBase(_BaseModel):
+class Axis(_BaseModel):
+    """An axis of an image: a name, and (SHOULD) a type and unit.
+
+    `SpaceAxis`, `TimeAxis` and `ChannelAxis` build one with the `type` filled in
+    (and, for IDEs, the units the spec recommends for that type).
+    """
+
     name: str = Field(description="The name of the axis.")
-
-
-# these three classes allow us to:
-# 1. have "type" be used for discrimination when parsing Axis union types, falling
-#    back to CustomAxis when "type" is missing or unrecognized
-# 2. have units validated in a type-specific way
-# 3. instantiate SpaceAxis, TimeAxis, ChannelAxis without specifying "type" at runtime
-#    (even though it's required in the schema)
-
-
-class CustomAxis(_AxisBase):
-    """Axis with unrecognized or missing `type`, and any unit."""
-
-    type: str | None = None  # SHOULD
+    type: Literal["space", "time", "channel"] | str | None = None  # SHOULD
     unit: str | None = None  # SHOULD
 
-
-class SpaceAxis(_AxisBase):
-    """Axis with `type="space"` (units restricted to SpaceUnits)."""
-
-    if TYPE_CHECKING:
-        type: Literal["space"] = "space"
-    else:
-        type: Literal["space"]
-    unit: SpaceUnits | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def _inject_type_if_missing(cls, v: Any) -> Any:
-        if isinstance(v, dict) and "type" not in v:
-            v["type"] = "space"
-        return v
+    @model_validator(mode="after")
+    def _warn_unexpected_unit(self) -> Self:
+        warn_if_unexpected_unit(self.type, self.unit)
+        return self
 
 
-class TimeAxis(_AxisBase):
-    """Axis with `type="time"` (units restricted to TimeUnits)."""
+def build_axis(cls: type[_AxisT], fixed_type: str | None, **fields: Any) -> _AxisT:
+    """Build `cls` from the `fields` that aren't None (checking a `fixed_type`).
 
-    if TYPE_CHECKING:
-        type: Literal["time"] = "time"
-    else:
-        type: Literal["time"]
-    unit: TimeUnits | None = None  # SHOULD
-
-    @model_validator(mode="before")
-    @classmethod
-    def _inject_type_if_missing(cls, v: Any) -> Any:
-        if isinstance(v, dict) and "type" not in v:
-            v["type"] = "time"
-        return v
+    (only those, so that they're the fields set: `exclude_unset` dumps don't gain
+    `None`s)
+    """
+    if fixed_type is not None and fields["type"] != fixed_type:
+        raise ValueError(f"Expected type {fixed_type!r}, got {fields['type']!r}")
+    return cls(**{k: v for k, v in fields.items() if v is not None})
 
 
-class ChannelAxis(_AxisBase):
-    """Axis with `type="channel"`."""
-
-    if TYPE_CHECKING:
-        type: Literal["channel"] = "channel"
-    else:
-        type: Literal["channel"]
-    unit: str | None = None  # SHOULD
-
-    @model_validator(mode="before")
-    @classmethod
-    def _inject_type_if_missing(cls, v: Any) -> Any:
-        if isinstance(v, dict) and "type" not in v:
-            v["type"] = "channel"
-        return v
+def SpaceAxis(
+    *,
+    name: str,
+    type: Literal["space"] = "space",
+    unit: ValidSpaceUnit | str | None = None,
+) -> Axis:
+    """An `Axis` with `type="space"`."""
+    return build_axis(Axis, "space", name=name, type=type, unit=unit)
 
 
-def _axis_discriminator(v: Any) -> str:
-    if isinstance(v, dict):
-        t = v.get("type")
-    else:
-        t = getattr(v, "type", None)
+def TimeAxis(
+    *,
+    name: str,
+    type: Literal["time"] = "time",
+    unit: ValidTimeUnit | str | None = None,
+) -> Axis:
+    """An `Axis` with `type="time"`."""
+    return build_axis(Axis, "time", name=name, type=type, unit=unit)
 
-    if t in ("space", "time", "channel"):
-        return t
-    return "custom"
+
+def ChannelAxis(
+    *, name: str, type: Literal["channel"] = "channel", unit: str | None = None
+) -> Axis:
+    """An `Axis` with `type="channel"`."""
+    return build_axis(Axis, "channel", name=name, type=type, unit=unit)
 
 
-Axis: TypeAlias = Annotated[
-    Annotated[SpaceAxis, Tag("space")]
-    | Annotated[TimeAxis, Tag("time")]
-    | Annotated[ChannelAxis, Tag("channel")]
-    | Annotated[CustomAxis, Tag("custom")],
-    Discriminator(_axis_discriminator),
-]
+def CustomAxis(*, name: str, type: str | None = None, unit: str | None = None) -> Axis:
+    """An `Axis` of any other type (or none)."""
+    return build_axis(Axis, None, name=name, type=type, unit=unit)
 
 
 def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
