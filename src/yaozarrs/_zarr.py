@@ -47,7 +47,7 @@ from yaozarrs._base import type_adapter
 from yaozarrs.v06._version import VERSIONS as V06_VERSIONS
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterable
+    from collections.abc import AsyncIterator, Callable, Iterable
     from typing import Self, TypeVar
 
     import rich.tree
@@ -1095,18 +1095,21 @@ class _ZarrPythonStore(Mapping[str, bytes]):
         return dict(zip(keys, results, strict=True))
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self._collect(self.store.list()))
+        return iter(self._collect(self.store.list))
 
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
     def list_dir(self, prefix: str) -> list[str]:
         """Return the names of the keys and prefixes directly under `prefix`."""
-        return self._collect(self.store.list_dir(prefix))
+        return self._collect(self.store.list_dir, prefix)
 
-    def _collect(self, keys: AsyncIterator[str]) -> list[str]:
+    def _collect(
+        self, list_keys: Callable[..., AsyncIterator[str]], *args: str
+    ) -> list[str]:
+        # (`list_keys` is called in zarr's loop: some stores start listing right away)
         async def _list() -> list[str]:
-            return [key async for key in keys]
+            return [key async for key in list_keys(*args)]
 
         return self._sync(_list())
 

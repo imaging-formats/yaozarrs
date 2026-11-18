@@ -394,6 +394,10 @@ def test_open_group_from_zarr_python_store(tmp_path: Path, kind: str) -> None:
 
         store = "a client"  # (like zarr's ObjectStore)
 
+        def list_dir(self, prefix: str) -> Any:
+            asyncio.get_running_loop()  # (like ObjectStore, which lists right away)
+            return super().list_dir(prefix)
+
     store = {
         "memory": lambda: zarr.storage.MemoryStore(),
         "zip": lambda: zarr.storage.ZipStore(tmp_path / "a.zip", mode="w"),
