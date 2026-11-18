@@ -150,22 +150,12 @@ def _listed_children(group: ZarrGroup) -> list[str]:
 
     Empty if the store can't be listed (http and cloud stores, and mappings).
     """
-    mapper = group._store._mapper
-    if not hasattr(mapper, "fs"):
-        return []
-    protocol = getattr(mapper.fs, "protocol", "")
-    protocols = [protocol] if isinstance(protocol, str) else list(protocol)
-    if any(p in ("http", "https", "s3", "gs", "az") for p in protocols):
-        return []
-
-    full_path = f"{mapper.root}/{group._path}" if group._path else mapper.root
-    try:
-        entries = mapper.fs.ls(full_path, detail=False)
-    except Exception:
-        return []
-    names = (entry.rstrip("/").rsplit("/", 1)[-1] for entry in entries)
     # (skip metadata files)
-    return [n for n in names if not n.startswith(".") and n != "zarr.json"]
+    return [
+        n
+        for n in group._store.list_dir(group._path)
+        if not n.startswith(".") and n != "zarr.json"
+    ]
 
 
 def _group_node(group: ZarrGroup, name: str) -> TreeNode:

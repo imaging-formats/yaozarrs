@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import copy
 import json
 import pickle
 import shutil
+import sys
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -23,6 +25,7 @@ from yaozarrs._zarr import (
     ZarrMetadata,
     ZarrNode,
     _CachedMapper,
+    _ZarrPythonStore,
     open_group,
 )
 
@@ -324,6 +327,13 @@ def test_zarrgroup_to_zarr_python(v2_store: Path) -> None:
     assert isinstance(result, zarr.Group)
 
 
+def test_to_zarr_python_keeps_storage_options() -> None:
+    zarr = pytest.importorskip("zarr")
+    refs = {"zarr.json": '{"zarr_format": 3, "node_type": "group"}'}
+    group = open_group("reference://", storage_options={"fo": refs})
+    assert isinstance(group.to_zarr_python(), zarr.Group)
+
+
 @pytest.mark.parametrize("converter", ["to_zarr_python", "to_tensorstore"])
 def test_path_with_spaces(
     write_demo_ome: Callable, converter: str, tmp_path: Path
@@ -358,14 +368,71 @@ def test_zarrgroup_from_zarr_python(
     assert isinstance(group.metadata.ome_metadata(), BaseModel)
 
 
-def test_open_group_from_zarr_python_subgroup(tmp_path: Path) -> None:
+@pytest.mark.parametrize("kind", ["local", "memory", "fsspec"])
+def test_open_group_from_zarr_python_subgroup(tmp_path: Path, kind: str) -> None:
     zarr = pytest.importorskip("zarr")
-    root = zarr.open_group(tmp_path / "root.zarr", mode="w")
+    store = {
+        "local": tmp_path / "root.zarr",
+        "memory": zarr.storage.MemoryStore(),
+        "fsspec": zarr.storage.FsspecStore.from_url(f"memory://{tmp_path.name}"),
+    }[kind]
+    root = zarr.open_group(store, mode="w")
     root.create_group("inner").attrs["name"] = "inner"
 
     group = open_group(root["inner"])
     assert group.path == "inner"
     assert group.attrs.get("name") == "inner"
+    assert group.to_zarr_python().attrs["name"] == "inner"
+
+
+@pytest.mark.parametrize("kind", ["memory", "zip", "fsspec", "foreign"])
+def test_open_group_from_zarr_python_store(tmp_path: Path, kind: str) -> None:
+    zarr = pytest.importorskip("zarr")
+
+    class ForeignStore(zarr.storage.MemoryStore):
+        """A Store from another package (like icechunk's), with its own `.store`."""
+
+        store = "a client"  # (like zarr's ObjectStore)
+
+    store = {
+        "memory": lambda: zarr.storage.MemoryStore(),
+        "zip": lambda: zarr.storage.ZipStore(tmp_path / "a.zip", mode="w"),
+        "fsspec": lambda: zarr.storage.LocalStore(tmp_path),  # (read below)
+        "foreign": lambda: ForeignStore(),
+    }[kind]()
+    root = zarr.open_group(store, mode="w", attributes={"name": "root"})
+    root.create_group("unnamed")
+    if kind == "zip":
+        store.close()
+        store = zarr.storage.ZipStore(tmp_path / "a.zip", mode="r")
+    elif kind == "fsspec":
+        store = zarr.storage.FsspecStore.from_url(f"file://{tmp_path}")
+
+    group = open_group(store)
+    assert group.attrs.get("name") == "root"
+    assert "zarr.json" in list(group.store)
+    assert "unnamed" in group.tree()  # (found by listing the store)
+    assert "_ZarrPythonStore" not in repr(group)
+
+
+def test_open_group_from_local_store_without_fsspec(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    zarr = pytest.importorskip("zarr")
+    zarr.open_group(tmp_path, mode="w").attrs["name"] = "root"
+    monkeypatch.setitem(sys.modules, "fsspec", None)  # (as if not installed)
+    assert open_group(zarr.storage.LocalStore(tmp_path)).attrs.get("name") == "root"
+
+
+def test_zarr_python_store_reraises_cancellation() -> None:
+    zarr = pytest.importorskip("zarr")
+
+    class CancelledStore(zarr.storage.MemoryStore):
+        async def get(self, *args: Any, **kwargs: Any) -> None:
+            raise asyncio.CancelledError
+
+    with pytest.raises(asyncio.CancelledError):
+        _ZarrPythonStore(CancelledStore()).getitems(["zarr.json"])
 
 
 @pytest.mark.parametrize("version", ["0.4", "0.5"])
