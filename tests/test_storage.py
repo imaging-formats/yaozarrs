@@ -309,7 +309,7 @@ def test_validate_strict_accepts_valid_stores(
 
 def test_validate_null_storage(tmp_path: Path) -> None:
     """Test validation with intentionally broken storage."""
-    with pytest.raises(OSError, match="No zarr metadata found"):
+    with pytest.raises(OSError, match=f"No zarr metadata found at .*{tmp_path.name}"):
         validate_zarr_store(tmp_path.name)
 
 

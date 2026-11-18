@@ -310,9 +310,20 @@ def _load_zarr_metadata(mapper: Mapping[str, bytes], path: str = "") -> ZarrMeta
     if (meta := _load_zarray(prefix, mapper)) is not None:
         return meta
 
-    raise FileNotFoundError(  # pragma: no cover
-        f"No zarr metadata found at '{prefix}' (tried zarr.json, .zgroup, .zarray)"
+    where = f"{_store_name(mapper)}/{path}".rstrip("/")
+    raise FileNotFoundError(
+        f"No zarr metadata found at {where!r} (tried zarr.json, .zgroup, .zarray)"
     )
+
+
+def _store_name(mapper: Mapping[str, bytes]) -> str:
+    """Return the URI of a store mapping, or a name like `"<dict>"` if it has none."""
+    _mapper: Any = getattr(mapper, "_mapper", mapper)  # (unwrap a _CachedMapper)
+    if hasattr(_mapper, "root") and hasattr(_mapper, "fs"):
+        return _mapper.fs.unstrip_protocol(_mapper.root)
+    if isinstance(_mapper, _ZarrPythonStore):  # (name the user's store)
+        _mapper = _mapper.store
+    return f"<{type(_mapper).__name__}>"
 
 
 # ---------------------------------------------------
@@ -682,10 +693,7 @@ class ZarrNode:
         """Return the URI, or a name like `"<dict>/A/1"` for stores without one."""
         if self._has_uri():
             return self.store_path
-        mapper = self._store._mapper
-        if isinstance(mapper, _ZarrPythonStore):  # (name the user's store)
-            mapper = mapper.store
-        return f"<{type(mapper).__name__}>/{self._path}".rstrip("/")
+        return f"{_store_name(self._store)}/{self._path}".rstrip("/")
 
     def __repr__(self) -> str:
         cls_name = self.__class__.__name__
@@ -1186,9 +1194,9 @@ def open_group(
         from fsspec import FSMap, get_mapper
     except ImportError as e:
         raise ImportError(
-            "fsspec package is required for open_group() with a URI.  "
+            "fsspec package is required for open_group() with a path or URI.  "
             "Please install with `pip install yaozarrs[io]` or "
-            "`pip install fsspec`."
+            "`pip install fsspec`, or pass a mapping of store keys to bytes instead."
         ) from e
 
     if isinstance(uri, (str, os.PathLike)):
