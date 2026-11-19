@@ -1066,14 +1066,17 @@ class _ZarrPythonStore(Mapping[str, bytes]):
     MAX_CONCURRENCY = 1280
 
     def __init__(self, store: Store) -> None:
-        from zarr.core.buffer import default_buffer_prototype
+        from zarr.buffer import default_buffer_prototype
+
+        # technically this is private, but we see no easy alternative: stores like
+        # `FsspecStore` must be used on zarr's own event loop
         from zarr.core.sync import sync
-        from zarr.storage import FsspecStore
+        from zarr.storage import FsspecStore, StorePath
 
         self.store = store
         self._sync = sync
         self._prototype = default_buffer_prototype()
-        sync(store._ensure_open())  # (stores open lazily, e.g. a `ZipStore`)
+        sync(StorePath.open(store, ""))  # (stores open lazily, e.g. a `ZipStore`)
         if isinstance(store, FsspecStore):  # (keep its URI)
             self.fs, self.root = store.fs, store.path
 
