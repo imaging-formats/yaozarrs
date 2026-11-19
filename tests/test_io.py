@@ -6,15 +6,9 @@ import pytest
 from yaozarrs import v04, v05, validate_ome_uri
 from yaozarrs._base import ZarrGroupModel
 
-try:
-    from aiohttp.client_exceptions import ClientConnectorError
-
-    connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
-except ImportError:
-    connection_exceptions = ()
-
 HAVE_FSSPEC = importlib.util.find_spec("fsspec")
 DATA = Path(__file__).parent / "data"
+V04_DATA = DATA / "v04"
 V05_DATA = DATA / "v05"
 
 SOURCES = {
@@ -23,17 +17,15 @@ SOURCES = {
     "https://uk1s3.embassy.ebi.ac.uk/idr/share/ome2024-ngff-challenge/idr0010/76-45.zarr": v05.Plate,  # noqa E501
     V05_DATA / "76-45.ome.zarr": v05.Plate,
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr": v04.Image,
+    V04_DATA / "2551.zarr": v04.Plate,  # (no zarr.json: falls through to .zattrs)
 }
 
 
 @pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
+@pytest.mark.network
 @pytest.mark.parametrize("uri,expected_type", SOURCES.items())
 def test_from_uri(uri: str, expected_type: type) -> None:
-    try:
-        obj = validate_ome_uri(uri)
-    except connection_exceptions as e:
-        pytest.xfail(reason=f"Internet down?: {e}")
-        return
+    obj = validate_ome_uri(uri)
 
     if isinstance(obj, v05.OMEZarrGroupJSON):
         # in v05, the ome info is inside the doc['attributes']['ome'] key
@@ -44,3 +36,17 @@ def test_from_uri(uri: str, expected_type: type) -> None:
         assert isinstance(obj, expected_type)
         assert isinstance(obj, ZarrGroupModel)
         assert obj.uri is not None and obj.uri.endswith(".zattrs")
+
+
+@pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
+def test_from_uri_connection_error() -> None:
+    """A connection error is raised as such, not as missing metadata."""
+    aiohttp = pytest.importorskip("aiohttp")
+    with pytest.raises(aiohttp.ClientConnectionError):
+        validate_ome_uri("http://127.0.0.1:1/image.zarr")
+
+
+@pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
+def test_from_uri_missing(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="Could not find zarr group metadata"):
+        validate_ome_uri(tmp_path)
