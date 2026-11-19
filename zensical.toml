@@ -16,6 +16,7 @@ nav = [
     "ome_zarr_guide/coordinate_systems.md",
   ] },
   "writing.md",
+  "rules/index.md",
   { "API Reference" = [
     "API_Reference/yaozarrs.md",
     "API_Reference/yaozarrs.v04.md",
@@ -25,8 +26,14 @@ nav = [
     "API_Reference/yaozarrs.write.v06.md",
   ] },
 ]
+# the generated rule pages (scripts/ngff_rules.py docs) are linked from rules/index.md
+not_in_nav = """
+/rules/YZ-*.md
+"""
 [[project.extra_javascript]]
 path = "javascripts/yaozarrs-animation.js"
+[[project.extra_javascript]]
+path = "javascripts/rule_filter.js"
 [[project.extra_javascript]]
 path = "javascripts/ome_explorer.js"
 type = "module"

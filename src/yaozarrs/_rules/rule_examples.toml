@@ -1,0 +1,8 @@
+# Minimal failing examples for the rules in `rules.toml`, keyed by rule code
+# (`Rule.example` and `Rule.examples`, loaded on first use). The tests and the docs
+# script use them, to check that each code fires exactly where the spec states the rule.
+#
+# `[<CODE>.example]` is in the v0.5 format, and is converted for the other versions.
+# `[<CODE>.examples."<version>"]` replaces it for one version, in that version's format.
+# Only codes that yaozarrs emits have examples (none yet).
+# See `.claude/skills/ngff-rules/SKILL.md`.

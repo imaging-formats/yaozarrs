@@ -17,6 +17,7 @@ jobs:
           enable-cache: true
           python-version: "3.13"
 
+      - run: uv run --group docs python scripts/ngff_rules.py docs
       - run: uv run --group docs zensical build --clean --strict
       - run: touch site/.nojekyll
       # for docs-preview.yml, which deploys PR builds (it can't see the PR number)
