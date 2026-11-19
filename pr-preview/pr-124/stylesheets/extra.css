@@ -337,4 +337,10 @@ img.auto-screenshot {
 }
 .md-typeset .rule-source__note {
 	font-style: italic;
+/* Link previews of API objects: show only the signature and summary */
+.md-tooltip2__inner .doc-children,
+.md-tooltip2__inner details.mkdocstrings-source,
+.md-tooltip2__inner .doc-contents > p:has(> .doc-section-title),
+.md-tooltip2__inner .doc-contents > p:has(> .doc-section-title) ~ * {
+  display: none;
 }
