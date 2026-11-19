@@ -34,3 +34,11 @@ def test_from_uri(uri: str, expected_type: type) -> None:
         assert isinstance(obj, expected_type)
         assert isinstance(obj, ZarrGroupModel)
         assert obj.uri is not None and obj.uri.endswith(".zattrs")
+
+
+@pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
+def test_from_uri_connection_error() -> None:
+    """A connection error is raised as such, not as missing metadata."""
+    aiohttp = pytest.importorskip("aiohttp")
+    with pytest.raises(aiohttp.ClientConnectionError):
+        validate_ome_uri("http://127.0.0.1:1/image.zarr")
