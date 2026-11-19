@@ -1073,6 +1073,7 @@ class _ZarrPythonStore(Mapping[str, bytes]):
         self.store = store
         self._sync = sync
         self._prototype = default_buffer_prototype()
+        sync(store._ensure_open())  # (stores open lazily, e.g. a `ZipStore`)
         if isinstance(store, FsspecStore):  # (keep its URI)
             self.fs, self.root = store.fs, store.path
 
