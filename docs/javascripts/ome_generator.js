@@ -94,11 +94,14 @@ export function compactJSON(obj, indent = 0, maxLength = 79) {
  *
  * @param {Object} config - Configuration object
  * @param {Dimension[]} config.dimensions - Array of dimension objects
- * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.version - 'v0.4', 'v0.5' or 'v0.6'
  * @param {number} config.numLevels - Number of pyramid levels
  * @returns {string} Formatted JSON string
  */
 export function generateJSON({ dimensions, version, numLevels }) {
+  if (version === 'v0.6') {
+    return compactJSON(zarrJSON('0.6', { multiscales: [multiscaleV06(dimensions, numLevels)] }));
+  }
   const axes = dimensions.map(d => {
     const axis = { name: d.name, type: d.type || undefined };
     if (d.unit) axis.unit = d.unit;
@@ -110,10 +113,11 @@ export function generateJSON({ dimensions, version, numLevels }) {
     const scale = dimensions.map(d =>
       d.scale * Math.pow(d.scaleFactor || 1, level)
     );
-    const transforms = [{ scale }];
+    const transforms = [{ type: 'scale', scale }];
 
     if (dimensions.some(d => d.translation !== 0)) {
       transforms.push({
+        type: 'translation',
         translation: dimensions.map(d => d.translation || 0)
       });
     }
@@ -160,16 +164,76 @@ export function generateJSON({ dimensions, version, numLevels }) {
 }
 
 /**
+ * Wrap OME metadata in a Zarr v3 group's zarr.json.
+ */
+function zarrJSON(version, ome) {
+  return {
+    zarr_format: 3,
+    node_type: 'group',
+    attributes: { ome: { version, ...ome } },
+  };
+}
+
+/**
+ * The dataset transformations of a v0.6 multiscale, as `Multiscale.from_dims`
+ * builds them: a scale, or a sequence of a scale and a translation when there is
+ * one (including the half-pixel shift that keeps downsampled levels aligned).
+ *
+ * @returns {Array<{path: string, scale: number[], translation: number[] | null}>}
+ */
+export function levelsV06(dimensions, numLevels) {
+  return Array.from({ length: numLevels }, (_, level) => {
+    const scale = dimensions.map(d => d.scale * Math.pow(d.scaleFactor || 1, level));
+    const translation = dimensions.map((d, i) => (d.translation || 0) + (scale[i] - d.scale) / 2);
+    return {
+      path: String(level),
+      scale,
+      translation: translation.some(t => t !== 0) ? translation : null,
+    };
+  });
+}
+
+/**
+ * Generate a v0.6 multiscale, with a single ("intrinsic") coordinate system.
+ */
+function multiscaleV06(dimensions, numLevels, csName = 'intrinsic') {
+  const axes = dimensions.map(d => {
+    const axis = { name: d.name, type: d.type || undefined };
+    if (d.unit) axis.unit = d.unit;
+    return axis;
+  });
+  const datasets = levelsV06(dimensions, numLevels).map(({ path, scale, translation }) => {
+    const ends = { input: { path }, output: { name: csName } };
+    const transform = translation
+      ? {
+          type: 'sequence',
+          transformations: [
+            { type: 'scale', scale },
+            { type: 'translation', translation },
+          ],
+          ...ends,
+        }
+      : { type: 'scale', scale, ...ends };
+    return { path, coordinateTransformations: [transform] };
+  });
+  return {
+    name: 'example_image',
+    coordinateSystems: [{ name: csName, axes }],
+    datasets,
+  };
+}
+
+/**
  * Generate array metadata JSON for a specific pyramid level.
  *
  * @param {Object} config - Configuration object
  * @param {Dimension[]} config.dimensions - Array of dimension objects
- * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.version - 'v0.4', 'v0.5' or 'v0.6'
  * @param {number} level - Pyramid level (0 = full resolution)
  * @returns {string} Formatted JSON string
  */
 export function generateArrayMetadataJSON({ dimensions, version }, level) {
-  const isV05 = version === 'v0.5';
+  const isZarr3 = version !== 'v0.4';
   const base = 512;
   const shape = dimensions.map(d => {
     if (d.type === 'space') {
@@ -185,8 +249,9 @@ export function generateArrayMetadataJSON({ dimensions, version }, level) {
     return 64;
   });
 
-  if (isV05) {
+  if (isZarr3) {
     // Zarr v3 array metadata
+    // (dimension_names are required in v0.5; in v0.6 they're optional, but useful)
     return compactJSON({
       zarr_format: 3,
       node_type: 'array',
@@ -226,11 +291,14 @@ export function generateArrayMetadataJSON({ dimensions, version }, level) {
  *
  * @param {Object} config - Configuration object
  * @param {Dimension[]} config.dimensions - Array of dimension objects
- * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.version - 'v0.4', 'v0.5' or 'v0.6'
  * @param {number} config.numLevels - Number of pyramid levels
  * @returns {string} Python code string
  */
 export function generatePython({ dimensions, version, numLevels }) {
+  if (version === 'v0.6') {
+    return generatePythonV06({ dimensions, numLevels });
+  }
   const ver = version.replace('.', '');
 
   const axesCode = dimensions.map(d => {
@@ -244,15 +312,7 @@ export function generatePython({ dimensions, version, numLevels }) {
     return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
   }).join(',\n');
 
-  const dimsCode = dimensions.map(d => {
-    const parts = [`name="${d.name}"`];
-    if (d.type) parts.push(`type="${d.type}"`);
-    if (d.unit) parts.push(`unit="${d.unit}"`);
-    if (d.scale !== 1) parts.push(`scale=${d.scale}`);
-    if (d.translation !== 0) parts.push(`translation=${d.translation}`);
-    if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
-    return `    DimSpec(${parts.join(', ')})`;
-  }).join(',\n');
+  const dimsCode = dimSpecCode(dimensions);
 
   return `from yaozarrs import ${ver}, DimSpec
 
@@ -311,6 +371,106 @@ multiscale2 = ${ver}.Multiscale.from_dims(
 
 # Convert to JSON
 image = ${ver}.Image(multiscales=[multiscale2])
+print(image.model_dump_json(indent=2))`;
+}
+
+function axisClassName(d) {
+  const typeMap = { space: 'SpaceAxis', time: 'TimeAxis', channel: 'ChannelAxis' };
+  return typeMap[d.type] || 'CustomAxis';
+}
+
+function dimSpecCode(dimensions) {
+  return dimensions.map(d => {
+    const parts = [`name="${d.name}"`];
+    if (d.type) parts.push(`type="${d.type}"`);
+    if (d.unit) parts.push(`unit="${d.unit}"`);
+    if (d.scale !== 1) parts.push(`scale=${d.scale}`);
+    if (d.translation !== 0) parts.push(`translation=${d.translation}`);
+    // DimSpec downsamples space axes by 2 (and others by 1) unless told otherwise,
+    // and infers the type from the name when it isn't given
+    const factor = d.scaleFactor || 1;
+    if (!d.type || factor !== (d.type === 'space' ? 2 : 1)) {
+      parts.push(`scale_factor=${factor}`);
+    }
+    return `    DimSpec(${parts.join(', ')})`;
+  }).join(',\n');
+}
+
+/**
+ * Generate v0.6 Python code (coordinate systems and explicit transformations).
+ */
+function generatePythonV06({ dimensions, numLevels }) {
+  const axesCode = dimensions.map(d => {
+    const unit = d.unit ? `, unit="${d.unit}"` : '';
+    return `        v06.${axisClassName(d)}(name="${d.name}"${unit})`;
+  }).join(',\n');
+
+  const datasetsCode = levelsV06(dimensions, numLevels).map(({ path, scale, translation }) => {
+    const ends = `input={"path": "${path}"},\n                output={"name": "intrinsic"},`;
+    const transform = translation
+      ? `v06.SequenceTransformation(
+                ${ends}
+                transformations=[
+                    v06.ScaleTransformation(scale=[${scale.join(', ')}]),
+                    v06.TranslationTransformation(translation=[${translation.join(', ')}]),
+                ],
+            )`
+      : `v06.ScaleTransformation(
+                scale=[${scale.join(', ')}],
+                ${ends}
+            )`;
+    return `    v06.Dataset(
+        path="${path}",
+        coordinateTransformations=[
+            ${transform}
+        ],
+    )`;
+  }).join(',\n');
+
+  return `from yaozarrs import v06, DimSpec
+
+# ###############################################
+# Method 1: Using CoordinateSystem & Dataset classes directly
+# ###############################################
+
+# the "intrinsic" coordinate system, that every dataset maps into
+intrinsic = v06.CoordinateSystem(
+    name="intrinsic",
+    axes=[
+${axesCode}
+    ],
+)
+
+datasets = [
+${datasetsCode}
+]
+
+multiscale1 = v06.Multiscale(
+    name="example_image",
+    coordinateSystems=[intrinsic],
+    datasets=datasets,
+)
+
+# ###############################################
+# Method 2: Using DimSpec
+# ###############################################
+
+dims = [
+${dimSpecCode(dimensions)}
+]
+
+multiscale2 = v06.Multiscale.from_dims(
+    dims,
+    name="example_image",
+    n_levels=${numLevels}
+)
+
+# ###############################################
+# Shared code: Construct Image and print JSON
+# ###############################################
+
+# Convert to JSON
+image = v06.Image(multiscales=[multiscale2])
 print(image.model_dump_json(indent=2))`;
 }
 
@@ -436,7 +596,7 @@ const PLATE_LAYOUTS = {
  * Generate plate metadata JSON.
  *
  * @param {Object} config - Configuration object
- * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.version - 'v0.4', 'v0.5' or 'v0.6'
  * @param {string} config.plateType - '12-well', '24-well', or '96-well'
  * @param {Array<{row: number, col: number}>} config.selectedWells - Array of selected well positions
  * @param {number} config.numFOVs - Number of fields of view per well
@@ -469,18 +629,9 @@ export function generatePlateJSON({ version, plateType, selectedWells, numFOVs }
     plateDef.version = '0.4';
   }
 
-  const output = version === 'v0.5'
-    ? {
-        zarr_format: 3,
-        node_type: 'group',
-        attributes: {
-          ome: {
-            version: '0.5',
-            plate: plateDef
-          }
-        }
-      }
-    : { plate: plateDef };
+  const output = version === 'v0.4'
+    ? { plate: plateDef }
+    : zarrJSON(version.slice(1), { plate: plateDef });
 
   return compactJSON(output);
 }
@@ -489,7 +640,7 @@ export function generatePlateJSON({ version, plateType, selectedWells, numFOVs }
  * Generate well metadata JSON.
  *
  * @param {Object} config - Configuration object
- * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.version - 'v0.4', 'v0.5' or 'v0.6'
  * @param {number} config.numFOVs - Number of fields of view
  * @returns {string} Formatted JSON string
  */
@@ -504,18 +655,9 @@ export function generateWellJSON({ version, numFOVs }) {
     wellDef.version = '0.4';
   }
 
-  const output = version === 'v0.5'
-    ? {
-        zarr_format: 3,
-        node_type: 'group',
-        attributes: {
-          ome: {
-            version: '0.5',
-            well: wellDef
-          }
-        }
-      }
-    : { well: wellDef };
+  const output = version === 'v0.4'
+    ? { well: wellDef }
+    : zarrJSON(version.slice(1), { well: wellDef });
 
   return compactJSON(output);
 }
@@ -525,7 +667,7 @@ export function generateWellJSON({ version, numFOVs }) {
  *
  * @param {Object} config - Configuration object
  * @param {Dimension[]} config.dimensions - Array of dimension objects
- * @param {string} config.version - 'v0.4' or 'v0.5'
+ * @param {string} config.version - 'v0.4', 'v0.5' or 'v0.6'
  * @param {number} config.numLevels - Number of pyramid levels
  * @param {string} config.plateType - '12-well', '24-well', or '96-well'
  * @param {Array<{row: number, col: number}>} config.selectedWells - Array of selected well positions
@@ -548,15 +690,7 @@ export function generatePlatePython({ dimensions, version, numLevels, plateType,
     return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
   }).join(',\n');
 
-  const dimsCode = dimensions.map(d => {
-    const parts = [`name="${d.name}"`];
-    if (d.type) parts.push(`type="${d.type}"`);
-    if (d.unit) parts.push(`unit="${d.unit}"`);
-    if (d.scale !== 1) parts.push(`scale=${d.scale}`);
-    if (d.translation !== 0) parts.push(`translation=${d.translation}`);
-    if (d.scaleFactor !== 1) parts.push(`scale_factor=${d.scaleFactor}`);
-    return `    DimSpec(${parts.join(', ')})`;
-  }).join(',\n');
+  const dimsCode = dimSpecCode(dimensions);
 
   // Generate rows and columns
   const rowsCode = layout.rowNames.map(name => `${ver}.Row(name="${name}")`).join(', ');
@@ -626,11 +760,11 @@ well_def = ${ver}.WellDef(
 # ###############################################
 
 # Plate metadata (root level)
-${version === 'v0.5' ? `plate = ${ver}.Plate(version="0.5", plate=plate_def)
+${version !== 'v0.4' ? `plate = ${ver}.Plate(version="${version.slice(1)}", plate=plate_def)
 print(plate.model_dump_json(indent=2))` : `print(plate_def.model_dump_json(indent=2))`}
 
 # Well metadata (A/1/zarr.json)
-${version === 'v0.5' ? `well = ${ver}.Well(version="0.5", well=well_def)
+${version !== 'v0.4' ? `well = ${ver}.Well(version="${version.slice(1)}", well=well_def)
 print(well.model_dump_json(indent=2))` : `print(well_def.model_dump_json(indent=2))`}
 
 # Image metadata (A/1/0/zarr.json) - same as single image

@@ -265,6 +265,7 @@ class StorageErrorType(Enum):
     series_invalid_image = auto()
     series_path_not_found = auto()
     series_path_not_group = auto()
+    series_plate_mismatch = auto()
     transform_dimension_mismatch = auto()
     transform_parameters_invalid = auto()
     transform_parameters_location = auto()

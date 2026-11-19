@@ -1,22 +1,24 @@
 import os
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from functools import wraps
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 if TYPE_CHECKING:
-    import io
-
     import fsspec
-    import fsspec.utils
+    import fsspec.core
 else:
     try:
         import fsspec
-        import fsspec.utils
+        import fsspec.core
     except ImportError:
         fsspec = None
 
 
 F = TypeVar("F", bound=Callable[..., object])
+
+_METADATA_FILES = ("zarr.json", ".zattrs")
+# the errors that mean a key is missing (as in fsspec's FSMap.missing_exceptions)
+_MISSING = (FileNotFoundError, IsADirectoryError, NotADirectoryError)
 
 
 def _require_fsspec(func: F) -> F:
@@ -53,43 +55,19 @@ def read_json_from_uri(uri: str | os.PathLike) -> tuple[str, str]:
         A tuple containing the JSON content as a string, and the normalized URI string.
     """
     uri_str = os.fspath(uri)
-    json_uri = _find_zarr_group_metadata(uri_str)
+    if uri_str.endswith(_METADATA_FILES):
+        candidates = [uri_str]
+    else:  # a zarr group directory
+        uri_str = uri_str.rstrip("/") + "/"
+        candidates = [uri_str + name for name in _METADATA_FILES]
 
-    # Load JSON content using fsspec
-    try:
-        with fsspec.open(json_uri, "r") as f:
-            json_content = cast("io.TextIOBase", f).read()
-
-    except FileNotFoundError as e:  # pragma: no cover
-        msg = f"Could not load JSON from URI: {json_uri}:\n{e}"
-        raise FileNotFoundError(msg) from e
-
-    return json_content, json_uri
-
-
-def _find_zarr_group_metadata(
-    uri_str: str, candidates: Iterable[str] = ("zarr.json", ".zattrs")
-) -> str:
-    """Return path to zarr group metadata file inside a zarr group directory."""
-    # If the URI already points to a known metadata file, return it directly
-    if uri_str.endswith(("zarr.json", ".zattrs")):
-        return uri_str
-
-    # we assume it's a zarr group directory
-    # we now need to use fsspec to use the filesystem
-    # (which may be local or remote)
-    # to find either zarr.json or .zattrs
-    options = fsspec.utils.infer_storage_options(uri_str)
-    protocol = options.get("protocol", "file")
-    fs = cast("fsspec.AbstractFileSystem", fsspec.filesystem(protocol))
-
-    if not uri_str.endswith(fs.sep):
-        uri_str = uri_str + fs.sep
-    for candidate in candidates:
-        json_uri = uri_str + candidate
-        if fs.exists(json_uri):
-            return json_uri
-
-    raise FileNotFoundError(  # pragma: no cover
-        f"Could not find zarr group metadata in: {uri_str}"
-    )
+    # (`cat_file` raises FileNotFoundError only for a missing file. Not `fs.exists()`
+    # or `fsspec.open()`: over http they report *any* error, e.g. a refused
+    # connection, as a missing file)
+    for json_uri in candidates:
+        fs, path = fsspec.core.url_to_fs(json_uri)
+        try:
+            return fs.cat_file(path).decode("utf-8"), json_uri
+        except _MISSING:
+            continue
+    raise FileNotFoundError(f"Could not find zarr group metadata in: {uri_str}")

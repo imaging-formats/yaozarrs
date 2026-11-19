@@ -1,6 +1,6 @@
 # https://github.com/casey/just
 
-oztest := "oztest @ git+https://github.com/German-BioImaging/oztest@d43847d36cffa5368523d44dbc5dfb2e796a5fbc"
+oztest := "oztest @ git+https://github.com/German-BioImaging/oztest@75425e33282f6e1daecb3a4d6829122362d69219"
 
 # Default recipe
 default:

@@ -2,16 +2,74 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import shutil
+import urllib.request
 from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
+from urllib.error import HTTPError
+from urllib.parse import urlsplit
 
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
+
+# ---------------------------- network tests ----------------------------
+# Tests marked `network` read real remote stores. If one fails, we probe the hosts
+# it reads from: when any of them can't be reached, the failure is reported as an
+# xfail. If every host answers, the failure stands (whatever the exception was).
+
+
+def _host_url(url: str) -> str:
+    """The root of the https server that serves `url`."""
+    parts = urlsplit(url)
+    if parts.scheme == "s3":
+        return f"https://{parts.netloc}.s3.amazonaws.com/"
+    return f"{parts.scheme}://{parts.netloc}/"
+
+
+@functools.cache
+def _unreachable(host_url: str) -> str | None:
+    """Why `host_url` can't be reached, or None if the server answers at all."""
+    try:
+        request = urllib.request.Request(host_url, method="HEAD")
+        with urllib.request.urlopen(request, timeout=10):
+            return None
+    except HTTPError as e:
+        e.close()
+        return f"HTTP {e.code}" if e.code >= 500 else None
+    except OSError as e:  # URLError, timeouts, refused connections, TLS errors...
+        return str(getattr(e, "reason", e))
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo
+) -> Generator[None, pytest.TestReport, pytest.TestReport]:
+    report = yield
+    marker = item.get_closest_marker("network")
+    if report.when != "call" or not report.failed or marker is None:
+        return report
+    # the urls given to the marker, or else the test's url params
+    params = getattr(item, "callspec", None)
+    urls = marker.args or [
+        v
+        for v in (params.params.values() if params else ())
+        if isinstance(v, str) and v.startswith(("http://", "https://", "s3://"))
+    ]
+    hosts = sorted({_host_url(url) for url in urls})
+    if down := {h: why for h in hosts if (why := _unreachable(h))}:
+        report.outcome = "skipped"
+        report.wasxfail = "unreachable: " + ", ".join(
+            f"{host} ({why})" for host, why in down.items()
+        )
+    return report
+
+
+# -----------------------------------------------------------------------
 
 
 def dd() -> Any:
