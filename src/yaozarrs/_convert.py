@@ -462,7 +462,7 @@ def convert_version(
     dropped: list[str] = []
     result = _convert(obj, version, coordinate_system, dropped)
     if dropped:
-        warnings.warn(
+        warnings.warn(  # noqa: TID251 (not raised during validation)
             f"Converting to OME-Zarr v{version} dropped metadata that it can't "
             f"express: {', '.join(dict.fromkeys(dropped))}.",
             ConversionWarning,

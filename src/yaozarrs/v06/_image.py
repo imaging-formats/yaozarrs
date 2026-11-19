@@ -1,4 +1,3 @@
-import warnings
 from collections.abc import Sequence
 from typing import Annotated, Any, Self, TypeAlias, cast
 
@@ -10,7 +9,7 @@ from yaozarrs._common._image import check_resolution_order
 from yaozarrs._common._node_names import SuggestDatasetPath
 from yaozarrs._common._omero import Omero
 from yaozarrs._dim_spec import DimSpec
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 from yaozarrs._types import UniqueList
 
 from ._axes import Axis, validate_multiscale_axes
@@ -101,20 +100,18 @@ class Dataset(_BaseModel):
         if (scale := self.scale_transform) is not None and any(
             v < 0 for v in scale.scale
         ):
-            warnings.warn(
+            warn(
                 f"Dataset {self.path!r}: scale values SHOULD be positive (they are "
                 f"pixel sizes), got {scale.scale}.",
-                ValidationWarning,
                 stacklevel=2,
             )
         # The `name` field under `input` SHOULD be omitted. ... The `path` field of
         # `output` SHOULD be omitted.
         # NOTE: another section says "MUST ... omit", so we only warn.
         if t.input.name is not None or t.output.path is not None:
-            warnings.warn(
+            warn(
                 f"Dataset {self.path!r}: the transformation's input 'name' and output "
                 "'path' SHOULD be omitted.",
-                ValidationWarning,
                 stacklevel=2,
             )
         return self

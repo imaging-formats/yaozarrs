@@ -1,9 +1,8 @@
-import warnings
 from typing import Annotated, Literal, TypeAlias, get_args
 
 from pydantic import AfterValidator
 
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 
 
 def _warn_prerelease(v: str) -> str:
@@ -11,9 +10,8 @@ def _warn_prerelease(v: str) -> str:
     # "0.6.dev4" isn't in the schema, but much of the 0.6 data written so far uses it,
     # and ome-zarr-models and ngff-zarr both accept it with a warning.
     if v != "0.6":
-        warnings.warn(
+        warn(
             f"OME-Zarr version {v!r} is a pre-release of '0.6'.",
-            ValidationWarning,
             stacklevel=2,
         )
     return v
