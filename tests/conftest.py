@@ -15,24 +15,12 @@ from urllib.parse import urlsplit
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable
-
-    from pluggy import Result
+    from collections.abc import Callable, Generator
 
 # ---------------------------- network tests ----------------------------
 # Tests marked `network` read real remote stores. If one fails, we probe the hosts
 # it reads from: when any of them can't be reached, the failure is reported as an
 # xfail. If every host answers, the failure stands (whatever the exception was).
-
-SCHEMES = ("http://", "https://", "s3://")
-
-
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line(
-        "markers",
-        "network(*urls): reads remote urls (default: the url params); "
-        "a failure is an xfail if one of their hosts is unreachable",
-    )
 
 
 def _host_url(url: str) -> str:
@@ -57,30 +45,28 @@ def _unreachable(host_url: str) -> str | None:
         return str(getattr(e, "reason", e))
 
 
-def _network_urls(item: pytest.Item, marker: pytest.Mark) -> Iterable[str]:
-    if marker.args:
-        return marker.args
-    params = getattr(item, "callspec", None)
-    values = params.params.values() if params else ()
-    return [v for v in values if isinstance(v, str) and v.startswith(SCHEMES)]
-
-
-@pytest.hookimpl(hookwrapper=True)
+@pytest.hookimpl(wrapper=True)
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo
-) -> Generator[None, Result[pytest.TestReport], None]:
-    outcome = yield
-    report = outcome.get_result()
-    if report.when != "call" or not report.failed:
-        return
-    if (marker := item.get_closest_marker("network")) is None:
-        return
-    hosts = {_host_url(url) for url in _network_urls(item, marker)}
-    if down := {h: why for h in sorted(hosts) if (why := _unreachable(h))}:
+) -> Generator[None, pytest.TestReport, pytest.TestReport]:
+    report = yield
+    marker = item.get_closest_marker("network")
+    if report.when != "call" or not report.failed or marker is None:
+        return report
+    # the urls given to the marker, or else the test's url params
+    params = getattr(item, "callspec", None)
+    urls = marker.args or [
+        v
+        for v in (params.params.values() if params else ())
+        if isinstance(v, str) and v.startswith(("http://", "https://", "s3://"))
+    ]
+    hosts = sorted({_host_url(url) for url in urls})
+    if down := {h: why for h in hosts if (why := _unreachable(h))}:
         report.outcome = "skipped"
         report.wasxfail = "unreachable: " + ", ".join(
             f"{host} ({why})" for host, why in down.items()
         )
+    return report
 
 
 # -----------------------------------------------------------------------
