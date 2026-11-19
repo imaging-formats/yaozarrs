@@ -301,16 +301,7 @@ export function generatePython({ dimensions, version, numLevels }) {
   }
   const ver = version.replace('.', '');
 
-  const axesCode = dimensions.map(d => {
-    const typeMap = {
-      'space': 'SpaceAxis',
-      'time': 'TimeAxis',
-      'channel': 'ChannelAxis',
-    };
-    const axisClass = typeMap[d.type] || 'CustomAxis';
-    const unit = d.unit ? `, unit="${d.unit}"` : '';
-    return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
-  }).join(',\n');
+  const axesCode = dimensions.map(d => `    ${ver}.${axisCode(d)}`).join(',\n');
 
   const dimsCode = dimSpecCode(dimensions);
 
@@ -374,9 +365,10 @@ image = ${ver}.Image(multiscales=[multiscale2])
 print(image.model_dump_json(indent=2))`;
 }
 
-function axisClassName(d) {
-  const typeMap = { space: 'SpaceAxis', time: 'TimeAxis', channel: 'ChannelAxis' };
-  return typeMap[d.type] || 'CustomAxis';
+function axisCode(d) {
+  const type = d.type ? `, type="${d.type}"` : '';
+  const unit = d.unit ? `, unit="${d.unit}"` : '';
+  return `Axis(name="${d.name}"${type}${unit})`;
 }
 
 function dimSpecCode(dimensions) {
@@ -400,10 +392,7 @@ function dimSpecCode(dimensions) {
  * Generate v0.6 Python code (coordinate systems and explicit transformations).
  */
 function generatePythonV06({ dimensions, numLevels }) {
-  const axesCode = dimensions.map(d => {
-    const unit = d.unit ? `, unit="${d.unit}"` : '';
-    return `        v06.${axisClassName(d)}(name="${d.name}"${unit})`;
-  }).join(',\n');
+  const axesCode = dimensions.map(d => `        v06.${axisCode(d)}`).join(',\n');
 
   const datasetsCode = levelsV06(dimensions, numLevels).map(({ path, scale, translation }) => {
     const ends = `input={"path": "${path}"},\n                output={"name": "intrinsic"},`;
@@ -679,16 +668,7 @@ export function generatePlatePython({ dimensions, version, numLevels, plateType,
   const layout = PLATE_LAYOUTS[plateType];
 
   // Generate the multiscale code (reuse from generatePython)
-  const axesCode = dimensions.map(d => {
-    const typeMap = {
-      'space': 'SpaceAxis',
-      'time': 'TimeAxis',
-      'channel': 'ChannelAxis',
-    };
-    const axisClass = typeMap[d.type] || 'CustomAxis';
-    const unit = d.unit ? `, unit="${d.unit}"` : '';
-    return `    ${ver}.${axisClass}(name="${d.name}"${unit})`;
-  }).join(',\n');
+  const axesCode = dimensions.map(d => `    ${ver}.${axisCode(d)}`).join(',\n');
 
   const dimsCode = dimSpecCode(dimensions);
 

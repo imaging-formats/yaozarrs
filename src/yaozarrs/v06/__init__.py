@@ -7,7 +7,13 @@ Schema: <https://github.com/ome/ngff-spec/tree/89da1da5b0491f83b7cdde7d123aef763
 
 from yaozarrs._common._omero import Omero, OmeroChannel, OmeroRenderingDefs, OmeroWindow
 
-from ._axes import Axis, ChannelAxis, CustomAxis, SpaceAxis, TimeAxis
+from ._axes import (
+    Axis,
+    ChannelAxis,
+    CustomAxis,  # ty: ignore[deprecated]
+    SpaceAxis,
+    TimeAxis,
+)
 from ._bf2raw import Bf2Raw, Series
 from ._coordinate_systems import CoordinateSystem
 from ._image import Dataset, Image, Multiscale

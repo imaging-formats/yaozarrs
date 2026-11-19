@@ -22,11 +22,11 @@ image = v05.Image(
         v05.Multiscale(
             name="My Image",
             axes=[
-                v05.TimeAxis(name="time", unit="second"),
-                v05.ChannelAxis(name="channel"),
-                v05.SpaceAxis(name="z", unit="micrometer"),
-                v05.SpaceAxis(name="y", unit="micrometer"),
-                v05.SpaceAxis(name="x", unit="micrometer"),
+                v05.Axis(name="time", type="time", unit="second"),
+                v05.Axis(name="channel", type="channel"),
+                v05.Axis(name="z", type="space", unit="micrometer"),
+                v05.Axis(name="y", type="space", unit="micrometer"),
+                v05.Axis(name="x", type="space", unit="micrometer"),
             ],
             datasets=[
                 v05.Dataset(

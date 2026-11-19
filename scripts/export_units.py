@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 from typing import get_args
 
-from yaozarrs._common._units import SpaceUnits, TimeUnits
+from yaozarrs._common._units import ValidSpaceUnit, ValidTimeUnit
 
 # Output path relative to repo root
 OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "javascripts" / "ome_units.js"
@@ -26,8 +26,8 @@ OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "javascripts" / "ome_units
 
 def export_units() -> None:
     """Export space and time units to JS module for direct import."""
-    space_units = sorted(get_args(SpaceUnits))
-    time_units = sorted(get_args(TimeUnits))
+    space_units = sorted(get_args(ValidSpaceUnit))
+    time_units = sorted(get_args(ValidTimeUnit))
 
     # Generate JS module content
     js_content = f"""\

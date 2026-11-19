@@ -29,10 +29,10 @@ image = v05.Image(
         v05.Multiscale(
             name="Sample Image",
             axes=[
-                v05.ChannelAxis(name="channel", type="channel"),
-                v05.SpaceAxis(name="z", type="space", unit="micrometer"),
-                v05.SpaceAxis(name="y", type="space", unit="micrometer"),
-                v05.SpaceAxis(name="x", type="space", unit="micrometer"),
+                v05.Axis(name="channel", type="channel"),
+                v05.Axis(name="z", type="space", unit="micrometer"),
+                v05.Axis(name="y", type="space", unit="micrometer"),
+                v05.Axis(name="x", type="space", unit="micrometer"),
             ],
             datasets=[
                 v05.Dataset(

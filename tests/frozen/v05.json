@@ -5,32 +5,13 @@
       "$ref": "#/$defs/Acquisition"
     },
     "Axis": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/SpaceAxis"
-        },
-        {
-          "$ref": "#/$defs/TimeAxis"
-        },
-        {
-          "$ref": "#/$defs/ChannelAxis"
-        },
-        {
-          "$ref": "#/$defs/CustomAxis"
-        }
-      ]
+      "$ref": "#/$defs/Axis"
     },
     "Bf2Raw": {
       "$ref": "#/$defs/Bf2Raw"
     },
-    "ChannelAxis": {
-      "$ref": "#/$defs/ChannelAxis"
-    },
     "Column": {
       "$ref": "#/$defs/Column"
-    },
-    "CustomAxis": {
-      "$ref": "#/$defs/CustomAxis"
     },
     "Dataset": {
       "$ref": "#/$defs/Dataset"
@@ -123,12 +104,6 @@
     "Series": {
       "$ref": "#/$defs/Series"
     },
-    "SpaceAxis": {
-      "$ref": "#/$defs/SpaceAxis"
-    },
-    "TimeAxis": {
-      "$ref": "#/$defs/TimeAxis"
-    },
     "TranslationTransformation": {
       "$ref": "#/$defs/TranslationTransformation"
     },
@@ -211,6 +186,48 @@
       ],
       "type": "object"
     },
+    "Axis": {
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": [
+                "space",
+                "time",
+                "channel"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
     "Bf2Raw": {
       "additionalProperties": true,
       "properties": {
@@ -227,74 +244,12 @@
       },
       "type": "object"
     },
-    "ChannelAxis": {
-      "additionalProperties": true,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "const": "channel",
-          "type": "string"
-        },
-        "unit": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "required": [
-        "name",
-        "type"
-      ],
-      "type": "object"
-    },
     "Column": {
       "additionalProperties": true,
       "properties": {
         "name": {
           "pattern": "^[A-Za-z0-9]+$",
           "type": "string"
-        }
-      },
-      "required": [
-        "name"
-      ],
-      "type": "object"
-    },
-    "CustomAxis": {
-      "additionalProperties": true,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "unit": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
         }
       },
       "required": [
@@ -578,20 +533,7 @@
         },
         "axes": {
           "items": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/SpaceAxis"
-              },
-              {
-                "$ref": "#/$defs/TimeAxis"
-              },
-              {
-                "$ref": "#/$defs/ChannelAxis"
-              },
-              {
-                "$ref": "#/$defs/CustomAxis"
-              }
-            ]
+            "$ref": "#/$defs/Axis"
           },
           "maxItems": 5,
           "minItems": 2,
@@ -1125,121 +1067,6 @@
       },
       "required": [
         "series"
-      ],
-      "type": "object"
-    },
-    "SpaceAxis": {
-      "additionalProperties": true,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "const": "space",
-          "type": "string"
-        },
-        "unit": {
-          "anyOf": [
-            {
-              "enum": [
-                "angstrom",
-                "attometer",
-                "centimeter",
-                "decimeter",
-                "exameter",
-                "femtometer",
-                "foot",
-                "gigameter",
-                "hectometer",
-                "inch",
-                "kilometer",
-                "megameter",
-                "meter",
-                "micrometer",
-                "mile",
-                "millimeter",
-                "nanometer",
-                "parsec",
-                "petameter",
-                "picometer",
-                "terameter",
-                "yard",
-                "yoctometer",
-                "yottameter",
-                "zeptometer",
-                "zettameter"
-              ],
-              "type": "string"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "required": [
-        "name",
-        "type"
-      ],
-      "type": "object"
-    },
-    "TimeAxis": {
-      "additionalProperties": true,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "const": "time",
-          "type": "string"
-        },
-        "unit": {
-          "anyOf": [
-            {
-              "enum": [
-                "attosecond",
-                "centisecond",
-                "day",
-                "decisecond",
-                "exasecond",
-                "femtosecond",
-                "gigasecond",
-                "hectosecond",
-                "hour",
-                "kilosecond",
-                "megasecond",
-                "microsecond",
-                "millisecond",
-                "minute",
-                "nanosecond",
-                "petasecond",
-                "picosecond",
-                "second",
-                "terasecond",
-                "yoctosecond",
-                "yottasecond",
-                "zeptosecond",
-                "zettasecond"
-              ],
-              "type": "string"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "required": [
-        "name",
-        "type"
       ],
       "type": "object"
     },

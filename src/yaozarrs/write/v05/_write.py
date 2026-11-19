@@ -180,9 +180,9 @@ def write_image(
     ...     multiscales=[
     ...         v05.Multiscale(
     ...             axes=[
-    ...                 v05.ChannelAxis(name="c"),
-    ...                 v05.SpaceAxis(name="y", unit="micrometer"),
-    ...                 v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                 v05.Axis(name="c", type="channel"),
+    ...                 v05.Axis(name="y", type="space", unit="micrometer"),
+    ...                 v05.Axis(name="x", type="space", unit="micrometer"),
     ...             ],
     ...             datasets=[
     ...                 v05.Dataset(
@@ -339,8 +339,8 @@ def write_plate(
     ...         multiscales=[
     ...             v05.Multiscale(
     ...                 axes=[
-    ...                     v05.SpaceAxis(name="y", unit="micrometer"),
-    ...                     v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                     v05.Axis(name="y", type="space", unit="micrometer"),
+    ...                     v05.Axis(name="x", type="space", unit="micrometer"),
     ...                 ],
     ...                 datasets=[
     ...                     v05.Dataset(
@@ -495,8 +495,8 @@ def write_bioformats2raw(
     ...         multiscales=[
     ...             v05.Multiscale(
     ...                 axes=[
-    ...                     v05.SpaceAxis(name="y", unit="micrometer"),
-    ...                     v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                     v05.Axis(name="y", type="space", unit="micrometer"),
+    ...                     v05.Axis(name="x", type="space", unit="micrometer"),
     ...                 ],
     ...                 datasets=[
     ...                     v05.Dataset(
@@ -668,8 +668,8 @@ def prepare_image(
     ...     multiscales=[
     ...         v05.Multiscale(
     ...             axes=[
-    ...                 v05.SpaceAxis(name="y", unit="micrometer"),
-    ...                 v05.SpaceAxis(name="x", unit="micrometer"),
+    ...                 v05.Axis(name="y", type="space", unit="micrometer"),
+    ...                 v05.Axis(name="x", type="space", unit="micrometer"),
     ...             ],
     ...             datasets=[
     ...                 v05.Dataset(
@@ -776,7 +776,10 @@ class Bf2RawBuilder(Bf2RawBuilderBase[Image]):
     ...     return v05.Image(
     ...         multiscales=[
     ...             v05.Multiscale(
-    ...                 axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
+    ...                 axes=[
+    ...                     v05.Axis(name="y", type="space"),
+    ...                     v05.Axis(name="x", type="space"),
+    ...                 ],
     ...                 datasets=[
     ...                     v05.Dataset(
     ...                         path="0",
@@ -908,7 +911,10 @@ class PlateBuilder(PlateBuilderBase[Image]):
     ...     return v05.Image(
     ...         multiscales=[
     ...             v05.Multiscale(
-    ...                 axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
+    ...                 axes=[
+    ...                     v05.Axis(name="y", type="space"),
+    ...                     v05.Axis(name="x", type="space"),
+    ...                 ],
     ...                 datasets=[
     ...                     v05.Dataset(
     ...                         path="0",
@@ -1036,7 +1042,10 @@ class LabelsBuilder(LabelsBuilderBase[LabelImage]):
     ...     return v05.LabelImage(
     ...         multiscales=[
     ...             v05.Multiscale(
-    ...                 axes=[v05.SpaceAxis(name="y"), v05.SpaceAxis(name="x")],
+    ...                 axes=[
+    ...                     v05.Axis(name="y", type="space"),
+    ...                     v05.Axis(name="x", type="space"),
+    ...                 ],
     ...                 datasets=[
     ...                     v05.Dataset(
     ...                         path="0",
