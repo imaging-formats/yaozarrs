@@ -228,6 +228,7 @@ def test_zarrgroup_v3_behaviour(v3_memory_store: str) -> None:
     assert isinstance(child, ZarrArray)
     assert child.path == "child"
     assert child.ndim == 3
+    assert child.shape == (1, 2, 3)
     assert child.dtype == "<i2"
 
     subgroup = group["group_child"]
