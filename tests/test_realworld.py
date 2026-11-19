@@ -3,8 +3,6 @@
 This file must be explicitly listed in the pytest command to be run.
 """
 
-from contextlib import suppress
-
 import pytest
 
 import yaozarrs
@@ -95,52 +93,37 @@ WARN_URLS = (
 )
 
 
-skip_errors = []
-with suppress(ImportError):
-    from aiohttp.client_exceptions import (
-        ClientConnectorDNSError,
-        ConnectionTimeoutError,
-    )
-
-    skip_errors.append(ClientConnectorDNSError)
-    skip_errors.append(ConnectionTimeoutError)
-with suppress(ImportError):
-    from botocore.exceptions import EndpointConnectionError
-
-    skip_errors.append(EndpointConnectionError)
-with suppress(ImportError):
-    from fsspec.exceptions import FSTimeoutError
-
-    skip_errors.append(FSTimeoutError)
-
-
+@pytest.mark.network
 @pytest.mark.parametrize("url", VALID_URLS + WARN_URLS)
 def test_realworld_store(url):
     """Test opening real-world stores."""
-    try:
-        group = yaozarrs.open_group(url)
-        assert group.ome_metadata() is not None
-        assert group.ome_version() is not None
-        if url in WARN_URLS:
-            with pytest.warns(StorageValidationWarning):
-                group.validate()
-        else:
+    group = yaozarrs.open_group(url)
+    assert group.ome_metadata() is not None
+    assert group.ome_version() is not None
+    if url in WARN_URLS:
+        with pytest.warns(StorageValidationWarning):
             group.validate()
-    except tuple(skip_errors):
-        pytest.xfail(reason="Internet Down?")
+    else:
+        group.validate()
 
 
+NON_OME_URL = "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/"
+V03_URL = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr"
+
+
+@pytest.mark.network(NON_OME_URL)
 def test_non_ome_zarr():
     """Test opening a non-OME-Zarr store with bioformats2raw layout."""
-    url = "s3://janelia-cosem-datasets/jrc_hela-3/jrc_hela-3.zarr/recon-1/em/"
+    url = NON_OME_URL
     group = yaozarrs.open_group(url)
     with pytest.raises(ValueError, match=r"Is this an OME-Zarr group?"):
         assert group.validate()
 
 
+@pytest.mark.network(V03_URL)
 def test_unsupported_version():
     """Test opening a non-OME-Zarr store with bioformats2raw layout."""
-    url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr"
+    url = V03_URL
     group = yaozarrs.open_group(url)
     with pytest.raises(ValueError, match=r"Unsupported OME-Zarr version '0.3'"):
         assert group.validate()

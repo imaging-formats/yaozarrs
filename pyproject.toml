@@ -46,7 +46,7 @@ write-tensorstore = [
 write-zarrs = ["zarrs>=0.1.5"]
 
 [dependency-groups]
-test = ["pytest>=7.4.0", "pytest-cov>=4.0.0"]
+test = ["pytest>=8.0", "pytest-cov>=4.0.0"]
 test-full = [
     { include-group = "test" },
     "numpy>=2.3.2; python_version >= '3.14'",          # needed for creating test data to write
@@ -132,7 +132,7 @@ skip-magic-trailing-comma = false # default is false
 
 # https://docs.pytest.org/
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "8.0"
 addopts = [
     "--color=yes",
     "--ignore=tests/test_realworld.py",
@@ -141,6 +141,9 @@ addopts = [
 ]
 testpaths = ["tests", "src"]
 filterwarnings = ["error"]
+markers = [
+    "network(*urls): reads remote urls (default: its url params). A failure is an xfail if one of their hosts is unreachable.",
+]
 
 # https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]
