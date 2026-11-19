@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from yaozarrs import DimSpec, v05, validate_ome_object
+from yaozarrs._errors import ValidationWarning
 
 X_AXIS = {"name": "x", "type": "space", "unit": "millimeter"}
 Y_AXIS = {"name": "y", "type": "space", "unit": None}
@@ -591,7 +592,7 @@ def test_multiscale_from_dims() -> None:
 def test_dataset_path_warns_on_risky_characters() -> None:
     """Test that Dataset.path warns on characters outside [A-Za-z0-9._-]."""
     # Path with risky character (space) should warn
-    with pytest.warns(UserWarning, match=r"Dataset\.path.*risky characters"):
+    with pytest.warns(ValidationWarning, match=r"Dataset\.path.*risky characters"):
         v05.Dataset(
             path="level 0",  # space is risky
             coordinateTransformations=[v05.ScaleTransformation(scale=[1.0, 1.0])],

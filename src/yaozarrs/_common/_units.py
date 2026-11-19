@@ -1,12 +1,11 @@
 """Units recommended by the spec for space and time axes (from UDUNITS-2)."""
 
-import warnings
 from collections.abc import Callable
 from typing import Annotated, Literal, TypeAlias, get_args
 
 from pydantic import AfterValidator
 
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 
 ValidSpaceUnit: TypeAlias = Literal[
     "angstrom",
@@ -67,9 +66,8 @@ ValidTimeUnit: TypeAlias = Literal[
 def _warn_if_not_one_of(kind: str, valid: tuple[str, ...]) -> Callable[[str], str]:
     def _warn(v: str) -> str:
         if v not in valid:
-            warnings.warn(
+            warn(
                 f"Warning: {kind} axis unit {v!r}, SHOULD be one of {valid}",
-                ValidationWarning,
                 stacklevel=3,
             )
         return v

@@ -1,4 +1,3 @@
-import warnings
 from collections.abc import Sequence
 from typing import Annotated, Any, Literal, TypeAlias
 
@@ -14,7 +13,7 @@ from pydantic import (
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._units import SpaceUnits, TimeUnits
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
 
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
@@ -155,11 +154,10 @@ def validate_multiscale_axes(axes: Sequence[Axis]) -> None:
     n_space = sum(ax.type == "space" for ax in axes)
     array_cs = sum(ax.type == "array" for ax in axes) >= 2 and not 2 <= n_space <= 3
     if array_cs:
-        warnings.warn(
+        warn(
             "Coordinate systems inside multiscales MUST contain 2 or 3 axes of type "
             "'space' according to the spec prose; coordinate systems made of 'array' "
             "axes are only allowed by the JSON schema.",
-            ValidationWarning,
             stacklevel=2,
         )
 
