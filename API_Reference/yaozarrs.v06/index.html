@@ -2743,7 +2743,10 @@ into. Default is "intrinsic".</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v06/_image.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">306</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
 <span class="normal">309</span>
@@ -2784,10 +2787,7 @@ into. Default is "intrinsic".</p>
 <span class="normal">344</span>
 <span class="normal">345</span>
 <span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">347</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dims</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DimSpec</span><span class="p">],</span>
@@ -3611,7 +3611,8 @@ them by <code>name</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v06/_axes.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
+<span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span>
 <span class="normal">145</span>
@@ -3658,9 +3659,7 @@ them by <code>name</code>.</p>
 <span class="normal">186</span>
 <span class="normal">187</span>
 <span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_multiscale_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Axis</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">189</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_multiscale_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Axis</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Rules for the axes of coordinate systems inside `multiscales` metadata.</span>
 
 <span class="sd">    Raises</span>
@@ -3676,11 +3675,10 @@ them by <code>name</code>.</p>
     <span class="n">n_space</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"space"</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">)</span>
     <span class="n">array_cs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"array"</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="n">n_space</span> <span class="o">&lt;=</span> <span class="mi">3</span>
     <span class="k">if</span> <span class="n">array_cs</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="n">warn</span><span class="p">(</span>
             <span class="s2">"Coordinate systems inside multiscales MUST contain 2 or 3 axes of type "</span>
             <span class="s2">"'space' according to the spec prose; coordinate systems made of 'array' "</span>
             <span class="s2">"axes are only allowed by the JSON schema."</span><span class="p">,</span>
-            <span class="n">ValidationWarning</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -5133,7 +5131,10 @@ If <code>path</code> is omitted (or null), <code>name</code> refers to a coordin
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/v06/_transforms.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">380</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
 <span class="normal">383</span>
@@ -5215,10 +5216,7 @@ If <code>path</code> is omitted (or null), <code>name</code> refers to a coordin
 <span class="normal">459</span>
 <span class="normal">460</span>
 <span class="normal">461</span>
-<span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_transform_ndim</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">CoordinateTransformation</span><span class="p">,</span> <span class="n">n_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">462</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_transform_ndim</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">CoordinateTransformation</span><span class="p">,</span> <span class="n">n_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Check that the parameters of `t` fit `n_in` input and `n_out` output axes.</span>
 
 <span class="sd">    Raises</span>
