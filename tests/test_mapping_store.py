@@ -50,7 +50,7 @@ def test_mapping_store_without_fsspec(
     assert repr(group["s0"]) == "<ZarrArray <LazyStore>/s0>"
     with pytest.raises(TypeError, match="not backed by a filesystem"):
         group.store_path  # noqa: B018
-    with pytest.raises(ImportError, match="fsspec package is required"):
+    with pytest.raises(ImportError, match=r"with a path or URI.*pass a mapping"):
         open_group("some/path.zarr")
 
 
