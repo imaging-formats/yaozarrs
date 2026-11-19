@@ -994,11 +994,16 @@ class ZarrArray(ZarrNode):
         return "array"
 
     @property
-    def ndim(self) -> int:
-        """Return the number of dimensions."""
+    def shape(self) -> tuple[int, ...]:
+        """Return the shape."""
         if self._metadata.shape is None:  # pragma: no cover
             raise ValueError("Array metadata missing 'shape'")
-        return len(self._metadata.shape)
+        return self._metadata.shape
+
+    @property
+    def ndim(self) -> int:
+        """Return the number of dimensions."""
+        return len(self.shape)
 
     @property
     def dtype(self) -> str:
