@@ -6,6 +6,7 @@ import re
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -24,8 +25,19 @@ BLOCK = re.compile(
 )
 
 
+URL = re.compile(r"(?:https?|s3)://[^\s\"'<>)]+")
+
+
+def _param(path: Path) -> Any:
+    """A file param, marked `network` with the urls its python blocks use."""
+    blocks = BLOCK.finditer(path.read_text(encoding="utf-8"))
+    urls = {url for b in blocks if not b["skip"] for url in URL.findall(b["code"])}
+    marks = [pytest.mark.network(*sorted(urls))] if urls else []
+    return pytest.param(path, marks=marks, id=str(path.relative_to(ROOT)))
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="skipped on windows")
-@pytest.mark.parametrize("path", FILES, ids=lambda p: str(p.relative_to(ROOT)))
+@pytest.mark.parametrize("path", [_param(p) for p in FILES])
 def test_code_blocks(
     path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

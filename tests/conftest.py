@@ -2,16 +2,88 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import shutil
+import urllib.request
 from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
+from urllib.error import HTTPError
+from urllib.parse import urlsplit
 
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator, Iterable
+
+    from pluggy import Result
+
+# ---------------------------- network tests ----------------------------
+# Tests marked `network` read real remote stores. If one fails, we probe the hosts
+# it reads from: when any of them can't be reached, the failure is reported as an
+# xfail. If every host answers, the failure stands (whatever the exception was).
+
+SCHEMES = ("http://", "https://", "s3://")
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "network(*urls): reads remote urls (default: the url params); "
+        "a failure is an xfail if one of their hosts is unreachable",
+    )
+
+
+def _host_url(url: str) -> str:
+    """The root of the https server that serves `url`."""
+    parts = urlsplit(url)
+    if parts.scheme == "s3":
+        return f"https://{parts.netloc}.s3.amazonaws.com/"
+    return f"{parts.scheme}://{parts.netloc}/"
+
+
+@functools.cache
+def _unreachable(host_url: str) -> str | None:
+    """Why `host_url` can't be reached, or None if the server answers at all."""
+    try:
+        request = urllib.request.Request(host_url, method="HEAD")
+        with urllib.request.urlopen(request, timeout=10):
+            return None
+    except HTTPError as e:
+        e.close()
+        return f"HTTP {e.code}" if e.code >= 500 else None
+    except OSError as e:  # URLError, timeouts, refused connections, TLS errors...
+        return str(getattr(e, "reason", e))
+
+
+def _network_urls(item: pytest.Item, marker: pytest.Mark) -> Iterable[str]:
+    if marker.args:
+        return marker.args
+    params = getattr(item, "callspec", None)
+    values = params.params.values() if params else ()
+    return [v for v in values if isinstance(v, str) and v.startswith(SCHEMES)]
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo
+) -> Generator[None, Result[pytest.TestReport], None]:
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or not report.failed:
+        return
+    if (marker := item.get_closest_marker("network")) is None:
+        return
+    hosts = {_host_url(url) for url in _network_urls(item, marker)}
+    if down := {h: why for h in sorted(hosts) if (why := _unreachable(h))}:
+        report.outcome = "skipped"
+        report.wasxfail = "unreachable: " + ", ".join(
+            f"{host} ({why})" for host, why in down.items()
+        )
+
+
+# -----------------------------------------------------------------------
 
 
 def dd() -> Any:

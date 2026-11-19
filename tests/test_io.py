@@ -6,13 +6,6 @@ import pytest
 from yaozarrs import v04, v05, validate_ome_uri
 from yaozarrs._base import ZarrGroupModel
 
-try:
-    from aiohttp.client_exceptions import ClientConnectorError
-
-    connection_exceptions: tuple[type[Exception], ...] = (ClientConnectorError,)
-except ImportError:
-    connection_exceptions = ()
-
 HAVE_FSSPEC = importlib.util.find_spec("fsspec")
 DATA = Path(__file__).parent / "data"
 V05_DATA = DATA / "v05"
@@ -27,13 +20,10 @@ SOURCES = {
 
 
 @pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
+@pytest.mark.network
 @pytest.mark.parametrize("uri,expected_type", SOURCES.items())
 def test_from_uri(uri: str, expected_type: type) -> None:
-    try:
-        obj = validate_ome_uri(uri)
-    except connection_exceptions as e:
-        pytest.xfail(reason=f"Internet down?: {e}")
-        return
+    obj = validate_ome_uri(uri)
 
     if isinstance(obj, v05.OMEZarrGroupJSON):
         # in v05, the ome info is inside the doc['attributes']['ome'] key
