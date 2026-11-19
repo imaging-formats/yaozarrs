@@ -429,6 +429,15 @@ def test_open_group_from_local_store_without_fsspec(
     assert open_group(zarr.storage.LocalStore(tmp_path)).attrs.get("name") == "root"
 
 
+def test_zarr_python_store_missing_key() -> None:
+    """A missing key is a KeyError (not None), so that `.get()` can tell it apart."""
+    zarr = pytest.importorskip("zarr")
+    store = _ZarrPythonStore(zarr.storage.MemoryStore())
+    with pytest.raises(KeyError):
+        store["zarr.json"]
+    assert store.get("zarr.json") is None
+
+
 def test_zarr_python_store_reraises_cancellation() -> None:
     zarr = pytest.importorskip("zarr")
 
