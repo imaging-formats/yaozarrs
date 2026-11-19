@@ -8,6 +8,7 @@ from yaozarrs._base import ZarrGroupModel
 
 HAVE_FSSPEC = importlib.util.find_spec("fsspec")
 DATA = Path(__file__).parent / "data"
+V04_DATA = DATA / "v04"
 V05_DATA = DATA / "v05"
 
 SOURCES = {
@@ -16,6 +17,7 @@ SOURCES = {
     "https://uk1s3.embassy.ebi.ac.uk/idr/share/ome2024-ngff-challenge/idr0010/76-45.zarr": v05.Plate,  # noqa E501
     V05_DATA / "76-45.ome.zarr": v05.Plate,
     "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr": v04.Image,
+    V04_DATA / "2551.zarr": v04.Plate,  # (no zarr.json: falls through to .zattrs)
 }
 
 
@@ -42,3 +44,9 @@ def test_from_uri_connection_error() -> None:
     aiohttp = pytest.importorskip("aiohttp")
     with pytest.raises(aiohttp.ClientConnectionError):
         validate_ome_uri("http://127.0.0.1:1/image.zarr")
+
+
+@pytest.mark.skipif(not HAVE_FSSPEC, reason="fsspec not installed")
+def test_from_uri_missing(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="Could not find zarr group metadata"):
+        validate_ome_uri(tmp_path)
