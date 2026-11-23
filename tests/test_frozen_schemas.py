@@ -16,6 +16,7 @@ If a change is intentional (e.g. a `fix(v05): ...` commit), regenerate with:
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 from pathlib import Path
@@ -56,7 +57,9 @@ def _strip_docs(obj: Any, names: bool = False) -> Any:
 def _public_schemas(mod: ModuleType) -> dict[str, Any]:
     """Schemas of everything in `mod.__all__`, with shared `$defs`."""
     mode: JsonSchemaMode = "validation"
-    items = [(n, mode, TypeAdapter(getattr(mod, n))) for n in mod.__all__]
+    # (not the axis constructor functions: their argument schemas aren't models)
+    names = [n for n in mod.__all__ if not inspect.isfunction(getattr(mod, n))]
+    items = [(n, mode, TypeAdapter(getattr(mod, n))) for n in names]
     key_map, defs = TypeAdapter.json_schemas(items)
     public = {key[0]: schema for key, schema in key_map.items()}
     return {"public": _strip_docs(public, names=True), **_strip_docs(defs)}

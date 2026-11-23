@@ -25,8 +25,8 @@ def make_image(name: str) -> v05.Image:
             v05.Multiscale(
                 name=name,
                 axes=[
-                    v05.SpaceAxis(name="y", type="space", unit="micrometer"),
-                    v05.SpaceAxis(name="x", type="space", unit="micrometer"),
+                    v05.Axis(name="y", type="space", unit="micrometer"),
+                    v05.Axis(name="x", type="space", unit="micrometer"),
                 ],
                 datasets=[
                     v05.Dataset(

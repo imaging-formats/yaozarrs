@@ -238,10 +238,10 @@ Axes define the dimensions of your image data. Starting with v0.4, axes are
     physical = v06.CoordinateSystem(
         name="physical",
         axes=[
-            v06.ChannelAxis(name="c", discrete=True),
-            v06.SpaceAxis(name="z", unit="micrometer"),
-            v06.SpaceAxis(name="y", unit="micrometer"),
-            v06.SpaceAxis(name="x", unit="micrometer"),
+            v06.Axis(name="c", type="channel", discrete=True),
+            v06.Axis(name="z", type="space", unit="micrometer"),
+            v06.Axis(name="y", type="space", unit="micrometer"),
+            v06.Axis(name="x", type="space", unit="micrometer"),
         ],
     )
     ```
@@ -281,10 +281,10 @@ Axes define the dimensions of your image data. Starting with v0.4, axes are
     from yaozarrs import v05
 
     axes = [
-        v05.ChannelAxis(name="c"),
-        v05.SpaceAxis(name="z", unit="micrometer"),
-        v05.SpaceAxis(name="y", unit="micrometer"),
-        v05.SpaceAxis(name="x", unit="micrometer"),
+        v05.Axis(name="c", type="channel"),
+        v05.Axis(name="z", type="space", unit="micrometer"),
+        v05.Axis(name="y", type="space", unit="micrometer"),
+        v05.Axis(name="x", type="space", unit="micrometer"),
     ]
     ```
 
@@ -310,12 +310,45 @@ Axes define the dimensions of your image data. Starting with v0.4, axes are
     from yaozarrs import v04
 
     axes = [
-        v04.ChannelAxis(name="c"),
-        v04.SpaceAxis(name="z", unit="micrometer"),
-        v04.SpaceAxis(name="y", unit="micrometer"),
-        v04.SpaceAxis(name="x", unit="micrometer"),
+        v04.Axis(name="c", type="channel"),
+        v04.Axis(name="z", type="space", unit="micrometer"),
+        v04.Axis(name="y", type="space", unit="micrometer"),
+        v04.Axis(name="x", type="space", unit="micrometer"),
     ]
     ```
+
+#### Building axes
+
+Every axis is an `Axis` ([v0.4][yaozarrs.v04._image.Axis] ·
+[v0.5][yaozarrs.v05._image.Axis] · [v0.6][yaozarrs.v06.Axis]), whose fields mirror
+the JSON, as above.  As a shortcut, `SpaceAxis`, `TimeAxis`
+and `ChannelAxis` fill in the `type` for you, and for `SpaceAxis` and `TimeAxis`, IDEs
+complete the units the spec recommends for space and time axes.  These are the same axes as the v0.6 example above:
+
+```python
+from yaozarrs import v06
+
+axes = [
+    v06.ChannelAxis(name="c", discrete=True),
+    v06.SpaceAxis(name="z", unit="micrometer"),
+    v06.SpaceAxis(name="y", unit="micrometer"),
+    v06.SpaceAxis(name="x", unit="micrometer"),
+]
+```
+
+A few more things to know:
+
+- **Units:** the spec recommends specific units for `space` and `time` axes (e.g.
+  `"micrometer"`, `"second"`).  Other units are accepted, with a
+  `yaozarrs.ValidationWarning`.
+- **Shortcuts return an `Axis`:** they are functions, not classes, so check an
+  axis's type with `axis.type == "space"` (not `isinstance`).  (`CustomAxis` is
+  deprecated: it's the same as `Axis`.)
+- **Dicts:** anywhere yaozarrs takes an axis, a dict like
+  `{"name": "z", "type": "space"}` is validated into an `Axis` too.
+- **New images:** to build a multiscale's axes *and* its per-level transformations
+  in one go, use [`Multiscale.from_dims`][yaozarrs.v06._image.Multiscale.from_dims]
+  with a list of [`DimSpec`][yaozarrs.DimSpec].
 
 ---
 
@@ -1436,8 +1469,8 @@ from yaozarrs import v06
 stage = v06.CoordinateSystem(
     name="stage",
     axes=[
-        v06.SpaceAxis(name="y", unit="micrometer"),
-        v06.SpaceAxis(name="x", unit="micrometer"),
+        v06.Axis(name="y", type="space", unit="micrometer"),
+        v06.Axis(name="x", type="space", unit="micrometer"),
     ],
 )
 scene = v06.Scene(

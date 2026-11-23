@@ -50,11 +50,11 @@ You can create OME-Zarr metadata objects using the pydantic models in
                         v06.CoordinateSystem(  # (1)!
                             name="physical",
                             axes=[
-                                v06.TimeAxis(name="t", unit="second"),
-                                v06.ChannelAxis(name="c"),
-                                v06.SpaceAxis(name="z", unit="micrometer"),
-                                v06.SpaceAxis(name="y", unit="micrometer"),
-                                v06.SpaceAxis(name="x", unit="micrometer"),
+                                v06.Axis(name="t", type="time", unit="second"),
+                                v06.Axis(name="c", type="channel"),
+                                v06.Axis(name="z", type="space", unit="micrometer"),
+                                v06.Axis(name="y", type="space", unit="micrometer"),
+                                v06.Axis(name="x", type="space", unit="micrometer"),
                             ],
                         )
                     ],
@@ -96,11 +96,11 @@ You can create OME-Zarr metadata objects using the pydantic models in
                 v05.Multiscale(
                     name=None,
                     axes=[
-                        v05.TimeAxis(name="t", unit="second"),
-                        v05.ChannelAxis(name="c"),
-                        v05.SpaceAxis(name="z", unit="micrometer"),
-                        v05.SpaceAxis(name="y", unit="micrometer"),
-                        v05.SpaceAxis(name="x", unit="micrometer"),
+                        v05.Axis(name="t", type="time", unit="second"),
+                        v05.Axis(name="c", type="channel"),
+                        v05.Axis(name="z", type="space", unit="micrometer"),
+                        v05.Axis(name="y", type="space", unit="micrometer"),
+                        v05.Axis(name="x", type="space", unit="micrometer"),
                     ],
                     datasets=[
                         v05.Dataset(

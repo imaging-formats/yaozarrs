@@ -111,8 +111,8 @@ from yaozarrs import v05
 scale = v05.Multiscale(
     name="scale0",
     axes=[
-        v05.SpaceAxis(name="y", unit="micrometer"),
-        v05.SpaceAxis(name="x", unit="micrometer"),
+        v05.Axis(name="y", type="space", unit="micrometer"),
+        v05.Axis(name="x", type="space", unit="micrometer"),
     ],
     datasets=[
         v05.Dataset(
@@ -150,7 +150,7 @@ print(type(obj))
 # <class 'yaozarrs.v05._zarr_json.OMEZarrGroupJSON'>
 
 print(repr(obj.attributes.ome.multiscales[0].axes[0]))
-# SpaceAxis(name='y', type='space', unit='micrometer')
+# Axis(name='y', type='space', unit='micrometer')
 ```
 
 #### Validate arbitrary python objects

@@ -9,7 +9,14 @@ from pydantic import (
 )
 
 from yaozarrs._base import _BaseModel, _OMEDocument
-from yaozarrs._common._axis import AxesList
+from yaozarrs._common._axis import (
+    AxesList,
+    Axis,
+    ChannelAxis,
+    CustomAxis,  # ty: ignore[deprecated]
+    SpaceAxis,
+    TimeAxis,
+)
 from yaozarrs._common._image import (
     check_resolution_order,
     check_transform_lengths,
@@ -27,6 +34,11 @@ from yaozarrs._types import UniqueList
 __all__ = [  # noqa: RUF022  (don't resort, this is used for docs ordering)
     "Image",
     "Multiscale",
+    "Axis",
+    "SpaceAxis",
+    "TimeAxis",
+    "ChannelAxis",
+    "CustomAxis",
     "Dataset",
     "ScaleTransformation",
     "TranslationTransformation",
