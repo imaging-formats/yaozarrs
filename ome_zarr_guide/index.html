@@ -1,4 +1,6 @@
 
+
+
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
@@ -16,6 +18,7 @@
       
       
       
+      
         <link rel="prev" href="../ome_zarr_explorer/">
       
       
@@ -26,7 +29,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.1.2">
+      <meta name="generator" content="zensical-0.1.3">
     
     
       
@@ -37,12 +40,13 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.ebb7f775.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.e2cf241e.min.css">
       
         
           
         
         <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
       
       
 
@@ -777,6 +781,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Axes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-axes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Building axes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1263,10 +1284,10 @@ Transformations</a>.)</p>
 <span class="n">physical</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">CoordinateSystem</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">"physical"</span><span class="p">,</span>
     <span class="n">axes</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v06</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="n">discrete</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"channel"</span><span class="p">,</span> <span class="n">discrete</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -1303,10 +1324,10 @@ Transformations</a>.)</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v05</span>
 
 <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">),</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-    <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"channel"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="p">]</span>
 </code></pre></div>
 </div>
@@ -1326,15 +1347,49 @@ Transformations</a>.)</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v04</span>
 
 <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">),</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-    <span class="n">v04</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"channel"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v04</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
 <span class="p">]</span>
 </code></pre></div>
 </div>
 </div>
 </div>
+<h4 id="building-axes">Building axes<a class="headerlink" href="#building-axes" title="Link to this section">#</a></h4>
+<p>Every axis is an <code>Axis</code> (<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Axis&lt;/span&gt;" href="../API_Reference/yaozarrs.v04/#yaozarrs.v04._image.Axis">v0.4</a> ·
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Axis&lt;/span&gt;" href="../API_Reference/yaozarrs.v05/#yaozarrs.v05._image.Axis">v0.5</a> · <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Axis&lt;/span&gt;" href="../API_Reference/yaozarrs.v06/#yaozarrs.v06._axes.Axis">v0.6</a>), whose fields mirror
+the JSON, as above.  As a shortcut, <code>SpaceAxis</code>, <code>TimeAxis</code>
+and <code>ChannelAxis</code> fill in the <code>type</code> for you, and for <code>SpaceAxis</code> and <code>TimeAxis</code>, IDEs
+complete the units the spec recommends for space and time axes.  These are the same axes as the v0.6 example above:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">yaozarrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">v06</span>
+
+<span class="n">axes</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">v06</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="n">discrete</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+    <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>A few more things to know:</p>
+<ul>
+<li><strong>Units:</strong> the spec recommends specific units for <code>space</code> and <code>time</code> axes (e.g.
+  <code>"micrometer"</code>, <code>"second"</code>).  Other units are accepted, with a
+  <code>yaozarrs.ValidationWarning</code>.</li>
+<li><strong>Shortcuts return an <code>Axis</code>:</strong> they are functions, not classes, so check an
+  axis's type with <code>axis.type == "space"</code> (not <code>isinstance</code>).  (<code>CustomAxis</code> is
+  deprecated: it's the same as <code>Axis</code>.)</li>
+<li><strong>Dicts:</strong> anywhere yaozarrs takes an axis, a dict like
+  <code>{"name": "z", "type": "space"}</code> is validated into an <code>Axis</code> too.</li>
+<li><strong>New images:</strong> to build a multiscale's axes <em>and</em> its per-level transformations
+  in one go, use <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-method&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;from_dims&lt;/span&gt;
+
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-classmethod&quot;&gt;&lt;code&gt;classmethod&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="../API_Reference/yaozarrs.v06/#yaozarrs.v06._image.Multiscale.from_dims"><code>Multiscale.from_dims</code></a>
+  with a list of <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;DimSpec&lt;/span&gt;" href="../API_Reference/yaozarrs/#yaozarrs.DimSpec"><code>DimSpec</code></a>.</li>
+</ul>
 <hr />
 <h3 id="coordinate-transformations">Coordinate Transformations<a class="headerlink" href="#coordinate-transformations" title="Link to this section">#</a></h3>
 <p>Starting in v0.4, <strong>every dataset MUST include coordinate transformations</strong> that
@@ -2342,8 +2397,8 @@ below are 300 µm wide, so they overlap by 30 µm.)</p>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">CoordinateSystem</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">"stage"</span><span class="p">,</span>
     <span class="n">axes</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 <span class="n">scene</span> <span class="o">=</span> <span class="n">v06</span><span class="o">.</span><span class="n">Scene</span><span class="p">(</span>
@@ -2622,7 +2677,8 @@ the images.</p>
       <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["search.highlight","search.suggest","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.3cb411a8.min.js"></script>
+      <script src="../assets/javascripts/bundle.9e76c64c.min.js"></script>
+      
       
         <script src="../javascripts/yaozarrs-animation.js"></script>
       

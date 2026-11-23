@@ -1,4 +1,6 @@
 
+
+
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
@@ -17,6 +19,7 @@
       
       
       
+      
         <link rel="next" href="./installation/">
       
       
@@ -24,7 +27,7 @@
       
       
       <link rel="icon" href="./assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.1.2">
+      <meta name="generator" content="zensical-0.1.3">
     
     
       
@@ -35,12 +38,13 @@
       
         
       
-      <link rel="stylesheet" href="./assets/stylesheets/modern/main.ebb7f775.min.css">
+      <link rel="stylesheet" href="./assets/stylesheets/modern/main.e2cf241e.min.css">
       
         
           
         
         <link rel="stylesheet" href="./assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
       
       
 
@@ -1105,11 +1109,11 @@ using the yaozarrs models:</p>
                 <span class="n">v06</span><span class="o">.</span><span class="n">CoordinateSystem</span><span class="p">(</span>  <span class="c1"># (1)!</span>
                     <span class="n">name</span><span class="o">=</span><span class="s2">"physical"</span><span class="p">,</span>
                     <span class="n">axes</span><span class="o">=</span><span class="p">[</span>
-                        <span class="n">v06</span><span class="o">.</span><span class="n">TimeAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"t"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"second"</span><span class="p">),</span>
-                        <span class="n">v06</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">),</span>
-                        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-                        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-                        <span class="n">v06</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+                        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"t"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"time"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"second"</span><span class="p">),</span>
+                        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"channel"</span><span class="p">),</span>
+                        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+                        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+                        <span class="n">v06</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
                     <span class="p">],</span>
                 <span class="p">)</span>
             <span class="p">],</span>
@@ -1150,11 +1154,11 @@ exporting metadata back to JSON format.</li>
         <span class="n">v05</span><span class="o">.</span><span class="n">Multiscale</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">axes</span><span class="o">=</span><span class="p">[</span>
-                <span class="n">v05</span><span class="o">.</span><span class="n">TimeAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"t"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"second"</span><span class="p">),</span>
-                <span class="n">v05</span><span class="o">.</span><span class="n">ChannelAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">),</span>
-                <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-                <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
-                <span class="n">v05</span><span class="o">.</span><span class="n">SpaceAxis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+                <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"t"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"time"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"second"</span><span class="p">),</span>
+                <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"c"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"channel"</span><span class="p">),</span>
+                <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+                <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
+                <span class="n">v05</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"space"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"micrometer"</span><span class="p">),</span>
             <span class="p">],</span>
             <span class="n">datasets</span><span class="o">=</span><span class="p">[</span>
                 <span class="n">v05</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
@@ -1802,7 +1806,8 @@ more directly tied to the zarr-python implementation.</p>
       <script id="__config" type="application/json">{"annotate":null,"base":".","features":["search.highlight","search.suggest","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","toc.follow"],"redirect":null,"search":"./assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="./assets/javascripts/bundle.3cb411a8.min.js"></script>
+      <script src="./assets/javascripts/bundle.9e76c64c.min.js"></script>
+      
       
         <script src="./javascripts/yaozarrs-animation.js"></script>
       
