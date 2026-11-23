@@ -322,8 +322,8 @@ Axes define the dimensions of your image data. Starting with v0.4, axes are
 Every axis is an `Axis` ([v0.4][yaozarrs.v04._image.Axis] ·
 [v0.5][yaozarrs.v05._image.Axis] · [v0.6][yaozarrs.v06.Axis]), whose fields mirror
 the JSON, as above.  As a shortcut, `SpaceAxis`, `TimeAxis`
-and `ChannelAxis` fill in the `type` for you, and IDEs complete the units the spec
-recommends for that type.  These are the same axes as the v0.6 example above:
+and `ChannelAxis` fill in the `type` for you, and for `SpaceAxis` and `TimeAxis`, IDEs
+complete the units the spec recommends for space and time axes.  These are the same axes as the v0.6 example above:
 
 ```python
 from yaozarrs import v06

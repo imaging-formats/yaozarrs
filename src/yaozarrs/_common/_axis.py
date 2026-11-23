@@ -15,10 +15,11 @@ _AxisT = TypeVar("_AxisT", bound=_BaseModel)
 
 
 class Axis(_BaseModel):
-    """An axis of an image: a name, and (SHOULD) a type and unit.
+    """A dimension (axis) of a physical coordinate space.
 
     `SpaceAxis`, `TimeAxis` and `ChannelAxis` build one with the `type` filled in
-    (and, for IDEs, the units the spec recommends for that type).
+    (`SpaceAxis` and `TimeAxis` also hint, for IDEs, the units the spec recommends for
+    space and time axes).
     """
 
     name: str = Field(description="The name of the axis.")
