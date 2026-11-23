@@ -1,6 +1,5 @@
 """Plate building blocks (identical in v0.5 and v0.6)."""
 
-import warnings
 from collections.abc import Sequence
 from typing import Annotated, Any, Self
 
@@ -8,7 +7,7 @@ from annotated_types import MinLen
 from pydantic import Field, NonNegativeInt, PositiveInt, model_validator
 
 from yaozarrs._base import _BaseModel
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 from yaozarrs._types import UNIQUE_ITEMS, duplicates
 
 
@@ -191,10 +190,9 @@ class PlateDef(_BaseModel):
         for kind, items in (("row", self.rows), ("column", self.columns)):
             lowered = [x.name.lower() for x in items]
             if clashes := [x.name for x in items if lowered.count(x.name.lower()) > 1]:
-                warnings.warn(
+                warn(
                     f"Plate {kind} names {clashes} differ only by case, which will "
                     "collide on case-insensitive filesystems.",
-                    ValidationWarning,
                     stacklevel=2,
                 )
         return self

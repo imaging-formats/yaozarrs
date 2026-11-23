@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import warnings
 from typing import TYPE_CHECKING, Annotated, Any, TypeAlias, TypeVar, overload
 
@@ -10,12 +11,11 @@ from pydantic_core import PydanticCustomError
 from . import v04, v05, v06
 from ._base import MISSING_VERSION, REQUIRE_VERSION, type_adapter
 from ._errors import (
-    ErrorDetails,
     StorageErrorType,
     StorageValidationError,
     StorageValidationWarning,
     ValidationResult,
-    ValidationWarning,
+    collect_warnings,
 )
 from ._zarr import ZarrGroup, open_group
 from .v06._version import VERSIONS as V06_VERSIONS
@@ -400,40 +400,43 @@ def validate_zarr_store(
         )
         raise StorageValidationError(error.errors)
 
-    # Capture RuntimeWarnings from pydantic validators during validation
+    # Collect the models' warnings during validation (see `_errors.warn`)
     # and convert them to StorageValidationWarning
-    with warnings.catch_warnings(record=True) as captured_warnings:
-        warnings.filterwarnings("always", category=ValidationWarning)
+    with collect_warnings() as captured_warnings:
         result = Validator.validate_group(zarr_group, strict=strict)
 
-    # prepend captured warnings to the result
-    for w in captured_warnings:
-        details: ErrorDetails = {
-            "type": "model_warning",
-            "loc": (),
-            "msg": str(w.message),
-        }
-        result.warnings.insert(0, details)
+    for msg in reversed(captured_warnings):  # (prepended, in the order raised)
+        result.warnings.insert(0, {"type": "model_warning", "loc": (), "msg": msg})
 
     # Emit warnings for SHOULD directives from structural validation
     if result.warnings:
-        # Use a custom formatter to match exception style
-        warning_instance = StorageValidationWarning(result.warnings)
-
-        _original_formatwarning = warnings.formatwarning
-
-        def _custom_formatwarning(message, category, *_, **__) -> str:
-            # Format like an exception: module.Class: message
-            return f"{category.__module__}.{category.__name__}: {message}\n"
-
-        warnings.formatwarning = _custom_formatwarning  # ty: ignore[invalid-assignment]
-        try:
-            warnings.warn(warning_instance, stacklevel=2)
-        finally:
-            warnings.formatwarning = _original_formatwarning
+        _warn_storage(StorageValidationWarning(result.warnings), stacklevel=2)
 
     # Raise error if any validation issues found
     if not result.is_valid:
         raise StorageValidationError(result.errors)
 
     return zarr_group
+
+
+# (re-entrant: a `showwarning` hook may call `validate_zarr_store` again)
+_FORMATWARNING_LOCK = threading.RLock()
+
+
+def _warn_storage(warning: StorageValidationWarning, stacklevel: int) -> None:
+    """Emit `warning`, formatted like an exception: `module.Class: message`."""
+    # (the lock keeps concurrent calls from restoring each other's formatter)
+    with _FORMATWARNING_LOCK:
+        original = warnings.formatwarning
+
+        def _format(message: Any, category: Any, *args: Any, **kwargs: Any) -> str:
+            # (other threads' warnings may be formatted meanwhile)
+            if category is not StorageValidationWarning:
+                return original(message, category, *args, **kwargs)
+            return f"{category.__module__}.{category.__name__}: {message}\n"
+
+        warnings.formatwarning = _format  # ty: ignore[invalid-assignment]
+        try:
+            warnings.warn(warning, stacklevel=stacklevel + 1)  # noqa: TID251
+        finally:
+            warnings.formatwarning = original

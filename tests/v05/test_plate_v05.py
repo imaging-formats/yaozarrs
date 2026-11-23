@@ -469,7 +469,7 @@ def test_fov_path_validation() -> None:
     assert fov.path == "0"
 
     # Path with dots/underscores/hyphens - warns but succeeds
-    with pytest.warns(UserWarning, match="outside of the NGFF spec"):
+    with pytest.warns(ValidationWarning, match="outside of the NGFF spec"):
         fov = v05.FieldOfView(path="fov_0.test-1")
         assert fov.path == "fov_0.test-1"
 

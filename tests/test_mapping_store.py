@@ -6,12 +6,13 @@ import json
 import posixpath
 import sys
 from collections.abc import Iterator, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
 import yaozarrs
-from yaozarrs import DimSpec, open_group, v06, validate_zarr_store
+from yaozarrs import DimSpec, open_group, v06, validate_ome_json, validate_zarr_store
 from yaozarrs._errors import StorageValidationError, StorageValidationWarning
 
 if TYPE_CHECKING:
@@ -49,7 +50,7 @@ def test_mapping_store_without_fsspec(
     assert repr(group["s0"]) == "<ZarrArray <LazyStore>/s0>"
     with pytest.raises(TypeError, match="not backed by a filesystem"):
         group.store_path  # noqa: B018
-    with pytest.raises(ImportError, match="fsspec package is required"):
+    with pytest.raises(ImportError, match=r"with a path or URI.*pass a mapping"):
         open_group("some/path.zarr")
 
 
@@ -176,6 +177,32 @@ def test_prefetched_documents_validated_once() -> None:
     with pytest.warns(StorageValidationWarning) as record:
         validate_zarr_store(store)
     assert len(record.pop(StorageValidationWarning).message.warnings()) == 3
+
+
+class ParsedInAnotherThread(dict):
+    """Parses its root document in another thread, while it's being validated."""
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        if key == "0/zarr.json":
+            with ThreadPoolExecutor() as pool:
+                pool.submit(validate_ome_json, self["zarr.json"]).result()
+        return dict.get(self, key, default)
+
+
+def test_concurrent_validations_report_own_warnings() -> None:
+    store = {"zarr.json": _group(_image("0.6.dev4")), "0/zarr.json": _array("u2")}
+    with pytest.warns(UserWarning) as record:
+        validate_zarr_store(ParsedInAnotherThread(store))
+    assert len(record.pop(StorageValidationWarning).message.warnings()) == 1
+
+
+@pytest.mark.filterwarnings("error")
+def test_validated_root_model_reused() -> None:
+    # (validation parsed the root document: its warning isn't repeated)
+    store = {"zarr.json": _group(_image("0.6.dev4")), "0/zarr.json": _array("u2")}
+    with pytest.warns(StorageValidationWarning, match="pre-release"):
+        group = validate_zarr_store(store)
+    group.ome_metadata()  # (warnings are errors in the tests)
 
 
 def _scene(n: int) -> dict[str, bytes]:

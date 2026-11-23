@@ -1,10 +1,9 @@
 """Units recommended by the spec for space and time axes (from UDUNITS-2)."""
 
 import sys
-import warnings
 from typing import Literal, TypeAlias, get_args
 
-from yaozarrs._errors import ValidationWarning
+from yaozarrs._errors import warn
 
 ValidSpaceUnit: TypeAlias = Literal[
     "angstrom",
@@ -74,9 +73,8 @@ def warn_if_unexpected_unit(axis_type: str | None, unit: str | None) -> None:
         return
     kind, valid = expected
     if unit not in valid:
-        warnings.warn(
+        warn(
             f"Warning: {kind} axis unit {unit!r}, SHOULD be one of {valid}",
-            ValidationWarning,
             stacklevel=_external_stacklevel(),
         )
 
