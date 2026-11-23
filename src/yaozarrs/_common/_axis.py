@@ -17,9 +17,9 @@ _AxisT = TypeVar("_AxisT", bound=_BaseModel)
 class Axis(_BaseModel):
     """A dimension (axis) of a physical coordinate space.
 
-    `SpaceAxis`, `TimeAxis` and `ChannelAxis` build one with the `type` filled in
-    (`SpaceAxis` and `TimeAxis` also hint, for IDEs, the units the spec recommends for
-    space and time axes).
+    [`SpaceAxis`][], [`TimeAxis`][] and [`ChannelAxis`][] build one with the `type`
+    filled in (`SpaceAxis` and `TimeAxis` also hint, for IDEs, the units the spec
+    recommends for space and time axes).
     """
 
     name: str = Field(description="The name of the axis.")

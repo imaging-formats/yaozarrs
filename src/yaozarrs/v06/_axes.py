@@ -32,9 +32,9 @@ AxisType: TypeAlias = Literal[
 class Axis(_BaseModel):
     """A dimension (axis) of a coordinate system.
 
-    `SpaceAxis`, `TimeAxis` and `ChannelAxis` build one with the `type` filled in
-    (`SpaceAxis` and `TimeAxis` also hint, for IDEs, the units the spec recommends for
-    space and time axes).
+    [`SpaceAxis`][], [`TimeAxis`][] and [`ChannelAxis`][] build one with the `type`
+    filled in (`SpaceAxis` and `TimeAxis` also hint, for IDEs, the units the spec
+    recommends for space and time axes).
     """
 
     # MUST contain the field `name` ... The value MUST be a non-empty string.

@@ -106,6 +106,7 @@ separate_signature = true
 show_signature_annotations = true
 show_overloads = false
 signature_crossrefs = true
+scoped_crossrefs = true
 
 [[project.plugins.mkdocstrings.handlers.python.options.extensions]]
 griffe_fieldz = { strip_annotated = true }
