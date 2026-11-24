@@ -200,9 +200,8 @@ class ZarrMetadata(BaseModel):
 
     def _guess_ome_version(self) -> str | None:
         attrs = self.attributes
-        if isinstance(attrs.get("ome"), Mapping):
-            if "version" in attrs["ome"]:
-                return attrs["ome"]["version"]
+        if isinstance(ome := attrs.get("ome"), Mapping) and "version" in ome:
+            return ome["version"]
         # TODO: this is probably flaky
         # metadata outside of "ome" means v0.4 (zarr v2), where version is only a SHOULD
         default = "0.4" if self.zarr_format == 2 else None

@@ -251,6 +251,7 @@ _ZGROUP = b'{"zarr_format": 2}'
 @pytest.mark.parametrize(
     "zattrs",
     [
+        b'{"multiscales": "oops"}',
         b'{"multiscales": {"version": "0.4"}}',
         b'{"multiscales": ["oops"]}',
         b'{"plate": "version"}',
@@ -263,3 +264,9 @@ def test_malformed_attrs_are_validation_errors(zattrs: bytes) -> None:
         validate_zarr_store(store)
     # (nor do they break the search for the version a child inherits)
     assert open_group(store)["a"].ome_metadata() is None
+
+
+def test_v04_label_named_version() -> None:
+    # a valid v0.4 labels group, whose one label happens to be named "version"
+    store = {".zgroup": _ZGROUP, ".zattrs": b'{"labels": ["version"]}'}
+    assert open_group(store).ome_metadata().labels == ["version"]
