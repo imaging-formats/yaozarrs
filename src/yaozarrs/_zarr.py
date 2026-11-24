@@ -204,19 +204,19 @@ class ZarrMetadata(BaseModel):
 
     def _guess_ome_version(self) -> str | None:
         attrs = self.attributes
-        if "ome" in attrs:
-            if "version" in attrs["ome"]:
-                return attrs["ome"]["version"]
+        if isinstance(ome := attrs.get("ome"), Mapping) and "version" in ome:
+            return ome["version"]
         # TODO: this is probably flaky
         # metadata outside of "ome" means v0.4 (zarr v2), where version is only a SHOULD
         default = "0.4" if self.zarr_format == 2 else None
         if "multiscales" in attrs:
             ms = attrs["multiscales"]
-            return ms[0].get("version", default) if ms else default
+            ms0 = ms[0] if isinstance(ms, list) and ms else None
+            return ms0.get("version", default) if isinstance(ms0, Mapping) else default
         for possible_key in ["plate", "well", "labels", "series"]:
             if possible_key in attrs:
-                if "version" in attrs[possible_key]:
-                    return attrs[possible_key]["version"]
+                if isinstance(val := attrs[possible_key], Mapping) and "version" in val:
+                    return val["version"]
                 return attrs.get("version", default)
 
         return None
@@ -754,12 +754,13 @@ class ZarrGroup(ZarrNode):
             # Try to load parent attrs and extract version
             attrs = _load_attrs(prefix, self._store, self._metadata.zarr_format)
             if attrs is not None:
-                if "ome" in attrs and "version" in attrs["ome"]:
-                    return attrs["ome"]["version"]
+                if isinstance(ome := attrs.get("ome"), Mapping) and "version" in ome:
+                    return ome["version"]
                 if ms := attrs.get("multiscales"):
-                    return ms[0].get("version")
+                    ms0 = ms[0] if isinstance(ms, list) else None
+                    return ms0.get("version") if isinstance(ms0, Mapping) else None
                 if plate := attrs.get("plate"):
-                    return plate.get("version")
+                    return plate.get("version") if isinstance(plate, Mapping) else None
         return None
 
     def validate(self, *, strict: bool | None = None) -> Self:
