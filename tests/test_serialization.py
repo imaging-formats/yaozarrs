@@ -88,3 +88,11 @@ def test_unknown_keys_round_trip(path: Path) -> None:
     marked = _mark(doc)
     model = validate_ome_object(doc, GROUP_DOCS[path.relative_to(DATA).parts[0]])
     assert _marks(model.model_dump(mode="json")) == marked
+
+
+@pytest.mark.parametrize("mod", [v04, v05, v06], ids=lambda m: m.__name__)
+def test_label_source_image_default(mod: Any) -> None:
+    # "The default value is `../../`" for the source image of a label image
+    label = mod.ImageLabel.model_validate({"source": {}})
+    assert label.source.image == "../../"
+    assert label.model_dump()["source"] == {"image": "../../"}
