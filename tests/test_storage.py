@@ -1,6 +1,7 @@
 import json
 import re
 import shutil
+import warnings
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -896,3 +897,18 @@ def test_vector_data_is_not_read(
         monkeypatch.setattr(_CachedMapper, name, spy)
     validate_zarr_store(tmp_path)
     assert {k for k in read if k.startswith("vec/")} == {"vec/zarr.json"}
+
+
+def test_label_source_default_not_validated(
+    write_demo_ome: Callable, as_store: Callable
+) -> None:
+    # an omitted source `image` (default `../../`) isn't checked against the store
+    path = write_demo_ome("image-with-labels", version="0.5")
+    label_json = path / "labels" / "annotations" / "zarr.json"
+    meta = json.loads(label_json.read_text())
+    meta["attributes"]["ome"]["image-label"]["source"] = {}
+    label_json.write_text(json.dumps(meta))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        validate_zarr_store(as_store(path / "labels" / "annotations"))

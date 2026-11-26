@@ -77,8 +77,10 @@ class LabelSource(_BaseModel):
     image was derived.
     """
 
+    # The default value is `../../` since most labeled images are stored in a
+    # "labels" group that is nested within the original image group.
     image: str | None = Field(
-        default=None,
+        default="../../",
         description=(
             "Relative path to the source image group (default: '../../', "
             "pointing to the parent of the labels/ directory)"

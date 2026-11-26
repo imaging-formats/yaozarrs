@@ -497,7 +497,7 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": "../../"
         }
       },
       "type": "object"
