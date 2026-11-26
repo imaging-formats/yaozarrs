@@ -705,7 +705,8 @@ class ZarrGroup(ZarrNode):
 
     !!!important
         Requires `yaozarrs[io]` or `fsspec` to be installed, unless the store is a
-        mapping that you provide yourself (see [`yaozarrs.open_group`][]).
+        mapping that you provide yourself, or a zarr-python group or store (see
+        [`yaozarrs.open_group`][]).
 
     This class exists to provide minimal zarr group functionality, needed for hierarchy
     traversal and structural validation, without requiring a dependency on a full blown

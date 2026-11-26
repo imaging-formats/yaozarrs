@@ -18,8 +18,9 @@ layers. Take only the ones you need:
    *Needs:* only `pydantic`.
 2. **Hierarchy.** Open and validate entire OME-Zarr stores (metadata *and*
    structure), with the `yaozarrs validate` and `yaozarrs tree` CLI.\
-   *Needs:* nothing more if you fetch the documents yourself, `fsspec` for
-   local paths, or `yaozarrs[io]` for http(s) and s3 URLs.
+   *Needs:* nothing more if you fetch the documents yourself or pass a
+   zarr-python group, `fsspec` for local paths, or `yaozarrs[io]` for http(s)
+   and s3 URLs.
 3. **Array data.** Write complete stores, or open arrays for reading, with the
    zarr library of your choice.\
    *Needs:* `zarr-python`, `tensorstore`, or your own writer.
@@ -74,7 +75,8 @@ the dependencies yourself):
 > [!TIP]
 > You may not need the `io` extra. It adds `aiohttp` and `s3fs` (with
 > `botocore`) for remote URLs, but local paths need only `fsspec` (which has no
-> dependencies), and if you do the I/O yourself you need nothing at all. See
+> dependencies), and if you do the I/O yourself (or pass a zarr-python group)
+> you need nothing at all. See
 > [Layer 2](#layer-2-hierarchy).
 
 ## Usage
@@ -200,7 +202,8 @@ implementation, and how much else it needs depends on how you hand it a store:
 | store | install |
 | --- | --- |
 | any `Mapping[str, bytes]` of store keys (e.g. `"0/zarr.json"`) to metadata documents | nothing more: [you do the I/O](#do-the-io-yourself) |
-| a local path, or a zarr-python `Group` | `fsspec` (which has no dependencies) |
+| a zarr-python `Group` or `Store` (zarr-python 3) | nothing more: it's read through its own store |
+| a local path | `fsspec` (which has no dependencies) |
 | an http(s) or s3 URL | `pip install "yaozarrs[io]"` (adds `aiohttp` and `s3fs`) |
 
 The CLI always takes a path or URL, so it needs at least `fsspec`.
