@@ -1218,7 +1218,7 @@ def open_group(
             "Store"
         )
 
-    storage_options = storage_options or {}
+    storage_options = dict(storage_options or {})
     if str(uri).startswith("s3://"):
         storage_options.setdefault("anon", True)
     elif str(uri).startswith(("http://", "https://")):
@@ -1227,7 +1227,8 @@ def open_group(
         # and batch fetches may queue hundreds of requests behind it).
         import aiohttp
 
-        client_kwargs = storage_options.setdefault("client_kwargs", {})
+        client_kwargs = dict(storage_options.get("client_kwargs") or {})
+        storage_options["client_kwargs"] = client_kwargs
         client_kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=30))
     mapper = get_mapper(uri, **storage_options)
 
