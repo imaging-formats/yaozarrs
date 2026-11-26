@@ -941,14 +941,16 @@ but lacks structural validation and writing capabilities.</p>
 <p>Note that the conda distribution contains only the core package and no extras.
 You will need to manually install the following dependencies if you need them:</p>
 <ul>
-<li><code>conda-forge::fsspec</code> -  for <code>yaozarrs.open_group</code> and any structural validation.</li>
+<li><code>conda-forge::fsspec</code> -  for opening and validating stores from a path or URL
+  (not needed for a zarr-python group).</li>
 <li><code>conda-forge::zarr</code> OR <code>conda-forge::tensorstore</code> - for writing support.</li>
 </ul>
 </div>
 </div>
 </div>
 <h2 id="structural-validation">Structural validation<a class="headerlink" href="#structural-validation" title="Link to this section">#</a></h2>
-<p>To enable validation of Zarr hierarchies, include the <code>io</code> extra when installing.
+<p>To open and validate Zarr hierarchies from a path or URL, include the <code>io</code> extra
+when installing (a zarr-python group needs no extra).
 This brings in <a href="https://github.com/fsspec/filesystem_spec"><code>fsspec</code></a> (but not zarr-python):</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">with pip</label><label for="__tabbed_2_2">with uv</label></div>
 <div class="tabbed-content">
