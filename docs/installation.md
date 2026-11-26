@@ -37,12 +37,14 @@ but lacks structural validation and writing capabilities.
     Note that the conda distribution contains only the core package and no extras.
     You will need to manually install the following dependencies if you need them:
     
-    - `conda-forge::fsspec` -  for `yaozarrs.open_group` and any structural validation.
+    - `conda-forge::fsspec` -  for opening and validating stores from a path or URL
+      (not needed for a zarr-python group).
     - `conda-forge::zarr` OR `conda-forge::tensorstore` - for writing support.
 
 ## Structural validation
 
-To enable validation of Zarr hierarchies, include the `io` extra when installing.
+To open and validate Zarr hierarchies from a path or URL, include the `io` extra
+when installing (a zarr-python group needs no extra).
 This brings in [`fsspec`](https://github.com/fsspec/filesystem_spec) (but not zarr-python):
 
 === "with pip"

@@ -332,8 +332,8 @@ def validate_zarr_store(
     """Validate both structure and metadata of an OME-Zarr hierarchy.
 
     !!!important
-        Requires `yaozarrs[io]` or `fsspec` to be installed, unless `obj` is a mapping
-        or a [`yaozarrs.ZarrGroup`][] opened from one.
+        Requires `yaozarrs[io]` or `fsspec` to be installed, unless `obj` is a mapping,
+        a zarr-python group or store, or a [`yaozarrs.ZarrGroup`][] opened from one.
 
     This is a high-level function to validate both the metadata and the structure
     of a complete OME-Zarr store.  This is the function used by the `yaozarrs validate`
