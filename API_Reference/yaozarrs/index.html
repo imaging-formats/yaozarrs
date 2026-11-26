@@ -5303,8 +5303,7 @@ visiting them:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/yaozarrs/_zarr.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1273</span>
-<span class="normal">1274</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1274</span>
 <span class="normal">1275</span>
 <span class="normal">1276</span>
 <span class="normal">1277</span>
@@ -5366,7 +5365,8 @@ visiting them:</p>
 <span class="normal">1333</span>
 <span class="normal">1334</span>
 <span class="normal">1335</span>
-<span class="normal">1336</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">bioformats2raw_series</span><span class="p">(</span>
+<span class="normal">1336</span>
+<span class="normal">1337</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">bioformats2raw_series</span><span class="p">(</span>
     <span class="n">group</span><span class="p">:</span> <span class="n">ZarrGroup</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Return the image paths of a bioformats2raw collection, in series order.</span>
@@ -6001,7 +6001,8 @@ Ignored if <code>uri</code> is a mapping or a zarr-python object.</p>
 <span class="normal">1234</span>
 <span class="normal">1235</span>
 <span class="normal">1236</span>
-<span class="normal">1237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">open_group</span><span class="p">(</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">open_group</span><span class="p">(</span>
     <span class="n">uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span> <span class="o">|</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">storage_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ZarrGroup</span><span class="p">:</span>
@@ -6073,7 +6074,7 @@ Ignored if <code>uri</code> is a mapping or a zarr-python object.</p>
             <span class="s2">"Store"</span>
         <span class="p">)</span>
 
-    <span class="n">storage_options</span> <span class="o">=</span> <span class="n">storage_options</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">storage_options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">storage_options</span> <span class="ow">or</span> <span class="p">{})</span>
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"s3://"</span><span class="p">):</span>
         <span class="n">storage_options</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"anon"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"http://"</span><span class="p">,</span> <span class="s2">"https://"</span><span class="p">)):</span>
@@ -6082,7 +6083,8 @@ Ignored if <code>uri</code> is a mapping or a zarr-python object.</p>
         <span class="c1"># and batch fetches may queue hundreds of requests behind it).</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">aiohttp</span>
 
-        <span class="n">client_kwargs</span> <span class="o">=</span> <span class="n">storage_options</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"client_kwargs"</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">client_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">storage_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"client_kwargs"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="n">storage_options</span><span class="p">[</span><span class="s2">"client_kwargs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_kwargs</span>
         <span class="n">client_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"timeout"</span><span class="p">,</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">ClientTimeout</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
     <span class="n">mapper</span> <span class="o">=</span> <span class="n">get_mapper</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="o">**</span><span class="n">storage_options</span><span class="p">)</span>
 
