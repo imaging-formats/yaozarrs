@@ -74,12 +74,15 @@ SuggestDatasetPath = AfterValidator(
 
 
 def _validate_label_path(path: str) -> str:
-    # label images are *within* the labels group (an empty, "." or ".." segment
-    # would point at the labels group itself, or outside of it)
-    if any(re.fullmatch(r"\.*", part) for part in path.split("/")):
+    # label images are *within* the labels group, so a "." or ".." segment, or a
+    # path with no segments, is an error (as in zarr v2, where after normalizing
+    # "if ... any path segment [is] equal to the string "." or the string ".." then
+    # an error MUST be raised"; empty segments are just dropped)
+    parts = [part for part in path.split("/") if part]
+    if not parts or any(part in (".", "..") for part in parts):
         raise ValueError(
             f"Label path {path!r} must be a path to a group within the labels "
-            "group, without empty, '.' or '..' segments"
+            "group, without '.' or '..' segments"
         )
     return path
 
