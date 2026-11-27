@@ -31,7 +31,7 @@ try:
 except ImportError:
     connection_exceptions = ()
 
-from yaozarrs import bioformats2raw_series, v04, v05, validate_zarr_store
+from yaozarrs import bioformats2raw_series, v04, v05, v06, validate_zarr_store
 from yaozarrs._errors import (
     ErrorDetails,
     StorageErrorType,
@@ -912,3 +912,38 @@ def test_label_source_default_not_validated(
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         validate_zarr_store(as_store(path / "labels" / "annotations"))
+
+
+@pytest.mark.parametrize("mod", [v04, v05, v06])
+def test_label_path_within_labels_group(mod: Any) -> None:
+    # label images are *within* the labels group: no "." or ".." segments
+    for bad in ["..", "../x", "a/../b", ".", "./a", "", "/"]:
+        with pytest.raises(ValidationError, match="must be a path to a group"):
+            mod.LabelsGroup(labels=[bad])
+    # (but nested paths are fine, and empty segments are dropped, as in zarr v2)
+    for good in ["a", "a/b", "a//b", "a/b/", "/a/b", "..."]:
+        assert mod.LabelsGroup(labels=[good]).labels == [good]
+
+
+@pytest.mark.parametrize("label", ["..", "../labels", "a/../b", ".", ""])
+def test_label_path_outside_labels_group(write_demo_ome: Callable, label: str) -> None:
+    # (and `[".."]` mustn't recurse into labels/../labels/...)
+    path = write_demo_ome("image-with-labels", version="0.5")
+    update_meta("labels", ("attributes", "ome", "labels"), [label])(path)
+
+    with pytest.raises(StorageValidationError) as err:
+        validate_zarr_store(path)
+    assert [e["type"] for e in err.value.errors()] == [
+        str(StorageErrorType.labels_metadata_invalid)
+    ]
+
+
+@pytest.mark.parametrize("label", ["annotations/", "/annotations", "./annotations"])
+def test_label_path_empty_segments(write_demo_ome: Callable, label: str) -> None:
+    path = write_demo_ome("image-with-labels", version="0.5")
+    update_meta("labels", ("attributes", "ome", "labels"), [label])(path)
+    if label.startswith("."):
+        with pytest.raises(StorageValidationError, match="labels_metadata_invalid"):
+            validate_zarr_store(path)
+    else:
+        validate_zarr_store(path)

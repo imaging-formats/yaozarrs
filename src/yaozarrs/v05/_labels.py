@@ -5,6 +5,7 @@ from pydantic import Field
 
 from yaozarrs._base import _BaseModel
 from yaozarrs._common._labels import LabelColor, LabelProperty, LabelSource
+from yaozarrs._common._node_names import LabelPath
 from yaozarrs._types import UniqueList
 
 from ._image import Image
@@ -70,7 +71,7 @@ class LabelsGroup(_BaseModel):
         default="0.5",
         description="OME-NGFF specification version",
     )
-    labels: list[str] = Field(
+    labels: list[LabelPath] = Field(
         description="Paths to individual label image groups within this collection"
     )
 

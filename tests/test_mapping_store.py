@@ -137,12 +137,20 @@ def _image(version: str = "0.6") -> dict:
 
 
 def test_prefetch_stops_at_self_reference() -> None:
-    labels = {"version": "0.6", "labels": ["."]}  # (lists itself)
+    well = {"path": "A/1", "rowIndex": 0, "columnIndex": 0}
+    plate = {"rows": [{"name": "A"}], "columns": [{"name": "1"}], "wells": [well]}
     store = HttpLikeStore(
-        {"zarr.json": _group(_image()), "labels/zarr.json": _group(labels)}
+        {
+            "zarr.json": _group({"version": "0.5", "plate": plate}),
+            # (a field of view that lists the well itself)
+            "A/1/zarr.json": _group(
+                {"version": "0.5", "well": {"images": [{"path": "."}]}}
+            ),
+        }
     )
-    with pytest.raises(StorageValidationError, match="label_image_invalid"):
-        validate_zarr_store(store)
+    with pytest.warns(UserWarning, match="outside of the NGFF spec"):
+        with pytest.raises(StorageValidationError, match="field_image_invalid"):
+            validate_zarr_store(store)
     open_group(store).tree()
     assert store.round_trips < 10
 
