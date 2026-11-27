@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 # (v0.4 and v0.5 share their axis models)
 VERSIONS = pytest.mark.parametrize("v", [v05, v06], ids=["v05", "v06"])
 TYPED = [("SpaceAxis", "space"), ("TimeAxis", "time"), ("ChannelAxis", "channel")]
+SCALE_2D = {"type": "scale", "scale": [1, 1]}
 
 
 def test_v04_v05_share_axis() -> None:
@@ -107,3 +108,27 @@ def test_unit_warning_points_at_caller(v: ModuleType) -> None:
     with pytest.warns(ValidationWarning) as record:
         v.SpaceAxis(name="x", unit="pixel")
     assert record[0].filename == __file__
+
+
+@VERSIONS
+def test_unit_warning_once_per_axis(v: ModuleType) -> None:
+    # passing an existing Axis into another model mustn't warn again
+    with pytest.warns(ValidationWarning) as record:
+        axes = [v.SpaceAxis(name="y", unit="pixel"), v.SpaceAxis(name="x")]
+        if v is v06:
+            v.CoordinateSystem(name="cs", axes=axes)
+        else:
+            v.Multiscale(
+                axes=axes,
+                datasets=[{"path": "0", "coordinateTransformations": [SCALE_2D]}],
+            )
+    assert len(record) == 1
+
+
+@VERSIONS
+def test_unit_warning_on_assignment(v: ModuleType) -> None:
+    ax = v.Axis(name="a", unit="pixel")
+    with pytest.warns(ValidationWarning, match="Space axis unit 'pixel'"):
+        ax.type = "space"
+    with pytest.warns(ValidationWarning, match="Space axis unit 'parsnip'"):
+        ax.unit = "parsnip"

@@ -1,8 +1,8 @@
 from collections.abc import Sequence
-from typing import Annotated, Literal, Self, TypeAlias
+from typing import Annotated, Literal, TypeAlias
 
 from annotated_types import MinLen
-from pydantic import AfterValidator, Field, model_validator
+from pydantic import AfterValidator, Field, ValidationInfo, field_validator
 from typing_extensions import deprecated
 
 from yaozarrs._base import _BaseModel
@@ -58,10 +58,18 @@ class Axis(_BaseModel):
         ),
     )
 
-    @model_validator(mode="after")
-    def _warn_unexpected_unit(self) -> Self:
-        warn_if_unexpected_unit(self.type, self.unit)
-        return self
+    # (a field validator, not a model "after" validator: pydantic re-runs those when
+    # an existing Axis is passed into another model, which warned twice)
+    @field_validator("type", "unit")
+    @classmethod
+    def _warn_unexpected_unit(cls, v: str | None, info: ValidationInfo) -> str | None:
+        # `type` is validated first, so on init only `unit` sees both; on assignment
+        # `info.data` holds the other field's current value.
+        if info.field_name == "unit":
+            warn_if_unexpected_unit(info.data.get("type"), v)
+        elif "unit" in info.data:
+            warn_if_unexpected_unit(v, info.data["unit"])
+        return v
 
 
 def SpaceAxis(
