@@ -1,9 +1,9 @@
 """Axis building blocks (identical in v0.4 and v0.5)."""
 
-from typing import Annotated, Any, Literal, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Literal, TypeAlias, TypeVar
 
 from annotated_types import Len
-from pydantic import AfterValidator, Field, model_validator
+from pydantic import AfterValidator, Field, ValidationInfo, field_validator
 from typing_extensions import deprecated
 
 from yaozarrs._base import _BaseModel
@@ -26,10 +26,18 @@ class Axis(_BaseModel):
     type: Literal["space", "time", "channel"] | str | None = None  # SHOULD
     unit: str | None = None  # SHOULD
 
-    @model_validator(mode="after")
-    def _warn_unexpected_unit(self) -> Self:
-        warn_if_unexpected_unit(self.type, self.unit)
-        return self
+    # (a field validator, not a model "after" validator: pydantic re-runs those when
+    # an existing Axis is passed into another model, which warned twice)
+    @field_validator("type", "unit")
+    @classmethod
+    def _warn_unexpected_unit(cls, v: str | None, info: ValidationInfo) -> str | None:
+        # `type` is validated first, so on init only `unit` sees both; on assignment
+        # `info.data` holds the other field's current value.
+        if info.field_name == "unit":
+            warn_if_unexpected_unit(info.data.get("type"), v)
+        elif "unit" in info.data:
+            warn_if_unexpected_unit(v, info.data["unit"])
+        return v
 
 
 def build_axis(cls: type[_AxisT], fixed_type: str | None, **fields: Any) -> _AxisT:
