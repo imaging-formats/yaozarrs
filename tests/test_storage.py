@@ -912,3 +912,17 @@ def test_label_source_default_not_validated(
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         validate_zarr_store(as_store(path / "labels" / "annotations"))
+
+
+@pytest.mark.parametrize("label", ["..", "../labels", "a/../b", ".", ""])
+def test_label_path_outside_labels_group(write_demo_ome: Callable, label: str) -> None:
+    # label images are *within* the labels group, so a path with an empty, "." or
+    # ".." segment is an error (and `[".."]` mustn't recurse into labels/../labels)
+    path = write_demo_ome("image-with-labels", version="0.5")
+    update_meta("labels", ("attributes", "ome", "labels"), [label])(path)
+
+    with pytest.raises(StorageValidationError) as err:
+        validate_zarr_store(path)
+    assert [e["type"] for e in err.value.errors()] == [
+        str(StorageErrorType.labels_metadata_invalid)
+    ]

@@ -4,6 +4,7 @@ from annotated_types import Interval, Len, MinLen
 from pydantic import ConfigDict, Field
 
 from yaozarrs._base import _BaseModel
+from yaozarrs._common._node_names import LabelPath
 from yaozarrs._types import UniqueList
 
 from ._image import Image
@@ -131,7 +132,7 @@ class LabelsGroup(_BaseModel):
         ```
     """
 
-    labels: list[str] = Field(
+    labels: list[LabelPath] = Field(
         description="Paths to individual label image groups within this collection"
     )
 

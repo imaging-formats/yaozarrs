@@ -73,6 +73,20 @@ SuggestDatasetPath = AfterValidator(
 )
 
 
+def _validate_label_path(path: str) -> str:
+    # label images are *within* the labels group (an empty, "." or ".." segment
+    # would point at the labels group itself, or outside of it)
+    if any(re.fullmatch(r"\.*", part) for part in path.split("/")):
+        raise ValueError(
+            f"Label path {path!r} must be a path to a group within the labels "
+            "group, without empty, '.' or '..' segments"
+        )
+    return path
+
+
+LabelPath: TypeAlias = Annotated[str, AfterValidator(_validate_label_path)]
+
+
 def _warn_non_spec_fov_name(path: Any) -> str:
     """Warning validator for FOV names.
 

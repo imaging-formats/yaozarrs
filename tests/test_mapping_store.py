@@ -141,7 +141,7 @@ def test_prefetch_stops_at_self_reference() -> None:
     store = HttpLikeStore(
         {"zarr.json": _group(_image()), "labels/zarr.json": _group(labels)}
     )
-    with pytest.raises(StorageValidationError, match="label_image_invalid"):
+    with pytest.raises(StorageValidationError, match="labels_metadata_invalid"):
         validate_zarr_store(store)
     open_group(store).tree()
     assert store.round_trips < 10

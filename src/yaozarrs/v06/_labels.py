@@ -5,6 +5,7 @@ from pydantic import Field
 
 from yaozarrs._base import _BaseModel, _OMEDocument
 from yaozarrs._common._labels import LabelColor, LabelProperty, LabelSource
+from yaozarrs._common._node_names import LabelPath
 from yaozarrs._types import UniqueList
 
 from ._image import Image
@@ -73,7 +74,7 @@ class LabelsGroup(_OMEDocument):
     version: VersionStr = Field(default="0.6", description="OME-NGFF version")
     # [The labels group metadata] MUST contain a JSON object with the key `labels`,
     # whose value is a JSON array of paths to the labeled multiscale image(s).
-    labels: list[str] = Field(
+    labels: list[LabelPath] = Field(
         description="Paths to individual label image groups within this collection"
     )
 
