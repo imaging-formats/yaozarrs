@@ -3699,7 +3699,11 @@ recommends for space and time axes).</p>
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_multiscale_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Axis</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_multiscale_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Axis</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Rules for the axes of coordinate systems inside `multiscales` metadata.</span>
 
 <span class="sd">    Raises</span>
@@ -3733,10 +3737,14 @@ recommends for space and time axes).</p>
     <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"time"</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"There can be at most 1 axis of type 'time'."</span><span class="p">)</span>
     <span class="c1"># `axes` MAY contain one additional entry of `type:channel` or a null / custom type.</span>
-    <span class="c1"># NOTE: this sentence is unchanged from v0.5; like v05 we only limit `channel` axes</span>
-    <span class="c1"># to one, and allow several custom/untyped axes (within the 5-axis limit).</span>
+    <span class="c1"># NOTE: read literally, that's one channel *or* custom axis.  Like v05, we</span>
+    <span class="c1"># deliberately still accept one channel axis *plus* one custom axis, since</span>
+    <span class="c1"># ome-zarr-py and ome-zarr-models both write that.  "custom" means a type outside</span>
+    <span class="c1"># the ones the spec lists (`AxisType`).</span>
     <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"channel"</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"There can be at most 1 axis of type 'channel'."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">get_args</span><span class="p">(</span><span class="n">AxisType</span><span class="p">)</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"There can be at most 1 axis with a null or custom type."</span><span class="p">)</span>
 
     <span class="c1"># `axes` entries MUST be ordered by `type` where the `time` axis must come first</span>
     <span class="c1"># (if present), followed by the `channel` or custom axis (if present) and the</span>
