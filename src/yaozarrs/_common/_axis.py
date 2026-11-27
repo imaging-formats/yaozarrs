@@ -101,6 +101,11 @@ def _validate_axes_list(axes: list[Axis]) -> list[Axis]:
         raise ValueError("There can be at most 1 axis of type 'time'.")
     if len([ax for ax in axes if ax.type == "channel"]) > 1:
         raise ValueError("There can be at most 1 axis of type 'channel'.")
+    # NOTE: read literally, that's one channel *or* custom axis.  We deliberately
+    # still accept one channel axis *plus* one custom axis, since ome-zarr-py and
+    # ome-zarr-models both write that.
+    if sum(ax.type not in ("space", "time", "channel") for ax in axes) > 1:
+        raise ValueError("There can be at most 1 axis with a null or custom type.")
 
     # The entries MUST be ordered by "type" where the "time" axis must come first (if
     # present), followed by the "channel" or custom axis (if present) and the axes of

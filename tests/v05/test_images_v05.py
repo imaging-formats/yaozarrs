@@ -271,6 +271,26 @@ V05_INVALID_IMAGES: list[tuple[dict, str]] = [
         },
         "There can be at most 1 axis of type 'channel'",
     ),
+    # Test multiple custom/untyped axes
+    (
+        {
+            "version": "0.5",
+            "multiscales": [
+                {
+                    "axes": [
+                        {"name": "angle", "type": "custom"},
+                        {"name": "q"},  # 2 custom/untyped axes
+                        Y_AXIS,
+                        X_AXIS,
+                    ],
+                    "datasets": [
+                        {"path": "0", "coordinateTransformations": [scale_tform(4)]}
+                    ],
+                }
+            ],
+        },
+        "There can be at most 1 axis with a null or custom type",
+    ),
     # Test incorrect axis ordering (space before time)
     (
         {

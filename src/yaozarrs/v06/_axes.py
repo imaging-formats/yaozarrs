@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias, get_args
 
 from annotated_types import MinLen
 from pydantic import AfterValidator, Field, ValidationInfo, field_validator
@@ -184,10 +184,14 @@ def validate_multiscale_axes(axes: Sequence[Axis]) -> None:
     if sum(ax.type == "time" for ax in axes) > 1:
         raise ValueError("There can be at most 1 axis of type 'time'.")
     # `axes` MAY contain one additional entry of `type:channel` or a null / custom type.
-    # NOTE: this sentence is unchanged from v0.5; like v05 we only limit `channel` axes
-    # to one, and allow several custom/untyped axes (within the 5-axis limit).
+    # NOTE: read literally, that's one channel *or* custom axis.  Like v05, we
+    # deliberately still accept one channel axis *plus* one custom axis, since
+    # ome-zarr-py and ome-zarr-models both write that.  "custom" means a type outside
+    # the ones the spec lists (`AxisType`).
     if sum(ax.type == "channel" for ax in axes) > 1:
         raise ValueError("There can be at most 1 axis of type 'channel'.")
+    if sum(ax.type not in get_args(AxisType) for ax in axes) > 1:
+        raise ValueError("There can be at most 1 axis with a null or custom type.")
 
     # `axes` entries MUST be ordered by `type` where the `time` axis must come first
     # (if present), followed by the `channel` or custom axis (if present) and the

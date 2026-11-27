@@ -92,9 +92,9 @@ VALID_MULTISCALE_AXES = [
     [T, C, Z, Y, X],
     [D, Y, X],  # displacement axis sits in the channel/custom slot
     [{"name": "q"}, Y, X],  # untyped axis also sits in that slot
-    # several channel/custom axes are fine (like v05), within the 5-axis limit
     [C, D, Y, X],
-    [{"name": "view", "type": "view"}, {"name": "phase"}, Y, X],
+    # one channel plus one custom axis is accepted (like v05)
+    [C, {"name": "view", "type": "view"}, Y, X],
 ]
 
 
@@ -110,6 +110,7 @@ INVALID_MULTISCALE_AXES = [
     ([{**X, "name": "w"}, Z, Y, X], "2 or 3 axes of type 'space'"),
     ([T, {**T, "name": "t2"}, Y, X], "at most 1 axis of type 'time'"),
     ([C, {**C, "name": "c2"}, Y, X], "at most 1 axis of type 'channel'"),
+    ([{"name": "view", "type": "view"}, {"name": "phase"}, Y, X], "null or custom"),
     ([Y, X, T], "required order"),
     ([C, T, Y, X], "required order"),
     ([Y, C, X], "required order"),
@@ -148,6 +149,7 @@ PARITY_AXES = [
     [C, {"name": "view", "type": "view"}, Y, X],
     [{"name": "view", "type": "view"}, {"name": "phase"}, {"name": "i"}, Y, X],
     [T, C, {"name": "view", "type": "view"}, Y, X],
+    [{"name": "view", "type": "view"}, {"name": "phase"}, Y, X],
     [C, {**C, "name": "c2"}, Y, X],
     [T, {**T, "name": "t2"}, Y, X],
     [X],
