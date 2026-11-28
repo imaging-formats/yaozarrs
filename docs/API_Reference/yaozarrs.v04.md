@@ -12,6 +12,24 @@ Schema: <https://github.com/ome/ngff-spec/tree/a4fe54cf9c49cff8bf31cf83b8a78ef71
           - "!^_"
           - "!^serialize_model"
 
+## Omero (display metadata)
+
+::: yaozarrs.v04.Omero
+    options:
+      show_root_heading: true
+
+::: yaozarrs.v04.OmeroChannel
+    options:
+      show_root_heading: true
+
+::: yaozarrs.v04.OmeroWindow
+    options:
+      show_root_heading: true
+
+::: yaozarrs.v04.OmeroRenderingDefs
+    options:
+      show_root_heading: true
+
 ## Labels
 
 ::: yaozarrs.v04._labels
