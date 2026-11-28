@@ -23,6 +23,24 @@ Schema: <https://github.com/ome/ngff-spec/tree/89da1da5b0491f83b7cdde7d123aef763
 
 ::: yaozarrs.v06._transforms
 
+## Omero (display metadata)
+
+::: yaozarrs.v06.Omero
+    options:
+      show_root_heading: true
+
+::: yaozarrs.v06.OmeroChannel
+    options:
+      show_root_heading: true
+
+::: yaozarrs.v06.OmeroWindow
+    options:
+      show_root_heading: true
+
+::: yaozarrs.v06.OmeroRenderingDefs
+    options:
+      show_root_heading: true
+
 ## Labels
 
 ::: yaozarrs.v06._labels
